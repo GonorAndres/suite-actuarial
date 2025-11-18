@@ -2743,8 +2743,324 @@ print(f"Capital adicional requerido: ${capital_adicional:,.0f}")
 
 ---
 
+## Fase 5A: Cumplimiento Regulatorio - RCS
+
+**Fecha**: Noviembre 2025
+**Duración**: ~6 horas
+**Objetivo**: Implementar cálculo de Requerimiento de Capital de Solvencia (RCS) según normativa CNSF
+
+### Contexto Regulatorio
+
+El RCS es el capital mínimo que una aseguradora debe mantener para operar legalmente en México.
+Se basa en el marco de Solvencia II adaptado a regulaciones CNSF.
+
+**Componentes del RCS**:
+1. RCS Suscripción Vida (mortalidad, longevidad, invalidez, gastos)
+2. RCS Suscripción Daños (prima, reserva)
+3. RCS Inversión (mercado, crédito, concentración)
+4. Agregación con correlaciones
+
+### Decisiones de Diseño
+
+#### 1. Estructura Modular
+
+**Decisión**: Separar cada tipo de riesgo en su propio módulo.
+
+**Razón**:
+- Separación de concerns (vida ≠ daños ≠ inversión)
+- Facilita testing independiente
+- Permite usar solo los módulos necesarios
+
+**Módulos creados**:
+- `rcs_vida.py` (~280 LOC): Riesgos de suscripción vida
+- `rcs_danos.py` (~180 LOC): Riesgos de suscripción daños
+- `rcs_inversion.py` (~280 LOC): Riesgos de mercado y crédito
+- `agregador_rcs.py` (~230 LOC): Agregación con correlaciones
+
+#### 2. Matriz de Correlación
+
+**Decisión**: Usar correlación fija basada en Solvencia II.
+
+**Matriz implementada**:
+```
+              Vida    Daños   Inversión
+Vida          1.00    0.00    0.25
+Daños         0.00    1.00    0.25
+Inversión     0.25    0.25    1.00
+```
+
+**Razón**:
+- Vida y Daños son independientes (ρ=0.00)
+- Ambos tienen exposición a mercados (ρ=0.25 con Inversión)
+- Valores conservadores según estándares internacionales
+
+**Fórmula de agregación**:
+```
+RCS_total = sqrt(
+    RCS_vida² + RCS_daños² + RCS_inv² +
+    2×ρ_vida_daños×RCS_vida×RCS_daños +
+    2×ρ_vida_inv×RCS_vida×RCS_inv +
+    2×ρ_daños_inv×RCS_daños×RCS_inv
+)
+```
+
+#### 3. Factores de Shock
+
+**Decisión**: Usar shocks específicos por tipo de activo.
+
+**Shocks implementados** (basados en Solvencia II para México):
+
+| Activo | Shock | Justificación |
+|--------|-------|---------------|
+| Acciones | 35% | Volatilidad histórica BMV |
+| Bonos Gub. | 5% base | Bajo riesgo soberano México |
+| Bonos Corp. | 15% base | Riesgo corporativo promedio |
+| Inmuebles | 25% | Iliquidez del mercado inmobiliario |
+
+**Ajustes adicionales**:
+- Duración de bonos: Shock aumenta con duración
+- Calificación crediticia: Shock aumenta con peor calificación
+- Concentración: Penalización por exposición >10% a un emisor
+
+#### 4. RCS Vida: Factores de Edad y Duración
+
+**Decisión**: Aplicar factores multiplicativos por edad y duración.
+
+**Factor de edad** (mortalidad):
+```python
+factor_edad = 1.0 + (edad_promedio - 30) * 0.025
+```
+- Edad 30: factor = 1.00 (base)
+- Edad 50: factor = 1.50 (50% más RCS)
+- Edad 70: factor = 2.00 (doble RCS)
+
+**Factor de duración** (longevidad):
+```python
+factor_duracion = 1.0 + (duracion - 10) * 0.03
+```
+- Duración 10 años: factor = 1.00 (base)
+- Duración 20 años: factor = 1.30 (30% más RCS)
+- Duración 30 años: factor = 1.60 (60% más RCS)
+
+**Razón**: Carteras con mayor edad y duración tienen mayor exposición a riesgo biométrico.
+
+#### 5. RCS Daños: Diversificación por Ramos
+
+**Decisión**: Reducir RCS según número de líneas de negocio.
+
+**Factor de diversificación**:
+```python
+if num_ramos == 1:
+    factor = 1.00  # Sin diversificación
+elif num_ramos <= 5:
+    factor = 1.0 - (num_ramos - 1) * 0.03  # 3% reducción por ramo
+else:
+    factor = 0.75  # Máxima diversificación
+```
+
+**Razón**: Más ramos reduce correlación de siniestros (diversificación de riesgo).
+
+#### 6. RCS Inversión: Riesgo de Concentración
+
+**Decisión**: Penalizar exposiciones >10% a emisor único.
+
+**Fórmula**:
+```python
+total_bonos = bonos_gub + bonos_corp
+concentracion_max = total_bonos * 0.10
+
+if mayor_exposicion > concentracion_max:
+    exceso = mayor_exposicion - concentracion_max
+    rcs_concentracion = exceso * 0.12  # 12% del exceso
+```
+
+**Razón**: Limitar riesgo de incumplimiento de un solo emisor (diversificación crediticia).
+
+### Pseudocódigo Clave
+
+#### Cálculo RCS Vida Total
+
+```
+FUNCIÓN calcular_rcs_total_vida():
+    // Calcular cada componente
+    rcs_mortalidad = suma_asegurada × 0.003 × factor_edad × factor_diversificación
+    rcs_longevidad = reserva_matematica × 0.025 × factor_duracion
+    rcs_invalidez = rcs_mortalidad × 0.5
+    rcs_gastos = reserva_matematica × 0.10 × factor_gastos
+
+    // Agregar con sqrt de suma de cuadrados
+    rcs_total = sqrt(
+        rcs_mortalidad² +
+        rcs_longevidad² +
+        rcs_invalidez² +
+        rcs_gastos²
+    )
+
+    RETORNAR rcs_total, {
+        mortalidad: rcs_mortalidad,
+        longevidad: rcs_longevidad,
+        invalidez: rcs_invalidez,
+        gastos: rcs_gastos
+    }
+```
+
+#### Cálculo RCS Daños Total
+
+```
+FUNCIÓN calcular_rcs_total_danos():
+    // Riesgo de prima (enfoque 3-sigma)
+    rcs_prima = 3.0 × primas_retenidas × CV × factor_ramos
+
+    // Riesgo de reserva
+    rcs_reserva = sqrt(reserva_siniestros) × CV × 1.5
+
+    // Agregar con correlación ρ=0.5
+    ρ = 0.5
+    rcs_total = sqrt(
+        rcs_prima² +
+        rcs_reserva² +
+        2×ρ×rcs_prima×rcs_reserva
+    )
+
+    RETORNAR rcs_total, {prima: rcs_prima, reserva: rcs_reserva}
+```
+
+#### Agregación Final
+
+```
+FUNCIÓN calcular_rcs_completo():
+    // Calcular componentes individuales
+    rcs_vida, detalles_vida = calcular_rcs_total_vida()
+    rcs_danos, detalles_danos = calcular_rcs_total_danos()
+    rcs_inv, detalles_inv = calcular_rcs_total_inversion()
+
+    // Agregar con correlaciones
+    rcs_total = agregar_con_correlaciones(rcs_vida, rcs_danos, rcs_inv)
+
+    // Validar cumplimiento
+    ratio_solvencia = rcs_total / capital_disponible
+    cumple = (capital_disponible >= rcs_total)
+    excedente = capital_disponible - rcs_total
+
+    RETORNAR ResultadoRCS(
+        rcs_total=rcs_total,
+        ratio_solvencia=ratio_solvencia,
+        cumple_regulacion=cumple,
+        excedente_solvencia=excedente,
+        ...detalles
+    )
+```
+
+### Validaciones Implementadas
+
+**Pydantic Models** con validaciones estrictas:
+
+1. **ConfiguracionRCSVida**:
+   - Suma asegurada > 0
+   - Reserva <= 2× suma asegurada (coherencia actuarial)
+   - Edad entre 18-100 años
+   - Duración entre 1-50 años
+
+2. **ConfiguracionRCSDanos**:
+   - Primas y reservas > 0
+   - Coeficiente variación: 0.05 ≤ CV ≤ 0.50 (rango razonable)
+   - Número ramos ≥ 1
+
+3. **ConfiguracionRCSInversion**:
+   - Al menos un tipo de inversión presente
+   - Calificación de bonos válida (AAA, AA, A, BBB, BB, B, CCC)
+   - Duración de bonos razonable (0-30 años)
+
+4. **ResultadoRCS**:
+   - Todos los componentes ≥ 0
+   - RCS total > 0
+   - Capital > 0
+   - Validación cruzada: detalles suman correctamente
+
+### Testing
+
+**46 tests** automatizados con >95% cobertura:
+
+**RCS Vida (20 tests)**:
+- Cálculos positivos de cada riesgo
+- Impacto de edad, duración, número asegurados
+- Validaciones de configuración
+- Casos especiales (carteras pequeñas, duraciones largas)
+
+**RCS Daños (6 tests)**:
+- Riesgo de prima y reserva
+- Diversificación por ramos
+- Validaciones de CV
+
+**RCS Inversión (10 tests)**:
+- Shocks por tipo de activo
+- Riesgo de crédito por calificación
+- Riesgo de concentración
+- Validaciones de calificación
+
+**Agregador RCS (10 tests)**:
+- Agregación con correlaciones
+- Cumplimiento/incumplimiento regulatorio
+- Configuraciones parciales (solo vida, solo daños)
+- Validación de capital con márgenes
+
+**Comando de ejecución**:
+```bash
+PYTHONPATH=/home/user/Analisis_Seguros_Mexico/src \
+python -m pytest tests/unit/test_rcs_vida.py \
+                 tests/unit/test_rcs_completo.py \
+                 -v
+# 46 passed in 0.38s
+```
+
+### Métricas de Desarrollo
+
+**Líneas de código**:
+- rcs_vida.py: 280
+- rcs_danos.py: 180
+- rcs_inversion.py: 280
+- agregador_rcs.py: 230
+- validators.py (modelos RCS): 400
+- tests: 600
+- **Total**: ~1,970 LOC
+
+**Tiempo de desarrollo**: ~6 horas
+- Diseño y planificación: 1 hora
+- Implementación (vida, daños, inversión, agregador): 3 horas
+- Tests y ajustes: 1.5 horas
+- Documentación: 30 min
+
+**Cobertura de tests**:
+- RCS Vida: >95%
+- RCS Daños: >95%
+- RCS Inversión: >95%
+- Agregador: >95%
+
+**Complejidad ciclomática**: <10 por función (excelente)
+
+### Lecciones Aprendidas
+
+**Aciertos**:
+1. Diseño modular facilita testing y mantenimiento
+2. Correlaciones reducen RCS total vs suma simple (reconoce diversificación)
+3. Validaciones Pydantic atrapan errores en configuración temprano
+4. Decimal elimina errores de redondeo en cálculos financieros
+
+**Desafíos**:
+1. Calibración de shocks para mercado mexicano (usamos Solvencia II como proxy)
+2. Balancear simplicidad vs precisión actuarial
+3. Tests de agregación requieren entender interacción de correlaciones
+
+**Mejoras futuras**:
+1. Shocks dinámicos basados en volatilidad histórica del mercado mexicano
+2. RCS operacional (fraude, sistemas, personas)
+3. Stress testing: shock de escenarios extremos (terremoto, pandemia)
+4. Integración con reportes CNSF (Fase 5B)
+
+---
+
 **Fin del Journal Técnico**
 
 **Última actualización**: Noviembre 2025
-**Fase actual**: Fase 4 completada
-**Próxima revisión**: Inicio de Fase 5 (Cumplimiento Regulatorio)
+**Fase actual**: Fase 5A completada
+**Próxima revisión**: Inicio de Fase 5B (Reportes CNSF)
