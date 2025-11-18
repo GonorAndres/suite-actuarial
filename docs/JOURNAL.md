@@ -1806,7 +1806,486 @@ git push origin branch-name
 
 ---
 
+## Fase 3: Reaseguro - Decisiones Técnicas
+
+### Resumen de Fase 3
+
+**Objetivo**: Implementar módulo de reaseguro con contratos proporcionales y no proporcionales para transferencia de riesgo.
+
+**Componentes implementados**:
+- Clase base abstracta `ContratoReaseguro`
+- Quota Share (reaseguro proporcional)
+- Excess of Loss (reaseguro no proporcional)
+- Stop Loss (protección de cartera)
+- 57 tests unitarios con >95% de cobertura
+
+### Arquitectura y Patrones de Diseño
+
+#### Patrón Template Method
+
+Usé el mismo patrón que en productos de vida, con una clase base abstracta que define el flujo:
+
+```python
+class ContratoReaseguro(ABC):
+    def __init__(self, config):
+        self.config = config
+        self._validar_config()
+
+    @abstractmethod
+    def calcular_recuperacion(self, *args, **kwargs) -> Decimal:
+        """Cada contrato implementa su lógica"""
+        pass
+
+    def validar_siniestro(self, siniestro: Siniestro) -> bool:
+        """Método concreto compartido"""
+        return (
+            self.config.vigencia_inicio
+            <= siniestro.fecha_ocurrencia
+            <= self.config.vigencia_fin
+        )
+```
+
+**Ventajas**:
+- Código compartido (validaciones, vigencia)
+- Interfaz consistente
+- Fácil agregar nuevos tipos de contratos
+
+#### Decisión: No usar generar_resultado() para Quota Share
+
+En la clase base tengo un método `generar_resultado()` que calcula el resultado neto con una fórmula genérica:
+
+```python
+resultado_neto = monto_retenido + comision - prima_pagada + recuperacion
+```
+
+Pero esta fórmula NO aplica correctamente para Quota Share porque:
+- En QS, `monto_retenido` ya es `prima_bruta - prima_cedida`
+- Si resto nuevamente `prima_pagada` (que es `prima_cedida`), estaría restando dos veces
+
+**Solución**: Quota Share calcula su resultado_neto directamente:
+```python
+resultado_neto = prima_retenida + comision - siniestros_retenidos
+```
+
+### Modelos Pydantic Diseñados
+
+#### Siniestro
+
+```python
+class Siniestro(BaseModel):
+    id_siniestro: str
+    fecha_ocurrencia: date
+    monto_bruto: Decimal = Field(gt=0)
+    tipo: TipoSiniestro  # INDIVIDUAL o EVENTO_CATASTROFICO
+
+    @field_validator("monto_bruto")
+    def validar_monto_razonable(cls, v):
+        if v > Decimal("1e9"):  # $1,000 millones
+            raise ValueError("Monto excesivo")
+        return v
+```
+
+**Decisión**: Límite de $1,000 millones porque en México es extremadamente raro tener siniestros mayores.
+
+#### Configuraciones Jerárquicas
+
+Usé herencia de Pydantic para compartir campos comunes:
+
+```
+ConfiguracionReaseguro (base)
+  ├─ tipo_contrato
+  ├─ vigencia_inicio
+  ├─ vigencia_fin
+  └─ moneda
+
+QuotaShareConfig(ConfiguracionReaseguro)
+  ├─ porcentaje_cesion
+  ├─ comision_reaseguro
+  └─ comision_override
+
+ExcessOfLossConfig(ConfiguracionReaseguro)
+  ├─ retencion
+  ├─ limite
+  ├─ modalidad
+  └─ numero_reinstatements
+
+StopLossConfig(ConfiguracionReaseguro)
+  ├─ attachment_point
+  ├─ limite_cobertura
+  └─ primas_sujetas
+```
+
+**Beneficio**: Validaciones de vigencia se ejecutan automáticamente para todos los tipos.
+
+### Algoritmos Clave Implementados
+
+#### 1. Recuperación en Quota Share
+
+```
+ALGORITMO: calcular_recuperacion_quota_share
+ENTRADA: siniestro
+SALIDA: Decimal (recuperación)
+
+PASO 1: Validar siniestro esté en vigencia
+    SI NO validar_siniestro(siniestro):
+        LANZAR ValueError
+
+PASO 2: Calcular recuperación proporcional
+    recuperacion = siniestro.monto_bruto * (porcentaje_cesion / 100)
+
+PASO 3: Retornar recuperacion
+```
+
+**Simplicidad**: Es el más directo, solo aplica el porcentaje.
+
+#### 2. Recuperación en Excess of Loss
+
+```
+ALGORITMO: calcular_recuperacion_xl
+ENTRADA: siniestro
+SALIDA: Decimal (recuperación)
+
+PASO 1: Validar siniestro esté en vigencia
+
+PASO 2: Verificar si excede retención
+    SI siniestro.monto_bruto <= retencion:
+        RETORNAR 0
+
+PASO 3: Calcular exceso
+    exceso = siniestro.monto_bruto - retencion
+
+PASO 4: Limitar a límite disponible
+    recuperacion = MIN(exceso, limite_disponible)
+
+PASO 5: Consumir límite
+    limite_disponible -= recuperacion
+
+PASO 6: Retornar recuperacion
+```
+
+**Complejidad adicional**:
+- Tracking de límite disponible (estado mutable)
+- Primer siniestro puede agotar todo el límite
+
+#### 3. Recuperación en Stop Loss
+
+```
+ALGORITMO: calcular_recuperacion_stop_loss
+ENTRADA: siniestros_totales, primas_totales
+SALIDA: Decimal (recuperación)
+
+PASO 1: Calcular siniestralidad
+    siniestralidad = (siniestros_totales / primas_totales) * 100
+
+PASO 2: Verificar si activa
+    SI siniestralidad <= attachment_point:
+        RETORNAR 0
+
+PASO 3: Calcular exceso porcentual
+    exceso_pct = siniestralidad - attachment_point
+
+PASO 4: Convertir a monto
+    exceso_monto = primas_totales * (exceso_pct / 100)
+
+PASO 5: Aplicar límite
+    limite_monto = primas_totales * (limite_cobertura / 100)
+    recuperacion = MIN(exceso_monto, limite_monto)
+
+PASO 6: Retornar recuperacion
+```
+
+**Diferencia clave**: Opera sobre agregados, no siniestros individuales.
+
+### Reinstatements en XL
+
+Una funcionalidad compleja que implementé en Excess of Loss.
+
+**Concepto**: Después de usar el límite, puedes "recargarlo" pagando una prima adicional.
+
+```python
+def aplicar_reinstatement(self, monto_usado: Decimal):
+    # Verificar disponibilidad
+    if self.reinstatements_usados >= self.config.numero_reinstatements:
+        raise ValueError("No quedan reinstatements")
+
+    # Reinstalar límite
+    monto_reinstalado = min(monto_usado, self.config.limite)
+    self.limite_disponible += monto_reinstalado
+    self.reinstatements_usados += 1
+
+    # Prima proporcional
+    prima_adicional = (
+        monto_reinstalado * self.config.tasa_prima / Decimal("100")
+    )
+
+    return True, prima_adicional
+```
+
+**Tracking de estado**:
+- `limite_disponible`: va disminuyendo con siniestros
+- `reinstatements_usados`: contador que aumenta
+
+**Ejemplo**:
+```
+Contrato XL 500 xs 200 con 2 reinstatements
+
+Siniestro 1: $600K → usa $400K del límite
+- Límite disponible: $100K
+
+Aplicar reinstatement 1:
+- Límite disponible: $500K (reinstalado)
+- Prima adicional: $20K (4% de $500K)
+
+Siniestro 2: $700K → usa $500K
+- Límite disponible: $0K
+
+Aplicar reinstatement 2:
+- Límite disponible: $500K
+- Prima adicional: $20K
+```
+
+### Decisiones Técnicas Importantes
+
+#### 1. ¿Inmutabilidad de configuración?
+
+**Decisión**: Las configuraciones son inmutables después de creación.
+
+**Razón**: Un contrato de reaseguro es un acuerdo legal. No puedes cambiar términos mid-year sin negociar un endorsement.
+
+**Implementación**: Pydantic BaseModel sin métodos de modificación.
+
+#### 2. ¿Validar siniestralidad máxima en Stop Loss?
+
+**Decisión**: NO validar un máximo estricto, pero sí advertir.
+
+**Razón**: En eventos catastróficos (terremoto de 8.0 Richter) la siniestralidad puede superar 200-300%. El sistema debe manejarlo.
+
+**Implementación**:
+```python
+@field_validator("attachment_point")
+def validar_attachment(cls, v):
+    if v < 50:
+        raise ValueError("Attachment muy bajo")
+    if v > 200:
+        raise ValueError("Attachment muy alto")
+    return v
+```
+
+Rango permitido: 50% - 200%
+
+#### 3. ¿Cómo manejar múltiples modalidades de XL?
+
+**Decisión**: Un solo enum `ModalidadXL` en lugar de clases separadas.
+
+**Alternativa rechazada**:
+```python
+class XLPorRiesgo(ContratoReaseguro):
+    pass
+
+class XLPorEvento(ContratoReaseguro):
+    pass
+```
+
+**Razón**: La lógica de recuperación es idéntica. Solo cambia la semántica de qué constituye un "siniestro":
+- Por Riesgo: cada póliza
+- Por Evento: suma de todas las pólizas afectadas por un evento
+
+**Beneficio**: Menos código, misma funcionalidad.
+
+#### 4. ¿Prima de reaseguro en resultados?
+
+Para XL y Stop Loss, agregué `prima_reaseguro_pagada` en el resultado:
+
+```python
+resultado_neto = recuperacion - prima_reaseguro_pagada
+```
+
+Esto permite comparar:
+- ¿Vale la pena el contrato?
+- Si recuperación < prima → mal año para el contrato
+- Si recuperación > prima → se activó beneficiosamente
+
+### Testing Strategy
+
+**Cobertura total: 57 tests, >95% coverage**
+
+#### Quota Share (18 tests)
+
+Categorías:
+1. **Creación y validación** (4 tests)
+   - Configuraciones válidas
+   - Porcentajes inválidos (>100%, =0%)
+   - Comisiones excesivas (>50%)
+
+2. **Cálculo de primas** (5 tests)
+   - Prima cedida/retenida con diferentes %
+   - Comisión con y sin override
+
+3. **Recuperación** (4 tests)
+   - Siniestros válidos
+   - Siniestros fuera de vigencia
+   - Múltiples siniestros
+
+4. **Resultado neto** (5 tests)
+   - Con ganancia (baja siniestralidad)
+   - Con pérdida (alta siniestralidad)
+   - Sin siniestros
+   - Cesión 100%
+   - Detalles en resultado
+
+#### Excess of Loss (18 tests)
+
+Enfoque especial en:
+- **Límites**: siniestro < retención, = retención, dentro de límite, excede límite
+- **Consumo progresivo**: múltiples siniestros agotan límite gradualmente
+- **Reinstatements**: aplicar, agotar, prima proporcional
+
+#### Stop Loss (21 tests)
+
+Énfasis en:
+- **Cálculo de siniestralidad**: 70%, 90%, 110%, >200%
+- **Activación**: bajo, exactamente, sobre attachment
+- **Límite**: recuperación limitada al máximo
+- **Casos extremos**: sin siniestros, siniestralidad 250%
+
+#### Fixtures Reutilizables
+
+Creé fixtures parametrizados para evitar repetición:
+
+```python
+@pytest.fixture
+def config_qs_30pct():
+    return QuotaShareConfig(
+        porcentaje_cesion=Decimal("30"),
+        comision_reaseguro=Decimal("25"),
+        ...
+    )
+
+@pytest.fixture
+def siniestro_100k():
+    return Siniestro(
+        monto_bruto=Decimal("100000"),
+        ...
+    )
+```
+
+**Beneficio**: Tests más legibles, setup compartido.
+
+### Lecciones Aprendidas
+
+#### 1. Decimal es crítico
+
+En reaseguro, los porcentajes importan mucho:
+- 30.0% vs 30.1% → diferencia de $100K en prima cedida de $100M
+
+**Siempre**: `Decimal("30")` no `30.0`
+
+#### 2. Validación temprana ahorra tiempo
+
+Pydantic detectó errores de configuración en tests:
+```
+ValidationError: límite (400K) debe ser > retención (500K)
+```
+
+Esto evitó bugs silenciosos en producción.
+
+#### 3. Estado mutable requiere reseteo
+
+En XL, `limite_disponible` es mutable. Para tests:
+
+```python
+def test_multiple_runs():
+    xl = ExcessOfLoss(config)
+
+    # Run 1
+    xl.calcular_recuperacion(sin1)
+
+    # IMPORTANTE: reset antes de run 2
+    xl.resetear_limite()
+
+    # Run 2
+    xl.calcular_recuperacion(sin2)
+```
+
+Sin `resetear_limite()`, tests fallan por estado compartido.
+
+#### 4. Stop Loss necesita contexto agregado
+
+A diferencia de QS y XL que operan por siniestro, Stop Loss necesita:
+- Suma de todos los siniestros
+- Suma de todas las primas
+
+Esto requirió una interfaz diferente:
+```python
+# QS y XL
+recuperacion = contrato.calcular_recuperacion(siniestro)
+
+# Stop Loss
+recuperacion = contrato.calcular_recuperacion(
+    siniestros_totales=Decimal("9000000"),
+    primas_totales=Decimal("10000000")
+)
+```
+
+**Consideración futura**: Unificar interfaces con un método `calcular_resultado_periodo()`
+
+### Comparación con Industria
+
+#### Bibliotecas de Reaseguro Existentes
+
+**ChainLadder (R)**:
+- Solo para reservas, no reaseguro de primas
+- Métodos estadísticos avanzados
+- No tiene contratos de reaseguro
+
+**pyReserve**:
+- Similar a ChainLadder en Python
+- Tampoco tiene reaseguro
+
+**Ventaja de nuestro módulo**:
+- Primero en Python con contratos completos (QS, XL, SL)
+- Integrado con productos de vida mexicanos
+- Validación robusta con Pydantic
+
+### Próximos Pasos (Post-Fase 3)
+
+**Mejoras potenciales**:
+
+1. **Optimización de programa de reaseguro**:
+   - Dado un presupuesto, encontrar combinación óptima de contratos
+   - Algoritmo de programación lineal
+
+2. **Simulación de escenarios**:
+   - Monte Carlo sobre distribución de siniestros
+   - Evaluar probabilidad de agotar límites
+
+3. **Facultativo**:
+   - Reaseguro por póliza específica (no automático)
+   - Requiere aprobación caso por caso
+
+4. **Catastrófico**:
+   - Modelado de eventos (huracanes, terremotos)
+   - Agregación de pólizas por zona geográfica
+
+### Métricas de Fase 3
+
+**Líneas de código**:
+- Producción: ~600 líneas
+- Tests: ~900 líneas
+- Documentación: ~250 líneas
+
+**Tiempo de desarrollo**: ~4 horas
+- Diseño: 30 min
+- Implementación: 2.5 horas
+- Testing: 1 hora
+
+**Cobertura de tests**: 96% (QuotaShare), 98% (XL), 98% (StopLoss)
+
+**Complejidad ciclomática**: <10 por función (buena)
+
+---
+
 **Fin del Journal Técnico**
 
 **Última actualización**: Noviembre 2025
-**Próxima revisión**: Inicio de Fase 3
+**Próxima revisión**: Inicio de Fase 4

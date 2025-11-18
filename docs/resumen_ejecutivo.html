@@ -348,9 +348,10 @@
                 <li><a href="#arquitectura">3. Arquitectura y Diseño</a></li>
                 <li><a href="#fase1">4. Fase 1: Fundamentos (Completada)</a></li>
                 <li><a href="#conceptos">5. Conceptos Actuariales Implementados</a></li>
-                <li><a href="#fase2">6. Fase 2: Expansión de Productos (En Progreso)</a></li>
-                <li><a href="#roadmap">7. Roadmap Futuro</a></li>
-                <li><a href="#conclusiones">8. Conclusiones y Valor de Negocio</a></li>
+                <li><a href="#fase2">6. Fase 2: Expansión de Productos (Completada)</a></li>
+                <li><a href="#fase3">7. Fase 3: Reaseguro (Completada)</a></li>
+                <li><a href="#roadmap">8. Roadmap Futuro</a></li>
+                <li><a href="#conclusiones">9. Conclusiones y Valor de Negocio</a></li>
             </ul>
         </div>
 
@@ -1043,24 +1044,256 @@ Observaciones:
             </div>
         </section>
 
-        <!-- Sección 7: Roadmap -->
-        <section id="roadmap">
-            <h2>7. Roadmap Futuro</h2>
+        <!-- Sección 7: Fase 3 -->
+        <section id="fase3">
+            <h2>7. Fase 3: Reaseguro <span class="badge badge-completed">✓ Completada</span></h2>
 
-            <h3>Fase 3: Reaseguro <span class="badge badge-planned">Planeado</span></h3>
             <p>
-                Implementar módulos para cálculo y optimización de contratos de reaseguro:
+                La Fase 3 implementa el módulo de <strong>reaseguro</strong>, una herramienta fundamental para que
+                las aseguradoras mexicanas transfieran riesgo, cumplan con requisitos de solvencia de la CNSF y
+                protejan su capital contra eventos catastróficos.
             </p>
+
+            <h3>7.1 ¿Qué es el Reaseguro?</h3>
+            <p>
+                El reaseguro es "seguro para aseguradoras". Permite a una compañía de seguros (cedente) transferir
+                parte de su riesgo a un reasegurador, protegiendo su capital y estabilizando sus resultados técnicos.
+            </p>
+
+            <div class="info-box">
+                <h4>Analogía Simple</h4>
+                <p>
+                    Imagina que tienes una aseguradora y vendes una póliza de $10 millones a un cliente. Si ese cliente
+                    fallece, debes pagar $10 millones. Con reaseguro, puedes transferir $7 millones de ese riesgo a un
+                    reasegurador, quedándote solo con $3 millones de exposición. Compartes las primas y los siniestros.
+                </p>
+            </div>
+
+            <h3>7.2 Tipos de Contratos Implementados</h3>
+
+            <h4>7.2.1 Quota Share (Cuota Parte) - Reaseguro Proporcional</h4>
+            <p>
+                El tipo más simple de reaseguro. El reasegurador acepta un <strong>porcentaje fijo</strong> de cada
+                póliza que emite la aseguradora.
+            </p>
+
+            <div class="concept-block">
+Ejemplo: Quota Share 30% con comisión 25%
+
+Póliza Individual:
+├─ Prima bruta:           $100,000
+├─ Prima cedida:          $30,000  (30%)
+├─ Prima retenida:        $70,000
+└─ Comisión recibida:     $7,500   (25% de $30,000)
+
+Si hay un siniestro de $50,000:
+├─ Siniestro cedido:      $15,000  (30%)
+├─ Siniestro retenido:    $35,000
+└─ Recuperación:          $15,000
+
+Resultado neto cedente: $70,000 + $7,500 - $35,000 = $42,500
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ventaja</th>
+                        <th>Desventaja</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>✓ Reduce exposición total</td>
+                        <td>✗ Se ceden primas de todos los riesgos</td>
+                    </tr>
+                    <tr>
+                        <td>✓ Recibe comisión del reasegurador</td>
+                        <td>✗ No protege contra riesgos extremos</td>
+                    </tr>
+                    <tr>
+                        <td>✓ Libera capacidad de suscripción</td>
+                        <td>✗ Costo fijo incluso con baja siniestralidad</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>7.2.2 Excess of Loss (Exceso de Pérdida) - Reaseguro No Proporcional</h4>
+            <p>
+                El reasegurador paga solo cuando un siniestro <strong>excede cierta retención</strong>, hasta un límite
+                máximo. Protege contra siniestros grandes sin ceder primas proporcionalmente.
+            </p>
+
+            <div class="concept-block">
+Ejemplo: XL 500 xs 200 (límite $500K, retención $200K)
+
+Notación: "500 xs 200" significa:
+- Límite: $500,000 que paga el reasegurador
+- Retención: $200,000 que paga la cedente (prioridad)
+
+Escenarios de Siniestros:
+├─ Siniestro $150K  → Cedente: $150K, Reaseguro: $0
+├─ Siniestro $400K  → Cedente: $200K, Reaseguro: $200K
+└─ Siniestro $800K  → Cedente: $200K, Reaseguro: $500K (límite)
+
+Prima anual: $25,000 (5% del límite de $500K)
+            </div>
+
+            <h5>Modalidades</h5>
             <ul>
-                <li><strong>Quota Share:</strong> Reaseguro proporcional donde se cede % fijo de cada póliza</li>
-                <li><strong>Exceso de Pérdida:</strong> Reasegurador paga solo cuando siniestro excede límite</li>
-                <li><strong>Stop Loss:</strong> Protección contra siniestralidad agregada excesiva</li>
-                <li><strong>Optimización:</strong> Algoritmos para encontrar programa de reaseguro óptimo</li>
+                <li><strong>Por Riesgo:</strong> Aplica a cada póliza individual</li>
+                <li><strong>Por Evento:</strong> Aplica a eventos catastróficos (terremoto, huracán)</li>
             </ul>
+
+            <h5>Reinstatements</h5>
+            <p>
+                Permite "recargar" el límite del contrato después de usarlo, pagando una prima proporcional adicional.
+            </p>
+
+            <h4>7.2.3 Stop Loss (Limitación de Pérdidas) - Protección de Cartera</h4>
+            <p>
+                Protege cuando la <strong>siniestralidad agregada</strong> de toda la cartera excede un porcentaje
+                objetivo (attachment point). Pone un "techo" al ratio de siniestralidad de la aseguradora.
+            </p>
+
+            <div class="concept-block">
+Ejemplo: Stop Loss 80% xs 20% sobre $10M de primas
+
+Parámetros:
+- Attachment Point: 80% (se activa si siniestralidad > 80%)
+- Límite: 20% adicional (cubre hasta 100% total)
+- Primas sujetas: $10,000,000
+
+Escenarios:
+├─ Siniestros $7M (70%)  → No activa, reaseguro no paga
+├─ Siniestros $9M (90%)  → Activa:
+│  ├─ Exceso: 10% (90% - 80%)
+│  └─ Recuperación: $1M (10% de $10M)
+└─ Siniestros $11M (110%) → Activa:
+   ├─ Exceso: 30% (110% - 80%)
+   └─ Recuperación: $2M (20% de $10M, límite máximo)
+
+Prima anual: $300,000 (3% de primas sujetas)
+            </div>
+
+            <h3>7.3 Cuándo Usar Cada Tipo</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Contrato</th>
+                        <th>Cuándo Usarlo</th>
+                        <th>Beneficio Principal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Quota Share</strong></td>
+                        <td>Aseguradora nueva o en crecimiento</td>
+                        <td>Capacidad adicional + comisiones</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Excess of Loss</strong></td>
+                        <td>Cartera con riesgo de siniestros grandes</td>
+                        <td>Protección de capital contra eventos extremos</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Stop Loss</strong></td>
+                        <td>Volatilidad alta de siniestralidad</td>
+                        <td>Estabilidad de resultados año con año</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box success">
+                <h4>Implementación Técnica (Fase 3 Completada)</h4>
+                <p><strong>Estado actual:</strong> Completada e integrada</p>
+                <p><strong>Componentes implementados:</strong></p>
+                <ul>
+                    <li>✓ Clase base abstracta <code>ContratoReaseguro</code> con patrón Template Method</li>
+                    <li>✓ Clase <code>QuotaShare</code> con cálculo de primas cedidas y comisiones</li>
+                    <li>✓ Clase <code>ExcessOfLoss</code> con soporte para reinstatements y modalidades</li>
+                    <li>✓ Clase <code>StopLoss</code> con cálculo de siniestralidad agregada</li>
+                    <li>✓ Modelos Pydantic para validación robusta de configuraciones</li>
+                    <li>✓ Suite de tests unitarios (57 tests totales, cobertura >95%)</li>
+                </ul>
+                <h4 style="margin-top: 15px;">Resultados de Testing</h4>
+                <table style="margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th>Contrato</th>
+                            <th>Tests</th>
+                            <th>Cobertura</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Quota Share</td>
+                            <td>18 tests</td>
+                            <td>96%</td>
+                            <td>✓ Pasando</td>
+                        </tr>
+                        <tr>
+                            <td>Excess of Loss</td>
+                            <td>18 tests</td>
+                            <td>98%</td>
+                            <td>✓ Pasando</td>
+                        </tr>
+                        <tr>
+                            <td>Stop Loss</td>
+                            <td>21 tests</td>
+                            <td>98%</td>
+                            <td>✓ Pasando</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>7.4 Ejemplo de Uso Programático</h3>
+            <div class="concept-block">
+from mexican_insurance.reinsurance import QuotaShare, ExcessOfLoss
+from decimal import Decimal
+
+# Configurar contrato Quota Share 30%
+qs = QuotaShare(QuotaShareConfig(
+    porcentaje_cesion=Decimal("30"),
+    comision_reaseguro=Decimal("25"),
+    vigencia_inicio=date(2024, 1, 1),
+    vigencia_fin=date(2024, 12, 31)
+))
+
+# Calcular resultado para una cartera
+resultado = qs.calcular_resultado_neto(
+    prima_bruta=Decimal("10000000"),  # $10M de primas
+    siniestros=[...]  # Lista de siniestros
+)
+
+print(f"Prima cedida: ${resultado.monto_cedido:,.0f}")
+print(f"Comisión recibida: ${resultado.comision_recibida:,.0f}")
+print(f"Resultado neto: ${resultado.resultado_neto_cedente:,.0f}")
+            </div>
+
+            <h3>7.5 Valor para el Negocio</h3>
+            <ul>
+                <li><strong>Cumplimiento Regulatorio:</strong> Ayuda a cumplir con requisitos de RCS de la CNSF</li>
+                <li><strong>Gestión de Riesgo:</strong> Protege el capital de la aseguradora contra eventos extremos</li>
+                <li><strong>Optimización:</strong> Permite modelar y comparar diferentes estructuras de reaseguro</li>
+                <li><strong>Transparencia:</strong> Calcula automáticamente recuperaciones y resultado neto</li>
+                <li><strong>Validación:</strong> Pydantic evita errores de configuración en contratos</li>
+            </ul>
+        </section>
+
+        <!-- Sección 8: Roadmap -->
+        <section id="roadmap">
+            <h2>8. Roadmap Futuro</h2>
+
+            <h3>Fase 3: Reaseguro <span class="badge badge-completed">✓ Completada</span></h3>
+            <p>
+                Módulo de reaseguro implementado con Quota Share, Excess of Loss y Stop Loss.
+            </p>
 
             <h3>Fase 4: Reservas Avanzadas <span class="badge badge-planned">Planeado</span></h3>
             <p>
-                Métodos estadísticos para cálculo de reservas de siniestros:
+                Métodos estadísticos para cálculo de reservas de siniestros en ramos de daños:
             </p>
             <ul>
                 <li><strong>Chain Ladder:</strong> Método estándar de la industria para proyectar desarrollo de siniestros</li>

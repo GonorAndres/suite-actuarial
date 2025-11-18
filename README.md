@@ -195,9 +195,9 @@ mypy src/
 - [x] Tests exhaustivos
 
 ### Fase 3: Reaseguro
-- [ ] Quota Share
-- [ ] Exceso de Pérdida
-- [ ] Stop Loss
+- [x] Quota Share
+- [x] Exceso de Pérdida
+- [x] Stop Loss
 
 ### Fase 4: Reservas Avanzadas
 - [ ] Chain Ladder
