@@ -82,6 +82,28 @@ for concepto, monto in resultado.desglose_recargos.items():
     print(f"  - {concepto}: ${monto:,.2f}")
 ```
 
+## 📄 Resumen Ejecutivo para Portafolio
+
+**¿Necesitas entender el proyecto sin profundizar en el código?**
+
+Hemos creado un [**Resumen Ejecutivo en HTML**](docs/resumen_ejecutivo.html) que explica:
+
+- 🎯 **Visión general** del proyecto y problema que resuelve
+- 🏗️ **Arquitectura** y diseño del sistema
+- 📊 **Conceptos actuariales** traducidos a lenguaje de negocio
+- ✅ **Fase 1 completada** con explicaciones detalladas de cada componente
+- 🔄 **Fase 2 en progreso** (Vida Ordinario, Vida Dotal)
+- 📈 **Valor de negocio** y beneficios cuantificables
+- 🗺️ **Roadmap futuro** con siguientes fases
+
+**Ideal para:**
+- Presentar el proyecto en portafolio profesional
+- Explicar la solución a stakeholders no técnicos
+- Compartir con equipos de negocio o actuariales
+- Documentar decisiones de diseño y arquitectura
+
+👉 **[Ver Resumen Ejecutivo](docs/resumen_ejecutivo.html)** - Se puede abrir en cualquier navegador y exportar a PDF.
+
 ## 📚 Estructura del Proyecto
 
 ```
