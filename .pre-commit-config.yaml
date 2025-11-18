@@ -1,0 +1,59 @@
+# Pre-commit hooks para mantener calidad de código
+# Instalar con: pre-commit install
+# Ejecutar manualmente: pre-commit run --all-files
+
+repos:
+  # Hooks generales de pre-commit
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Eliminar espacios al final de líneas
+      - id: end-of-file-fixer
+        name: Asegurar nueva línea al final de archivos
+      - id: check-yaml
+        name: Validar YAML
+      - id: check-json
+        name: Validar JSON
+      - id: check-toml
+        name: Validar TOML
+      - id: check-added-large-files
+        name: Prevenir archivos grandes (>500KB)
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+        name: Detectar marcas de merge conflict
+      - id: mixed-line-ending
+        name: Detectar mezcla de line endings
+
+  # Ruff - linting y formatting ultra rápido
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.8
+    hooks:
+      - id: ruff
+        name: Ruff linter
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+        name: Ruff formatter
+
+  # MyPy - type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.1
+    hooks:
+      - id: mypy
+        name: MyPy type checker
+        additional_dependencies:
+          - pydantic>=2.5.0
+          - pandas-stubs
+        args: [--ignore-missing-imports]
+        exclude: ^tests/
+
+  # Pytest - ejecutar tests antes de commit
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: Ejecutar tests con pytest
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        args: [--tb=short]
