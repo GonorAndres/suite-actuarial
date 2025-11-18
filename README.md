@@ -31,14 +31,18 @@ Un conjunto de herramientas en Python para análisis actuarial, cálculo de prim
 - **Bornhuetter-Ferguson**: Combinación de datos históricos y esperados
 - **Bootstrap**: Estimación de incertidumbre en reservas
 
-### Fase 5 - Cumplimiento Regulatorio [En Progreso]
+### Fase 5 - Cumplimiento Regulatorio [Completada]
 - **5A - RCS (Solvencia)**: Cálculo de requerimientos de capital [✓]
 - **5B - Reportes CNSF**: Reportes trimestrales automatizados [✓]
 - **5C - Reservas Técnicas S-11.4**: RRC y RM según normativa [✓]
 - **5D - Validaciones SAT**: Deducibilidad, gravabilidad y retenciones ISR [✓]
 
+### Fase 6 - Dashboards Interactivos [Completada]
+- **Dashboard Productos de Vida**: Calculadora y análisis de sensibilidad [✓]
+- **Dashboard Cumplimiento**: Monitor regulatorio RCS, SAT, S-11.4 [✓]
+- **Dashboard Reservas**: Análisis con Chain Ladder, B-F, Bootstrap [✓]
+
 ### Próximamente
-- **Dashboard Streamlit**: Interfaz visual para análisis
 - **API REST**: Endpoints para integración con sistemas
 - **Seguros de Daños**: Expansión a autos, GMM, incendio
 
@@ -100,6 +104,26 @@ print(f"\nDesglose de Recargos:")
 for concepto, monto in resultado.desglose_recargos.items():
     print(f"  - {concepto}: ${monto:,.2f}")
 ```
+
+### Ejecutar Dashboards Interactivos
+
+Los dashboards de Streamlit proporcionan una interfaz visual para análisis:
+
+```bash
+# Instalar dependencias de Streamlit
+cd streamlit_app
+pip install -r requirements.txt
+
+# Ejecutar dashboard
+streamlit run Home.py
+```
+
+El dashboard se abrirá en `http://localhost:8501` con tres secciones:
+- **📊 Productos de Vida**: Calculadora interactiva y análisis
+- **📋 Cumplimiento**: Monitor regulatorio (RCS, SAT, S-11.4)
+- **📈 Reservas**: Métodos actuariales avanzados
+
+Ver [documentación completa](streamlit_app/README.md) de los dashboards.
 
 ## Documentación
 
@@ -218,18 +242,23 @@ mypy src/
 - [x] Bornhuetter-Ferguson
 - [x] Bootstrap
 
-### Fase 5: Cumplimiento Regulatorio [En Progreso]
+### Fase 5: Cumplimiento Regulatorio [Completada]
 - [x] 5A - Cálculo de RCS (Solvencia)
 - [x] 5B - Reportes Trimestrales CNSF
 - [x] 5C - Reservas Técnicas S-11.4
 - [x] 5D - Validaciones Fiscales SAT
-- [ ] 5E - Validaciones SIPRES
-- [ ] 5F - Reportes Anuales
 
-### Fase 6: Interfaz
-- [ ] Dashboard Streamlit
+### Fase 6: Dashboards Interactivos [Completada]
+- [x] Dashboard Productos de Vida
+- [x] Dashboard Cumplimiento Regulatorio
+- [x] Dashboard Reservas Técnicas
+
+### Fase 7: Expansiones Futuras
+- [ ] 5E - Validaciones SIPRES
+- [ ] 5F - Reportes Anuales CNSF
 - [ ] API REST
 - [ ] CLI Interactivo
+- [ ] Seguros de Daños (Autos, GMM)
 
 ## Contribuir
 
