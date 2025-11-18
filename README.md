@@ -1,4 +1,4 @@
-# 🏦 Mexican Insurance Analytics Suite
+# Mexican Insurance Analytics Suite
 
 > Suite de herramientas actuariales para el mercado asegurador mexicano
 
@@ -7,23 +7,28 @@
 
 Un conjunto de herramientas en Python para análisis actuarial, cálculo de primas, reservas técnicas y cumplimiento regulatorio para el mercado de seguros en México.
 
-## 🎯 Características
+## Características
 
-### Fase 1 (Actual) - Fundamentos ✅
-- ✅ **Tablas de Mortalidad**: Carga y manejo de EMSSA-09 y otras tablas mexicanas
-- ✅ **Seguros de Vida**: Cálculo de primas para seguros temporales
-- ✅ **Reservas Técnicas**: Cálculo de reservas matemáticas
-- ✅ **Validación de Datos**: Modelos Pydantic para garantizar consistencia
-- ✅ **Tests Completos**: Suite de tests con pytest (>90% cobertura)
+### Fase 1 (Actual) - Fundamentos [Completada]
+- **Tablas de Mortalidad**: Carga y manejo de EMSSA-09 y otras tablas mexicanas
+- **Seguros de Vida**: Cálculo de primas para seguros temporales
+- **Reservas Técnicas**: Cálculo de reservas matemáticas
+- **Validación de Datos**: Modelos Pydantic para garantizar consistencia
+- **Tests Completos**: Suite de tests con pytest (>90% cobertura)
 
-### Próximamente 🔄
+### Fase 2 - Expansión de Productos [Completada]
+- **Vida Ordinario**: Seguro de vida entera con pago limitado o vitalicio
+- **Vida Dotal**: Seguro mixto con componente de ahorro y protección
+- **Tests Completos**: Suite de tests con >92% cobertura
+
+### Próximamente
 - **Reaseguro**: Quota Share, Exceso de Pérdida, Stop Loss
 - **Cumplimiento CNSF**: Reportes regulatorios automatizados
 - **RCS (Solvencia)**: Cálculo de requerimientos de capital
 - **Reservas Avanzadas**: Chain Ladder, Bornhuetter-Ferguson
 - **Dashboard Streamlit**: Interfaz visual para análisis
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 ### Instalación
 
@@ -82,19 +87,20 @@ for concepto, monto in resultado.desglose_recargos.items():
     print(f"  - {concepto}: ${monto:,.2f}")
 ```
 
-## 📄 Resumen Ejecutivo para Portafolio
+## Documentación
+
+### Resumen Ejecutivo para Portafolio
 
 **¿Necesitas entender el proyecto sin profundizar en el código?**
 
 Hemos creado un [**Resumen Ejecutivo en HTML**](docs/resumen_ejecutivo.html) que explica:
 
-- 🎯 **Visión general** del proyecto y problema que resuelve
-- 🏗️ **Arquitectura** y diseño del sistema
-- 📊 **Conceptos actuariales** traducidos a lenguaje de negocio
-- ✅ **Fase 1 completada** con explicaciones detalladas de cada componente
-- 🔄 **Fase 2 en progreso** (Vida Ordinario, Vida Dotal)
-- 📈 **Valor de negocio** y beneficios cuantificables
-- 🗺️ **Roadmap futuro** con siguientes fases
+- **Visión general** del proyecto y problema que resuelve
+- **Arquitectura** y diseño del sistema
+- **Conceptos actuariales** traducidos a lenguaje de negocio
+- **Fases 1 y 2 completadas** con explicaciones detalladas de cada componente
+- **Valor de negocio** y beneficios cuantificables
+- **Roadmap futuro** con siguientes fases
 
 **Ideal para:**
 - Presentar el proyecto en portafolio profesional
@@ -102,9 +108,19 @@ Hemos creado un [**Resumen Ejecutivo en HTML**](docs/resumen_ejecutivo.html) que
 - Compartir con equipos de negocio o actuariales
 - Documentar decisiones de diseño y arquitectura
 
-👉 **[Ver Resumen Ejecutivo](docs/resumen_ejecutivo.html)** - Se puede abrir en cualquier navegador y exportar a PDF.
+**[Ver Resumen Ejecutivo](docs/resumen_ejecutivo.html)** - Se puede abrir en cualquier navegador y exportar a PDF.
 
-## 📚 Estructura del Proyecto
+### Journal Técnico de Desarrollo
+
+Para entender las decisiones técnicas y la lógica detrás de cada implementación, consulta el [**Journal Técnico**](docs/JOURNAL.md) que documenta:
+
+- Arquitectura y patrones de diseño utilizados
+- Decisiones técnicas y su justificación
+- Fórmulas actuariales implementadas
+- Proceso de desarrollo paso a paso
+- Lecciones aprendidas y mejores prácticas
+
+## Estructura del Proyecto
 
 ```
 mexican-insurance-suite/
@@ -113,7 +129,9 @@ mexican-insurance-suite/
 │   │   ├── base_product.py     # Clase abstracta ProductoSeguro
 │   │   └── validators.py       # Modelos Pydantic
 │   ├── products/vida/           # Seguros de vida
-│   │   └── temporal.py         # Vida temporal
+│   │   ├── temporal.py         # Vida temporal
+│   │   ├── ordinario.py        # Vida ordinario
+│   │   └── dotal.py            # Vida dotal
 │   ├── actuarial/               # Herramientas actuariales
 │   │   ├── mortality/          # Tablas de mortalidad
 │   │   └── pricing/            # Fórmulas de tarificación
@@ -124,9 +142,11 @@ mexican-insurance-suite/
 │   ├── unit/                   # Tests unitarios
 │   └── integration/            # Tests de integración
 └── docs/                        # Documentación
+    ├── resumen_ejecutivo.html  # Resumen para portafolio
+    └── JOURNAL.md              # Journal técnico de desarrollo
 ```
 
-## 🧪 Tests
+## Tests
 
 El proyecto incluye una suite completa de tests:
 
@@ -143,7 +163,7 @@ pytest tests/unit/test_vida_temporal.py -v
 
 **Cobertura actual**: >90% en módulos core
 
-## 🛠️ Desarrollo
+## Desarrollo
 
 ### Configuración del Entorno
 
@@ -161,18 +181,18 @@ ruff check src/ tests/
 mypy src/
 ```
 
-## 📝 Roadmap
+## Roadmap
 
-### Fase 1: Fundamentos ✅ (Completada)
+### Fase 1: Fundamentos [Completada]
 - [x] Estructura base del proyecto
 - [x] Tablas de mortalidad
 - [x] Seguros de vida temporal
 - [x] Tests unitarios
 
-### Fase 2: Expansión de Productos
-- [ ] Vida Ordinario
-- [ ] Vida Dotal
-- [ ] Gastos Médicos Mayores
+### Fase 2: Expansión de Productos [Completada]
+- [x] Vida Ordinario
+- [x] Vida Dotal
+- [x] Tests exhaustivos
 
 ### Fase 3: Reaseguro
 - [ ] Quota Share
@@ -192,9 +212,9 @@ mypy src/
 - [ ] Dashboard Streamlit
 - [ ] API REST
 
-## 🤝 Contribuir
+## Contribuir
 
-¡Las contribuciones son bienvenidas! Por favor:
+Las contribuciones son bienvenidas. Por favor:
 
 1. Fork el repositorio
 2. Crea una rama para tu feature
@@ -202,11 +222,11 @@ mypy src/
 4. Asegúrate que todos los tests pasen
 5. Abre un Pull Request
 
-## ⚖️ Licencia
+## Licencia
 
 MIT License - ver archivo [LICENSE](LICENSE)
 
-## 📧 Contacto
+## Contacto
 
 Para preguntas o reportar bugs, abre un issue en GitHub.
 
