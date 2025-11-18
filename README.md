@@ -21,12 +21,26 @@ Un conjunto de herramientas en Python para análisis actuarial, cálculo de prim
 - **Vida Dotal**: Seguro mixto con componente de ahorro y protección
 - **Tests Completos**: Suite de tests con >92% cobertura
 
+### Fase 3 - Reaseguro [Completada]
+- **Quota Share**: Reaseguro proporcional con cesión fija
+- **Exceso de Pérdida**: Protección por siniestro individual
+- **Stop Loss**: Protección agregada por cartera
+
+### Fase 4 - Reservas Avanzadas [Completada]
+- **Chain Ladder**: Método clásico de triángulos de desarrollo
+- **Bornhuetter-Ferguson**: Combinación de datos históricos y esperados
+- **Bootstrap**: Estimación de incertidumbre en reservas
+
+### Fase 5 - Cumplimiento Regulatorio [En Progreso]
+- **5A - RCS (Solvencia)**: Cálculo de requerimientos de capital [✓]
+- **5B - Reportes CNSF**: Reportes trimestrales automatizados [✓]
+- **5C - Reservas Técnicas S-11.4**: RRC y RM según normativa [✓]
+- **5D - Validaciones SAT**: Deducibilidad, gravabilidad y retenciones ISR [✓]
+
 ### Próximamente
-- **Reaseguro**: Quota Share, Exceso de Pérdida, Stop Loss
-- **Cumplimiento CNSF**: Reportes regulatorios automatizados
-- **RCS (Solvencia)**: Cálculo de requerimientos de capital
-- **Reservas Avanzadas**: Chain Ladder, Bornhuetter-Ferguson
 - **Dashboard Streamlit**: Interfaz visual para análisis
+- **API REST**: Endpoints para integración con sistemas
+- **Seguros de Daños**: Expansión a autos, GMM, incendio
 
 ## Inicio Rápido
 
@@ -194,23 +208,28 @@ mypy src/
 - [x] Vida Dotal
 - [x] Tests exhaustivos
 
-### Fase 3: Reaseguro
+### Fase 3: Reaseguro [Completada]
 - [x] Quota Share
 - [x] Exceso de Pérdida
 - [x] Stop Loss
 
-### Fase 4: Reservas Avanzadas
-- [ ] Chain Ladder
-- [ ] Bornhuetter-Ferguson
-- [ ] Bootstrap
+### Fase 4: Reservas Avanzadas [Completada]
+- [x] Chain Ladder
+- [x] Bornhuetter-Ferguson
+- [x] Bootstrap
 
-### Fase 5: Regulatorio
-- [ ] Cálculo de RCS (Solvencia)
-- [ ] Reportes CNSF automáticos
+### Fase 5: Cumplimiento Regulatorio [En Progreso]
+- [x] 5A - Cálculo de RCS (Solvencia)
+- [x] 5B - Reportes Trimestrales CNSF
+- [x] 5C - Reservas Técnicas S-11.4
+- [x] 5D - Validaciones Fiscales SAT
+- [ ] 5E - Validaciones SIPRES
+- [ ] 5F - Reportes Anuales
 
 ### Fase 6: Interfaz
 - [ ] Dashboard Streamlit
 - [ ] API REST
+- [ ] CLI Interactivo
 
 ## Contribuir
 
