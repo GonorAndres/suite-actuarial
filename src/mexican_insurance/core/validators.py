@@ -694,3 +694,209 @@ class ResultadoReaseguro(BaseModel):
             ]
         }
     }
+
+
+# ============================================================================
+# MODELOS PARA RESERVAS (Fase 4)
+# ============================================================================
+
+
+class TipoTriangulo(str, Enum):
+    """Tipo de triángulo de desarrollo"""
+
+    ACUMULADO = "acumulado"
+    INCREMENTAL = "incremental"
+
+
+class MetodoReserva(str, Enum):
+    """Métodos de cálculo de reservas soportados"""
+
+    CHAIN_LADDER = "chain_ladder"
+    BORNHUETTER_FERGUSON = "bornhuetter_ferguson"
+    BOOTSTRAP = "bootstrap"
+
+
+class MetodoPromedio(str, Enum):
+    """Métodos para calcular promedio de factores de desarrollo"""
+
+    SIMPLE = "simple"
+    PONDERADO = "weighted"
+    GEOMETRICO = "geometric"
+
+
+class ConfiguracionChainLadder(BaseModel):
+    """
+    Configuración para método Chain Ladder.
+
+    El Chain Ladder es el método más usado en la industria
+    para proyectar desarrollo de siniestros.
+    """
+
+    metodo_promedio: MetodoPromedio = Field(
+        default=MetodoPromedio.SIMPLE,
+        description="Método para calcular factores de desarrollo",
+    )
+    calcular_tail_factor: bool = Field(
+        default=False,
+        description="Si se debe calcular factor de cola (tail)",
+    )
+    tail_factor: Optional[Decimal] = Field(
+        default=None,
+        ge=Decimal("1.0"),
+        le=Decimal("2.0"),
+        description="Factor de cola manual (si no se calcula)",
+    )
+
+
+class ConfiguracionBornhuetterFerguson(BaseModel):
+    """
+    Configuración para método Bornhuetter-Ferguson.
+
+    Combina siniestros observados con expectativa a priori.
+    Más estable para años con poco desarrollo.
+    """
+
+    loss_ratio_apriori: Decimal = Field(
+        ...,
+        gt=0,
+        le=Decimal("2.0"),
+        description="Loss ratio esperado (típicamente 0.60-0.75)",
+    )
+    metodo_promedio: MetodoPromedio = Field(
+        default=MetodoPromedio.SIMPLE,
+        description="Método para factores de desarrollo",
+    )
+
+    @field_validator("loss_ratio_apriori")
+    @classmethod
+    def validar_loss_ratio(cls, v: Decimal) -> Decimal:
+        """Loss ratio debe ser razonable"""
+        if v < Decimal("0.3"):
+            raise ValueError("Loss ratio muy bajo (típicamente >= 30%)")
+        if v > Decimal("1.5"):
+            raise ValueError("Loss ratio muy alto (típicamente <= 150%)")
+        return v
+
+
+class ConfiguracionBootstrap(BaseModel):
+    """
+    Configuración para método Bootstrap.
+
+    Usa simulación Monte Carlo para estimar distribución
+    completa de reservas.
+    """
+
+    num_simulaciones: int = Field(
+        default=1000,
+        ge=100,
+        le=10000,
+        description="Número de simulaciones a ejecutar",
+    )
+    seed: Optional[int] = Field(
+        default=None,
+        description="Semilla para reproducibilidad",
+    )
+    metodo_residuales: str = Field(
+        default="pearson",
+        description="Método para calcular residuales",
+    )
+    percentiles: List[int] = Field(
+        default=[50, 75, 90, 95, 99],
+        description="Percentiles a calcular",
+    )
+
+    @field_validator("percentiles")
+    @classmethod
+    def validar_percentiles(cls, v: List[int]) -> List[int]:
+        """Percentiles deben estar entre 1 y 99"""
+        for p in v:
+            if not (1 <= p <= 99):
+                raise ValueError(f"Percentil {p} fuera de rango [1, 99]")
+        return sorted(set(v))  # Ordenar y eliminar duplicados
+
+
+class ResultadoReserva(BaseModel):
+    """
+    Resultado de cálculo de reservas.
+
+    Contiene estimaciones de ultimate y reservas por año de origen.
+    """
+
+    metodo: MetodoReserva = Field(
+        ...,
+        description="Método utilizado para el cálculo",
+    )
+    reserva_total: Decimal = Field(
+        ...,
+        ge=0,
+        description="Reserva total estimada",
+    )
+    ultimate_total: Decimal = Field(
+        ...,
+        ge=0,
+        description="Estimación final total de siniestros",
+    )
+    pagado_total: Decimal = Field(
+        ...,
+        ge=0,
+        description="Total pagado a la fecha",
+    )
+
+    # Por año de origen
+    reservas_por_anio: Dict[int, Decimal] = Field(
+        default_factory=dict,
+        description="Reservas estimadas por año de origen",
+    )
+    ultimates_por_anio: Dict[int, Decimal] = Field(
+        default_factory=dict,
+        description="Ultimate estimado por año de origen",
+    )
+
+    # Factores de desarrollo (solo Chain Ladder y BF)
+    factores_desarrollo: Optional[List[Decimal]] = Field(
+        default=None,
+        description="Factores age-to-age calculados",
+    )
+
+    # Distribución (solo Bootstrap)
+    percentiles: Optional[Dict[int, Decimal]] = Field(
+        default=None,
+        description="Percentiles de la distribución (solo Bootstrap)",
+    )
+
+    detalles: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Detalles adicionales del cálculo",
+    )
+
+    @model_validator(mode="after")
+    def validar_consistencia(self) -> "ResultadoReserva":
+        """Validar que ultimate = pagado + reserva"""
+        expected_ultimate = self.pagado_total + self.reserva_total
+        # Permitir pequeña diferencia por redondeo
+        if abs(self.ultimate_total - expected_ultimate) > Decimal("0.01"):
+            raise ValueError(
+                f"Inconsistencia: ultimate ({self.ultimate_total}) != "
+                f"pagado ({self.pagado_total}) + reserva ({self.reserva_total})"
+            )
+        return self
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "metodo": "chain_ladder",
+                    "reserva_total": "2500000.00",
+                    "ultimate_total": "12500000.00",
+                    "pagado_total": "10000000.00",
+                    "reservas_por_anio": {
+                        "2020": "100000.00",
+                        "2021": "500000.00",
+                        "2022": "900000.00",
+                        "2023": "1000000.00",
+                    },
+                    "factores_desarrollo": ["1.20", "1.10", "1.05"],
+                }
+            ]
+        }
+    }
