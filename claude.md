@@ -2,7 +2,27 @@
 
 > Documento de referencia con todas las instrucciones, condiciones y contexto utilizados en el desarrollo del proyecto Mexican Insurance Analytics Suite.
 
-## 📋 Información General del Proyecto
+---
+
+## REGLA CRÍTICA: NO USAR EMOJIS
+
+**IMPORTANTE**: No usar emojis en ninguna comunicación con el usuario a menos que el usuario lo solicite explícitamente.
+
+- No usar emojis en respuestas de texto
+- No usar emojis en mensajes al usuario
+- No usar emojis en archivos de código (a menos que sean parte del nombre del archivo como en Streamlit)
+- No usar emojis en comentarios de código
+- No usar emojis en commits
+- No usar emojis en documentación
+
+**Excepciones**:
+- Nombres de archivos de Streamlit (ej: `1_📊_Productos_Vida.py`) - estos son requeridos por convención de Streamlit
+- Cuando el usuario explícitamente pida usar emojis
+- En archivos existentes que ya los contengan (no eliminarlos)
+
+---
+
+## Información General del Proyecto
 
 ### Proyecto
 **Mexican Insurance Analytics Suite** - Suite de herramientas actuariales para el mercado asegurador mexicano
@@ -24,7 +44,7 @@ El proyecto ha completado las Fases 1-6:
 
 ---
 
-## 🔧 Condiciones y Requisitos Técnicos
+## Condiciones y Requisitos Técnicos
 
 ### 1. Desarrollo en Branch Específico
 
@@ -107,7 +127,7 @@ EOF
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 ### Backend (Python 3.11+)
 - **Pydantic**: Validación de modelos
@@ -143,7 +163,7 @@ src/mexican_insurance/
 
 ---
 
-## 📝 Estándares de Código
+## Estándares de Código
 
 ### 1. Arquitectura y Patrones
 
@@ -256,7 +276,7 @@ def test_calculo_prima(asegurado_ejemplo):
 
 ---
 
-## 🎨 Streamlit - Patrones y Mejores Prácticas
+## Streamlit - Patrones y Mejores Prácticas
 
 ### 1. Estructura de Página
 
@@ -336,7 +356,7 @@ with st.expander("Ver detalles"):
 
 ---
 
-## 📊 Normativa y Fundamentos Regulatorios
+## Normativa y Fundamentos Regulatorios
 
 ### CNSF (Comisión Nacional de Seguros y Fianzas)
 
@@ -373,7 +393,7 @@ with st.expander("Ver detalles"):
 
 ---
 
-## 🔄 Workflow de Desarrollo
+## Workflow de Desarrollo
 
 ### 1. Planificación
 
@@ -431,7 +451,7 @@ Mantener actualizado:
 
 ---
 
-## 💡 Convenciones de Nombres
+## Convenciones de Nombres
 
 ### Archivos y Directorios
 ```
@@ -465,7 +485,7 @@ class Sexo(str, Enum):
 
 ---
 
-## 🚨 Errores Comunes a Evitar
+## Errores Comunes a Evitar
 
 ### 1. No usar Decimal para dinero
 ```python
@@ -514,7 +534,7 @@ def main():
 
 ---
 
-## 📚 Recursos de Referencia
+## Recursos de Referencia
 
 ### Documentación Oficial
 - [Python 3.11 Docs](https://docs.python.org/3.11/)
@@ -533,7 +553,7 @@ def main():
 
 ---
 
-## 🎯 Objetivos de Calidad
+## Objetivos de Calidad
 
 ### Código
 - ✅ Type hints completos
@@ -562,7 +582,7 @@ def main():
 
 ---
 
-## 📖 Resumen de Conversaciones Previas
+## Resumen de Conversaciones Previas
 
 ### Contexto Inicial
 Este proyecto comenzó con la Fase 1 (Fundamentos) y ha evolucionado hasta completar la Fase 6 (Dashboards).
@@ -586,7 +606,7 @@ Este proyecto comenzó con la Fase 1 (Fundamentos) y ha evolucionado hasta compl
 
 ---
 
-## 🔮 Próximos Pasos (Fase 7)
+## Próximos Pasos (Fase 7)
 
 ### Opciones para Expandir
 1. **Validaciones SIPRES**: Sistema de Información Prudencial de Seguros
@@ -597,7 +617,7 @@ Este proyecto comenzó con la Fase 1 (Fundamentos) y ha evolucionado hasta compl
 
 ---
 
-## ✅ Checklist de Inicio de Sesión
+## Checklist de Inicio de Sesión
 
 Cuando se continúe el proyecto en una nueva sesión:
 
@@ -610,7 +630,7 @@ Cuando se continúe el proyecto en una nueva sesión:
 
 ---
 
-## 📞 Contacto y Contribución
+## Contacto y Contribución
 
 Para este proyecto:
 - Seguir estándares definidos en este documento
