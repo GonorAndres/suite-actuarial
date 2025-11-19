@@ -1,0 +1,15 @@
+# Streamlit Dashboard Requirements
+# Para ejecutar: pip install -r requirements.txt
+
+# Framework principal
+streamlit>=1.28.0
+
+# Visualización
+plotly>=5.17.0
+
+# Data manipulation
+pandas>=2.1.0
+numpy>=1.24.0
+
+# El paquete principal debe estar instalado
+# pip install -e ..
