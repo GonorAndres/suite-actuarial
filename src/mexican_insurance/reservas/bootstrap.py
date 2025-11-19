@@ -252,6 +252,10 @@ class Bootstrap:
         Returns:
             ResultadoReserva con distribución completa
         """
+        # Restablecer seed para reproducibilidad
+        if self.config.seed is not None:
+            np.random.seed(self.config.seed)
+
         # Validar triángulo
         validar_triangulo(triangulo)
 
