@@ -1,0 +1,11 @@
+siniestro_id,poliza_id,fecha_ocurrencia,fecha_reporte,fecha_pago,monto_reclamado,monto_pagado,reserva,estado,causa
+SIN001,POL003,2024-06-15,2024-06-17,2024-07-10,500000,500000,0,pagado,fallecimiento
+SIN002,POL007,2024-08-22,2024-08-25,,1200000,0,1200000,en_proceso,fallecimiento
+SIN003,POL001,2024-05-10,2024-05-12,2024-06-05,1000000,1000000,0,pagado,fallecimiento
+SIN004,POL009,2024-09-01,2024-09-05,,1800000,0,1800000,en_investigacion,fallecimiento
+SIN005,POL012,2024-07-18,2024-07-20,2024-08-15,950000,950000,0,pagado,fallecimiento
+SIN006,POL014,2024-10-05,2024-10-08,,650000,0,650000,en_proceso,fallecimiento
+SIN007,POL016,2024-06-28,2024-07-02,2024-07-25,1100000,1100000,0,pagado,fallecimiento
+SIN008,POL018,2024-09-15,2024-09-18,,750000,0,750000,en_proceso,fallecimiento
+SIN009,POL020,2024-08-10,2024-08-12,2024-09-05,1300000,1300000,0,pagado,fallecimiento
+SIN010,POL005,2024-10-20,2024-10-23,,3000000,0,3000000,en_investigacion,fallecimiento

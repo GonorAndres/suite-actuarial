@@ -125,6 +125,61 @@ El dashboard se abrirá en `http://localhost:8501` con tres secciones:
 
 Ver [documentación completa](streamlit_app/README.md) de los dashboards.
 
+## Notebooks de Ejemplo
+
+Aprende a usar la librería con **7 notebooks interactivos** que cubren todos los aspectos del análisis actuarial:
+
+### Notebooks Disponibles
+
+1. **[Introducción y Productos de Vida](examples/01_introduccion_productos_vida.ipynb)**
+   - Tablas de mortalidad EMSSA-09
+   - Seguros Temporal, Ordinario y Dotal
+   - Comparativas y análisis de sensibilidad
+
+2. **[Reaseguro](examples/02_reaseguro.ipynb)**
+   - Quota Share, Excess of Loss, Stop Loss
+   - Optimización de estructuras
+   - Análisis comparativo
+
+3. **[Reservas Técnicas](examples/03_reservas_tecnicas.ipynb)**
+   - Chain Ladder, Bornhuetter-Ferguson, Bootstrap
+   - Intervalos de confianza
+   - Estimación de incertidumbre
+
+4. **[Cumplimiento CNSF](examples/04_cumplimiento_cnsf.ipynb)**
+   - RCS Vida y Daños
+   - Reservas Técnicas S-11.4
+   - Dashboard de solvencia
+
+5. **[Validaciones SAT](examples/05_validaciones_sat.ipynb)**
+   - Deducibilidad de primas
+   - Requisitos fiscales de siniestros
+   - Retenciones ISR
+
+6. **[Reportes CNSF](examples/06_reportes_cnsf.ipynb)**
+   - Reportes automatizados
+   - Exportación a Excel/PDF
+   - Cumplimiento regulatorio
+
+7. **[Casos Prácticos End-to-End](examples/07_casos_practicos_completos.ipynb)**
+   - Workflow completo: Producto → Reaseguro → Reservas → Reportes
+   - Casos de negocio reales
+   - Integración de todos los módulos
+
+### Ejecutar los Notebooks
+
+```bash
+# Instalar Jupyter
+pip install -e ".[viz]"
+
+# Iniciar Jupyter Lab
+jupyter lab
+
+# Navegar a examples/ y abrir cualquier notebook
+```
+
+Ver [guía completa de notebooks](examples/README.md) para más detalles.
+
 ## Documentación
 
 ### Resumen Ejecutivo para Portafolio
