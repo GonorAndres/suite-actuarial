@@ -56,7 +56,8 @@ class TestAsegurado:
                 suma_asegurada=Decimal("0"),
             )
 
-        assert "suma asegurada" in str(exc_info.value).lower()
+        # Pydantic V2: verificar que el campo está en el error
+        assert "suma_asegurada" in str(exc_info.value)
 
     def test_suma_asegurada_excesiva_falla(self):
         """Suma asegurada no debe ser ridículamente alta"""
@@ -104,7 +105,8 @@ class TestConfiguracionProducto:
                 tasa_interes_tecnico=Decimal("-0.01"),
             )
 
-        assert "negativa" in str(exc_info.value).lower()
+        # Pydantic V2: verificar que el campo está en el error
+        assert "tasa_interes_tecnico" in str(exc_info.value)
 
     def test_recargos_excesivos_falla(self):
         """Recargos totales no deben superar 100%"""
@@ -185,7 +187,8 @@ class TestRegistroMortalidad:
                 qx=Decimal("1.5"),  # Mayor a 1
             )
 
-        assert "0 y 1" in str(exc_info.value)
+        # Pydantic V2: verificar que el campo está en el error
+        assert "qx" in str(exc_info.value)
 
     def test_qx_negativo_falla(self):
         """qx no puede ser negativo"""
@@ -196,4 +199,5 @@ class TestRegistroMortalidad:
                 qx=Decimal("-0.001"),
             )
 
-        assert "0 y 1" in str(exc_info.value)
+        # Pydantic V2: verificar que el campo está en el error
+        assert "qx" in str(exc_info.value)

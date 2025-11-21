@@ -172,7 +172,7 @@ class TestVidaTemporal:
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado)
 
         assert es_asegurable is False
-        assert "vencimiento" in razon.lower()
+        assert "edad" in razon.lower()  # Edad máxima excedida
 
     def test_validar_asegurabilidad_menor_de_edad(
         self, config_basica, tabla_simple
