@@ -15,6 +15,7 @@ Características:
 """
 
 from decimal import Decimal
+from typing import Any
 
 from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
 from mexican_insurance.actuarial.pricing.vida_pricing import calcular_anualidad
@@ -23,6 +24,7 @@ from mexican_insurance.core.validators import (
     Asegurado,
     ConfiguracionProducto,
     ResultadoCalculo,
+    Sexo,
 )
 
 
@@ -97,7 +99,7 @@ class VidaDotal(ProductoSeguro):
         self,
         asegurado: Asegurado,
         frecuencia_pago: str = "anual",
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un seguro dotal.
@@ -182,7 +184,7 @@ class VidaDotal(ProductoSeguro):
     def _calcular_seguro_dotal(
         self,
         edad: int,
-        sexo,
+        sexo: Sexo,
         plazo: int,
         suma_asegurada: Decimal,
     ) -> Decimal:

@@ -8,6 +8,7 @@ Esta es la clase padre de la que heredan todos los productos específicos
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from enum import Enum
+from typing import Any
 
 from mexican_insurance.core.validators import (
     Asegurado,
@@ -66,7 +67,7 @@ class ProductoSeguro(ABC):
     def calcular_prima(
         self,
         asegurado: Asegurado,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un asegurado dado.

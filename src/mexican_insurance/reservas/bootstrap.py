@@ -85,6 +85,8 @@ class Bootstrap:
         """
         # Obtener factores de desarrollo
         factores = cl.factores_desarrollo
+        if factores is None:
+            factores = []
 
         # Crear triángulo ajustado
         triangulo_ajustado = pd.DataFrame(

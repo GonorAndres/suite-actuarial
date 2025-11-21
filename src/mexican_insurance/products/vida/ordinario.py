@@ -14,6 +14,7 @@ Características:
 """
 
 from decimal import Decimal
+from typing import Any
 
 from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
 from mexican_insurance.actuarial.pricing.vida_pricing import (
@@ -108,7 +109,7 @@ class VidaOrdinario(ProductoSeguro):
         self,
         asegurado: Asegurado,
         frecuencia_pago: str = "anual",
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un seguro de vida ordinario.
