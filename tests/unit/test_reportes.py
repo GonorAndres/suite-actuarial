@@ -7,7 +7,6 @@ Tests unitarios para modelos, generadores y exportadores de reportes.
 import tempfile
 from datetime import date
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
@@ -31,7 +30,6 @@ from mexican_insurance.reportes import (
     TipoRamo,
     TrimesteCNSF,
 )
-
 
 # ======================================
 # Fixtures

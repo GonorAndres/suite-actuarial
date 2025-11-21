@@ -215,7 +215,7 @@ class TestBootstrapSimulacion:
 
         config_cl = ConfiguracionChainLadder()
         cl = ChainLadder(config_cl)
-        resultado_base = cl.calcular(triangulo_simple)
+        cl.calcular(triangulo_simple)
 
         # Preparar bootstrap
         bs.triangulo_ajustado = bs.calcular_triangulo_ajustado(

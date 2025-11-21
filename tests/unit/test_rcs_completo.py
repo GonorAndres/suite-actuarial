@@ -17,9 +17,7 @@ from mexican_insurance.regulatorio import (
     AgregadorRCS,
     RCSDanos,
     RCSInversion,
-    RCSVida,
 )
-
 
 # ======================================
 # Tests RCS Daños

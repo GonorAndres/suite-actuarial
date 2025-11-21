@@ -8,7 +8,7 @@ que los datos cumplen con las reglas de negocio y de la CNSF.
 from datetime import date
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -57,7 +57,7 @@ class Asegurado(BaseModel):
         default=Fumador.NO_ESPECIFICADO,
         description="Estatus de fumador (algunas tablas lo requieren)",
     )
-    fecha_nacimiento: Optional[date] = Field(
+    fecha_nacimiento: date | None = Field(
         default=None,
         description="Fecha de nacimiento (opcional, para cálculos exactos)",
     )
@@ -219,11 +219,11 @@ class ResultadoCalculo(BaseModel):
         ...,
         description="Moneda del cálculo",
     )
-    desglose_recargos: Dict[str, Decimal] = Field(
+    desglose_recargos: dict[str, Decimal] = Field(
         default_factory=dict,
         description="Desglose detallado de cada recargo aplicado",
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Información adicional sobre el cálculo",
     )
@@ -275,7 +275,7 @@ class RegistroMortalidad(BaseModel):
         le=1,
         description="Probabilidad de muerte entre edad x y x+1",
     )
-    lx: Optional[int] = Field(
+    lx: int | None = Field(
         default=None,
         ge=0,
         description="Número de sobrevivientes a edad x (opcional)",
@@ -356,11 +356,11 @@ class Siniestro(BaseModel):
         default=TipoSiniestro.INDIVIDUAL,
         description="Tipo de siniestro (individual o catastrófico)",
     )
-    id_poliza: Optional[str] = Field(
+    id_poliza: str | None = Field(
         default=None,
         description="ID de la póliza asociada (si aplica)",
     )
-    descripcion: Optional[str] = Field(
+    descripcion: str | None = Field(
         default=None,
         max_length=500,
         description="Descripción del siniestro",
@@ -669,7 +669,7 @@ class ResultadoReaseguro(BaseModel):
         ...,
         description="Resultado neto para la cedente (puede ser negativo)",
     )
-    detalles: Dict[str, Any] = Field(
+    detalles: dict[str, Any] = Field(
         default_factory=dict,
         description="Detalles adicionales del cálculo",
     )
@@ -740,7 +740,7 @@ class ConfiguracionChainLadder(BaseModel):
         default=False,
         description="Si se debe calcular factor de cola (tail)",
     )
-    tail_factor: Optional[Decimal] = Field(
+    tail_factor: Decimal | None = Field(
         default=None,
         ge=Decimal("1.0"),
         le=Decimal("2.0"),
@@ -792,7 +792,7 @@ class ConfiguracionBootstrap(BaseModel):
         le=10000,
         description="Número de simulaciones a ejecutar",
     )
-    seed: Optional[int] = Field(
+    seed: int | None = Field(
         default=None,
         description="Semilla para reproducibilidad",
     )
@@ -800,14 +800,14 @@ class ConfiguracionBootstrap(BaseModel):
         default="pearson",
         description="Método para calcular residuales",
     )
-    percentiles: List[int] = Field(
+    percentiles: list[int] = Field(
         default=[50, 75, 90, 95, 99],
         description="Percentiles a calcular",
     )
 
     @field_validator("percentiles")
     @classmethod
-    def validar_percentiles(cls, v: List[int]) -> List[int]:
+    def validar_percentiles(cls, v: list[int]) -> list[int]:
         """Percentiles deben estar entre 1 y 99"""
         for p in v:
             if not (1 <= p <= 99):
@@ -843,28 +843,28 @@ class ResultadoReserva(BaseModel):
     )
 
     # Por año de origen
-    reservas_por_anio: Dict[int, Decimal] = Field(
+    reservas_por_anio: dict[int, Decimal] = Field(
         default_factory=dict,
         description="Reservas estimadas por año de origen",
     )
-    ultimates_por_anio: Dict[int, Decimal] = Field(
+    ultimates_por_anio: dict[int, Decimal] = Field(
         default_factory=dict,
         description="Ultimate estimado por año de origen",
     )
 
     # Factores de desarrollo (solo Chain Ladder y BF)
-    factores_desarrollo: Optional[List[Decimal]] = Field(
+    factores_desarrollo: list[Decimal] | None = Field(
         default=None,
         description="Factores age-to-age calculados",
     )
 
     # Distribución (solo Bootstrap)
-    percentiles: Optional[Dict[int, Decimal]] = Field(
+    percentiles: dict[int, Decimal] | None = Field(
         default=None,
         description="Percentiles de la distribución (solo Bootstrap)",
     )
 
-    detalles: Dict[str, Any] = Field(
+    detalles: dict[str, Any] = Field(
         default_factory=dict,
         description="Detalles adicionales del cálculo",
     )
@@ -1222,7 +1222,7 @@ class ResultadoRCS(BaseModel):
     )
 
     # Desglose detallado
-    desglose_por_riesgo: Dict[str, Decimal] = Field(
+    desglose_por_riesgo: dict[str, Decimal] = Field(
         default_factory=dict,
         description="Desglose detallado de RCS por cada tipo de riesgo",
     )

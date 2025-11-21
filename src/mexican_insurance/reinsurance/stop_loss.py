@@ -6,7 +6,6 @@ excede un porcentaje objetivo (attachment point).
 """
 
 from decimal import Decimal
-from typing import Dict, List
 
 from mexican_insurance.core.validators import (
     ResultadoReaseguro,
@@ -182,7 +181,7 @@ class StopLoss(ContratoReaseguro):
     def calcular_resultado_neto(
         self,
         primas_totales: Decimal,
-        siniestros: List[Siniestro],
+        siniestros: list[Siniestro],
         prima_reaseguro_cobrada: Decimal = None,
     ) -> ResultadoReaseguro:
         """
@@ -229,7 +228,7 @@ class StopLoss(ContratoReaseguro):
         resultado_neto = recuperacion - prima_reaseguro_cobrada
 
         # Construir detalles
-        detalles: Dict = {
+        detalles: dict = {
             "attachment_point": f"{self.config.attachment_point}%",
             "limite_cobertura": f"{self.config.limite_cobertura}%",
             "primas_sujetas": str(self.config.primas_sujetas),

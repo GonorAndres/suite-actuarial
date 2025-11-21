@@ -6,7 +6,6 @@ para exportar a Excel o CSV.
 """
 
 from decimal import Decimal
-from typing import Dict
 
 import pandas as pd
 
@@ -76,7 +75,7 @@ class GeneradorReporteInversiones:
 
         return df
 
-    def generar_resumen(self, reporte: ReporteInversiones) -> Dict[str, any]:
+    def generar_resumen(self, reporte: ReporteInversiones) -> dict[str, any]:
         """
         Genera resumen ejecutivo del reporte de inversiones.
 

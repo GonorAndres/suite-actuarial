@@ -18,7 +18,6 @@ from mexican_insurance.regulatorio.reservas_tecnicas import (
     ValidadorSuficiencia,
 )
 
-
 # ======================================
 # Fixtures
 # ======================================

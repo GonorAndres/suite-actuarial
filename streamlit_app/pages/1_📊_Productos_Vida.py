@@ -13,8 +13,6 @@ import streamlit as st
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
-from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
-
 from utils.calculations import (
     analisis_sensibilidad_edad,
     analisis_sensibilidad_tasa,
@@ -32,6 +30,8 @@ from utils.visualizations import (
     crear_grafico_sensibilidad_tasa,
     crear_tabla_metricas_producto,
 )
+
+from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
 
 # Configuración de la página
 st.set_page_config(

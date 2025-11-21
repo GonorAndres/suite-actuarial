@@ -6,7 +6,6 @@ acepta un porcentaje fijo de todas las pólizas.
 """
 
 from decimal import Decimal
-from typing import List, Tuple
 
 from mexican_insurance.core.validators import (
     QuotaShareConfig,
@@ -134,8 +133,8 @@ class QuotaShare(ContratoReaseguro):
         )
 
     def calcular_recuperacion_multiple(
-        self, siniestros: List[Siniestro]
-    ) -> Tuple[Decimal, List[Tuple[str, Decimal]]]:
+        self, siniestros: list[Siniestro]
+    ) -> tuple[Decimal, list[tuple[str, Decimal]]]:
         """
         Calcula la recuperación para múltiples siniestros.
 
@@ -176,7 +175,7 @@ class QuotaShare(ContratoReaseguro):
     def calcular_resultado_neto(
         self,
         prima_bruta: Decimal,
-        siniestros: List[Siniestro],
+        siniestros: list[Siniestro],
     ) -> ResultadoReaseguro:
         """
         Calcula el resultado neto del contrato para un periodo.

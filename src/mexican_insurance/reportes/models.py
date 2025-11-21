@@ -8,7 +8,6 @@ trimestrales que las aseguradoras deben presentar a la CNSF.
 from datetime import date
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -61,7 +60,7 @@ class MetadatosReporte(BaseModel):
     trimestre: TrimesteCNSF
     anio: int = Field(..., ge=2020, le=2100)
     fecha_presentacion: date
-    contacto_responsable: Optional[str] = Field(default=None, max_length=200)
+    contacto_responsable: str | None = Field(default=None, max_length=200)
 
     @field_validator("fecha_presentacion")
     @classmethod
@@ -261,7 +260,7 @@ class ReporteSuscripcion(BaseModel):
     """
 
     metadata: MetadatosReporte
-    datos_por_ramo: List[DatosSuscripcionRamo]
+    datos_por_ramo: list[DatosSuscripcionRamo]
 
     @property
     def total_primas_emitidas(self) -> Decimal:
@@ -287,7 +286,7 @@ class ReporteSiniestros(BaseModel):
     """
 
     metadata: MetadatosReporte
-    datos_por_ramo: List[DatosSiniestrosRamo]
+    datos_por_ramo: list[DatosSiniestrosRamo]
 
     @property
     def total_siniestros_ocurridos(self) -> Decimal:
@@ -313,7 +312,7 @@ class ReporteInversiones(BaseModel):
     """
 
     metadata: MetadatosReporte
-    datos_por_activo: List[DatosInversionActivo]
+    datos_por_activo: list[DatosInversionActivo]
 
     @property
     def total_valor_mercado(self) -> Decimal:
@@ -330,7 +329,7 @@ class ReporteInversiones(BaseModel):
         """Total de ganancias (o pérdidas) no realizadas"""
         return sum(d.ganancia_no_realizada for d in self.datos_por_activo)
 
-    def obtener_composicion_pct(self) -> Dict[str, Decimal]:
+    def obtener_composicion_pct(self) -> dict[str, Decimal]:
         """Devuelve composición porcentual por tipo de activo"""
         total = self.total_valor_mercado
         if total == 0:

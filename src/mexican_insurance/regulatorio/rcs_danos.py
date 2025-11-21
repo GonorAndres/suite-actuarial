@@ -8,7 +8,6 @@ la normativa de la CNSF.
 
 import math
 from decimal import Decimal
-from typing import Dict
 
 from mexican_insurance.core.validators import ConfiguracionRCSDanos
 
@@ -115,7 +114,7 @@ class RCSDanos:
 
         return rcs_reserva.quantize(Decimal("0.01"))
 
-    def calcular_rcs_total_danos(self) -> tuple[Decimal, Dict[str, Decimal]]:
+    def calcular_rcs_total_danos(self) -> tuple[Decimal, dict[str, Decimal]]:
         """
         Calcula RCS total de suscripción daños agregando riesgo de prima y reserva.
 
@@ -152,7 +151,7 @@ class RCSDanos:
 
         return rcs_total.quantize(Decimal("0.01")), desglose
 
-    def obtener_parametros_calculo(self) -> Dict[str, Decimal]:
+    def obtener_parametros_calculo(self) -> dict[str, Decimal]:
         """
         Obtiene parámetros utilizados en el cálculo.
 

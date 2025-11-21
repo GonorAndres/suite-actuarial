@@ -8,7 +8,6 @@ que las aseguradoras deben constituir conforme a normativa mexicana.
 from datetime import date
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -45,10 +44,10 @@ class ConfiguracionRRC(BaseModel):
     )
 
     # Opcional: para método 365avos detallado por póliza
-    dias_promedio_vigencia: Optional[int] = Field(
+    dias_promedio_vigencia: int | None = Field(
         default=365, ge=1, le=730, description="Días promedio de vigencia"
     )
-    dias_promedio_transcurridos: Optional[int] = Field(
+    dias_promedio_transcurridos: int | None = Field(
         default=None, ge=0, description="Días promedio transcurridos desde emisión"
     )
 
@@ -87,7 +86,7 @@ class ConfiguracionRM(BaseModel):
 
     # Para rentas vitalicias
     es_renta_vitalicia: bool = Field(default=False)
-    monto_renta_mensual: Optional[Decimal] = Field(default=None, ge=0)
+    monto_renta_mensual: Decimal | None = Field(default=None, ge=0)
 
     @field_validator("edad_asegurado")
     @classmethod
@@ -118,8 +117,8 @@ class ResultadoRRC(BaseModel):
     prima_no_devengada: Decimal = Field(..., ge=0)
     porcentaje_reserva: Decimal = Field(..., ge=0, le=1)
     metodo_utilizado: MetodoCalculoRRC
-    dias_vigencia_promedio: Optional[int] = Field(default=None)
-    dias_transcurridos_promedio: Optional[int] = Field(default=None)
+    dias_vigencia_promedio: int | None = Field(default=None)
+    dias_transcurridos_promedio: int | None = Field(default=None)
 
 
 class ResultadoRM(BaseModel):
@@ -139,7 +138,7 @@ class ResultadoRM(BaseModel):
     valor_presente_beneficios: Decimal = Field(..., ge=0)
     valor_presente_primas: Decimal = Field(..., ge=0)
     edad_actuarial: int = Field(..., ge=0, le=120)
-    probabilidad_supervivencia: Optional[Decimal] = Field(default=None, ge=0, le=1)
+    probabilidad_supervivencia: Decimal | None = Field(default=None, ge=0, le=1)
 
 
 class ResultadoValidacionSuficiencia(BaseModel):

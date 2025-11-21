@@ -3,7 +3,6 @@ Tests para el manejo de tablas de mortalidad
 """
 
 from decimal import Decimal
-from pathlib import Path
 
 import pandas as pd
 import pytest

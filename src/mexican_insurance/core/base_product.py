@@ -8,7 +8,6 @@ Esta es la clase padre de la que heredan todos los productos específicos
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, Optional
 
 from mexican_insurance.core.validators import (
     Asegurado,
@@ -67,7 +66,7 @@ class ProductoSeguro(ABC):
     def calcular_prima(
         self,
         asegurado: Asegurado,
-        **kwargs: Dict,
+        **kwargs: dict,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un asegurado dado.
@@ -92,7 +91,7 @@ class ProductoSeguro(ABC):
         self,
         asegurado: Asegurado,
         anio: int,
-        **kwargs: Dict,
+        **kwargs: dict,
     ) -> Decimal:
         """
         Calcula la reserva matemática en un año dado.
@@ -113,7 +112,7 @@ class ProductoSeguro(ABC):
     def validar_asegurabilidad(
         self,
         asegurado: Asegurado,
-    ) -> tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Valida si un asegurado es elegible para este producto.
 
@@ -153,7 +152,7 @@ class ProductoSeguro(ABC):
     def aplicar_recargos(
         self,
         prima_neta: Decimal,
-    ) -> tuple[Decimal, Dict[str, Decimal]]:
+    ) -> tuple[Decimal, dict[str, Decimal]]:
         """
         Aplica los recargos configurados a la prima neta.
 

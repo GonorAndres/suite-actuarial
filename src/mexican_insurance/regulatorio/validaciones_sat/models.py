@@ -7,7 +7,6 @@ de primas y siniestros según la Ley del ISR mexicana.
 
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +32,7 @@ class ResultadoDeducibilidadPrima(BaseModel):
     monto_prima: Decimal = Field(..., ge=0)
     monto_deducible: Decimal = Field(..., ge=0)
     porcentaje_deducible: Decimal = Field(..., ge=0, le=100)
-    limite_aplicado: Optional[str] = None
+    limite_aplicado: str | None = None
     fundamento_legal: str
 
     @property

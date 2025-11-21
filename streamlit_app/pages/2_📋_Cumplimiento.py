@@ -20,14 +20,16 @@ from mexican_insurance.regulatorio.rcs.calculadora_rcs import CalculadoraRCS
 from mexican_insurance.regulatorio.rcs.models import (
     DatosAseguradora,
     ParametrosRCS,
-    RiesgoSuscripcion,
 )
 from mexican_insurance.regulatorio.reservas_tecnicas.calculadora_s11_4 import (
     CalculadoraReservasTecnicasS11_4,
 )
+
 from mexican_insurance.regulatorio.reservas_tecnicas.models import (
     ConfiguracionReserva,
     DatosPoliza,
+)
+from mexican_insurance.regulatorio.reservas_tecnicas.models import (
     TipoSeguro as TipoSeguroReservas,
 )
 from mexican_insurance.regulatorio.validaciones_sat.models import TipoSeguroFiscal
@@ -36,9 +38,6 @@ from mexican_insurance.regulatorio.validaciones_sat.validador_primas import (
 )
 from mexican_insurance.regulatorio.validaciones_sat.validador_retenciones import (
     CalculadoraRetencionesISR,
-)
-from mexican_insurance.regulatorio.validaciones_sat.validador_siniestros import (
-    ValidadorSiniestrosGravables,
 )
 
 # Configuración de la página
@@ -226,8 +225,8 @@ with tab1:
                 go.Bar(
                     x=labels,
                     y=values,
-                    marker=dict(
-                        color=[
+                    marker={
+                        "color": [
                             "#1f77b4",
                             "#ff7f0e",
                             "#2ca02c",
@@ -235,7 +234,7 @@ with tab1:
                             "#9467bd",
                             "#8c564b",
                         ][:len(labels)]
-                    ),
+                    },
                     text=[f"${v:,.0f}M" for v in values],
                     textposition="outside",
                 )
@@ -505,7 +504,7 @@ with tab2:
                 mode="lines",
                 name="RRC",
                 fill="tozeroy",
-                line=dict(color="#1f77b4", width=2),
+                line={"color": "#1f77b4", "width": 2},
             )
         )
 
@@ -516,7 +515,7 @@ with tab2:
                 mode="lines",
                 name="RM",
                 fill="tozeroy",
-                line=dict(color="#ff7f0e", width=2),
+                line={"color": "#ff7f0e", "width": 2},
             )
         )
 

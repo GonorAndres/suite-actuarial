@@ -99,7 +99,7 @@ def ejecutar_demo() -> None:
             sexo=Sexo.HOMBRE,
             suma_asegurada=Decimal("1000000"),
         )
-        print(f"   ✓ Asegurado: Hombre, 35 años, $1,000,000 MXN")
+        print("   ✓ Asegurado: Hombre, 35 años, $1,000,000 MXN")
 
         # Calcular prima
         print("\n4. Calculando prima...")
@@ -110,7 +110,7 @@ def ejecutar_demo() -> None:
         print("=" * 60)
         print(f"\nPrima Neta:    ${resultado.prima_neta:>15,.2f} MXN")
         print(f"Prima Total:   ${resultado.prima_total:>15,.2f} MXN")
-        print(f"\nDesglose de Recargos:")
+        print("\nDesglose de Recargos:")
         for concepto, monto in resultado.desglose_recargos.items():
             print(f"  - {concepto:20s}: ${monto:>10,.2f}")
 

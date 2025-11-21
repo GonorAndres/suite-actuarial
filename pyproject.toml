@@ -108,6 +108,8 @@ ignore = [
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]  # imports no usados están ok en __init__
+"streamlit_app/**/*.py" = ["E402"]  # imports después de sys.path.insert
+"tests/**/*.py" = ["B017"]  # Exception genérica en pytest.raises está ok
 
 [tool.mypy]
 python_version = "3.11"

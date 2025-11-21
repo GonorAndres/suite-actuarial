@@ -12,16 +12,15 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from plotly.subplots import make_subplots
 
 # Agregar src al path para imports
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
+from mexican_insurance.actuarial.reservas.bootstrap import BootstrapReservas
 from mexican_insurance.actuarial.reservas.bornhuetter_ferguson import (
     BornhuetterFerguson,
 )
-from mexican_insurance.actuarial.reservas.bootstrap import BootstrapReservas
 from mexican_insurance.actuarial.reservas.chain_ladder import ChainLadder
 
 # Configuración de la página
@@ -293,7 +292,7 @@ with tab1:
         st.metric(
             "Incremento Anual",
             f"{incremento_anual:+.1f}%",
-            delta=f"vs año anterior",
+            delta="vs año anterior",
             help="Cambio en siniestralidad año a año",
         )
 
@@ -538,10 +537,10 @@ with tab3:
             "Año": anos,
             "Chain Ladder": reservas_cl_list,
             "Bornhuetter-Ferguson": reservas_bf_list,
-            "Diferencia": [b - c for b, c in zip(reservas_bf_list, reservas_cl_list)],
+            "Diferencia": [b - c for b, c in zip(reservas_bf_list, reservas_cl_list, strict=False)],
             "% Diferencia": [
                 ((b - c) / c * 100) if c > 0 else 0
-                for b, c in zip(reservas_bf_list, reservas_cl_list)
+                for b, c in zip(reservas_bf_list, reservas_cl_list, strict=False)
             ],
         })
 
@@ -721,17 +720,17 @@ with tab4:
             go.Scatter(
                 x=["Bootstrap (Media)"],
                 y=[media_bs],
-                error_y=dict(
-                    type="data",
-                    symmetric=False,
-                    array=[percentil_sup - media_bs],
-                    arrayminus=[media_bs - percentil_inf],
-                    color="red",
-                    thickness=2,
-                    width=10,
-                ),
+                error_y={
+                    "type": "data",
+                    "symmetric": False,
+                    "array": [percentil_sup - media_bs],
+                    "arrayminus": [media_bs - percentil_inf],
+                    "color": "red",
+                    "thickness": 2,
+                    "width": 10,
+                },
                 mode="markers",
-                marker=dict(size=10, color="#2ca02c"),
+                marker={"size": 10, "color": "#2ca02c"},
                 name=f"IC {nivel_conf}%",
                 showlegend=True,
             )

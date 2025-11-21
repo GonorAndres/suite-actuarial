@@ -14,7 +14,6 @@ Características:
 """
 
 from decimal import Decimal
-from typing import Dict, Optional
 
 from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
 from mexican_insurance.actuarial.pricing.vida_pricing import (
@@ -109,7 +108,7 @@ class VidaOrdinario(ProductoSeguro):
         self,
         asegurado: Asegurado,
         frecuencia_pago: str = "anual",
-        **kwargs: Dict,
+        **kwargs: dict,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un seguro de vida ordinario.
@@ -210,7 +209,7 @@ class VidaOrdinario(ProductoSeguro):
         self,
         asegurado: Asegurado,
         anio: int,
-        **kwargs: Dict,
+        **kwargs: dict,
     ) -> Decimal:
         """
         Calcula la reserva matemática en un año dado.
@@ -300,7 +299,7 @@ class VidaOrdinario(ProductoSeguro):
     def validar_asegurabilidad(
         self,
         asegurado: Asegurado,
-    ) -> tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Valida asegurabilidad específica para vida ordinario.
 
