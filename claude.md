@@ -30,7 +30,7 @@
 ### Repositorio
 - **Owner**: GonorAndres
 - **Repo**: Analisis_Seguros_Mexico
-- **Branch de desarrollo**: `claude/review-workflow-plan-01KdR8QXYSTdi9Fo6Fu7nPmd`
+- **Branch de desarrollo**: `claude/audit-and-fix-issues-013HYc7AHfou3XMYTNwh1vhf`
 - **Directorio de trabajo**: `/home/user/Analisis_Seguros_Mexico`
 
 ### Estado del Proyecto
@@ -50,7 +50,7 @@ El proyecto ha completado las Fases 1-6:
 
 **CRÍTICO**: Todo el desarrollo debe realizarse en el branch:
 ```
-claude/review-workflow-plan-01KdR8QXYSTdi9Fo6Fu7nPmd
+claude/audit-and-fix-issues-013HYc7AHfou3XMYTNwh1vhf
 ```
 
 **Reglas del branch**:
@@ -69,7 +69,7 @@ claude/review-workflow-plan-01KdR8QXYSTdi9Fo6Fu7nPmd
 #### Git Push
 ```bash
 # Siempre usar -u origin <branch-name>
-git push -u origin claude/review-workflow-plan-01KdR8QXYSTdi9Fo6Fu7nPmd
+git push -u origin claude/audit-and-fix-issues-013HYc7AHfou3XMYTNwh1vhf
 
 # Retry con exponential backoff si falla por red (2s, 4s, 8s, 16s)
 # Máximo 4 intentos
@@ -621,7 +621,7 @@ Este proyecto comenzó con la Fase 1 (Fundamentos) y ha evolucionado hasta compl
 
 Cuando se continúe el proyecto en una nueva sesión:
 
-- [ ] Verificar que estoy en el branch correcto: `claude/review-workflow-plan-01KdR8QXYSTdi9Fo6Fu7nPmd`
+- [ ] Verificar que estoy en el branch correcto: `claude/audit-and-fix-issues-013HYc7AHfou3XMYTNwh1vhf`
 - [ ] Leer este documento `claude.md` para contexto
 - [ ] Revisar estado de TODOs si hay tareas pendientes
 - [ ] Verificar que dependencias estén instaladas
