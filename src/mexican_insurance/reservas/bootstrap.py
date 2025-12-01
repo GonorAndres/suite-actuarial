@@ -169,23 +169,43 @@ class Bootstrap:
         # Crear triángulo sintético
         triangulo_sintetico = triangulo_ajustado.copy()
 
-        # Re-muestrear residuales para cada celda
-        for i in range(len(triangulo_ajustado)):
-            for j in range(triangulo_ajustado.shape[1]):
-                esp = triangulo_ajustado.iloc[i, j]
+        # Verificar si los residuales tienen variación significativa
+        # Nota: Cuando el ajuste Chain Ladder es perfecto o casi perfecto,
+        # todos los residuales son ≈0 y el bootstrap no tiene variación.
+        # En este caso, agregamos ruido sintético basado en proceso de Poisson.
+        std_residuales = np.std(residuales_validos)
 
-                if pd.notna(esp) and esp > 0:
-                    # Re-muestrear un residual
-                    r_sample = np.random.choice(residuales_validos)
+        if std_residuales < 0.01:  # Threshold: residuales con std < 1%
+            # Residuales son esencialmente cero - agregar ruido sintético Poisson
+            # Esto asegura variación incluso cuando el ajuste es perfecto
+            for i in range(len(triangulo_ajustado)):
+                for j in range(triangulo_ajustado.shape[1]):
+                    esp = triangulo_ajustado.iloc[i, j]
 
-                    # Generar valor sintético
-                    # valor_sintetico = esperado + residual * sqrt(esperado)
-                    valor_sintetico = esp + r_sample * np.sqrt(esp)
+                    if pd.notna(esp) and esp > 0:
+                        # Ruido Poisson: var = mean
+                        # Generar valor de distribución Poisson centrada en esp
+                        valor_poisson = np.random.poisson(max(1, esp))
+                        # Asegurar no-negativo
+                        triangulo_sintetico.iloc[i, j] = max(0, float(valor_poisson))
+        else:
+            # Re-muestrear residuales para cada celda (método estándar)
+            for i in range(len(triangulo_ajustado)):
+                for j in range(triangulo_ajustado.shape[1]):
+                    esp = triangulo_ajustado.iloc[i, j]
 
-                    # Asegurar no-negativo
-                    valor_sintetico = max(0, valor_sintetico)
+                    if pd.notna(esp) and esp > 0:
+                        # Re-muestrear un residual
+                        r_sample = np.random.choice(residuales_validos)
 
-                    triangulo_sintetico.iloc[i, j] = valor_sintetico
+                        # Generar valor sintético
+                        # valor_sintetico = esperado + residual * sqrt(esperado)
+                        valor_sintetico = esp + r_sample * np.sqrt(esp)
+
+                        # Asegurar no-negativo
+                        valor_sintetico = max(0, valor_sintetico)
+
+                        triangulo_sintetico.iloc[i, j] = valor_sintetico
 
         return triangulo_sintetico
 
@@ -254,6 +274,13 @@ class Bootstrap:
         """
         # Validar triángulo
         validar_triangulo(triangulo)
+
+        # Resetear semilla para asegurar reproducibilidad
+        # Nota: Esto es necesario porque la semilla se establece en __init__,
+        # pero si se crean múltiples instancias de Bootstrap, la segunda
+        # sobrescribe el estado del generador aleatorio global de numpy.
+        if self.config.seed is not None:
+            np.random.seed(self.config.seed)
 
         # 1. Ejecutar Chain Ladder base
         from mexican_insurance.core.validators import ConfiguracionChainLadder
