@@ -46,12 +46,17 @@ class ProductoSeguro(ABC):
     Atributos:
         config: Configuración del producto
         tipo: Tipo de producto según clasificación CNSF
+        edad_max_aceptacion: Edad máxima de aceptación (personalizable por producto)
     """
+
+    # Límite absoluto de edad - ningún producto puede exceder esto
+    HARD_LIMIT_EDAD = 81
 
     def __init__(
         self,
         config: ConfiguracionProducto,
         tipo: TipoProducto,
+        edad_max_aceptacion: int = 70,
     ):
         """
         Inicializa un producto de seguros.
@@ -59,9 +64,21 @@ class ProductoSeguro(ABC):
         Args:
             config: Configuración del producto
             tipo: Tipo de producto
+            edad_max_aceptacion: Edad máxima de aceptación (default: 70 años).
+                                 No puede exceder HARD_LIMIT_EDAD (81 años).
+
+        Raises:
+            ValueError: Si edad_max_aceptacion excede el límite absoluto
         """
+        if edad_max_aceptacion > self.HARD_LIMIT_EDAD:
+            raise ValueError(
+                f"Edad máxima de aceptación ({edad_max_aceptacion}) "
+                f"excede el límite absoluto ({self.HARD_LIMIT_EDAD} años)"
+            )
+
         self.config = config
         self.tipo = tipo
+        self.edad_max_aceptacion = edad_max_aceptacion
 
     @abstractmethod
     def calcular_prima(
@@ -134,12 +151,17 @@ class ProductoSeguro(ABC):
             >>> producto.validar_asegurabilidad(asegurado_rechazado)
             (False, "Edad fuera de rango aceptable")
         """
-        # Validación básica de edad
+        # Validación básica de edad mínima
         if asegurado.edad < 18:
             return False, "El asegurado debe ser mayor de edad (18+)"
 
-        if asegurado.edad > 70:
-            return False, "Edad máxima de aceptación excedida (70 años)"
+        # Validación de edad máxima configurada por producto
+        # Nota: edad_max_aceptacion ya está limitado por HARD_LIMIT_EDAD en __init__
+        if asegurado.edad > self.edad_max_aceptacion:
+            return (
+                False,
+                f"Edad máxima de aceptación excedida ({self.edad_max_aceptacion} años)",
+            )
 
         # Validación de suma asegurada
         if asegurado.suma_asegurada > Decimal("50000000"):  # 50M MXN

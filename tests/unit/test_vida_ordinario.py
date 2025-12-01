@@ -158,7 +158,8 @@ class TestVidaOrdinario:
         self, config_pago_limitado, tabla_simple
     ):
         """No debe aceptar asegurados mayores de 75 años"""
-        producto = VidaOrdinario(config_pago_limitado, tabla_simple)
+        # Configurar edad_max_aceptacion=75 para este producto específico
+        producto = VidaOrdinario(config_pago_limitado, tabla_simple, edad_max_aceptacion=75)
 
         asegurado_mayor = Asegurado(
             edad=76, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
@@ -171,13 +172,15 @@ class TestVidaOrdinario:
 
     def test_validar_edad_cercana_omega(self, config_pago_limitado, tabla_simple):
         """No debe aceptar edades muy cercanas a omega"""
+        # Usar edad_omega=85 y edad_max_aceptacion=81 para probar validación de omega
+        # Con hard limit de 81, omega debe ser ajustado a un valor alcanzable
         producto = VidaOrdinario(
-            config_pago_limitado, tabla_simple, edad_omega=100
+            config_pago_limitado, tabla_simple, edad_omega=85, edad_max_aceptacion=81
         )
 
-        # Edad 96 está a solo 4 años de omega
+        # Edad 81 está a solo 4 años de omega=85 (requiere > 5 años)
         asegurado_cercano = Asegurado(
-            edad=96, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
+            edad=81, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
         )
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado_cercano)
@@ -189,12 +192,13 @@ class TestVidaOrdinario:
         self, config_pago_limitado, tabla_simple
     ):
         """Debe fallar si edad >= omega"""
+        # Con hard limit de 81, usar omega=81 para probar validación
         producto = VidaOrdinario(
-            config_pago_limitado, tabla_simple, edad_omega=100
+            config_pago_limitado, tabla_simple, edad_omega=81, edad_max_aceptacion=81
         )
 
         asegurado_omega = Asegurado(
-            edad=100, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
+            edad=81, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
         )
 
         with pytest.raises(ValueError) as exc_info:

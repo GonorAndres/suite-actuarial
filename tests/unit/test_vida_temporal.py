@@ -162,11 +162,12 @@ class TestVidaTemporal:
         self, config_basica, tabla_simple
     ):
         """Edad + plazo > 100 debe ser rechazado"""
-        producto = VidaTemporal(config_basica, tabla_simple)
+        # Usar edad_max_aceptacion=81 (límite absoluto) para probar validación de vencimiento
+        producto = VidaTemporal(config_basica, tabla_simple, edad_max_aceptacion=81)
 
-        # Edad 85 + plazo 20 = 105 años
+        # Edad 81 + plazo 20 = 101 años (excede límite de 100)
         asegurado = Asegurado(
-            edad=85, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
+            edad=81, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
         )
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado)

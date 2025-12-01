@@ -160,9 +160,10 @@ class TestVidaDotal:
 
     def test_validar_edad_vencimiento_maxima(self, config_dotal_20, tabla_simple):
         """No debe aceptar edad + plazo > 90"""
-        producto = VidaDotal(config_dotal_20, tabla_simple)
+        # Usar edad_max_aceptacion=81 para permitir que la validación específica se ejecute
+        producto = VidaDotal(config_dotal_20, tabla_simple, edad_max_aceptacion=81)
 
-        # Edad 75 + plazo 20 = 95 (excede límite)
+        # Edad 75 + plazo 20 = 95 (excede límite de 90)
         asegurado_mayor = Asegurado(
             edad=75, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("500000")
         )

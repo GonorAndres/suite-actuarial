@@ -167,8 +167,11 @@ class TestBootstrapTrianguloSintetico:
         # Debe tener mismas dimensiones
         assert triangulo_sintetico.shape == triangulo_simple.shape
 
-        # Todos los valores deben ser >= 0
-        assert (triangulo_sintetico >= 0).all().all()
+        # Verificar que todos los valores no-NaN sean >= 0
+        # Nota: Los triángulos de desarrollo contienen NaN en la diagonal superior
+        # (periodos futuros no desarrollados). Solo validamos valores observados.
+        # Usamos máscara booleana: True donde valor >= 0 o es NaN
+        assert ((triangulo_sintetico >= 0) | triangulo_sintetico.isna()).all().all()
 
     def test_triangulossinteticos_son_diferentes(
         self, triangulo_simple, config_100_sims

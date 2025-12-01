@@ -78,6 +78,7 @@ class VidaOrdinario(ProductoSeguro):
         tabla_mortalidad: TablaMortalidad,
         edad_omega: int = 100,
         plazo_pago_vitalicio: bool = False,
+        edad_max_aceptacion: int = 70,
     ):
         """
         Inicializa un seguro de vida ordinario.
@@ -88,13 +89,14 @@ class VidaOrdinario(ProductoSeguro):
             edad_omega: Edad final de la tabla (default 100)
             plazo_pago_vitalicio: Si True, paga prima toda la vida;
                                  si False, usa config.plazo_years como periodo de pago
+            edad_max_aceptacion: Edad máxima de aceptación (default: 70 años)
 
         Note:
             - Si plazo_pago_vitalicio=True: Paga prima hasta fallecimiento
             - Si plazo_pago_vitalicio=False: Paga prima durante config.plazo_years años
               (llamado "pago limitado"), pero cobertura es vitalicia
         """
-        super().__init__(config, TipoProducto.VIDA_ORDINARIO)
+        super().__init__(config, TipoProducto.VIDA_ORDINARIO, edad_max_aceptacion)
         self.tabla_mortalidad = tabla_mortalidad
         self.edad_omega = edad_omega
         self.plazo_pago_vitalicio = plazo_pago_vitalicio
@@ -310,17 +312,10 @@ class VidaOrdinario(ProductoSeguro):
         Returns:
             (es_asegurable, razon_rechazo)
         """
-        # Validación base
+        # Validación base (incluye edad_max_aceptacion configurada)
         es_asegurable, razon = super().validar_asegurabilidad(asegurado)
         if not es_asegurable:
             return False, razon
-
-        # Edad máxima de emisión
-        if asegurado.edad > 75:
-            return (
-                False,
-                "Edad máxima de emisión para vida ordinario es 75 años",
-            )
 
         # Edad debe permitir al menos 5 años de cobertura
         if asegurado.edad >= (self.edad_omega - 5):

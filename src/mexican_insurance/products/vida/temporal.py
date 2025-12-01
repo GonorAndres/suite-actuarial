@@ -70,6 +70,7 @@ class VidaTemporal(ProductoSeguro):
         config: ConfiguracionProducto,
         tabla_mortalidad: TablaMortalidad,
         plazo_pago: Optional[int] = None,
+        edad_max_aceptacion: int = 70,
     ):
         """
         Inicializa un seguro de vida temporal.
@@ -79,8 +80,9 @@ class VidaTemporal(ProductoSeguro):
             tabla_mortalidad: Tabla de mortalidad a usar
             plazo_pago: Plazo de pago de primas (si es diferente al plazo del seguro)
                        Por default es igual al plazo del seguro.
+            edad_max_aceptacion: Edad máxima de aceptación (default: 70 años)
         """
-        super().__init__(config, TipoProducto.VIDA_TEMPORAL)
+        super().__init__(config, TipoProducto.VIDA_TEMPORAL, edad_max_aceptacion)
         self.tabla_mortalidad = tabla_mortalidad
 
         # Por default, el plazo de pago es igual al plazo del seguro
@@ -271,6 +273,13 @@ class VidaTemporal(ProductoSeguro):
             return (
                 False,
                 "Edad mínima de 25 años para seguros de 30+ años",
+            )
+
+        # Validación: personas de 70+ años requieren mínimo 20 años de plazo
+        if asegurado.edad >= 70 and self.config.plazo_years < 20:
+            return (
+                False,
+                f"Asegurados de 70+ años requieren plazo mínimo de 20 años (plazo actual: {self.config.plazo_years})",
             )
 
         return True, None

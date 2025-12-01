@@ -71,6 +71,7 @@ class VidaDotal(ProductoSeguro):
         config: ConfiguracionProducto,
         tabla_mortalidad: TablaMortalidad,
         plazo_pago: Optional[int] = None,
+        edad_max_aceptacion: int = 70,
     ):
         """
         Inicializa un seguro dotal.
@@ -79,12 +80,13 @@ class VidaDotal(ProductoSeguro):
             config: Configuración del producto
             tabla_mortalidad: Tabla de mortalidad
             plazo_pago: Plazo de pago de primas (default = plazo del seguro)
+            edad_max_aceptacion: Edad máxima de aceptación (default: 70 años)
 
         Note:
             Típicamente plazo_pago = plazo del seguro, pero puede ser menor
             (ej: pago 10 años, cobertura 20 años)
         """
-        super().__init__(config, TipoProducto.VIDA_DOTAL)
+        super().__init__(config, TipoProducto.VIDA_DOTAL, edad_max_aceptacion)
         self.tabla_mortalidad = tabla_mortalidad
         self.plazo_pago = plazo_pago or config.plazo_years
 
