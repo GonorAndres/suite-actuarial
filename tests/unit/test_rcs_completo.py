@@ -17,9 +17,7 @@ from mexican_insurance.regulatorio import (
     AgregadorRCS,
     RCSDanos,
     RCSInversion,
-    RCSVida,
 )
-
 
 # ======================================
 # Tests RCS Daños
@@ -94,7 +92,7 @@ class TestRCSDanos:
 
     def test_cv_invalido(self):
         """Coeficiente de variación debe estar en rango válido"""
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises((ValueError, Exception)):
             ConfiguracionRCSDanos(
                 primas_retenidas_12m=Decimal("100000000"),
                 reserva_siniestros=Decimal("80000000"),

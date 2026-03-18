@@ -7,14 +7,12 @@ Soporta las principales tablas usadas en México:
 - Tablas personalizadas
 """
 
-import json
 from decimal import Decimal
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
-from mexican_insurance.core.validators import RegistroMortalidad, Sexo
+from mexican_insurance.core.validators import Sexo
 
 
 class TablaMortalidad:
@@ -39,7 +37,7 @@ class TablaMortalidad:
         self,
         nombre: str,
         datos: pd.DataFrame,
-        metadata: Optional[Dict] = None,
+        metadata: dict | None = None,
     ):
         """
         Inicializa una tabla de mortalidad.
@@ -77,7 +75,7 @@ class TablaMortalidad:
     def obtener_qx(
         self,
         edad: int,
-        sexo: Union[Sexo, str],
+        sexo: Sexo | str,
         interpolar: bool = False,
     ) -> Decimal:
         """
@@ -171,7 +169,7 @@ class TablaMortalidad:
 
     def obtener_tabla_completa(
         self,
-        sexo: Union[Sexo, str],
+        sexo: Sexo | str,
     ) -> pd.DataFrame:
         """
         Obtiene toda la tabla para un sexo dado.
@@ -193,7 +191,7 @@ class TablaMortalidad:
 
     def calcular_lx(
         self,
-        sexo: Union[Sexo, str],
+        sexo: Sexo | str,
         raiz: int = 100000,
     ) -> pd.DataFrame:
         """
@@ -234,8 +232,8 @@ class TablaMortalidad:
     @classmethod
     def desde_csv(
         cls,
-        path: Union[str, Path],
-        nombre: Optional[str] = None,
+        path: str | Path,
+        nombre: str | None = None,
         **kwargs,
     ) -> "TablaMortalidad":
         """
@@ -291,7 +289,7 @@ class TablaMortalidad:
             "Ejecuta el script de descarga o coloca el archivo en data/mortality_tables/"
         )
 
-    def guardar_csv(self, path: Union[str, Path]) -> None:
+    def guardar_csv(self, path: str | Path) -> None:
         """
         Guarda la tabla en formato CSV.
 

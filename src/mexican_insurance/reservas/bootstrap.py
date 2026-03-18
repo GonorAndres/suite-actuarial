@@ -7,7 +7,6 @@ percentiles y medidas de incertidumbre.
 """
 
 from decimal import Decimal
-from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -19,7 +18,6 @@ from mexican_insurance.core.validators import (
 )
 from mexican_insurance.reservas.chain_ladder import ChainLadder
 from mexican_insurance.reservas.triangulo import (
-    calcular_age_to_age,
     obtener_ultima_diagonal,
     validar_triangulo,
 )
@@ -63,10 +61,10 @@ class Bootstrap:
             config: Configuración del método
         """
         self.config = config
-        self.chain_ladder: Optional[ChainLadder] = None
-        self.triangulo_ajustado: Optional[pd.DataFrame] = None
-        self.residuales: Optional[pd.DataFrame] = None
-        self.simulaciones_reservas: Optional[List[Decimal]] = None
+        self.chain_ladder: ChainLadder | None = None
+        self.triangulo_ajustado: pd.DataFrame | None = None
+        self.residuales: pd.DataFrame | None = None
+        self.simulaciones_reservas: list[Decimal] | None = None
 
         # Fijar semilla para reproducibilidad
         if self.config.seed is not None:
@@ -102,7 +100,7 @@ class Bootstrap:
                 # Valor anterior
                 valor_prev = triangulo_ajustado.iloc[i, j - 1]
 
-                if pd.notna(valor_prev) and j < len(factores):
+                if pd.notna(valor_prev) and j <= len(factores):
                     # Aplicar factor
                     valor_ajustado = float(valor_prev) * float(factores[j - 1])
                     triangulo_ajustado.iloc[i, j] = valor_ajustado
@@ -221,8 +219,8 @@ class Bootstrap:
             return cl_base.calcular(triangulo).reserva_total
 
     def calcular_percentiles(
-        self, simulaciones: List[Decimal]
-    ) -> Dict[int, Decimal]:
+        self, simulaciones: list[Decimal]
+    ) -> dict[int, Decimal]:
         """
         Calcula percentiles de las simulaciones.
 
@@ -281,7 +279,7 @@ class Bootstrap:
         # 4. Ejecutar simulaciones
         self.simulaciones_reservas = []
 
-        for sim in range(self.config.num_simulaciones):
+        for _sim in range(self.config.num_simulaciones):
             reserva_sim = self.ejecutar_simulacion(
                 triangulo, self.chain_ladder
             )
@@ -341,7 +339,7 @@ class Bootstrap:
 
         return resultado
 
-    def obtener_distribucion(self) -> Optional[List[Decimal]]:
+    def obtener_distribucion(self) -> list[Decimal] | None:
         """
         Obtiene la distribución completa de reservas simuladas.
 

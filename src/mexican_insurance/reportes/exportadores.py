@@ -7,7 +7,6 @@ o CSV para integración con otros sistemas.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -46,11 +45,11 @@ class ExportadorExcel:
     def exportar_reporte_completo(
         self,
         ruta_salida: str,
-        df_suscripcion: Optional[pd.DataFrame] = None,
-        df_siniestros: Optional[pd.DataFrame] = None,
-        df_inversiones: Optional[pd.DataFrame] = None,
-        df_rcs: Optional[pd.DataFrame] = None,
-        metadata: Optional[Dict] = None,
+        df_suscripcion: pd.DataFrame | None = None,
+        df_siniestros: pd.DataFrame | None = None,
+        df_inversiones: pd.DataFrame | None = None,
+        df_rcs: pd.DataFrame | None = None,
+        metadata: dict | None = None,
     ) -> Path:
         """
         Exporta reporte completo a Excel con múltiples hojas.
@@ -95,7 +94,7 @@ class ExportadorExcel:
 
         return ruta
 
-    def _crear_hoja_portada(self, metadata: Dict) -> pd.DataFrame:
+    def _crear_hoja_portada(self, metadata: dict) -> pd.DataFrame:
         """Crea DataFrame para hoja de portada"""
         datos = [
             ["REPORTE TRIMESTRAL CNSF", ""],
@@ -208,11 +207,11 @@ class ExportadorCSV:
 
     def exportar_multiples(
         self,
-        dataframes: Dict[str, pd.DataFrame],
+        dataframes: dict[str, pd.DataFrame],
         directorio_salida: str,
         prefijo: str = "",
         separador: str = ",",
-    ) -> List[Path]:
+    ) -> list[Path]:
         """
         Exporta múltiples DataFrames a archivos CSV separados.
 

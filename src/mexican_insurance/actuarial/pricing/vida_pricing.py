@@ -10,7 +10,6 @@ Referencias:
 """
 
 from decimal import Decimal
-from typing import Union
 
 from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
 from mexican_insurance.core.validators import Sexo
@@ -19,7 +18,7 @@ from mexican_insurance.core.validators import Sexo
 def calcular_seguro_vida(
     tabla: TablaMortalidad,
     edad: int,
-    sexo: Union[Sexo, str],
+    sexo: Sexo | str,
     plazo: int,
     tasa_interes: Decimal,
     suma_asegurada: Decimal = Decimal("1"),
@@ -85,7 +84,7 @@ def calcular_seguro_vida(
 def calcular_anualidad(
     tabla: TablaMortalidad,
     edad: int,
-    sexo: Union[Sexo, str],
+    sexo: Sexo | str,
     plazo: int,
     tasa_interes: Decimal,
     pago_anticipado: bool = True,
@@ -144,7 +143,7 @@ def calcular_anualidad(
 def calcular_prima_neta_temporal(
     tabla: TablaMortalidad,
     edad: int,
-    sexo: Union[Sexo, str],
+    sexo: Sexo | str,
     plazo_seguro: int,
     plazo_pago: int,
     tasa_interes: Decimal,

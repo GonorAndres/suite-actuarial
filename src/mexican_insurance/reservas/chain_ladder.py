@@ -6,7 +6,6 @@ el desarrollo futuro de siniestros basado en patrones históricos.
 """
 
 from decimal import Decimal
-from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -15,12 +14,10 @@ from mexican_insurance.core.validators import (
     MetodoPromedio,
     MetodoReserva,
     ResultadoReserva,
-    TipoTriangulo,
 )
 from mexican_insurance.reservas.triangulo import (
     acumular_triangulo,
     calcular_age_to_age,
-    convertir_a_decimal,
     obtener_ultima_diagonal,
     promedio_geometrico,
     promedio_ponderado,
@@ -58,14 +55,14 @@ class ChainLadder:
             config: Configuración del método
         """
         self.config = config
-        self.triangulo_original: Optional[pd.DataFrame] = None
-        self.triangulo_completo: Optional[pd.DataFrame] = None
-        self.factores_age_to_age: Optional[pd.DataFrame] = None
-        self.factores_desarrollo: Optional[List[Decimal]] = None
+        self.triangulo_original: pd.DataFrame | None = None
+        self.triangulo_completo: pd.DataFrame | None = None
+        self.factores_age_to_age: pd.DataFrame | None = None
+        self.factores_desarrollo: list[Decimal] | None = None
 
     def calcular_factores_desarrollo(
         self, triangulo: pd.DataFrame
-    ) -> List[Decimal]:
+    ) -> list[Decimal]:
         """
         Calcula los factores de desarrollo promedio para cada período.
 
@@ -126,7 +123,7 @@ class ChainLadder:
         return factores
 
     def completar_triangulo(
-        self, triangulo: pd.DataFrame, factores: List[Decimal]
+        self, triangulo: pd.DataFrame, factores: list[Decimal]
     ) -> pd.DataFrame:
         """
         Completa el triángulo proyectando valores futuros.
@@ -170,7 +167,7 @@ class ChainLadder:
 
     def calcular_ultimates(
         self, triangulo_completo: pd.DataFrame
-    ) -> Dict[int, Decimal]:
+    ) -> dict[int, Decimal]:
         """
         Calcula el valor ultimate (final proyectado) para cada año.
 
@@ -193,8 +190,8 @@ class ChainLadder:
         return ultimates
 
     def calcular_reservas(
-        self, triangulo_original: pd.DataFrame, ultimates: Dict[int, Decimal]
-    ) -> Dict[int, Decimal]:
+        self, triangulo_original: pd.DataFrame, ultimates: dict[int, Decimal]
+    ) -> dict[int, Decimal]:
         """
         Calcula las reservas (IBNR) para cada año.
 
@@ -297,7 +294,7 @@ class ChainLadder:
 
         return resultado
 
-    def obtener_triangulo_completo(self) -> Optional[pd.DataFrame]:
+    def obtener_triangulo_completo(self) -> pd.DataFrame | None:
         """
         Obtiene el triángulo completo (con proyecciones).
 
@@ -306,7 +303,7 @@ class ChainLadder:
         """
         return self.triangulo_completo
 
-    def obtener_factores_age_to_age(self) -> Optional[pd.DataFrame]:
+    def obtener_factores_age_to_age(self) -> pd.DataFrame | None:
         """
         Obtiene los factores age-to-age calculados.
 

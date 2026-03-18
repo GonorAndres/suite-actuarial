@@ -6,7 +6,6 @@ triángulos de datos de siniestros para cálculo de reservas.
 """
 
 from decimal import Decimal
-from typing import List
 
 import pandas as pd
 
@@ -159,7 +158,7 @@ def calcular_age_to_age(df: pd.DataFrame) -> pd.DataFrame:
     return factores
 
 
-def promedio_simple(valores: List[float]) -> float:
+def promedio_simple(valores: list[float]) -> float:
     """
     Calcula promedio aritmético simple.
 
@@ -176,7 +175,7 @@ def promedio_simple(valores: List[float]) -> float:
 
 
 def promedio_ponderado(
-    valores: List[float], volumenes: List[float]
+    valores: list[float], volumenes: list[float]
 ) -> float:
     """
     Calcula promedio ponderado por volumen.
@@ -194,7 +193,7 @@ def promedio_ponderado(
     suma_ponderada = 0.0
     suma_volumenes = 0.0
 
-    for v, vol in zip(valores, volumenes):
+    for v, vol in zip(valores, volumenes, strict=False):
         if pd.notna(v) and pd.notna(vol) and v > 0 and vol > 0:
             suma_ponderada += v * vol
             suma_volumenes += vol
@@ -205,7 +204,7 @@ def promedio_ponderado(
     return suma_ponderada / suma_volumenes
 
 
-def promedio_geometrico(valores: List[float]) -> float:
+def promedio_geometrico(valores: list[float]) -> float:
     """
     Calcula promedio geométrico.
 

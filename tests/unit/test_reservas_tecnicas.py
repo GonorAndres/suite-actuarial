@@ -18,7 +18,6 @@ from mexican_insurance.regulatorio.reservas_tecnicas import (
     ValidadorSuficiencia,
 )
 
-
 # ======================================
 # Fixtures
 # ======================================
@@ -364,7 +363,7 @@ class TestValidacionesModelos:
 
     def test_prima_devengada_no_puede_exceder_emitida(self):
         """Prima devengada no puede ser mayor que emitida"""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises((ValueError, Exception)):
             ConfiguracionRRC(
                 prima_emitida=Decimal("50000000"),
                 prima_devengada=Decimal("60000000"),  # Mayor que emitida

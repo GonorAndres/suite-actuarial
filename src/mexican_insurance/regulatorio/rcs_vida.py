@@ -8,7 +8,6 @@ de la CNSF (Comisión Nacional de Seguros y Fianzas de México).
 
 import math
 from decimal import Decimal
-from typing import Dict
 
 from mexican_insurance.core.validators import ConfiguracionRCSVida
 
@@ -182,7 +181,7 @@ class RCSVida:
 
         return rcs_gastos.quantize(Decimal("0.01"))
 
-    def calcular_rcs_total_vida(self) -> tuple[Decimal, Dict[str, Decimal]]:
+    def calcular_rcs_total_vida(self) -> tuple[Decimal, dict[str, Decimal]]:
         """
         Calcula RCS total de suscripción vida agregando todos los riesgos.
 
@@ -217,7 +216,7 @@ class RCSVida:
 
         return rcs_total.quantize(Decimal("0.01")), desglose
 
-    def obtener_factores_aplicados(self) -> Dict[str, Decimal]:
+    def obtener_factores_aplicados(self) -> dict[str, Decimal]:
         """
         Obtiene los factores intermedios aplicados en los cálculos.
 

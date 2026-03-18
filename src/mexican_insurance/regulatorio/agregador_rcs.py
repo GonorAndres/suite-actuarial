@@ -8,7 +8,6 @@ matrices de correlación según la normativa de la CNSF.
 
 import math
 from decimal import Decimal
-from typing import Optional
 
 from mexican_insurance.core.validators import (
     ConfiguracionRCSDanos,
@@ -47,9 +46,9 @@ class AgregadorRCS:
 
     def __init__(
         self,
-        config_vida: Optional[ConfiguracionRCSVida] = None,
-        config_danos: Optional[ConfiguracionRCSDanos] = None,
-        config_inversion: Optional[ConfiguracionRCSInversion] = None,
+        config_vida: ConfiguracionRCSVida | None = None,
+        config_danos: ConfiguracionRCSDanos | None = None,
+        config_inversion: ConfiguracionRCSInversion | None = None,
         capital_minimo_pagado: Decimal = Decimal("0"),
     ):
         """
@@ -67,9 +66,9 @@ class AgregadorRCS:
         self.capital_minimo_pagado = capital_minimo_pagado
 
         # Calculadores
-        self.rcs_vida: Optional[RCSVida] = None
-        self.rcs_danos: Optional[RCSDanos] = None
-        self.rcs_inversion: Optional[RCSInversion] = None
+        self.rcs_vida: RCSVida | None = None
+        self.rcs_danos: RCSDanos | None = None
+        self.rcs_inversion: RCSInversion | None = None
 
         # Inicializar calculadores
         if config_vida:

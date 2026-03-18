@@ -77,19 +77,16 @@ class CalculadoraRetencionesISR:
         # Determinar si requiere retención y tasa aplicable
         requiere_retencion = False
         tasa_retencion = Decimal("0")
-        fundamento_legal = ""
 
         # Rentas vitalicias: REQUIEREN RETENCIÓN
         if es_renta_vitalicia and tipo_seguro == TipoSeguroFiscal.PENSIONES:
             requiere_retencion = True
             tasa_retencion = self.TASA_RETENCION_RENTAS_VITALICIAS
-            fundamento_legal = "LISR Art. 145 - Retención en rentas vitalicias (10%)"
 
         # Retiros de ahorro: REQUIEREN RETENCIÓN
         elif es_retiro_ahorro and tipo_seguro == TipoSeguroFiscal.VIDA:
             requiere_retencion = True
             tasa_retencion = self.TASA_RETENCION_RETIROS_AHORRO
-            fundamento_legal = "LISR Art. 158 - Retención en retiros de seguros (20%)"
 
         # Indemnizaciones por muerte: NO RETENCIÓN (exentas)
         elif tipo_seguro == TipoSeguroFiscal.VIDA and not es_retiro_ahorro:
@@ -121,7 +118,6 @@ class CalculadoraRetencionesISR:
         elif requiere_retencion_forzosa:
             requiere_retencion = True
             tasa_retencion = self.TASA_RETENCION_OTROS_INGRESOS
-            fundamento_legal = "LISR - Retención sobre ingresos gravables (10%)"
 
         # Calcular retención si aplica
         if requiere_retencion:

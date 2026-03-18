@@ -74,7 +74,7 @@ class CalculadoraRM:
         prima_anual = self.config.prima_nivelada_anual
 
         # Años transcurridos desde contratación
-        años_transcurridos = edad_actual - edad_contratacion
+        edad_actual - edad_contratacion
 
         # Probabilidad de supervivencia simplificada (tabla mortalidad básica)
         prob_supervivencia = self._calcular_probabilidad_supervivencia(edad_actual)

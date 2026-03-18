@@ -6,7 +6,6 @@ para riesgos de inversión conforme a la normativa de la CNSF.
 """
 
 from decimal import Decimal
-from typing import Dict
 
 from mexican_insurance.core.validators import ConfiguracionRCSInversion
 
@@ -240,7 +239,7 @@ class RCSInversion:
 
     def calcular_rcs_total_inversion(
         self,
-    ) -> tuple[Decimal, Dict[str, Decimal]]:
+    ) -> tuple[Decimal, dict[str, Decimal]]:
         """
         Calcula RCS total de inversión agregando mercado, crédito y concentración.
 
@@ -274,7 +273,7 @@ class RCSInversion:
 
         return rcs_total.quantize(Decimal("0.01")), desglose
 
-    def obtener_shocks_aplicados(self) -> Dict[str, Decimal]:
+    def obtener_shocks_aplicados(self) -> dict[str, Decimal]:
         """
         Obtiene los shocks aplicados a cada tipo de activo.
 

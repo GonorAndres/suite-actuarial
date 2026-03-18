@@ -16,7 +16,6 @@ from mexican_insurance.regulatorio.validaciones_sat import (
     ValidadorSiniestrosGravables,
 )
 
-
 # ======================================
 # Fixtures
 # ======================================

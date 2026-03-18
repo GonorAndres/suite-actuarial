@@ -6,7 +6,6 @@ con las obligaciones futuras de la aseguradora.
 """
 
 from decimal import Decimal
-from typing import Dict, List
 
 from mexican_insurance.regulatorio.reservas_tecnicas.models import (
     ResultadoValidacionSuficiencia,
@@ -81,10 +80,10 @@ class ValidadorSuficiencia:
 
     def validar_reservas_agregadas(
         self,
-        reservas_constituidas: Dict[str, Decimal],
-        reservas_calculadas: Dict[str, Decimal],
+        reservas_constituidas: dict[str, Decimal],
+        reservas_calculadas: dict[str, Decimal],
         margen_seguridad: Decimal = None,
-    ) -> Dict[str, ResultadoValidacionSuficiencia]:
+    ) -> dict[str, ResultadoValidacionSuficiencia]:
         """
         Valida múltiples reservas (por ramo o tipo).
 
@@ -115,8 +114,8 @@ class ValidadorSuficiencia:
 
     def generar_reporte_suficiencia(
         self,
-        validaciones: Dict[str, ResultadoValidacionSuficiencia],
-    ) -> Dict[str, any]:
+        validaciones: dict[str, ResultadoValidacionSuficiencia],
+    ) -> dict[str, any]:
         """
         Genera reporte resumen de suficiencia de reservas.
 

@@ -9,7 +9,6 @@ Este es uno de los productos más básicos y populares:
 """
 
 from decimal import Decimal
-from typing import Dict, Optional
 
 from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
 from mexican_insurance.actuarial.pricing.vida_pricing import (
@@ -69,7 +68,7 @@ class VidaTemporal(ProductoSeguro):
         self,
         config: ConfiguracionProducto,
         tabla_mortalidad: TablaMortalidad,
-        plazo_pago: Optional[int] = None,
+        plazo_pago: int | None = None,
     ):
         """
         Inicializa un seguro de vida temporal.
@@ -97,7 +96,7 @@ class VidaTemporal(ProductoSeguro):
         self,
         asegurado: Asegurado,
         frecuencia_pago: str = "anual",
-        **kwargs: Dict,
+        **kwargs: dict,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un asegurado dado.
@@ -159,7 +158,7 @@ class VidaTemporal(ProductoSeguro):
         self,
         asegurado: Asegurado,
         anio: int,
-        **kwargs: Dict,
+        **kwargs: dict,
     ) -> Decimal:
         """
         Calcula la reserva matemática en un año dado.
@@ -241,7 +240,7 @@ class VidaTemporal(ProductoSeguro):
     def validar_asegurabilidad(
         self,
         asegurado: Asegurado,
-    ) -> tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Valida asegurabilidad específica para vida temporal.
 

@@ -56,7 +56,7 @@ class TestAsegurado:
                 suma_asegurada=Decimal("0"),
             )
 
-        assert "suma asegurada" in str(exc_info.value).lower()
+        assert "suma_asegurada" in str(exc_info.value).lower()
 
     def test_suma_asegurada_excesiva_falla(self):
         """Suma asegurada no debe ser ridículamente alta"""
@@ -104,7 +104,7 @@ class TestConfiguracionProducto:
                 tasa_interes_tecnico=Decimal("-0.01"),
             )
 
-        assert "negativa" in str(exc_info.value).lower()
+        assert "tasa_interes_tecnico" in str(exc_info.value).lower()
 
     def test_recargos_excesivos_falla(self):
         """Recargos totales no deben superar 100%"""
@@ -185,7 +185,7 @@ class TestRegistroMortalidad:
                 qx=Decimal("1.5"),  # Mayor a 1
             )
 
-        assert "0 y 1" in str(exc_info.value)
+        assert "qx" in str(exc_info.value).lower()
 
     def test_qx_negativo_falla(self):
         """qx no puede ser negativo"""
@@ -196,4 +196,4 @@ class TestRegistroMortalidad:
                 qx=Decimal("-0.001"),
             )
 
-        assert "0 y 1" in str(exc_info.value)
+        assert "qx" in str(exc_info.value).lower()

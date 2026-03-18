@@ -8,13 +8,11 @@ Usa el patrón Template Method para compartir lógica común.
 from abc import ABC, abstractmethod
 from datetime import date
 from decimal import Decimal
-from typing import List
 
 from mexican_insurance.core.validators import (
     ConfiguracionReaseguro,
     ResultadoReaseguro,
     Siniestro,
-    TipoContrato,
 )
 
 

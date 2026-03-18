@@ -6,11 +6,9 @@ hasta un límite máximo. Protege contra siniestros grandes.
 """
 
 from decimal import Decimal
-from typing import List, Tuple
 
 from mexican_insurance.core.validators import (
     ExcessOfLossConfig,
-    ModalidadXL,
     ResultadoReaseguro,
     Siniestro,
 )
@@ -92,8 +90,8 @@ class ExcessOfLoss(ContratoReaseguro):
         return recuperacion
 
     def calcular_recuperacion_multiple(
-        self, siniestros: List[Siniestro]
-    ) -> Tuple[Decimal, List[Tuple[str, Decimal, Decimal]]]:
+        self, siniestros: list[Siniestro]
+    ) -> tuple[Decimal, list[tuple[str, Decimal, Decimal]]]:
         """
         Calcula la recuperación para múltiples siniestros.
 
@@ -122,7 +120,7 @@ class ExcessOfLoss(ContratoReaseguro):
 
     def aplicar_reinstatement(
         self, monto_usado: Decimal
-    ) -> Tuple[bool, Decimal]:
+    ) -> tuple[bool, Decimal]:
         """
         Aplica un reinstatement para reinstalar el límite consumido.
 
@@ -204,7 +202,7 @@ class ExcessOfLoss(ContratoReaseguro):
     def calcular_resultado_neto(
         self,
         prima_reaseguro_cobrada: Decimal,
-        siniestros: List[Siniestro],
+        siniestros: list[Siniestro],
     ) -> ResultadoReaseguro:
         """
         Calcula el resultado neto del contrato XL para un periodo.

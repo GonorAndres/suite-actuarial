@@ -7,7 +7,6 @@ en años con poco desarrollo o experiencia limitada.
 """
 
 from decimal import Decimal
-from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -18,7 +17,6 @@ from mexican_insurance.core.validators import (
 )
 from mexican_insurance.reservas.chain_ladder import ChainLadder
 from mexican_insurance.reservas.triangulo import (
-    convertir_a_decimal,
     obtener_ultima_diagonal,
     validar_triangulo,
 )
@@ -61,13 +59,13 @@ class BornhuetterFerguson:
             config: Configuración del método
         """
         self.config = config
-        self.chain_ladder: Optional[ChainLadder] = None
-        self.factores_desarrollo: Optional[List[Decimal]] = None
-        self.porcentajes_reportados: Optional[Dict[int, Decimal]] = None
+        self.chain_ladder: ChainLadder | None = None
+        self.factores_desarrollo: list[Decimal] | None = None
+        self.porcentajes_reportados: dict[int, Decimal] | None = None
 
     def calcular_porcentajes_reportados(
-        self, triangulo: pd.DataFrame, factores: List[Decimal]
-    ) -> Dict[int, Decimal]:
+        self, triangulo: pd.DataFrame, factores: list[Decimal]
+    ) -> dict[int, Decimal]:
         """
         Calcula el % de siniestros ya reportados para cada año de origen.
 
@@ -82,9 +80,9 @@ class BornhuetterFerguson:
             Diccionario {año_origen: % reportado (0-1)}
         """
         porcentajes = {}
-        n_cols = triangulo.shape[1]
+        triangulo.shape[1]
 
-        for i, idx in enumerate(triangulo.index):
+        for _i, idx in enumerate(triangulo.index):
             # Encontrar cuántos períodos han transcurrido
             row = triangulo.loc[idx]
             periodos_observados = row.notna().sum()
@@ -108,9 +106,9 @@ class BornhuetterFerguson:
     def calcular_ultimates(
         self,
         triangulo: pd.DataFrame,
-        primas_por_anio: Dict[int, Decimal],
-        porcentajes_reportados: Dict[int, Decimal],
-    ) -> Dict[int, Decimal]:
+        primas_por_anio: dict[int, Decimal],
+        porcentajes_reportados: dict[int, Decimal],
+    ) -> dict[int, Decimal]:
         """
         Calcula ultimates usando el método Bornhuetter-Ferguson.
 
@@ -164,8 +162,8 @@ class BornhuetterFerguson:
         return ultimates
 
     def calcular_reservas(
-        self, triangulo: pd.DataFrame, ultimates: Dict[int, Decimal]
-    ) -> Dict[int, Decimal]:
+        self, triangulo: pd.DataFrame, ultimates: dict[int, Decimal]
+    ) -> dict[int, Decimal]:
         """
         Calcula las reservas (IBNR) para cada año.
 
@@ -196,7 +194,7 @@ class BornhuetterFerguson:
     def calcular(
         self,
         triangulo: pd.DataFrame,
-        primas_por_anio: Dict[int, Decimal],
+        primas_por_anio: dict[int, Decimal],
     ) -> ResultadoReserva:
         """
         Ejecuta el método Bornhuetter-Ferguson completo.
@@ -226,7 +224,6 @@ class BornhuetterFerguson:
         # 1. Ejecutar Chain Ladder para obtener factores de desarrollo
         from mexican_insurance.core.validators import (
             ConfiguracionChainLadder,
-            MetodoPromedio,
         )
 
         config_cl = ConfiguracionChainLadder(
@@ -296,7 +293,7 @@ class BornhuetterFerguson:
 
         return resultado
 
-    def obtener_porcentajes_reportados(self) -> Optional[Dict[int, Decimal]]:
+    def obtener_porcentajes_reportados(self) -> dict[int, Decimal] | None:
         """
         Obtiene los porcentajes reportados calculados.
 
@@ -306,7 +303,7 @@ class BornhuetterFerguson:
         return self.porcentajes_reportados
 
     def comparar_con_chain_ladder(
-        self, triangulo: pd.DataFrame, primas_por_anio: Dict[int, Decimal]
+        self, triangulo: pd.DataFrame, primas_por_anio: dict[int, Decimal]
     ) -> pd.DataFrame:
         """
         Compara resultados de B-F vs Chain Ladder.

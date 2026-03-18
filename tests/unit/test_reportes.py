@@ -7,7 +7,6 @@ Tests unitarios para modelos, generadores y exportadores de reportes.
 import tempfile
 from datetime import date
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
@@ -31,7 +30,6 @@ from mexican_insurance.reportes import (
     TipoRamo,
     TrimesteCNSF,
 )
-
 
 # ======================================
 # Fixtures
@@ -140,7 +138,7 @@ class TestMetadatosReporte:
 
     def test_fecha_antes_trimestre_invalida(self):
         """Fecha de presentación antes del trimestre debe fallar"""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises((ValueError, Exception)):
             MetadatosReporte(
                 clave_aseguradora="A0123",
                 nombre_aseguradora="Seguros XYZ",
@@ -183,7 +181,7 @@ class TestDatosSiniestrosRamo:
 
     def test_pendientes_exceden_total(self):
         """Pendientes mayores a total debe fallar"""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises((ValueError, Exception)):
             DatosSiniestrosRamo(
                 ramo=TipoRamo.AUTOS,
                 siniestros_ocurridos=Decimal("35000000"),
