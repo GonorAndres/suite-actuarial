@@ -58,7 +58,7 @@ dmypy.json
 
 # Jupyter Notebook
 .ipynb_checkpoints
-*.ipynb
+notebooks/*_executed.ipynb
 
 # Documentation
 docs/_build/
