@@ -38,7 +38,11 @@ def main() -> int:
         ejecutar_demo()
         return 0
 
-    print(f"❌ Comando desconocido: {comando}")
+    if comando == "api":
+        ejecutar_api()
+        return 0
+
+    print(f"Comando desconocido: {comando}")
     print("Usa 'seguros --help' para ver los comandos disponibles.")
     return 1
 
@@ -49,13 +53,15 @@ def mostrar_ayuda() -> None:
 Uso: seguros [comando] [opciones]
 
 Comandos disponibles:
-  demo              Ejecuta un ejemplo de cálculo de primas
+  demo              Ejecuta un ejemplo de calculo de primas
+  api               Inicia el servidor REST API (FastAPI)
   --help, -h       Muestra esta ayuda
-  --version, -v    Muestra la versión
+  --version, -v    Muestra la version
 
 Ejemplos:
-  seguros demo          # Ejecuta una demostración
-  seguros --version     # Muestra la versión
+  seguros demo          # Ejecuta una demostracion
+  seguros api           # Inicia API en http://localhost:8000
+  seguros --version     # Muestra la version
 
 Para más información, visita:
 https://github.com/GonorAndres/Analisis_Seguros_Mexico
@@ -127,6 +133,25 @@ def ejecutar_demo() -> None:
         )
     except Exception as e:
         print(f"\n❌ Error durante la demostración: {e}")
+
+
+def ejecutar_api() -> None:
+    """Inicia el servidor REST API"""
+    try:
+        import uvicorn
+    except ImportError:
+        print("Error: FastAPI no instalado. Ejecuta: pip install mexican-insurance[api]")
+        return
+
+    print("Iniciando API REST en http://localhost:8000")
+    print("Documentacion interactiva en http://localhost:8000/docs")
+    print("Presiona Ctrl+C para detener\n")
+    uvicorn.run(
+        "mexican_insurance.api.main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=False,
+    )
 
 
 if __name__ == "__main__":

@@ -61,9 +61,15 @@ db = [
     "duckdb>=0.9.0",
 ]
 
+# Para API REST
+api = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.25.0",
+]
+
 # Todo junto
 all = [
-    "mexican-insurance[dev,viz,db]",
+    "mexican-insurance[dev,viz,db,api]",
 ]
 
 [project.scripts]
