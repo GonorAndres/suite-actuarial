@@ -5,6 +5,7 @@ Monitor de cumplimiento con normativa mexicana: RCS, CNSF, SAT, S-11.4.
 """
 
 import sys
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
@@ -16,19 +17,21 @@ import streamlit as st
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
-from mexican_insurance.regulatorio.rcs.calculadora_rcs import CalculadoraRCS
-from mexican_insurance.regulatorio.rcs.models import (
-    DatosAseguradora,
-    ParametrosRCS,
-    RiesgoSuscripcion,
+from mexican_insurance.core.validators import (
+    ConfiguracionRCSDanos,
+    ConfiguracionRCSInversion,
+    ConfiguracionRCSVida,
 )
-from mexican_insurance.regulatorio.reservas_tecnicas.calculadora_s11_4 import (
-    CalculadoraReservasTecnicasS11_4,
-)
+from mexican_insurance.regulatorio.agregador_rcs import AgregadorRCS
 from mexican_insurance.regulatorio.reservas_tecnicas.models import (
-    ConfiguracionReserva,
-    DatosPoliza,
-    TipoSeguro as TipoSeguroReservas,
+    ConfiguracionRM,
+    ConfiguracionRRC,
+)
+from mexican_insurance.regulatorio.reservas_tecnicas.reserva_matematica import (
+    CalculadoraRM,
+)
+from mexican_insurance.regulatorio.reservas_tecnicas.reserva_riesgos_curso import (
+    CalculadoraRRC,
 )
 from mexican_insurance.regulatorio.validaciones_sat.models import TipoSeguroFiscal
 from mexican_insurance.regulatorio.validaciones_sat.validador_primas import (
@@ -83,240 +86,354 @@ with tab1:
     # Formulario de entrada
     st.subheader("📊 Datos de la Aseguradora")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        activos = st.number_input(
-            "Activos Totales (Millones MXN)",
-            min_value=100.0,
+        st.markdown("**Vida**")
+        suma_asegurada_vida = st.number_input(
+            "Suma Asegurada Total Vida (Millones MXN)",
+            min_value=10.0,
             max_value=100_000.0,
-            value=5_000.0,
-            step=100.0,
-            format="%.2f",
-        )
-
-        pasivos = st.number_input(
-            "Pasivos Totales (Millones MXN)",
-            min_value=50.0,
-            max_value=90_000.0,
-            value=3_500.0,
-            step=100.0,
-            format="%.2f",
-        )
-
-        capital_pagado = st.number_input(
-            "Capital Pagado (Millones MXN)",
-            min_value=100.0,
-            max_value=10_000.0,
-            value=800.0,
+            value=500.0,
             step=50.0,
             format="%.2f",
         )
-
-    with col2:
-        primas_emitidas = st.number_input(
-            "Primas Emitidas Anuales (Millones MXN)",
-            min_value=100.0,
-            max_value=50_000.0,
-            value=2_000.0,
-            step=100.0,
+        reserva_matematica_input = st.number_input(
+            "Reserva Matematica (Millones MXN)",
+            min_value=0.0,
+            max_value=100_000.0,
+            value=350.0,
+            step=50.0,
             format="%.2f",
         )
+        edad_promedio = st.slider(
+            "Edad Promedio Asegurados",
+            min_value=18,
+            max_value=100,
+            value=45,
+        )
+        duracion_promedio = st.slider(
+            "Duracion Promedio Polizas (anios)",
+            min_value=1,
+            max_value=50,
+            value=15,
+        )
+        numero_asegurados = st.number_input(
+            "Numero de Asegurados",
+            min_value=1,
+            max_value=500_000,
+            value=10_000,
+            step=500,
+        )
 
-        siniestralidad = st.slider(
-            "Siniestralidad (%)",
-            min_value=30.0,
-            max_value=95.0,
-            value=65.0,
-            step=1.0,
-            help="Porcentaje de primas pagadas como siniestros",
-        ) / 100
-
-        volatilidad_primas = st.slider(
-            "Volatilidad de Primas (%)",
+    with col2:
+        st.markdown("**Danos**")
+        primas_retenidas = st.number_input(
+            "Primas Retenidas 12m (Millones MXN)",
+            min_value=10.0,
+            max_value=50_000.0,
+            value=250.0,
+            step=50.0,
+            format="%.2f",
+        )
+        reserva_siniestros_input = st.number_input(
+            "Reserva de Siniestros (Millones MXN)",
+            min_value=0.0,
+            max_value=50_000.0,
+            value=180.0,
+            step=50.0,
+            format="%.2f",
+        )
+        coef_variacion = st.slider(
+            "Coeficiente de Variacion (%)",
             min_value=5.0,
             max_value=50.0,
             value=15.0,
             step=1.0,
-            help="Desviación estándar de primas año a año",
+            help="Volatilidad historica de la siniestralidad",
         ) / 100
+        numero_ramos = st.slider(
+            "Numero de Ramos",
+            min_value=1,
+            max_value=20,
+            value=5,
+        )
+
+    with col3:
+        st.markdown("**Inversion**")
+        valor_acciones = st.number_input(
+            "Acciones (Millones MXN)",
+            min_value=0.0,
+            max_value=50_000.0,
+            value=50.0,
+            step=10.0,
+            format="%.2f",
+        )
+        valor_bonos_gub = st.number_input(
+            "Bonos Gubernamentales (Millones MXN)",
+            min_value=0.0,
+            max_value=100_000.0,
+            value=300.0,
+            step=50.0,
+            format="%.2f",
+        )
+        valor_bonos_corp = st.number_input(
+            "Bonos Corporativos (Millones MXN)",
+            min_value=0.0,
+            max_value=50_000.0,
+            value=150.0,
+            step=50.0,
+            format="%.2f",
+        )
+        valor_inmuebles_input = st.number_input(
+            "Inmuebles (Millones MXN)",
+            min_value=0.0,
+            max_value=50_000.0,
+            value=100.0,
+            step=10.0,
+            format="%.2f",
+        )
+        duracion_bonos = st.slider(
+            "Duracion Promedio Bonos (anios)",
+            min_value=0.5,
+            max_value=30.0,
+            value=7.5,
+            step=0.5,
+        )
+        calificacion_bonos = st.selectbox(
+            "Calificacion Promedio Bonos",
+            options=["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "CC", "C"],
+            index=1,
+        )
+
+    st.markdown("---")
+    capital_pagado = st.number_input(
+        "Capital Minimo Pagado (Millones MXN)",
+        min_value=1.0,
+        max_value=100_000.0,
+        value=800.0,
+        step=50.0,
+        format="%.2f",
+    )
 
     # Cálculo de RCS
     if st.button("🔍 Calcular RCS", type="primary"):
-        # Crear objetos para cálculo
-        datos_aseguradora = DatosAseguradora(
-            activos=Decimal(str(activos)),
-            pasivos=Decimal(str(pasivos)),
-            capital_pagado=Decimal(str(capital_pagado)),
-            primas_emitidas=Decimal(str(primas_emitidas)),
-        )
+        try:
+            # Convertir millones a unidades (la API trabaja en unidades)
+            M = Decimal("1000000")
 
-        parametros_rcs = ParametrosRCS(
-            riesgo_tasa_interes=Decimal("0.15"),  # 15% shock tasa
-            riesgo_accionario=Decimal("0.39"),  # 39% shock acciones
-            riesgo_inmobiliario=Decimal("0.25"),  # 25% shock inmuebles
-            riesgo_credito=Decimal("0.05"),  # 5% default
-            factor_correlacion=Decimal("0.5"),  # Correlación entre riesgos
-        )
-
-        # Calcular
-        calculadora = CalculadoraRCS()
-        resultado_rcs = calculadora.calcular_rcs_completo(
-            datos=datos_aseguradora,
-            parametros=parametros_rcs,
-        )
-
-        # Mostrar resultados
-        st.markdown("---")
-        st.subheader("✅ Resultados del Cálculo")
-
-        # Métricas principales
-        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-
-        capital_disponible = float(resultado_rcs.capital_disponible)
-        rcs_total = float(resultado_rcs.rcs_total)
-        ratio_cobertura = float(resultado_rcs.ratio_cobertura)
-        superavit = capital_disponible - rcs_total
-
-        with metric_col1:
-            st.metric(
-                "Capital Disponible",
-                f"${capital_disponible:,.0f}M",
-                help="Fondos propios ajustados",
+            config_vida = ConfiguracionRCSVida(
+                suma_asegurada_total=Decimal(str(suma_asegurada_vida)) * M,
+                reserva_matematica=Decimal(str(reserva_matematica_input)) * M,
+                edad_promedio_asegurados=edad_promedio,
+                duracion_promedio_polizas=duracion_promedio,
+                numero_asegurados=numero_asegurados,
             )
 
-        with metric_col2:
-            st.metric(
-                "RCS Requerido",
-                f"${rcs_total:,.0f}M",
-                help="Capital mínimo regulatorio",
+            config_danos = ConfiguracionRCSDanos(
+                primas_retenidas_12m=Decimal(str(primas_retenidas)) * M,
+                reserva_siniestros=Decimal(str(reserva_siniestros_input)) * M,
+                coeficiente_variacion=Decimal(str(coef_variacion)),
+                numero_ramos=numero_ramos,
             )
 
-        with metric_col3:
-            st.metric(
-                "Ratio de Cobertura",
-                f"{ratio_cobertura:.1f}%",
-                delta=f"{ratio_cobertura - 100:.1f}% vs mínimo",
-                delta_color="normal" if ratio_cobertura >= 100 else "inverse",
-                help="Capital Disponible / RCS (mínimo: 100%)",
+            config_inversion = ConfiguracionRCSInversion(
+                valor_acciones=Decimal(str(valor_acciones)) * M,
+                valor_bonos_gubernamentales=Decimal(str(valor_bonos_gub)) * M,
+                valor_bonos_corporativos=Decimal(str(valor_bonos_corp)) * M,
+                valor_inmuebles=Decimal(str(valor_inmuebles_input)) * M,
+                duracion_promedio_bonos=Decimal(str(duracion_bonos)),
+                calificacion_promedio_bonos=calificacion_bonos,
             )
 
-        with metric_col4:
-            st.metric(
-                "Superávit/Déficit",
-                f"${superavit:,.0f}M",
-                delta="Cumple" if superavit >= 0 else "Déficit",
-                delta_color="normal" if superavit >= 0 else "inverse",
+            agregador = AgregadorRCS(
+                config_vida=config_vida,
+                config_danos=config_danos,
+                config_inversion=config_inversion,
+                capital_minimo_pagado=Decimal(str(capital_pagado)) * M,
             )
 
-        # Desglose por componente de riesgo
-        st.markdown("---")
-        st.subheader("📊 Desglose de Riesgos")
+            resultado_rcs = agregador.calcular_rcs_completo()
 
-        col_left, col_right = st.columns([3, 2])
+            # Mostrar resultados
+            st.markdown("---")
+            st.subheader("✅ Resultados del Cálculo")
 
-        with col_left:
-            # Gráfico de waterfall de componentes RCS
-            componentes = resultado_rcs.desglose_riesgos
+            # Métricas principales
+            metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
 
-            labels = list(componentes.keys())
-            values = [float(v) for v in componentes.values()]
+            capital_disponible = float(resultado_rcs.capital_minimo_pagado) / 1e6
+            rcs_total = float(resultado_rcs.rcs_total) / 1e6
+            # ratio_solvencia is RCS/Capital; cobertura is Capital/RCS
+            ratio_solvencia_val = float(resultado_rcs.ratio_solvencia)
+            ratio_cobertura = (1.0 / ratio_solvencia_val * 100) if ratio_solvencia_val > 0 else 0.0
+            superavit = float(resultado_rcs.excedente_solvencia) / 1e6
 
-            fig_componentes = go.Figure(
-                go.Bar(
-                    x=labels,
-                    y=values,
-                    marker=dict(
-                        color=[
-                            "#1f77b4",
-                            "#ff7f0e",
-                            "#2ca02c",
-                            "#d62728",
-                            "#9467bd",
-                            "#8c564b",
-                        ][:len(labels)]
-                    ),
-                    text=[f"${v:,.0f}M" for v in values],
-                    textposition="outside",
+            with metric_col1:
+                st.metric(
+                    "Capital Disponible",
+                    f"${capital_disponible:,.0f}M",
+                    help="Fondos propios ajustados",
                 )
-            )
 
-            fig_componentes.update_layout(
-                title="Componentes del RCS (Millones MXN)",
-                xaxis_title="Tipo de Riesgo",
-                yaxis_title="RCS (Millones MXN)",
-                height=400,
-            )
-
-            st.plotly_chart(fig_componentes, use_container_width=True)
-
-        with col_right:
-            # Pie chart de distribución
-            fig_pie = go.Figure(
-                go.Pie(
-                    labels=labels,
-                    values=values,
-                    hole=0.4,
-                    textinfo="label+percent",
+            with metric_col2:
+                st.metric(
+                    "RCS Requerido",
+                    f"${rcs_total:,.0f}M",
+                    help="Capital mínimo regulatorio",
                 )
-            )
 
-            fig_pie.update_layout(
-                title="Distribución de Riesgos",
-                height=400,
-            )
+            with metric_col3:
+                st.metric(
+                    "Ratio de Cobertura",
+                    f"{ratio_cobertura:.1f}%",
+                    delta=f"{ratio_cobertura - 100:.1f}% vs mínimo",
+                    delta_color="normal" if ratio_cobertura >= 100 else "inverse",
+                    help="Capital Disponible / RCS (mínimo: 100%)",
+                )
 
-            st.plotly_chart(fig_pie, use_container_width=True)
+            with metric_col4:
+                st.metric(
+                    "Superávit/Déficit",
+                    f"${superavit:,.0f}M",
+                    delta="Cumple" if resultado_rcs.cumple_regulacion else "Déficit",
+                    delta_color="normal" if resultado_rcs.cumple_regulacion else "inverse",
+                )
 
-        # Tabla detallada
-        with st.expander("📋 Ver desglose detallado"):
-            df_riesgos = pd.DataFrame({
-                "Componente de Riesgo": labels,
-                "RCS Requerido (M MXN)": values,
-                "% del Total": [(v / rcs_total * 100) for v in values],
-            })
+            # Desglose por componente de riesgo
+            st.markdown("---")
+            st.subheader("📊 Desglose de Riesgos")
 
-            df_riesgos["RCS Requerido (M MXN)"] = df_riesgos[
-                "RCS Requerido (M MXN)"
-            ].apply(lambda x: f"${x:,.2f}")
-            df_riesgos["% del Total"] = df_riesgos["% del Total"].apply(
-                lambda x: f"{x:.2f}%"
-            )
+            col_left, col_right = st.columns([3, 2])
 
-            st.dataframe(df_riesgos, use_container_width=True, hide_index=True)
+            with col_left:
+                # Build desglose dict from resultado fields (in millions)
+                componentes = {
+                    "Vida - Mortalidad": float(resultado_rcs.rcs_mortalidad) / 1e6,
+                    "Vida - Longevidad": float(resultado_rcs.rcs_longevidad) / 1e6,
+                    "Vida - Invalidez": float(resultado_rcs.rcs_invalidez) / 1e6,
+                    "Vida - Gastos": float(resultado_rcs.rcs_gastos) / 1e6,
+                    "Danos - Prima": float(resultado_rcs.rcs_prima) / 1e6,
+                    "Danos - Reserva": float(resultado_rcs.rcs_reserva) / 1e6,
+                    "Inv - Mercado": float(resultado_rcs.rcs_mercado) / 1e6,
+                    "Inv - Credito": float(resultado_rcs.rcs_credito) / 1e6,
+                    "Inv - Concentracion": float(resultado_rcs.rcs_concentracion) / 1e6,
+                }
+                # Filter out zero components
+                componentes = {k: v for k, v in componentes.items() if v > 0}
 
-        # Semáforo regulatorio
-        st.markdown("---")
-        st.subheader("🚦 Evaluación Regulatoria")
+                labels = list(componentes.keys())
+                values = list(componentes.values())
 
-        if ratio_cobertura >= 200:
-            st.success(f"""
-            ✅ **EXCELENTE** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+                fig_componentes = go.Figure(
+                    go.Bar(
+                        x=labels,
+                        y=values,
+                        marker=dict(
+                            color=[
+                                "#1f77b4",
+                                "#ff7f0e",
+                                "#2ca02c",
+                                "#d62728",
+                                "#9467bd",
+                                "#8c564b",
+                                "#e377c2",
+                                "#7f7f7f",
+                                "#bcbd22",
+                            ][:len(labels)]
+                        ),
+                        text=[f"${v:,.0f}M" for v in values],
+                        textposition="outside",
+                    )
+                )
 
-            La aseguradora tiene un colchón de capital muy robusto (>200% del RCS mínimo).
-            Posición de solvencia muy sólida.
-            """)
-        elif ratio_cobertura >= 150:
-            st.success(f"""
-            ✅ **BUENO** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+                fig_componentes.update_layout(
+                    title="Componentes del RCS (Millones MXN)",
+                    xaxis_title="Tipo de Riesgo",
+                    yaxis_title="RCS (Millones MXN)",
+                    height=400,
+                )
 
-            La aseguradora cumple holgadamente con el RCS (>150% del mínimo).
-            Posición de solvencia sólida.
-            """)
-        elif ratio_cobertura >= 100:
-            st.warning(f"""
-            ⚠️ **CUMPLE** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+                st.plotly_chart(fig_componentes, use_container_width=True)
 
-            La aseguradora cumple con el RCS mínimo, pero tiene poco margen.
-            Se recomienda fortalecer el capital.
-            """)
-        else:
-            st.error(f"""
-            ❌ **DÉFICIT** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+            with col_right:
+                # Pie chart de distribución por categoría agregada
+                cat_labels = ["Suscripcion Vida", "Suscripcion Danos", "Inversion"]
+                cat_values = [
+                    float(resultado_rcs.rcs_suscripcion_vida) / 1e6,
+                    float(resultado_rcs.rcs_suscripcion_danos) / 1e6,
+                    float(resultado_rcs.rcs_inversion) / 1e6,
+                ]
 
-            La aseguradora **NO CUMPLE** con el RCS mínimo.
-            Requiere capitalización inmediata o plan de regularización.
-            """)
+                fig_pie = go.Figure(
+                    go.Pie(
+                        labels=cat_labels,
+                        values=cat_values,
+                        hole=0.4,
+                        textinfo="label+percent",
+                    )
+                )
+
+                fig_pie.update_layout(
+                    title="Distribución de Riesgos",
+                    height=400,
+                )
+
+                st.plotly_chart(fig_pie, use_container_width=True)
+
+            # Tabla detallada
+            with st.expander("📋 Ver desglose detallado"):
+                rcs_total_val = float(resultado_rcs.rcs_total) / 1e6
+                df_riesgos = pd.DataFrame({
+                    "Componente de Riesgo": labels,
+                    "RCS Requerido (M MXN)": values,
+                    "% del Total": [(v / rcs_total_val * 100) if rcs_total_val > 0 else 0.0 for v in values],
+                })
+
+                df_riesgos["RCS Requerido (M MXN)"] = df_riesgos[
+                    "RCS Requerido (M MXN)"
+                ].apply(lambda x: f"${x:,.2f}")
+                df_riesgos["% del Total"] = df_riesgos["% del Total"].apply(
+                    lambda x: f"{x:.2f}%"
+                )
+
+                st.dataframe(df_riesgos, use_container_width=True, hide_index=True)
+
+            # Semáforo regulatorio
+            st.markdown("---")
+            st.subheader("🚦 Evaluación Regulatoria")
+
+            if ratio_cobertura >= 200:
+                st.success(f"""
+                ✅ **EXCELENTE** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+
+                La aseguradora tiene un colchón de capital muy robusto (>200% del RCS mínimo).
+                Posición de solvencia muy sólida.
+                """)
+            elif ratio_cobertura >= 150:
+                st.success(f"""
+                ✅ **BUENO** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+
+                La aseguradora cumple holgadamente con el RCS (>150% del mínimo).
+                Posición de solvencia sólida.
+                """)
+            elif ratio_cobertura >= 100:
+                st.warning(f"""
+                ⚠️ **CUMPLE** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+
+                La aseguradora cumple con el RCS mínimo, pero tiene poco margen.
+                Se recomienda fortalecer el capital.
+                """)
+            else:
+                st.error(f"""
+                ❌ **DÉFICIT** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+
+                La aseguradora **NO CUMPLE** con el RCS mínimo.
+                Requiere capitalización inmediata o plan de regularización.
+                """)
+
+        except Exception as e:
+            st.error(f"Error en el cálculo de RCS: {e}")
 
 # ============================================================================
 # TAB 2: RESERVAS TÉCNICAS S-11.4
@@ -401,157 +518,172 @@ with tab2:
 
     # Cálculo de reservas
     if st.button("🔍 Calcular Reservas S-11.4", type="primary"):
-        # Crear objetos
-        tipo_enum = (
-            TipoSeguroReservas.VIDA
-            if tipo_seguro_reserva == "VIDA"
-            else TipoSeguroReservas.DANOS
-        )
+        try:
+            # --- RRC: Reserva de Riesgos en Curso ---
+            # prima_devengada is estimated from days elapsed
+            fraccion_devengada = Decimal(str(dias_transcurridos)) / Decimal(str(plazo_total_dias))
+            prima_devengada_calc = Decimal(str(prima_emitida)) * fraccion_devengada
 
-        datos_poliza = DatosPoliza(
-            tipo_seguro=tipo_enum,
-            suma_asegurada=Decimal(str(suma_asegurada_res)),
-            prima_emitida=Decimal(str(prima_emitida)),
-            dias_transcurridos=dias_transcurridos,
-            plazo_total_dias=plazo_total_dias,
-            edad_asegurado=edad_asegurado_res,
-        )
-
-        configuracion = ConfiguracionReserva(
-            tasa_interes_tecnico=Decimal(str(tasa_interes_res)),
-            factor_gastos_admin=Decimal("0.25"),  # 25% de prima para gastos
-        )
-
-        # Calcular
-        calculadora_reservas = CalculadoraReservasTecnicasS11_4()
-        resultado_reservas = calculadora_reservas.calcular_reservas(
-            poliza=datos_poliza,
-            config=configuracion,
-        )
-
-        # Mostrar resultados
-        st.markdown("---")
-        st.subheader("✅ Reservas Calculadas")
-
-        # Métricas
-        res_col1, res_col2, res_col3, res_col4 = st.columns(4)
-
-        rrc = float(resultado_reservas.reserva_riesgos_curso)
-        rm = float(resultado_reservas.reserva_matematica)
-        reserva_total = float(resultado_reservas.reserva_total)
-        pct_prima = (reserva_total / float(prima_emitida)) * 100
-
-        with res_col1:
-            st.metric(
-                "RRC",
-                f"${rrc:,.2f}",
-                help="Reserva de Riesgos en Curso",
-            )
-
-        with res_col2:
-            st.metric(
-                "RM",
-                f"${rm:,.2f}",
-                help="Reserva Matemática",
-            )
-
-        with res_col3:
-            st.metric(
-                "Reserva Total",
-                f"${reserva_total:,.2f}",
-                help="RRC + RM",
-            )
-
-        with res_col4:
-            st.metric(
-                "% de Prima",
-                f"{pct_prima:.1f}%",
-                help="Reserva como % de prima emitida",
-            )
-
-        # Visualización de reservas
-        st.markdown("---")
-
-        # Gráfico de evolución (simulado)
-        dias_rango = list(range(0, plazo_total_dias + 1, 30))
-        rrcs = []
-        rms = []
-
-        for dia in dias_rango:
-            poliza_temp = DatosPoliza(
-                tipo_seguro=tipo_enum,
-                suma_asegurada=Decimal(str(suma_asegurada_res)),
+            config_rrc = ConfiguracionRRC(
                 prima_emitida=Decimal(str(prima_emitida)),
-                dias_transcurridos=dia,
-                plazo_total_dias=plazo_total_dias,
-                edad_asegurado=edad_asegurado_res,
+                prima_devengada=prima_devengada_calc.quantize(Decimal("0.01")),
+                fecha_calculo=date.today(),
+                dias_promedio_vigencia=plazo_total_dias,
+                dias_promedio_transcurridos=dias_transcurridos,
             )
 
-            res_temp = calculadora_reservas.calcular_reservas(
-                poliza=poliza_temp,
-                config=configuracion,
+            calc_rrc = CalculadoraRRC(config_rrc)
+            resultado_rrc = calc_rrc.calcular()
+
+            # --- RM: Reserva Matematica (solo vida) ---
+            rm_val = Decimal("0")
+            resultado_rm = None
+            if tipo_seguro_reserva == "VIDA" and edad_asegurado_res is not None:
+                # Estimate edad_contratacion from dias_transcurridos
+                anios_transcurridos = dias_transcurridos // 365
+                edad_contratacion_est = max(edad_asegurado_res - anios_transcurridos, 18)
+                # Estimate prima nivelada anual from prima emitida and plazo
+                plazo_anios = max(plazo_total_dias // 365, 1)
+                prima_nivelada_est = Decimal(str(prima_emitida)) / Decimal(str(plazo_anios)) if plazo_anios > 0 else Decimal(str(prima_emitida))
+
+                config_rm = ConfiguracionRM(
+                    suma_asegurada=Decimal(str(suma_asegurada_res)),
+                    edad_asegurado=edad_asegurado_res,
+                    edad_contratacion=edad_contratacion_est,
+                    tasa_interes_tecnico=Decimal(str(tasa_interes_res)),
+                    prima_nivelada_anual=prima_nivelada_est.quantize(Decimal("0.01")),
+                )
+
+                calc_rm = CalculadoraRM(config_rm)
+                resultado_rm = calc_rm.calcular()
+                rm_val = resultado_rm.reserva_matematica
+
+            # Mostrar resultados
+            st.markdown("---")
+            st.subheader("✅ Reservas Calculadas")
+
+            # Métricas
+            res_col1, res_col2, res_col3, res_col4 = st.columns(4)
+
+            rrc = float(resultado_rrc.reserva_calculada)
+            rm = float(rm_val)
+            reserva_total = rrc + rm
+            pct_prima = (reserva_total / float(prima_emitida)) * 100 if prima_emitida > 0 else 0.0
+
+            with res_col1:
+                st.metric(
+                    "RRC",
+                    f"${rrc:,.2f}",
+                    help="Reserva de Riesgos en Curso",
+                )
+
+            with res_col2:
+                st.metric(
+                    "RM",
+                    f"${rm:,.2f}",
+                    help="Reserva Matemática",
+                )
+
+            with res_col3:
+                st.metric(
+                    "Reserva Total",
+                    f"${reserva_total:,.2f}",
+                    help="RRC + RM",
+                )
+
+            with res_col4:
+                st.metric(
+                    "% de Prima",
+                    f"{pct_prima:.1f}%",
+                    help="Reserva como % de prima emitida",
+                )
+
+            # Visualización de reservas
+            st.markdown("---")
+
+            # Gráfico de evolución (simulado)
+            dias_rango = list(range(0, plazo_total_dias + 1, 30))
+            rrcs = []
+            rms = []
+
+            for dia in dias_rango:
+                frac_dev = Decimal(str(dia)) / Decimal(str(plazo_total_dias))
+                prima_dev_temp = (Decimal(str(prima_emitida)) * frac_dev).quantize(Decimal("0.01"))
+
+                config_rrc_temp = ConfiguracionRRC(
+                    prima_emitida=Decimal(str(prima_emitida)),
+                    prima_devengada=prima_dev_temp,
+                    fecha_calculo=date.today(),
+                    dias_promedio_vigencia=plazo_total_dias,
+                    dias_promedio_transcurridos=dia,
+                )
+
+                res_rrc_temp = CalculadoraRRC(config_rrc_temp).calcular()
+                rrcs.append(float(res_rrc_temp.reserva_calculada))
+
+                # RM is constant for a given policy (depends on age, not days elapsed in short term)
+                rms.append(rm)
+
+            # Gráfico
+            fig_evolucion = go.Figure()
+
+            fig_evolucion.add_trace(
+                go.Scatter(
+                    x=dias_rango,
+                    y=rrcs,
+                    mode="lines",
+                    name="RRC",
+                    fill="tozeroy",
+                    line=dict(color="#1f77b4", width=2),
+                )
             )
 
-            rrcs.append(float(res_temp.reserva_riesgos_curso))
-            rms.append(float(res_temp.reserva_matematica))
-
-        # Gráfico
-        fig_evolucion = go.Figure()
-
-        fig_evolucion.add_trace(
-            go.Scatter(
-                x=dias_rango,
-                y=rrcs,
-                mode="lines",
-                name="RRC",
-                fill="tozeroy",
-                line=dict(color="#1f77b4", width=2),
+            fig_evolucion.add_trace(
+                go.Scatter(
+                    x=dias_rango,
+                    y=rms,
+                    mode="lines",
+                    name="RM",
+                    fill="tozeroy",
+                    line=dict(color="#ff7f0e", width=2),
+                )
             )
-        )
 
-        fig_evolucion.add_trace(
-            go.Scatter(
-                x=dias_rango,
-                y=rms,
-                mode="lines",
-                name="RM",
-                fill="tozeroy",
-                line=dict(color="#ff7f0e", width=2),
+            # Marcar día actual
+            fig_evolucion.add_vline(
+                x=dias_transcurridos,
+                line_dash="dash",
+                line_color="red",
+                annotation_text="Hoy",
             )
-        )
 
-        # Marcar día actual
-        fig_evolucion.add_vline(
-            x=dias_transcurridos,
-            line_dash="dash",
-            line_color="red",
-            annotation_text="Hoy",
-        )
+            fig_evolucion.update_layout(
+                title="Evolución de Reservas a lo largo de la Vigencia",
+                xaxis_title="Días desde inicio de póliza",
+                yaxis_title="Reserva (MXN)",
+                hovermode="x unified",
+                height=450,
+            )
 
-        fig_evolucion.update_layout(
-            title="Evolución de Reservas a lo largo de la Vigencia",
-            xaxis_title="Días desde inicio de póliza",
-            yaxis_title="Reserva (MXN)",
-            hovermode="x unified",
-            height=450,
-        )
+            st.plotly_chart(fig_evolucion, use_container_width=True)
 
-        st.plotly_chart(fig_evolucion, use_container_width=True)
+            # Interpretación
+            st.info(f"""
+            **RRC (Reserva de Riesgos en Curso):** ${rrc:,.2f}
 
-        # Interpretación
-        st.info(f"""
-        **RRC (Reserva de Riesgos en Curso):** ${rrc:,.2f}
+            Representa la prima no devengada. Para seguros de corto plazo (daños),
+            decrece linealmente conforme transcurre el tiempo.
 
-        Representa la prima no devengada. Para seguros de corto plazo (daños),
-        decrece linealmente conforme transcurre el tiempo.
+            **RM (Reserva Matemática):** ${rm:,.2f}
 
-        **RM (Reserva Matemática):** ${rm:,.2f}
+            Para seguros de vida de largo plazo, representa el valor presente de
+            obligaciones futuras menos primas futuras.
 
-        Para seguros de vida de largo plazo, representa el valor presente de
-        obligaciones futuras menos primas futuras.
+            **Fundamento Legal:** Circular Única de Seguros y Fianzas - Disposición S-11.4
+            """)
 
-        **Fundamento Legal:** Circular Única de Seguros y Fianzas - Disposición S-11.4
-        """)
+        except Exception as e:
+            st.error(f"Error en el cálculo de reservas: {e}")
 
 # ============================================================================
 # TAB 3: SAT - DEDUCIBILIDAD DE PRIMAS

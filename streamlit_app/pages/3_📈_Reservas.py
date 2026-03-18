@@ -18,11 +18,16 @@ from plotly.subplots import make_subplots
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
-from mexican_insurance.actuarial.reservas.bornhuetter_ferguson import (
+from mexican_insurance.reservas.bornhuetter_ferguson import (
     BornhuetterFerguson,
 )
-from mexican_insurance.actuarial.reservas.bootstrap import BootstrapReservas
-from mexican_insurance.actuarial.reservas.chain_ladder import ChainLadder
+from mexican_insurance.reservas.bootstrap import Bootstrap
+from mexican_insurance.reservas.chain_ladder import ChainLadder
+from mexican_insurance.core.validators import (
+    ConfiguracionChainLadder,
+    ConfiguracionBornhuetterFerguson,
+    ConfiguracionBootstrap,
+)
 
 # Configuración de la página
 st.set_page_config(
@@ -318,19 +323,24 @@ with tab2:
 
     # Calcular Chain Ladder
     with st.spinner("Calculando Chain Ladder..."):
-        cl = ChainLadder(df_triangulo)
-        factores = cl.calcular_factores_desarrollo()
-        triangulo_completo = cl.proyectar_triangulo()
-        reservas_cl = cl.calcular_reservas()
+        config_cl = ConfiguracionChainLadder()
+        cl = ChainLadder(config_cl)
+        resultado_cl = cl.calcular(df_triangulo)
+
+        # Extract results from ResultadoReserva
+        factores = [float(f) for f in resultado_cl.factores_desarrollo]
+        triangulo_completo = cl.obtener_triangulo_completo()
+        reservas_por_anio_cl = resultado_cl.reservas_por_anio
+        ultimates_por_anio_cl = resultado_cl.ultimates_por_anio
 
     # Métricas principales
     st.subheader("💰 Reservas Calculadas")
 
     cl_col1, cl_col2, cl_col3 = st.columns(3)
 
-    total_reserva_cl = reservas_cl.sum()
-    total_pagado = df_triangulo.sum().sum()  # Suma de todos los valores no-NaN
-    ratio_reserva = (total_reserva_cl / total_pagado) * 100
+    total_reserva_cl = float(resultado_cl.reserva_total)
+    total_pagado = float(resultado_cl.pagado_total)
+    ratio_reserva = (total_reserva_cl / total_pagado) * 100 if total_pagado > 0 else 0
 
     with cl_col1:
         st.metric(
@@ -412,10 +422,18 @@ with tab2:
 
     # Tabla de reservas por año
     with st.expander("📋 Ver reservas por año de origen"):
+        anos_cl = sorted(reservas_por_anio_cl.keys())
+        reservas_cl_values = [float(reservas_por_anio_cl[a]) for a in anos_cl]
+        pct_total = [
+            float(reservas_por_anio_cl[a]) / total_reserva_cl * 100
+            if total_reserva_cl > 0 else 0
+            for a in anos_cl
+        ]
+
         df_reservas_cl = pd.DataFrame({
-            "Año de Origen": df_triangulo.index,
-            "Reserva IBNR": reservas_cl,
-            "% del Total": (reservas_cl / total_reserva_cl * 100),
+            "Año de Origen": anos_cl,
+            "Reserva IBNR": reservas_cl_values,
+            "% del Total": pct_total,
         })
 
         df_reservas_cl["Reserva IBNR"] = df_reservas_cl["Reserva IBNR"].apply(
@@ -440,26 +458,30 @@ with tab3:
     """)
 
     # Calcular primas para B-F (simplificado: asumir que prima = siniestro inicial * 1.5)
-    primas_emitidas = df_triangulo.iloc[:, 0] * 1.5
+    primas_series = df_triangulo.iloc[:, 0] * 1.5
+    # Build primas_por_anio dict mapping year index -> Decimal premium
+    primas_por_anio = {
+        int(anio): Decimal(str(prima))
+        for anio, prima in primas_series.items()
+    }
 
     # Calcular B-F
     with st.spinner("Calculando Bornhuetter-Ferguson..."):
-        bf = BornhuetterFerguson(
-            triangulo_pagos=df_triangulo,
-            primas_emitidas=primas_emitidas,
-            expected_loss_ratio=Decimal(str(expected_loss_ratio)),
+        config_bf = ConfiguracionBornhuetterFerguson(
+            loss_ratio_apriori=Decimal(str(expected_loss_ratio)),
         )
+        bf = BornhuetterFerguson(config_bf)
+        resultado_bf = bf.calcular(df_triangulo, primas_por_anio)
 
-        factores_bf = bf.calcular_factores_desarrollo()
-        reservas_bf = bf.calcular_reservas()
+        reservas_por_anio_bf = resultado_bf.reservas_por_anio
 
     # Métricas principales
     st.subheader("💰 Reservas Calculadas (B-F)")
 
     bf_col1, bf_col2, bf_col3, bf_col4 = st.columns(4)
 
-    total_reserva_bf = sum(reservas_bf.values())
-    siniestros_esperados = sum(primas_emitidas) * expected_loss_ratio
+    total_reserva_bf = float(resultado_bf.reserva_total)
+    siniestros_esperados = sum(float(p) for p in primas_por_anio.values()) * expected_loss_ratio
 
     with bf_col1:
         st.metric(
@@ -484,7 +506,7 @@ with tab3:
 
     with bf_col4:
         diferencia_cl = total_reserva_bf - total_reserva_cl
-        pct_diferencia = (diferencia_cl / total_reserva_cl) * 100
+        pct_diferencia = (diferencia_cl / total_reserva_cl) * 100 if total_reserva_cl > 0 else 0
         st.metric(
             "Diferencia vs Chain Ladder",
             f"${diferencia_cl:,.0f}",
@@ -498,9 +520,9 @@ with tab3:
     st.subheader("⚖️ Comparación: B-F vs Chain Ladder")
 
     # Preparar datos para comparación
-    anos = list(reservas_bf.keys())
-    reservas_bf_list = list(reservas_bf.values())
-    reservas_cl_list = reservas_cl.tolist()
+    anos = sorted(reservas_por_anio_bf.keys())
+    reservas_bf_list = [float(reservas_por_anio_bf[a]) for a in anos]
+    reservas_cl_list = [float(reservas_por_anio_cl.get(a, Decimal("0"))) for a in anos]
 
     fig_comparacion = go.Figure()
 
@@ -580,12 +602,41 @@ with tab4:
     # Calcular Bootstrap
     if st.button("🚀 Ejecutar Bootstrap", type="primary"):
         with st.spinner(f"Ejecutando {n_simulaciones:,} simulaciones..."):
-            bootstrap = BootstrapReservas(df_triangulo, n_simulaciones=n_simulaciones)
-            bootstrap.ejecutar_bootstrap()
-            reservas_bootstrap = bootstrap.obtener_reservas_simuladas()
-            estadisticas = bootstrap.obtener_estadisticas(
-                nivel_confianza=nivel_confianza / 100
+            config_bs = ConfiguracionBootstrap(
+                num_simulaciones=n_simulaciones,
+                seed=42,
+                percentiles=[50, 75, 90, 95, 99],
             )
+            bs = Bootstrap(config_bs)
+            resultado_bs = bs.calcular(df_triangulo)
+
+            # Get the full simulation distribution for histogram
+            distribucion = bs.obtener_distribucion()
+            reservas_bootstrap = [float(r) for r in distribucion] if distribucion else []
+
+            # Risk metrics
+            var_value = float(bs.calcular_var(nivel_confianza / 100))
+            tvar_value = float(bs.calcular_tvar(nivel_confianza / 100))
+
+            # Build statistics from resultado and detalles
+            media_bs = float(resultado_bs.detalles["media"])
+            desv_std_bs = float(resultado_bs.detalles["desviacion_estandar"])
+
+            # Percentiles from resultado
+            percentiles_dict = resultado_bs.percentiles  # dict[int, Decimal]
+            percentil_inf_key = 100 - nivel_confianza
+            percentil_sup_key = nivel_confianza
+            percentil_inf = float(percentiles_dict.get(percentil_inf_key, Decimal("0")))
+            percentil_sup = float(percentiles_dict.get(percentil_sup_key, Decimal("0")))
+
+            estadisticas = {
+                "media": media_bs,
+                "desviacion_estandar": desv_std_bs,
+                "percentil_inferior": percentil_inf,
+                "percentil_superior": percentil_sup,
+                "var": var_value,
+                "tvar": tvar_value,
+            }
 
         # Guardar en session state
         st.session_state["bootstrap_ejecutado"] = True
