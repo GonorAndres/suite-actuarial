@@ -170,7 +170,7 @@ with st.sidebar:
     st.markdown("""
     - [Documentación](../docs/JOURNAL.md)
     - [Resumen Ejecutivo](../docs/resumen_ejecutivo.html)
-    - [GitHub](https://github.com/TuUsuario/Analisis_Seguros_Mexico)
+    - [GitHub](https://github.com/GonorAndres/Analisis_Seguros_Mexico)
     """)
 
     st.markdown("---")
@@ -184,5 +184,5 @@ with st.sidebar:
     - ✅ Fase 3: Reaseguro
     - ✅ Fase 4: Reservas
     - ✅ Fase 5A-D: Regulatorio
-    - 🚧 Fase 6: Dashboards
+    - Fase 6: Dashboards
     """)
