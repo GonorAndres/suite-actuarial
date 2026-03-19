@@ -5,6 +5,8 @@ Página principal de la suite de herramientas actuariales para el mercado
 asegurador mexicano.
 """
 
+from pathlib import Path
+
 import streamlit as st
 
 # Configuración de la página
@@ -139,6 +141,42 @@ with tech_col2:
     - **EMSSA-09**: Tablas de mortalidad
     """)
 
+# Recursos: Documentación y Resumen Ejecutivo
+st.markdown("---")
+st.header("Recursos")
+
+docs_root = Path(__file__).parent.parent / "docs"
+
+tab_doc, tab_resumen = st.tabs(["Documentación Técnica", "Resumen Ejecutivo"])
+
+with tab_doc:
+    journal_path = docs_root / "JOURNAL.md"
+    if journal_path.exists():
+        journal_text = journal_path.read_text(encoding="utf-8")
+        st.markdown(journal_text, unsafe_allow_html=False)
+    else:
+        st.warning("No se encontró el archivo docs/JOURNAL.md")
+
+with tab_resumen:
+    resumen_path = docs_root / "resumen_ejecutivo.html"
+    if resumen_path.exists():
+        html_content = resumen_path.read_text(encoding="utf-8")
+
+        # Download button for offline/PDF viewing
+        st.download_button(
+            label="Descargar Resumen Ejecutivo (HTML)",
+            data=html_content,
+            file_name="resumen_ejecutivo.html",
+            mime="text/html",
+            use_container_width=True,
+        )
+        st.caption("Abre el archivo descargado en tu navegador y usa Ctrl+P para exportar a PDF.")
+
+        # Embedded preview
+        st.components.v1.html(html_content, height=800, scrolling=True)
+    else:
+        st.warning("No se encontró el archivo docs/resumen_ejecutivo.html")
+
 # Footer
 st.markdown("---")
 st.markdown("""
@@ -167,11 +205,11 @@ with st.sidebar:
 
     st.header("Recursos")
 
-    st.markdown("""
-    - [Documentación](../docs/JOURNAL.md)
-    - [Resumen Ejecutivo](../docs/resumen_ejecutivo.html)
-    - [GitHub](https://github.com/GonorAndres/Analisis_Seguros_Mexico)
-    """)
+    st.link_button(
+        "GitHub",
+        "https://github.com/GonorAndres/Analisis_Seguros_Mexico",
+        use_container_width=True,
+    )
 
     st.markdown("---")
 
