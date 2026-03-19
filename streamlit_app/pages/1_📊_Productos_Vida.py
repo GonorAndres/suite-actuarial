@@ -36,13 +36,13 @@ from utils.visualizations import (
 # Configuración de la página
 st.set_page_config(
     page_title="Productos de Vida - Mexican Insurance",
-    page_icon="📊",
+    page_icon="V",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # Título
-st.title("📊 Dashboard de Productos de Vida")
+st.title("Dashboard de Productos de Vida")
 st.markdown("""
 Calculadora interactiva para productos de seguros de vida con análisis
 de sensibilidad y visualización de reservas matemáticas.
@@ -66,10 +66,10 @@ tabla = cargar_tabla_mortalidad()
 # ============================================================================
 
 with st.sidebar:
-    st.header("⚙️ Parámetros del Seguro")
+    st.header("Parametros del Seguro")
 
     # Datos del asegurado
-    st.subheader("👤 Asegurado")
+    st.subheader("Asegurado")
 
     edad = st.slider(
         "Edad",
@@ -98,7 +98,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Configuración del producto
-    st.subheader("🎯 Producto")
+    st.subheader("Producto")
 
     tipo_producto = st.selectbox(
         "Tipo de Producto",
@@ -139,7 +139,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Parámetros técnicos
-    st.subheader("🔧 Técnicos")
+    st.subheader("Tecnicos")
 
     tasa_interes = st.slider(
         "Tasa de Interés Técnico (%)",
@@ -153,11 +153,11 @@ with st.sidebar:
     st.markdown("---")
 
     st.info("""
-    **💡 Información:**
+    **Informacion:**
 
-    - **Temporal**: Protección solo en caso de fallecimiento durante el plazo
-    - **Ordinario**: Protección vitalicia o con pago limitado
-    - **Dotal**: Protección + ahorro (paga al final si sobrevive)
+    - **Temporal**: Proteccion solo en caso de fallecimiento durante el plazo
+    - **Ordinario**: Proteccion vitalicia o con pago limitado
+    - **Dotal**: Proteccion + ahorro (paga al final si sobrevive)
     """)
 
 # ============================================================================
@@ -218,10 +218,10 @@ metricas = crear_tabla_metricas_producto(
 # ============================================================================
 
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📋 Cotización",
-    "📊 Comparación",
-    "📈 Análisis de Sensibilidad",
-    "💰 Reservas Matemáticas",
+    "Cotizacion",
+    "Comparacion",
+    "Analisis de Sensibilidad",
+    "Reservas Matematicas",
 ])
 
 # ============================================================================
@@ -229,7 +229,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # ============================================================================
 
 with tab1:
-    st.header(f"💳 Cotización: {producto_nombre}")
+    st.header(f"Cotizacion: {producto_nombre}")
 
     # Métricas principales en cards
     col1, col2, col3, col4 = st.columns(4)
@@ -270,7 +270,7 @@ with tab1:
     col_left, col_right = st.columns([2, 1])
 
     with col_left:
-        st.subheader("📊 Desglose de Prima")
+        st.subheader("Desglose de Prima")
 
         # Tabla detallada
         prima_neta = resultado["prima_neta"]
@@ -294,7 +294,7 @@ with tab1:
         """)
 
     with col_right:
-        st.subheader("🥧 Composición")
+        st.subheader("Composicion")
 
         # Gráfico de pie con recargos
         if recargos:
@@ -304,42 +304,42 @@ with tab1:
     st.markdown("---")
 
     # Resumen de cobertura
-    st.subheader("🛡️ Resumen de Cobertura")
+    st.subheader("Resumen de Cobertura")
 
     if tipo_producto == "Temporal":
         st.success(f"""
-        ✅ **Cobertura:** Solo en caso de **fallecimiento** durante los **{plazo} años**
+        [OK] **Cobertura:** Solo en caso de **fallecimiento** durante los **{plazo} anos**
 
-        ✅ **Beneficio:** ${suma_asegurada:,.0f} MXN a los beneficiarios
+        [OK] **Beneficio:** ${suma_asegurada:,.0f} MXN a los beneficiarios
 
-        ❌ **Sin beneficio** si sobrevive al plazo
+        [X] **Sin beneficio** si sobrevive al plazo
         """)
 
     elif tipo_producto == "Ordinario":
         if pago_limitado:
             st.success(f"""
-            ✅ **Cobertura:** **Vitalicia** por fallecimiento
+            [OK] **Cobertura:** **Vitalicia** por fallecimiento
 
-            ✅ **Beneficio:** ${suma_asegurada:,.0f} MXN a los beneficiarios
+            [OK] **Beneficio:** ${suma_asegurada:,.0f} MXN a los beneficiarios
 
-            💰 **Pago de primas:** Solo hasta los {edad_pago_limitado} años
+            **Pago de primas:** Solo hasta los {edad_pago_limitado} anos
             """)
         else:
             st.success(f"""
-            ✅ **Cobertura:** **Vitalicia** por fallecimiento
+            [OK] **Cobertura:** **Vitalicia** por fallecimiento
 
-            ✅ **Beneficio:** ${suma_asegurada:,.0f} MXN a los beneficiarios
+            [OK] **Beneficio:** ${suma_asegurada:,.0f} MXN a los beneficiarios
 
-            💰 **Pago de primas:** Mientras viva el asegurado
+            **Pago de primas:** Mientras viva el asegurado
             """)
 
     elif tipo_producto == "Dotal":
         st.success(f"""
-        ✅ **Cobertura Dual:** Fallecimiento **O** supervivencia
+        [OK] **Cobertura Dual:** Fallecimiento **O** supervivencia
 
-        ✅ **Beneficio muerte:** ${suma_asegurada:,.0f} MXN a beneficiarios (si fallece en {plazo} años)
+        [OK] **Beneficio muerte:** ${suma_asegurada:,.0f} MXN a beneficiarios (si fallece en {plazo} anos)
 
-        ✅ **Beneficio vida:** ${suma_asegurada:,.0f} MXN al asegurado (si sobrevive {plazo} años)
+        [OK] **Beneficio vida:** ${suma_asegurada:,.0f} MXN al asegurado (si sobrevive {plazo} anos)
         """)
 
 # ============================================================================
@@ -347,7 +347,7 @@ with tab1:
 # ============================================================================
 
 with tab2:
-    st.header("⚖️ Comparación de Productos")
+    st.header("Comparacion de Productos")
 
     st.markdown("""
     Compara los **3 productos de vida** con los mismos parámetros
@@ -377,35 +377,35 @@ with tab2:
 
     # Análisis de diferencias
     st.markdown("---")
-    st.subheader("💡 Análisis")
+    st.subheader("Analisis")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
         st.info("""
         **Temporal**
-        - ✅ Prima más baja
-        - ✅ Protección pura
-        - ❌ Sin valor de rescate
-        - ❌ Sin beneficio por supervivencia
+        - [OK] Prima mas baja
+        - [OK] Proteccion pura
+        - [X] Sin valor de rescate
+        - [X] Sin beneficio por supervivencia
         """)
 
     with col2:
         st.info("""
         **Ordinario**
-        - ✅ Protección vitalicia
-        - ✅ Valor de rescate creciente
-        - ⚠️ Prima media
-        - ❌ Solo paga por muerte
+        - [OK] Proteccion vitalicia
+        - [OK] Valor de rescate creciente
+        - [!] Prima media
+        - [X] Solo paga por muerte
         """)
 
     with col3:
         st.info("""
         **Dotal**
-        - ✅ Doble beneficio
-        - ✅ Componente de ahorro
-        - ❌ Prima más alta
-        - ✅ Garantiza pago
+        - [OK] Doble beneficio
+        - [OK] Componente de ahorro
+        - [X] Prima mas alta
+        - [OK] Garantiza pago
         """)
 
 # ============================================================================
@@ -413,18 +413,18 @@ with tab2:
 # ============================================================================
 
 with tab3:
-    st.header("📈 Análisis de Sensibilidad")
+    st.header("Analisis de Sensibilidad")
 
     st.markdown("""
     Analiza cómo cambia la prima al variar diferentes parámetros.
     """)
 
     # Sub-tabs para diferentes análisis
-    subtab1, subtab2 = st.tabs(["👤 Sensibilidad por Edad", "📊 Sensibilidad por Tasa"])
+    subtab1, subtab2 = st.tabs(["Sensibilidad por Edad", "Sensibilidad por Tasa"])
 
     # Análisis de sensibilidad por edad
     with subtab1:
-        st.subheader("👤 Impacto de la Edad")
+        st.subheader("Impacto de la Edad")
 
         # Controles
         col_ctrl1, col_ctrl2 = st.columns(2)
@@ -459,15 +459,15 @@ with tab3:
         pct_incremento = (incremento / df_edad["Prima Total"].iloc[0]) * 100
 
         st.info(f"""
-        📊 **Insight:** De {edad_min_sens} a {edad_max_sens} años, la prima total aumenta
+        **Insight:** De {edad_min_sens} a {edad_max_sens} anos, la prima total aumenta
         **${incremento:,.2f} MXN** (**+{pct_incremento:.1f}%**)
 
-        La edad es el factor de riesgo más importante en seguros de vida.
+        La edad es el factor de riesgo mas importante en seguros de vida.
         """)
 
     # Análisis de sensibilidad por tasa
     with subtab2:
-        st.subheader("📊 Impacto de la Tasa de Interés")
+        st.subheader("Impacto de la Tasa de Interes")
 
         st.markdown("""
         La tasa de interés técnico afecta el valor presente de los pagos futuros.
@@ -499,10 +499,10 @@ with tab3:
         pct_reduccion = (reduccion / prima_tasa_baja) * 100
 
         st.info(f"""
-        📊 **Insight:** Al aumentar la tasa de 2% a 10%, la prima total se reduce
+        **Insight:** Al aumentar la tasa de 2% a 10%, la prima total se reduce
         **${reduccion:,.2f} MXN** (**-{pct_reduccion:.1f}%**)
 
-        Tasas de interés más altas permiten primas más bajas por el mayor rendimiento
+        Tasas de interes mas altas permiten primas mas bajas por el mayor rendimiento
         esperado de las inversiones.
         """)
 
@@ -511,7 +511,7 @@ with tab3:
 # ============================================================================
 
 with tab4:
-    st.header("💰 Reservas Matemáticas")
+    st.header("Reservas Matematicas")
 
     st.markdown("""
     La **reserva matemática** representa la obligación de la aseguradora en cada momento.
@@ -542,7 +542,7 @@ with tab4:
     st.plotly_chart(fig_reservas, use_container_width=True)
 
     # Tabla de datos
-    with st.expander("📋 Ver datos detallados"):
+    with st.expander("Ver datos detallados"):
         # Formatear DataFrame para mostrar
         df_display = df_reservas.copy()
         df_display["Reserva Matemática"] = df_display["Reserva Matemática"].apply(
@@ -556,7 +556,7 @@ with tab4:
 
     # Insights
     st.markdown("---")
-    st.subheader("💡 Interpretación")
+    st.subheader("Interpretacion")
 
     reserva_inicial = df_reservas["Reserva Matemática"].iloc[0]
     reserva_final = df_reservas["Reserva Matemática"].iloc[-1]

@@ -32,13 +32,13 @@ from mexican_insurance.core.validators import (
 # Configuración de la página
 st.set_page_config(
     page_title="Reservas Técnicas - Mexican Insurance",
-    page_icon="📈",
+    page_icon="R",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # Título
-st.title("📈 Dashboard de Reservas Técnicas")
+st.title("Dashboard de Reservas Tecnicas")
 st.markdown("""
 Análisis de reservas para siniestros incurridos pero no reportados (IBNR) y
 reservas de desarrollo usando métodos actuariales avanzados.
@@ -147,10 +147,10 @@ def crear_heatmap_triangulo(df: pd.DataFrame, title: str) -> go.Figure:
 # ============================================================================
 
 with st.sidebar:
-    st.header("⚙️ Configuración del Análisis")
+    st.header("Configuracion del Analisis")
 
     # Escenario de triángulo
-    st.subheader("📊 Datos de Entrada")
+    st.subheader("Datos de Entrada")
 
     escenario = st.selectbox(
         "Escenario de Triángulo",
@@ -161,7 +161,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Parámetros para métodos
-    st.subheader("🔧 Parámetros Técnicos")
+    st.subheader("Parametros Tecnicos")
 
     # Para Bornhuetter-Ferguson
     expected_loss_ratio = st.slider(
@@ -193,7 +193,7 @@ with st.sidebar:
     st.markdown("---")
 
     st.info("""
-    **💡 Métodos Disponibles:**
+    **Metodos Disponibles:**
 
     - **Chain Ladder**: Clásico, basado en factores de desarrollo
     - **Bornhuetter-Ferguson**: Combina datos históricos + expectativa
@@ -211,10 +211,10 @@ df_triangulo = generar_triangulo_ejemplo(escenario)
 # ============================================================================
 
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Triángulo de Datos",
-    "⛓️ Chain Ladder",
-    "🎯 Bornhuetter-Ferguson",
-    "🎲 Bootstrap",
+    "Triangulo de Datos",
+    "Chain Ladder",
+    "Bornhuetter-Ferguson",
+    "Bootstrap",
 ])
 
 # ============================================================================
@@ -222,7 +222,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # ============================================================================
 
 with tab1:
-    st.header("📊 Triángulo de Desarrollo")
+    st.header("Triangulo de Desarrollo")
 
     st.markdown("""
     El **triángulo de desarrollo** muestra los pagos acumulados de siniestros
@@ -240,10 +240,10 @@ with tab1:
 
     # Editor de triángulo (si es personalizado)
     if escenario == "Personalizado":
-        st.subheader("✏️ Editar Triángulo (Personalizado)")
+        st.subheader("Editar Triangulo (Personalizado)")
 
         st.warning("""
-        ⚠️ **Nota:** Modifica los valores del triángulo. Deja celdas vacías para
+        [!] **Nota:** Modifica los valores del triangulo. Deja celdas vacias para
         valores no disponibles (aún no transcurridos).
         """)
 
@@ -253,13 +253,13 @@ with tab1:
             num_rows="fixed",
         )
 
-        if st.button("💾 Aplicar Cambios"):
+        if st.button("Aplicar Cambios"):
             df_triangulo = df_editable
-            st.success("✅ Triángulo actualizado")
+            st.success("[OK] Triangulo actualizado")
             st.rerun()
 
     # Tabla con formato
-    st.subheader("📋 Datos del Triángulo")
+    st.subheader("Datos del Triangulo")
 
     df_display = df_triangulo.copy()
     for col in df_display.columns:
@@ -271,7 +271,7 @@ with tab1:
 
     # Estadísticas del triángulo
     st.markdown("---")
-    st.subheader("📊 Estadísticas")
+    st.subheader("Estadisticas")
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -314,7 +314,7 @@ with tab1:
 # ============================================================================
 
 with tab2:
-    st.header("⛓️ Método Chain Ladder")
+    st.header("Metodo Chain Ladder")
 
     st.markdown("""
     El **Chain Ladder** es el método más tradicional. Calcula factores de desarrollo
@@ -334,7 +334,7 @@ with tab2:
         ultimates_por_anio_cl = resultado_cl.ultimates_por_anio
 
     # Métricas principales
-    st.subheader("💰 Reservas Calculadas")
+    st.subheader("Reservas Calculadas")
 
     cl_col1, cl_col2, cl_col3 = st.columns(3)
 
@@ -366,7 +366,7 @@ with tab2:
     st.markdown("---")
 
     # Factores de desarrollo
-    st.subheader("📊 Factores de Desarrollo")
+    st.subheader("Factores de Desarrollo")
 
     col_left, col_right = st.columns([2, 1])
 
@@ -411,7 +411,7 @@ with tab2:
     st.markdown("---")
 
     # Triángulo completo proyectado
-    st.subheader("🔮 Triángulo Proyectado Completo")
+    st.subheader("Triangulo Proyectado Completo")
 
     # Crear heatmap del triángulo completo
     fig_completo = crear_heatmap_triangulo(
@@ -421,7 +421,7 @@ with tab2:
     st.plotly_chart(fig_completo, use_container_width=True)
 
     # Tabla de reservas por año
-    with st.expander("📋 Ver reservas por año de origen"):
+    with st.expander("Ver reservas por anio de origen"):
         anos_cl = sorted(reservas_por_anio_cl.keys())
         reservas_cl_values = [float(reservas_por_anio_cl[a]) for a in anos_cl]
         pct_total = [
@@ -450,7 +450,7 @@ with tab2:
 # ============================================================================
 
 with tab3:
-    st.header("🎯 Método Bornhuetter-Ferguson")
+    st.header("Metodo Bornhuetter-Ferguson")
 
     st.markdown("""
     **Bornhuetter-Ferguson** combina datos históricos con una estimación a priori
@@ -476,7 +476,7 @@ with tab3:
         reservas_por_anio_bf = resultado_bf.reservas_por_anio
 
     # Métricas principales
-    st.subheader("💰 Reservas Calculadas (B-F)")
+    st.subheader("Reservas Calculadas (B-F)")
 
     bf_col1, bf_col2, bf_col3, bf_col4 = st.columns(4)
 
@@ -517,7 +517,7 @@ with tab3:
     st.markdown("---")
 
     # Comparación B-F vs Chain Ladder
-    st.subheader("⚖️ Comparación: B-F vs Chain Ladder")
+    st.subheader("Comparacion: B-F vs Chain Ladder")
 
     # Preparar datos para comparación
     anos = sorted(reservas_por_anio_bf.keys())
@@ -555,7 +555,7 @@ with tab3:
     st.plotly_chart(fig_comparacion, use_container_width=True)
 
     # Tabla comparativa
-    with st.expander("📋 Ver tabla comparativa detallada"):
+    with st.expander("Ver tabla comparativa detallada"):
         df_comp = pd.DataFrame({
             "Año": anos,
             "Chain Ladder": reservas_cl_list,
@@ -592,7 +592,7 @@ with tab3:
 # ============================================================================
 
 with tab4:
-    st.header("🎲 Método Bootstrap")
+    st.header("Metodo Bootstrap")
 
     st.markdown("""
     **Bootstrap** estima la **incertidumbre** en las reservas mediante simulación.
@@ -600,7 +600,7 @@ with tab4:
     """)
 
     # Calcular Bootstrap
-    if st.button("🚀 Ejecutar Bootstrap", type="primary"):
+    if st.button("Ejecutar Bootstrap", type="primary"):
         with st.spinner(f"Ejecutando {n_simulaciones:,} simulaciones..."):
             config_bs = ConfiguracionBootstrap(
                 num_simulaciones=n_simulaciones,
@@ -653,12 +653,12 @@ with tab4:
         nivel_conf = st.session_state["nivel_conf"]
 
         st.success(
-            f"✅ Bootstrap ejecutado con {n_sims_ejecutadas:,} simulaciones "
+            f"[OK] Bootstrap ejecutado con {n_sims_ejecutadas:,} simulaciones "
             f"(nivel de confianza {nivel_conf}%)"
         )
 
         # Métricas principales
-        st.subheader("💰 Resultados Bootstrap")
+        st.subheader("Resultados Bootstrap")
 
         bs_col1, bs_col2, bs_col3, bs_col4 = st.columns(4)
 
@@ -698,7 +698,7 @@ with tab4:
         st.markdown("---")
 
         # Histograma de distribución
-        st.subheader("📊 Distribución de Reservas (Bootstrap)")
+        st.subheader("Distribucion de Reservas (Bootstrap)")
 
         fig_hist = go.Figure()
 
@@ -749,7 +749,7 @@ with tab4:
 
         # Comparación con otros métodos
         st.markdown("---")
-        st.subheader("⚖️ Comparación con Otros Métodos")
+        st.subheader("Comparacion con Otros Metodos")
 
         # Comparar media Bootstrap vs Chain Ladder y B-F
         metodos = ["Chain Ladder", "Bornhuetter-Ferguson", "Bootstrap (Media)"]
@@ -810,7 +810,7 @@ with tab4:
         """)
 
     else:
-        st.warning("👆 Haz clic en el botón para ejecutar el análisis Bootstrap")
+        st.warning("Haz clic en el boton para ejecutar el analisis Bootstrap")
 
 # ============================================================================
 # FOOTER

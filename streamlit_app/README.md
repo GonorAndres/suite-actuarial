@@ -2,7 +2,7 @@
 
 Dashboard interactivo para análisis actuarial del mercado asegurador mexicano.
 
-## 🚀 Inicio Rápido
+## Inicio Rapido
 
 ### 1. Instalar Dependencias
 
@@ -26,9 +26,9 @@ streamlit run Home.py
 
 El dashboard se abrirá en tu navegador en `http://localhost:8501`
 
-## 📊 Dashboards Disponibles
+## Dashboards Disponibles
 
-### 1. Productos de Vida 📊
+### 1. Productos de Vida
 
 Calculadora interactiva de seguros de vida con análisis completo:
 
@@ -44,7 +44,7 @@ Calculadora interactiva de seguros de vida con análisis completo:
   - Proyección de reservas matemáticas
   - Visualizaciones interactivas
 
-### 2. Cumplimiento Regulatorio 📋
+### 2. Cumplimiento Regulatorio
 
 Monitor de cumplimiento normativo mexicano:
 
@@ -66,7 +66,7 @@ Monitor de cumplimiento normativo mexicano:
   - Cálculo de retenciones ISR
   - Fundamentos legales
 
-### 3. Reservas Técnicas 📈
+### 3. Reservas Tecnicas
 
 Análisis avanzado de reservas para siniestros:
 
@@ -82,7 +82,7 @@ Análisis avanzado de reservas para siniestros:
   - Intervalos de confianza (Bootstrap)
   - Escenarios pre-configurados
 
-## 🎯 Estructura de Archivos
+## Estructura de Archivos
 
 ```
 streamlit_app/
@@ -101,7 +101,7 @@ streamlit_app/
 └── README.md                      # Esta documentación
 ```
 
-## ⚙️ Configuración
+## Configuracion
 
 ### Tema y Apariencia
 
@@ -124,7 +124,7 @@ Por defecto, Streamlit corre en `localhost:8501`. Para cambiar:
 streamlit run Home.py --server.port 8080
 ```
 
-## 📚 Uso de los Dashboards
+## Uso de los Dashboards
 
 ### Dashboard 1: Productos de Vida
 
@@ -169,7 +169,7 @@ streamlit run Home.py --server.port 8080
    - **Bornhuetter-Ferguson:** Método combinado
    - **Bootstrap:** Análisis de incertidumbre
 
-## 🔧 Desarrollo
+## Desarrollo
 
 ### Agregar Nueva Funcionalidad
 
@@ -203,13 +203,13 @@ if st.button("Ejecutar"):
     st.session_state["bootstrap_ejecutado"] = True
 ```
 
-## 📋 Requisitos del Sistema
+## Requisitos del Sistema
 
 - Python 3.11+
 - 4GB RAM mínimo (8GB recomendado para Bootstrap con muchas simulaciones)
 - Navegador moderno (Chrome, Firefox, Safari, Edge)
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Error: "ModuleNotFoundError: No module named 'mexican_insurance'"
 
@@ -235,14 +235,14 @@ pip install -e .
 pip install --upgrade plotly
 ```
 
-## 📖 Recursos
+## Recursos
 
 - [Documentación Streamlit](https://docs.streamlit.io)
 - [Plotly Docs](https://plotly.com/python/)
 - [Journal Técnico](../docs/JOURNAL.md) del proyecto
 - [Resumen Ejecutivo](../docs/resumen_ejecutivo.html)
 
-## 🤝 Contribuir
+## Contribuir
 
 Para agregar nuevos dashboards o features:
 
@@ -252,14 +252,14 @@ Para agregar nuevos dashboards o features:
 4. Documenta nuevos parámetros
 5. Agrega tests si aplica
 
-## 📝 Notas
+## Notas
 
 - Los cálculos usan tabla de mortalidad EMSSA-09
 - Tasas y parámetros son configurables
 - Resultados son indicativos, validar con actuario certificado para producción
 - Cumple normativa CNSF vigente a la fecha de desarrollo
 
-## 📄 Licencia
+## Licencia
 
 MIT License - ver archivo [LICENSE](../LICENSE)
 

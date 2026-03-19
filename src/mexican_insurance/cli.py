@@ -17,7 +17,7 @@ def main() -> int:
     Returns:
         Exit code (0 = éxito, 1 = error)
     """
-    print(f"🏦 Mexican Insurance Analytics Suite v{__version__}")
+    print(f"Mexican Insurance Analytics Suite v{__version__}")
     print("=" * 60)
 
     if len(sys.argv) < 2:
@@ -79,7 +79,7 @@ def ejecutar_demo() -> None:
     )
     from mexican_insurance.products.vida.temporal import VidaTemporal
 
-    print("\n📊 Demostración: Cálculo de Prima de Vida Temporal")
+    print("\nDemostracion: Calculo de Prima de Vida Temporal")
     print("-" * 60)
 
     try:
@@ -121,18 +121,18 @@ def ejecutar_demo() -> None:
             print(f"  - {concepto:20s}: ${monto:>10,.2f}")
 
         print("\n" + "=" * 60)
-        print("\n✓ Demostración completada exitosamente!")
+        print("\nDemostracion completada exitosamente.")
         print(
             "\nPara más ejemplos, revisa los notebooks en notebooks/01_ejemplo_basico.ipynb"
         )
 
     except FileNotFoundError:
-        print("\n❌ Error: No se encontró la tabla de mortalidad EMSSA-09")
+        print("\nError: No se encontro la tabla de mortalidad EMSSA-09")
         print(
             "   Asegúrate de que el archivo data/mortality_tables/emssa_09.csv existe."
         )
     except Exception as e:
-        print(f"\n❌ Error durante la demostración: {e}")
+        print(f"\nError durante la demostracion: {e}")
 
 
 def ejecutar_api() -> None:

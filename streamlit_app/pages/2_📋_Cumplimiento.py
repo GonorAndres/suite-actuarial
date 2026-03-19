@@ -47,13 +47,13 @@ from mexican_insurance.regulatorio.validaciones_sat.validador_siniestros import 
 # Configuración de la página
 st.set_page_config(
     page_title="Cumplimiento Regulatorio - Mexican Insurance",
-    page_icon="📋",
+    page_icon="C",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # Título
-st.title("📋 Dashboard de Cumplimiento Regulatorio")
+st.title("Dashboard de Cumplimiento Regulatorio")
 st.markdown("""
 Monitor de cumplimiento con las principales normativas del mercado asegurador mexicano.
 """)
@@ -63,10 +63,10 @@ Monitor de cumplimiento con las principales normativas del mercado asegurador me
 # ============================================================================
 
 tab1, tab2, tab3, tab4 = st.tabs([
-    "🏦 RCS - Solvencia",
-    "📊 Reservas S-11.4",
-    "💰 SAT - Deducibilidad",
-    "💳 SAT - Retenciones",
+    "RCS - Solvencia",
+    "Reservas S-11.4",
+    "SAT - Deducibilidad",
+    "SAT - Retenciones",
 ])
 
 # ============================================================================
@@ -74,7 +74,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # ============================================================================
 
 with tab1:
-    st.header("🏦 Requerimientos de Capital de Solvencia (RCS)")
+    st.header("Requerimientos de Capital de Solvencia (RCS)")
 
     st.markdown("""
     El **RCS** es el capital mínimo que debe mantener una aseguradora para cubrir
@@ -84,7 +84,7 @@ with tab1:
     st.markdown("---")
 
     # Formulario de entrada
-    st.subheader("📊 Datos de la Aseguradora")
+    st.subheader("Datos de la Aseguradora")
 
     col1, col2, col3 = st.columns(3)
 
@@ -217,7 +217,7 @@ with tab1:
     )
 
     # Cálculo de RCS
-    if st.button("🔍 Calcular RCS", type="primary"):
+    if st.button("Calcular RCS", type="primary"):
         try:
             # Convertir millones a unidades (la API trabaja en unidades)
             M = Decimal("1000000")
@@ -257,7 +257,7 @@ with tab1:
 
             # Mostrar resultados
             st.markdown("---")
-            st.subheader("✅ Resultados del Cálculo")
+            st.subheader("Resultados del Calculo")
 
             # Métricas principales
             metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
@@ -302,7 +302,7 @@ with tab1:
 
             # Desglose por componente de riesgo
             st.markdown("---")
-            st.subheader("📊 Desglose de Riesgos")
+            st.subheader("Desglose de Riesgos")
 
             col_left, col_right = st.columns([3, 2])
 
@@ -382,7 +382,7 @@ with tab1:
                 st.plotly_chart(fig_pie, use_container_width=True)
 
             # Tabla detallada
-            with st.expander("📋 Ver desglose detallado"):
+            with st.expander("Ver desglose detallado"):
                 rcs_total_val = float(resultado_rcs.rcs_total) / 1e6
                 df_riesgos = pd.DataFrame({
                     "Componente de Riesgo": labels,
@@ -401,32 +401,32 @@ with tab1:
 
             # Semáforo regulatorio
             st.markdown("---")
-            st.subheader("🚦 Evaluación Regulatoria")
+            st.subheader("Evaluacion Regulatoria")
 
             if ratio_cobertura >= 200:
                 st.success(f"""
-                ✅ **EXCELENTE** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+                [OK] **EXCELENTE** - Ratio de Cobertura: {ratio_cobertura:.1f}%
 
                 La aseguradora tiene un colchón de capital muy robusto (>200% del RCS mínimo).
                 Posición de solvencia muy sólida.
                 """)
             elif ratio_cobertura >= 150:
                 st.success(f"""
-                ✅ **BUENO** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+                [OK] **BUENO** - Ratio de Cobertura: {ratio_cobertura:.1f}%
 
                 La aseguradora cumple holgadamente con el RCS (>150% del mínimo).
                 Posición de solvencia sólida.
                 """)
             elif ratio_cobertura >= 100:
                 st.warning(f"""
-                ⚠️ **CUMPLE** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+                [!] **CUMPLE** - Ratio de Cobertura: {ratio_cobertura:.1f}%
 
                 La aseguradora cumple con el RCS mínimo, pero tiene poco margen.
                 Se recomienda fortalecer el capital.
                 """)
             else:
                 st.error(f"""
-                ❌ **DÉFICIT** - Ratio de Cobertura: {ratio_cobertura:.1f}%
+                [X] **DEFICIT** - Ratio de Cobertura: {ratio_cobertura:.1f}%
 
                 La aseguradora **NO CUMPLE** con el RCS mínimo.
                 Requiere capitalización inmediata o plan de regularización.
@@ -440,7 +440,7 @@ with tab1:
 # ============================================================================
 
 with tab2:
-    st.header("📊 Reservas Técnicas según Circular S-11.4")
+    st.header("Reservas Tecnicas segun Circular S-11.4")
 
     st.markdown("""
     Cálculo de **Reserva de Riesgos en Curso (RRC)** y **Reserva Matemática (RM)**
@@ -450,7 +450,7 @@ with tab2:
     st.markdown("---")
 
     # Formulario de entrada
-    st.subheader("📝 Datos de la Póliza")
+    st.subheader("Datos de la Poliza")
 
     col1, col2 = st.columns(2)
 
@@ -517,7 +517,7 @@ with tab2:
             tasa_interes_res = 0.055
 
     # Cálculo de reservas
-    if st.button("🔍 Calcular Reservas S-11.4", type="primary"):
+    if st.button("Calcular Reservas S-11.4", type="primary"):
         try:
             # --- RRC: Reserva de Riesgos en Curso ---
             # prima_devengada is estimated from days elapsed
@@ -560,7 +560,7 @@ with tab2:
 
             # Mostrar resultados
             st.markdown("---")
-            st.subheader("✅ Reservas Calculadas")
+            st.subheader("Reservas Calculadas")
 
             # Métricas
             res_col1, res_col2, res_col3, res_col4 = st.columns(4)
@@ -690,7 +690,7 @@ with tab2:
 # ============================================================================
 
 with tab3:
-    st.header("💰 SAT - Deducibilidad de Primas")
+    st.header("SAT - Deducibilidad de Primas")
 
     st.markdown("""
     Valida si las **primas de seguro pagadas** son **deducibles** para efectos del
@@ -700,7 +700,7 @@ with tab3:
     st.markdown("---")
 
     # Formulario
-    st.subheader("📝 Datos de la Prima")
+    st.subheader("Datos de la Prima")
 
     col1, col2 = st.columns(2)
 
@@ -747,7 +747,7 @@ with tab3:
             uma_anual = 37_500  # Valor por defecto
 
     # Validar deducibilidad
-    if st.button("🔍 Validar Deducibilidad", type="primary"):
+    if st.button("Validar Deducibilidad", type="primary"):
         # Mapear tipo de seguro a enum
         tipo_map = {
             "Gastos Médicos": TipoSeguroFiscal.GASTOS_MEDICOS,
@@ -770,7 +770,7 @@ with tab3:
 
         # Mostrar resultados
         st.markdown("---")
-        st.subheader("✅ Resultado de la Validación")
+        st.subheader("Resultado de la Validacion")
 
         # Métricas
         ded_col1, ded_col2, ded_col3 = st.columns(3)
@@ -803,13 +803,13 @@ with tab3:
 
         # Fundamento legal
         st.markdown("---")
-        st.subheader("📋 Fundamento Legal")
+        st.subheader("Fundamento Legal")
 
         fundamento = resultado_deducibilidad.fundamento_legal
 
         if es_deducible:
             st.success(f"""
-            ✅ **PRIMA DEDUCIBLE**
+            [OK] **PRIMA DEDUCIBLE**
 
             **Fundamento:** {fundamento}
 
@@ -820,7 +820,7 @@ with tab3:
             """)
         else:
             st.warning(f"""
-            ❌ **PRIMA NO DEDUCIBLE**
+            [X] **PRIMA NO DEDUCIBLE**
 
             **Fundamento:** {fundamento}
 
@@ -831,13 +831,13 @@ with tab3:
         # Recomendaciones
         if es_pf and tipo_seguro_sat == "Gastos Médicos":
             st.info("""
-            💡 **Recomendación:** Los gastos médicos mayores son 100% deducibles
-            para personas físicas sin límite. Conserva tus comprobantes fiscales.
+            **Recomendacion:** Los gastos medicos mayores son 100% deducibles
+            para personas fisicas sin limite. Conserva tus comprobantes fiscales.
             """)
         elif es_pf and tipo_seguro_sat == "Pensiones":
             limite_umas = 5 * uma_anual
             st.info(f"""
-            💡 **Recomendación:** Las primas de pensiones son deducibles hasta
+            **Recomendacion:** Las primas de pensiones son deducibles hasta
             **5 UMAs anuales** (${limite_umas:,.2f} MXN).
             """)
 
@@ -846,7 +846,7 @@ with tab3:
 # ============================================================================
 
 with tab4:
-    st.header("💳 SAT - Retenciones de ISR en Pagos")
+    st.header("SAT - Retenciones de ISR en Pagos")
 
     st.markdown("""
     Calcula las **retenciones de ISR** que debe aplicar la aseguradora en pagos
@@ -856,7 +856,7 @@ with tab4:
     st.markdown("---")
 
     # Formulario
-    st.subheader("📝 Datos del Pago")
+    st.subheader("Datos del Pago")
 
     col1, col2 = st.columns(2)
 
@@ -901,7 +901,7 @@ with tab4:
         )
 
     # Calcular retención
-    if st.button("🔍 Calcular Retención ISR", type="primary"):
+    if st.button("Calcular Retencion ISR", type="primary"):
         # Determinar flags
         es_renta = "Renta Vitalicia" in tipo_seguro_ret
         es_retiro = "Retiro Ahorro" in tipo_seguro_ret
@@ -928,7 +928,7 @@ with tab4:
 
         # Mostrar resultados
         st.markdown("---")
-        st.subheader("✅ Cálculo de Retención")
+        st.subheader("Calculo de Retencion")
 
         # Métricas
         ret_col1, ret_col2, ret_col3, ret_col4 = st.columns(4)
@@ -998,11 +998,11 @@ with tab4:
 
         # Explicación
         st.markdown("---")
-        st.subheader("📋 Fundamento y Explicación")
+        st.subheader("Fundamento y Explicacion")
 
         if requiere_ret:
             st.warning(f"""
-            ⚠️ **REQUIERE RETENCIÓN DE ISR**
+            [!] **REQUIERE RETENCION DE ISR**
 
             **Tasa de retención:** {tasa_ret:.1f}%
 
@@ -1017,7 +1017,7 @@ with tab4:
             """)
         else:
             st.success(f"""
-            ✅ **NO REQUIERE RETENCIÓN**
+            [OK] **NO REQUIERE RETENCION**
 
             Este tipo de pago está **exento** de retención de ISR.
 

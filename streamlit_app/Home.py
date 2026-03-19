@@ -10,13 +10,13 @@ import streamlit as st
 # Configuración de la página
 st.set_page_config(
     page_title="Mexican Insurance Analytics Suite",
-    page_icon="🏢",
+    page_icon="H",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # Título principal
-st.title("🏢 Mexican Insurance Analytics Suite")
+st.title("Mexican Insurance Analytics Suite")
 st.markdown("### Suite de Herramientas Actuariales para el Mercado Mexicano")
 
 # Bienvenida
@@ -59,14 +59,14 @@ with col4:
 
 # Sección de información
 st.markdown("---")
-st.header("📊 Dashboards Disponibles")
+st.header("Dashboards Disponibles")
 
 # Crear tres columnas para los dashboards
 dash_col1, dash_col2, dash_col3 = st.columns(3)
 
 with dash_col1:
     st.markdown("""
-    ### 📊 Productos de Vida
+    ### Productos de Vida
 
     Calculadora interactiva de productos de seguros de vida:
     - **Vida Temporal**: Protección por plazo definido
@@ -82,7 +82,7 @@ with dash_col1:
 
 with dash_col2:
     st.markdown("""
-    ### 📋 Cumplimiento Regulatorio
+    ### Cumplimiento Regulatorio
 
     Monitor de cumplimiento normativo mexicano:
     - **RCS**: Requerimientos de Capital de Solvencia
@@ -98,7 +98,7 @@ with dash_col2:
 
 with dash_col3:
     st.markdown("""
-    ### 📈 Reservas Técnicas
+    ### Reservas Tecnicas
 
     Análisis avanzado de reservas para siniestros:
     - **Chain Ladder**: Método clásico de triángulos
@@ -114,7 +114,7 @@ with dash_col3:
 
 # Información técnica
 st.markdown("---")
-st.header("🔧 Información Técnica")
+st.header("Informacion Tecnica")
 
 tech_col1, tech_col2 = st.columns(2)
 
@@ -146,14 +146,14 @@ st.markdown("""
     <p><strong>Nota Legal:</strong> Esta librería es para propósitos educativos y de análisis.
     Para uso en producción en una aseguradora, valida los resultados con un actuario certificado
     y asegúrate de cumplir con todas las regulaciones de la CNSF.</p>
-    <p>📧 Para preguntas o reportar bugs, abre un issue en GitHub.</p>
-    <p>⭐ Mexican Insurance Analytics Suite | MIT License</p>
+    <p>Para preguntas o reportar bugs, abre un issue en GitHub.</p>
+    <p>Mexican Insurance Analytics Suite | MIT License</p>
 </div>
 """, unsafe_allow_html=True)
 
 # Sidebar con información adicional
 with st.sidebar:
-    st.header("🚀 Inicio Rápido")
+    st.header("Inicio Rapido")
 
     st.markdown("""
     **Navega usando el menú lateral:**
@@ -165,7 +165,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    st.header("📚 Recursos")
+    st.header("Recursos")
 
     st.markdown("""
     - [Documentación](../docs/JOURNAL.md)
@@ -179,10 +179,10 @@ with st.sidebar:
     **Versión:** 1.0.0
 
     **Fases Completadas:**
-    - ✅ Fase 1: Fundamentos
-    - ✅ Fase 2: Productos
-    - ✅ Fase 3: Reaseguro
-    - ✅ Fase 4: Reservas
-    - ✅ Fase 5A-D: Regulatorio
+    - [OK] Fase 1: Fundamentos
+    - [OK] Fase 2: Productos
+    - [OK] Fase 3: Reaseguro
+    - [OK] Fase 4: Reservas
+    - [OK] Fase 5A-D: Regulatorio
     - Fase 6: Dashboards
     """)
