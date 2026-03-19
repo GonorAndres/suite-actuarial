@@ -170,10 +170,44 @@ with tab_resumen:
             mime="text/html",
             use_container_width=True,
         )
-        st.caption("Abre el archivo descargado en tu navegador y usa Ctrl+P para exportar a PDF.")
+        st.caption(
+            "Descarga el archivo y abre en tu navegador para la experiencia completa. "
+            "Usa Ctrl+P para exportar a PDF."
+        )
 
-        # Embedded preview
-        st.components.v1.html(html_content, height=800, scrolling=True)
+        # Extract just the body content, strip sidebar/nav, fix for embedding
+        import re
+
+        # Pull content between <body> and </body>
+        body_match = re.search(r"<body[^>]*>(.*)</body>", html_content, re.DOTALL)
+        if body_match:
+            body_html = body_match.group(1)
+            # Remove the fixed sidebar/table of contents (div with class containing "sidebar" or "toc")
+            body_html = re.sub(
+                r'<div[^>]*class="[^"]*(?:sidebar|toc|table-of-contents)[^"]*"[^>]*>.*?</div>',
+                "", body_html, flags=re.DOTALL | re.IGNORECASE,
+            )
+            # Remove any fixed-position nav
+            body_html = re.sub(r"<nav[^>]*>.*?</nav>", "", body_html, flags=re.DOTALL)
+
+        # Extract styles
+        style_match = re.search(r"<style[^>]*>(.*?)</style>", html_content, re.DOTALL)
+        styles = style_match.group(1) if style_match else ""
+
+        # Build clean embedded version
+        clean_html = f"""
+        <html><head><style>
+        {styles}
+        body {{ margin: 0; padding: 20px; font-family: sans-serif; }}
+        .sidebar, .toc, nav {{ display: none !important; }}
+        .main-content {{ margin-left: 0 !important; padding-left: 0 !important; }}
+        a[href^="#"] {{ pointer-events: none; color: inherit; text-decoration: none; }}
+        </style></head><body>
+        {body_html if body_match else '<p>No se pudo extraer el contenido.</p>'}
+        </body></html>
+        """
+
+        st.components.v1.html(clean_html, height=800, scrolling=True)
     else:
         st.warning("No se encontró el archivo docs/resumen_ejecutivo.html")
 
