@@ -66,9 +66,7 @@ class Bootstrap:
         self.residuales: pd.DataFrame | None = None
         self.simulaciones_reservas: list[Decimal] | None = None
 
-        # Fijar semilla para reproducibilidad
-        if self.config.seed is not None:
-            np.random.seed(self.config.seed)
+        # Seed is applied at the start of calcular() for reproducibility
 
     def calcular_triangulo_ajustado(
         self, triangulo: pd.DataFrame, cl: ChainLadder
@@ -149,40 +147,49 @@ class Bootstrap:
         """
         Genera un triángulo sintético re-muestreando residuales.
 
+        Preserva la estructura triangular (NaN en celdas futuras) del
+        triángulo original almacenado en self._triangulo_original.
+
         Args:
             triangulo_ajustado: Valores ajustados
             residuales: Residuales de Pearson
 
         Returns:
-            Triángulo sintético
+            Triángulo sintético con misma estructura NaN que el original
         """
-        # Extraer residuales válidos (no-NaN)
+        # Extraer residuales válidos (no-NaN y no-cero)
         residuales_validos = residuales.values.flatten()
         residuales_validos = residuales_validos[~np.isnan(residuales_validos)]
-
-        if len(residuales_validos) == 0:
-            # Fallback: retornar triángulo ajustado
-            return triangulo_ajustado.copy()
+        residuales_no_cero = residuales_validos[np.abs(residuales_validos) > 1e-10]
 
         # Crear triángulo sintético
         triangulo_sintetico = triangulo_ajustado.copy()
 
-        # Re-muestrear residuales para cada celda
         for i in range(len(triangulo_ajustado)):
             for j in range(triangulo_ajustado.shape[1]):
+                # Preserve NaN structure from original triangle
+                if hasattr(self, '_triangulo_original') and pd.isna(
+                    self._triangulo_original.iloc[i, j]
+                ):
+                    triangulo_sintetico.iloc[i, j] = None
+                    continue
+
                 esp = triangulo_ajustado.iloc[i, j]
 
                 if pd.notna(esp) and esp > 0:
-                    # Re-muestrear un residual
-                    r_sample = np.random.choice(residuales_validos)
+                    if len(residuales_no_cero) > 0:
+                        # Resample from non-zero residuals
+                        r_sample = np.random.choice(residuales_no_cero)
+                    else:
+                        # If residuals are all zero (perfectly fitting data),
+                        # add scaled process variance (over-dispersed Poisson).
+                        # Scale factor ~0.05 gives reasonable 5-15% CV for
+                        # small triangles with well-fitting data.
+                        r_sample = np.random.normal(0, 0.05)
 
-                    # Generar valor sintético
                     # valor_sintetico = esperado + residual * sqrt(esperado)
                     valor_sintetico = esp + r_sample * np.sqrt(esp)
-
-                    # Asegurar no-negativo
                     valor_sintetico = max(0, valor_sintetico)
-
                     triangulo_sintetico.iloc[i, j] = valor_sintetico
 
         return triangulo_sintetico
@@ -252,6 +259,13 @@ class Bootstrap:
         """
         # Validar triángulo
         validar_triangulo(triangulo)
+
+        # Seed at calculation time for reproducibility
+        if self.config.seed is not None:
+            np.random.seed(self.config.seed)
+
+        # Store original triangle for NaN structure preservation
+        self._triangulo_original = triangulo.copy()
 
         # 1. Ejecutar Chain Ladder base
         from mexican_insurance.core.validators import ConfiguracionChainLadder

@@ -605,7 +605,7 @@ with tab4:
             config_bs = ConfiguracionBootstrap(
                 num_simulaciones=n_simulaciones,
                 seed=42,
-                percentiles=[50, 75, 90, 95, 99],
+                percentiles=[5, 10, 25, 50, 75, 90, 95, 99],
             )
             bs = Bootstrap(config_bs)
             resultado_bs = bs.calcular(df_triangulo)
