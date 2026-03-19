@@ -178,11 +178,12 @@ if tipo_producto == "Temporal":
     plazo_display = plazo
 
 elif tipo_producto == "Ordinario":
+    plazo_pago_ord = (edad_pago_limitado - edad) if pago_limitado and edad_pago_limitado else None
     resultado = calcular_prima_ordinario(
         edad=edad,
         sexo=sexo,
         suma_asegurada=suma_asegurada,
-        edad_pago_limitado=edad_pago_limitado if pago_limitado else None,
+        plazo_pago=plazo_pago_ord,
         tasa_interes=tasa_interes,
         tabla=tabla,
     )

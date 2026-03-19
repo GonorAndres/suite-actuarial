@@ -84,23 +84,29 @@ def calcular_prima_ordinario(
     edad: int,
     sexo: str,
     suma_asegurada: float,
-    edad_pago_limitado: int | None,
+    plazo_pago: int | None,
     tasa_interes: float,
     tabla: TablaMortalidad,
 ) -> Dict:
     """
     Calcula prima para Vida Ordinario.
 
+    Args:
+        plazo_pago: Periodo de pago de primas (None = vitalicio)
+
     Returns:
         Diccionario con resultados del cálculo
     """
+    plazo = plazo_pago if plazo_pago else 20
     config = ConfiguracionProducto(
         nombre_producto="Vida Ordinario",
+        plazo_years=plazo,
         tasa_interes_tecnico=Decimal(str(tasa_interes)),
-        edad_pago_limitado=edad_pago_limitado,
     )
 
-    producto = VidaOrdinario(config, tabla)
+    producto = VidaOrdinario(
+        config, tabla, plazo_pago_vitalicio=(plazo_pago is None)
+    )
     asegurado = crear_asegurado(edad, sexo, suma_asegurada)
 
     resultado = producto.calcular_prima(asegurado, frecuencia_pago="mensual")
@@ -179,6 +185,7 @@ def calcular_reserva_matematica(
     elif producto_tipo == "Ordinario":
         config = ConfiguracionProducto(
             nombre_producto="Vida Ordinario",
+            plazo_years=plazo,
             tasa_interes_tecnico=Decimal(str(tasa_interes)),
         )
         producto = VidaOrdinario(config, tabla)
@@ -194,7 +201,7 @@ def calcular_reserva_matematica(
     else:
         raise ValueError(f"Tipo de producto desconocido: {producto_tipo}")
 
-    reserva = producto.calcular_reserva_matematica(asegurado, anos_transcurridos)
+    reserva = producto.calcular_reserva(asegurado, anio=anos_transcurridos)
     return float(reserva)
 
 
