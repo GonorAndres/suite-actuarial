@@ -66,7 +66,7 @@ tabla = cargar_tabla_mortalidad()
 # ============================================================================
 
 with st.sidebar:
-    st.header("Parametros del Seguro")
+    st.header("Parámetros del Seguro")
 
     # Datos del asegurado
     st.subheader("Asegurado")
@@ -139,7 +139,7 @@ with st.sidebar:
     st.markdown("---")
 
     # Parámetros técnicos
-    st.subheader("Tecnicos")
+    st.subheader("Técnicos")
 
     tasa_interes = st.slider(
         "Tasa de Interés Técnico (%)",
@@ -153,11 +153,11 @@ with st.sidebar:
     st.markdown("---")
 
     st.info("""
-    **Informacion:**
+    **Información:**
 
-    - **Temporal**: Proteccion solo en caso de fallecimiento durante el plazo
-    - **Ordinario**: Proteccion vitalicia o con pago limitado
-    - **Dotal**: Proteccion + ahorro (paga al final si sobrevive)
+    - **Temporal**: Protección solo en caso de fallecimiento durante el plazo
+    - **Ordinario**: Protección vitalicia o con pago limitado
+    - **Dotal**: Protección + ahorro (paga al final si sobrevive)
     """)
 
 # ============================================================================
@@ -219,10 +219,10 @@ metricas = crear_tabla_metricas_producto(
 # ============================================================================
 
 tab1, tab2, tab3, tab4 = st.tabs([
-    "Cotizacion",
-    "Comparacion",
-    "Analisis de Sensibilidad",
-    "Reservas Matematicas",
+    "Cotización",
+    "Comparación",
+    "Análisis de Sensibilidad",
+    "Reservas Matemáticas",
 ])
 
 # ============================================================================
@@ -230,7 +230,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # ============================================================================
 
 with tab1:
-    st.header(f"Cotizacion: {producto_nombre}")
+    st.header(f"Cotización: {producto_nombre}")
 
     # Métricas principales en cards
     col1, col2, col3, col4 = st.columns(4)
@@ -295,7 +295,7 @@ with tab1:
         """)
 
     with col_right:
-        st.subheader("Composicion")
+        st.subheader("Composición")
 
         # Gráfico de pie con recargos
         if recargos:
@@ -309,7 +309,7 @@ with tab1:
 
     if tipo_producto == "Temporal":
         st.success(f"""
-        [OK] **Cobertura:** Solo en caso de **fallecimiento** durante los **{plazo} anos**
+        [OK] **Cobertura:** Solo en caso de **fallecimiento** durante los **{plazo} años**
 
         [OK] **Beneficio:** ${suma_asegurada:,.0f} MXN a los beneficiarios
 
@@ -323,7 +323,7 @@ with tab1:
 
             [OK] **Beneficio:** ${suma_asegurada:,.0f} MXN a los beneficiarios
 
-            **Pago de primas:** Solo hasta los {edad_pago_limitado} anos
+            **Pago de primas:** Solo hasta los {edad_pago_limitado} años
             """)
         else:
             st.success(f"""
@@ -338,9 +338,9 @@ with tab1:
         st.success(f"""
         [OK] **Cobertura Dual:** Fallecimiento **O** supervivencia
 
-        [OK] **Beneficio muerte:** ${suma_asegurada:,.0f} MXN a beneficiarios (si fallece en {plazo} anos)
+        [OK] **Beneficio muerte:** ${suma_asegurada:,.0f} MXN a beneficiarios (si fallece en {plazo} años)
 
-        [OK] **Beneficio vida:** ${suma_asegurada:,.0f} MXN al asegurado (si sobrevive {plazo} anos)
+        [OK] **Beneficio vida:** ${suma_asegurada:,.0f} MXN al asegurado (si sobrevive {plazo} años)
         """)
 
 # ============================================================================
@@ -348,7 +348,7 @@ with tab1:
 # ============================================================================
 
 with tab2:
-    st.header("Comparacion de Productos")
+    st.header("Comparación de Productos")
 
     st.markdown("""
     Compara los **3 productos de vida** con los mismos parámetros
@@ -378,15 +378,15 @@ with tab2:
 
     # Análisis de diferencias
     st.markdown("---")
-    st.subheader("Analisis")
+    st.subheader("Análisis")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
         st.info("""
         **Temporal**
-        - [OK] Prima mas baja
-        - [OK] Proteccion pura
+        - [OK] Prima más baja
+        - [OK] Protección pura
         - [X] Sin valor de rescate
         - [X] Sin beneficio por supervivencia
         """)
@@ -394,7 +394,7 @@ with tab2:
     with col2:
         st.info("""
         **Ordinario**
-        - [OK] Proteccion vitalicia
+        - [OK] Protección vitalicia
         - [OK] Valor de rescate creciente
         - [!] Prima media
         - [X] Solo paga por muerte
@@ -405,7 +405,7 @@ with tab2:
         **Dotal**
         - [OK] Doble beneficio
         - [OK] Componente de ahorro
-        - [X] Prima mas alta
+        - [X] Prima más alta
         - [OK] Garantiza pago
         """)
 
@@ -414,7 +414,7 @@ with tab2:
 # ============================================================================
 
 with tab3:
-    st.header("Analisis de Sensibilidad")
+    st.header("Análisis de Sensibilidad")
 
     st.markdown("""
     Analiza cómo cambia la prima al variar diferentes parámetros.
@@ -460,15 +460,15 @@ with tab3:
         pct_incremento = (incremento / df_edad["Prima Total"].iloc[0]) * 100
 
         st.info(f"""
-        **Insight:** De {edad_min_sens} a {edad_max_sens} anos, la prima total aumenta
+        **Insight:** De {edad_min_sens} a {edad_max_sens} años, la prima total aumenta
         **${incremento:,.2f} MXN** (**+{pct_incremento:.1f}%**)
 
-        La edad es el factor de riesgo mas importante en seguros de vida.
+        La edad es el factor de riesgo más importante en seguros de vida.
         """)
 
     # Análisis de sensibilidad por tasa
     with subtab2:
-        st.subheader("Impacto de la Tasa de Interes")
+        st.subheader("Impacto de la Tasa de Interés")
 
         st.markdown("""
         La tasa de interés técnico afecta el valor presente de los pagos futuros.
@@ -503,7 +503,7 @@ with tab3:
         **Insight:** Al aumentar la tasa de 2% a 10%, la prima total se reduce
         **${reduccion:,.2f} MXN** (**-{pct_reduccion:.1f}%**)
 
-        Tasas de interes mas altas permiten primas mas bajas por el mayor rendimiento
+        Tasas de interés más altas permiten primas más bajas por el mayor rendimiento
         esperado de las inversiones.
         """)
 
@@ -512,7 +512,7 @@ with tab3:
 # ============================================================================
 
 with tab4:
-    st.header("Reservas Matematicas")
+    st.header("Reservas Matemáticas")
 
     st.markdown("""
     La **reserva matemática** representa la obligación de la aseguradora en cada momento.
@@ -557,7 +557,7 @@ with tab4:
 
     # Insights
     st.markdown("---")
-    st.subheader("Interpretacion")
+    st.subheader("Interpretación")
 
     reserva_inicial = df_reservas["Reserva Matemática"].iloc[0]
     reserva_final = df_reservas["Reserva Matemática"].iloc[-1]

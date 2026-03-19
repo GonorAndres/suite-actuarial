@@ -98,7 +98,7 @@ with dash_col2:
 
 with dash_col3:
     st.markdown("""
-    ### Reservas Tecnicas
+    ### Reservas Técnicas
 
     Análisis avanzado de reservas para siniestros:
     - **Chain Ladder**: Método clásico de triángulos
@@ -114,7 +114,7 @@ with dash_col3:
 
 # Información técnica
 st.markdown("---")
-st.header("Informacion Tecnica")
+st.header("Información Técnica")
 
 tech_col1, tech_col2 = st.columns(2)
 
@@ -153,7 +153,7 @@ st.markdown("""
 
 # Sidebar con información adicional
 with st.sidebar:
-    st.header("Inicio Rapido")
+    st.header("Inicio Rápido")
 
     st.markdown("""
     **Navega usando el menú lateral:**

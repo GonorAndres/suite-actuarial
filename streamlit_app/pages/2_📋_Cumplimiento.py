@@ -99,7 +99,7 @@ with tab1:
             format="%.2f",
         )
         reserva_matematica_input = st.number_input(
-            "Reserva Matematica (Millones MXN)",
+            "Reserva Matemática (Millones MXN)",
             min_value=0.0,
             max_value=100_000.0,
             value=350.0,
@@ -113,13 +113,13 @@ with tab1:
             value=45,
         )
         duracion_promedio = st.slider(
-            "Duracion Promedio Polizas (anios)",
+            "Duración Promedio Pólizas (años)",
             min_value=1,
             max_value=50,
             value=15,
         )
         numero_asegurados = st.number_input(
-            "Numero de Asegurados",
+            "Número de Asegurados",
             min_value=1,
             max_value=500_000,
             value=10_000,
@@ -127,7 +127,7 @@ with tab1:
         )
 
     with col2:
-        st.markdown("**Danos**")
+        st.markdown("**Daños**")
         primas_retenidas = st.number_input(
             "Primas Retenidas 12m (Millones MXN)",
             min_value=10.0,
@@ -145,22 +145,22 @@ with tab1:
             format="%.2f",
         )
         coef_variacion = st.slider(
-            "Coeficiente de Variacion (%)",
+            "Coeficiente de Variación (%)",
             min_value=5.0,
             max_value=50.0,
             value=15.0,
             step=1.0,
-            help="Volatilidad historica de la siniestralidad",
+            help="Volatilidad histórica de la siniestralidad",
         ) / 100
         numero_ramos = st.slider(
-            "Numero de Ramos",
+            "Número de Ramos",
             min_value=1,
             max_value=20,
             value=5,
         )
 
     with col3:
-        st.markdown("**Inversion**")
+        st.markdown("**Inversión**")
         valor_acciones = st.number_input(
             "Acciones (Millones MXN)",
             min_value=0.0,
@@ -194,21 +194,21 @@ with tab1:
             format="%.2f",
         )
         duracion_bonos = st.slider(
-            "Duracion Promedio Bonos (anios)",
+            "Duración Promedio Bonos (años)",
             min_value=0.5,
             max_value=30.0,
             value=7.5,
             step=0.5,
         )
         calificacion_bonos = st.selectbox(
-            "Calificacion Promedio Bonos",
+            "Calificación Promedio Bonos",
             options=["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "CC", "C"],
             index=1,
         )
 
     st.markdown("---")
     capital_pagado = st.number_input(
-        "Capital Minimo Pagado (Millones MXN)",
+        "Capital Mínimo Pagado (Millones MXN)",
         min_value=1.0,
         max_value=100_000.0,
         value=800.0,
@@ -257,7 +257,7 @@ with tab1:
 
             # Mostrar resultados
             st.markdown("---")
-            st.subheader("Resultados del Calculo")
+            st.subheader("Resultados del Cálculo")
 
             # Métricas principales
             metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
@@ -313,11 +313,11 @@ with tab1:
                     "Vida - Longevidad": float(resultado_rcs.rcs_longevidad) / 1e6,
                     "Vida - Invalidez": float(resultado_rcs.rcs_invalidez) / 1e6,
                     "Vida - Gastos": float(resultado_rcs.rcs_gastos) / 1e6,
-                    "Danos - Prima": float(resultado_rcs.rcs_prima) / 1e6,
-                    "Danos - Reserva": float(resultado_rcs.rcs_reserva) / 1e6,
+                    "Daños - Prima": float(resultado_rcs.rcs_prima) / 1e6,
+                    "Daños - Reserva": float(resultado_rcs.rcs_reserva) / 1e6,
                     "Inv - Mercado": float(resultado_rcs.rcs_mercado) / 1e6,
-                    "Inv - Credito": float(resultado_rcs.rcs_credito) / 1e6,
-                    "Inv - Concentracion": float(resultado_rcs.rcs_concentracion) / 1e6,
+                    "Inv - Crédito": float(resultado_rcs.rcs_credito) / 1e6,
+                    "Inv - Concentración": float(resultado_rcs.rcs_concentracion) / 1e6,
                 }
                 # Filter out zero components
                 componentes = {k: v for k, v in componentes.items() if v > 0}
@@ -358,7 +358,7 @@ with tab1:
 
             with col_right:
                 # Pie chart de distribución por categoría agregada
-                cat_labels = ["Suscripcion Vida", "Suscripcion Danos", "Inversion"]
+                cat_labels = ["Suscripción Vida", "Suscripción Daños", "Inversión"]
                 cat_values = [
                     float(resultado_rcs.rcs_suscripcion_vida) / 1e6,
                     float(resultado_rcs.rcs_suscripcion_danos) / 1e6,
@@ -401,7 +401,7 @@ with tab1:
 
             # Semáforo regulatorio
             st.markdown("---")
-            st.subheader("Evaluacion Regulatoria")
+            st.subheader("Evaluación Regulatoria")
 
             if ratio_cobertura >= 200:
                 st.success(f"""
@@ -440,7 +440,7 @@ with tab1:
 # ============================================================================
 
 with tab2:
-    st.header("Reservas Tecnicas segun Circular S-11.4")
+    st.header("Reservas Técnicas según Circular S-11.4")
 
     st.markdown("""
     Cálculo de **Reserva de Riesgos en Curso (RRC)** y **Reserva Matemática (RM)**
@@ -450,7 +450,7 @@ with tab2:
     st.markdown("---")
 
     # Formulario de entrada
-    st.subheader("Datos de la Poliza")
+    st.subheader("Datos de la Póliza")
 
     col1, col2 = st.columns(2)
 
@@ -770,7 +770,7 @@ with tab3:
 
         # Mostrar resultados
         st.markdown("---")
-        st.subheader("Resultado de la Validacion")
+        st.subheader("Resultado de la Validación")
 
         # Métricas
         ded_col1, ded_col2, ded_col3 = st.columns(3)
@@ -831,13 +831,13 @@ with tab3:
         # Recomendaciones
         if es_pf and tipo_seguro_sat == "Gastos Médicos":
             st.info("""
-            **Recomendacion:** Los gastos medicos mayores son 100% deducibles
-            para personas fisicas sin limite. Conserva tus comprobantes fiscales.
+            **Recomendación:** Los gastos médicos mayores son 100% deducibles
+            para personas físicas sin límite. Conserva tus comprobantes fiscales.
             """)
         elif es_pf and tipo_seguro_sat == "Pensiones":
             limite_umas = 5 * uma_anual
             st.info(f"""
-            **Recomendacion:** Las primas de pensiones son deducibles hasta
+            **Recomendación:** Las primas de pensiones son deducibles hasta
             **5 UMAs anuales** (${limite_umas:,.2f} MXN).
             """)
 
@@ -901,7 +901,7 @@ with tab4:
         )
 
     # Calcular retención
-    if st.button("Calcular Retencion ISR", type="primary"):
+    if st.button("Calcular Retención ISR", type="primary"):
         # Determinar flags
         es_renta = "Renta Vitalicia" in tipo_seguro_ret
         es_retiro = "Retiro Ahorro" in tipo_seguro_ret
@@ -928,7 +928,7 @@ with tab4:
 
         # Mostrar resultados
         st.markdown("---")
-        st.subheader("Calculo de Retencion")
+        st.subheader("Cálculo de Retención")
 
         # Métricas
         ret_col1, ret_col2, ret_col3, ret_col4 = st.columns(4)
@@ -998,11 +998,11 @@ with tab4:
 
         # Explicación
         st.markdown("---")
-        st.subheader("Fundamento y Explicacion")
+        st.subheader("Fundamento y Explicación")
 
         if requiere_ret:
             st.warning(f"""
-            [!] **REQUIERE RETENCION DE ISR**
+            [!] **REQUIERE RETENCIÓN DE ISR**
 
             **Tasa de retención:** {tasa_ret:.1f}%
 
@@ -1017,7 +1017,7 @@ with tab4:
             """)
         else:
             st.success(f"""
-            [OK] **NO REQUIERE RETENCION**
+            [OK] **NO REQUIERE RETENCIÓN**
 
             Este tipo de pago está **exento** de retención de ISR.
 

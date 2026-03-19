@@ -2,7 +2,7 @@
 
 Dashboard interactivo para análisis actuarial del mercado asegurador mexicano.
 
-## Inicio Rapido
+## Inicio Rápido
 
 ### 1. Instalar Dependencias
 
@@ -66,7 +66,7 @@ Monitor de cumplimiento normativo mexicano:
   - Cálculo de retenciones ISR
   - Fundamentos legales
 
-### 3. Reservas Tecnicas
+### 3. Reservas Técnicas
 
 Análisis avanzado de reservas para siniestros:
 
@@ -101,7 +101,7 @@ streamlit_app/
 └── README.md                      # Esta documentación
 ```
 
-## Configuracion
+## Configuración
 
 ### Tema y Apariencia
 

@@ -22,6 +22,31 @@
 
 ---
 
+## REGLA: ORTOGRAFÍA EN ESPAÑOL -- ACENTOS Y Ñ
+
+**IMPORTANTE**: Todo texto en español visible al usuario DEBE usar acentos ortográficos (tildes) y la letra ñ correctamente. Esto aplica a:
+
+- Títulos, encabezados y etiquetas en Streamlit (`st.title`, `st.header`, `st.subheader`, tabs, botones)
+- Texto en `st.markdown`, `st.info`, `st.warning`, `st.success`, `st.error`
+- Strings de ayuda (`help=...`)
+- Contenido de la documentación (README, blog posts, JOURNAL)
+- Mensajes de la CLI
+
+**NO aplica a:**
+- Nombres de variables, funciones o clases en Python (ej: `calcular_prima`, `ConfiguracionRCSDanos`)
+- Nombres de campos Pydantic (ej: `tasa_interes_tecnico`)
+- Paths de imports
+- Claves de diccionarios usados programáticamente
+
+**Palabras comunes que requieren acento:**
+- Cotización, Comparación, Parámetros, Técnico, Información, Protección
+- Matemática, Análisis, Interpretación, Configuración, Estadísticas
+- Triángulo, Distribución, Método, Composición, Evaluación, Cálculo
+- Años (no "anos" ni "anios"), Daños, Duración, Pólizas, Número
+- Suscripción, Inversión, Retención, Rápido
+
+---
+
 ## Información General del Proyecto
 
 ### Proyecto
