@@ -10,11 +10,11 @@ from decimal import Decimal
 import pandas as pd
 import pytest
 
-from mexican_insurance.core.validators import (
+from suite_actuarial.core.validators import (
     ConfiguracionBornhuetterFerguson,
     MetodoPromedio,
 )
-from mexican_insurance.reservas.bornhuetter_ferguson import BornhuetterFerguson
+from suite_actuarial.reservas.bornhuetter_ferguson import BornhuetterFerguson
 
 
 @pytest.fixture
@@ -101,8 +101,8 @@ class TestBornhuetterFergusonPorcentajesReportados:
         bf = BornhuetterFerguson(config_lr_65)
 
         # Primero necesitamos factores de desarrollo
-        from mexican_insurance.core.validators import ConfiguracionChainLadder
-        from mexican_insurance.reservas.chain_ladder import ChainLadder
+        from suite_actuarial.core.validators import ConfiguracionChainLadder
+        from suite_actuarial.reservas.chain_ladder import ChainLadder
 
         config_cl = ConfiguracionChainLadder()
         cl = ChainLadder(config_cl)
@@ -126,8 +126,8 @@ class TestBornhuetterFergusonPorcentajesReportados:
         """Años con más desarrollo deben tener mayor % reportado"""
         bf = BornhuetterFerguson(config_lr_65)
 
-        from mexican_insurance.core.validators import ConfiguracionChainLadder
-        from mexican_insurance.reservas.chain_ladder import ChainLadder
+        from suite_actuarial.core.validators import ConfiguracionChainLadder
+        from suite_actuarial.reservas.chain_ladder import ChainLadder
 
         config_cl = ConfiguracionChainLadder()
         cl = ChainLadder(config_cl)
@@ -161,7 +161,7 @@ class TestBornhuetterFergusonUltimates:
         bf = BornhuetterFerguson(config_lr_65)
         resultado = bf.calcular(triangulo_simple, primas_por_anio)
 
-        from mexican_insurance.reservas.triangulo import (
+        from suite_actuarial.reservas.triangulo import (
             obtener_ultima_diagonal,
         )
 

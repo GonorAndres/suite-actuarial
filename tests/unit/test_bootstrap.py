@@ -10,8 +10,8 @@ from decimal import Decimal
 import pandas as pd
 import pytest
 
-from mexican_insurance.core.validators import ConfiguracionBootstrap
-from mexican_insurance.reservas.bootstrap import Bootstrap
+from suite_actuarial.core.validators import ConfiguracionBootstrap
+from suite_actuarial.reservas.bootstrap import Bootstrap
 
 
 @pytest.fixture
@@ -88,8 +88,8 @@ class TestBootstrapTrianguloAjustado:
         bs = Bootstrap(config_100_sims)
 
         # Primero ejecutar Chain Ladder para tener factores
-        from mexican_insurance.core.validators import ConfiguracionChainLadder
-        from mexican_insurance.reservas.chain_ladder import ChainLadder
+        from suite_actuarial.core.validators import ConfiguracionChainLadder
+        from suite_actuarial.reservas.chain_ladder import ChainLadder
 
         config_cl = ConfiguracionChainLadder()
         cl = ChainLadder(config_cl)
@@ -115,8 +115,8 @@ class TestBootstrapResiduales:
         """Debe calcular residuales de Pearson"""
         bs = Bootstrap(config_100_sims)
 
-        from mexican_insurance.core.validators import ConfiguracionChainLadder
-        from mexican_insurance.reservas.chain_ladder import ChainLadder
+        from suite_actuarial.core.validators import ConfiguracionChainLadder
+        from suite_actuarial.reservas.chain_ladder import ChainLadder
 
         config_cl = ConfiguracionChainLadder()
         cl = ChainLadder(config_cl)
@@ -145,8 +145,8 @@ class TestBootstrapTrianguloSintetico:
         """Debe generar triángulo sintético re-muestreando residuales"""
         bs = Bootstrap(config_100_sims)
 
-        from mexican_insurance.core.validators import ConfiguracionChainLadder
-        from mexican_insurance.reservas.chain_ladder import ChainLadder
+        from suite_actuarial.core.validators import ConfiguracionChainLadder
+        from suite_actuarial.reservas.chain_ladder import ChainLadder
 
         config_cl = ConfiguracionChainLadder()
         cl = ChainLadder(config_cl)
@@ -176,8 +176,8 @@ class TestBootstrapTrianguloSintetico:
         """Múltiples triángulos sintéticos deben ser diferentes"""
         bs = Bootstrap(config_100_sims)
 
-        from mexican_insurance.core.validators import ConfiguracionChainLadder
-        from mexican_insurance.reservas.chain_ladder import ChainLadder
+        from suite_actuarial.core.validators import ConfiguracionChainLadder
+        from suite_actuarial.reservas.chain_ladder import ChainLadder
 
         config_cl = ConfiguracionChainLadder()
         cl = ChainLadder(config_cl)
@@ -208,8 +208,8 @@ class TestBootstrapSimulacion:
         """Debe ejecutar una simulación completa"""
         bs = Bootstrap(config_100_sims)
 
-        from mexican_insurance.core.validators import ConfiguracionChainLadder
-        from mexican_insurance.reservas.chain_ladder import ChainLadder
+        from suite_actuarial.core.validators import ConfiguracionChainLadder
+        from suite_actuarial.reservas.chain_ladder import ChainLadder
 
         config_cl = ConfiguracionChainLadder()
         cl = ChainLadder(config_cl)

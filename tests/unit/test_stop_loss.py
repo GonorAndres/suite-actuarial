@@ -9,14 +9,14 @@ from decimal import Decimal
 
 import pytest
 
-from mexican_insurance.core.validators import (
+from suite_actuarial.core.validators import (
     Moneda,
     Siniestro,
     StopLossConfig,
     TipoContrato,
     TipoSiniestro,
 )
-from mexican_insurance.reinsurance.stop_loss import StopLoss
+from suite_actuarial.reaseguro.stop_loss import StopLoss
 
 
 @pytest.fixture

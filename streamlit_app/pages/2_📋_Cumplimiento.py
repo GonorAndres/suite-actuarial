@@ -17,27 +17,27 @@ import streamlit as st
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
-from mexican_insurance.core.validators import (
+from suite_actuarial.core.validators import (
     ConfiguracionRCSDanos,
     ConfiguracionRCSInversion,
     ConfiguracionRCSVida,
 )
-from mexican_insurance.regulatorio.agregador_rcs import AgregadorRCS
-from mexican_insurance.regulatorio.reservas_tecnicas.models import (
+from suite_actuarial.regulatorio.agregador_rcs import AgregadorRCS
+from suite_actuarial.regulatorio.reservas_tecnicas.models import (
     ConfiguracionRM,
     ConfiguracionRRC,
 )
-from mexican_insurance.regulatorio.reservas_tecnicas.reserva_matematica import (
+from suite_actuarial.regulatorio.reservas_tecnicas.reserva_matematica import (
     CalculadoraRM,
 )
-from mexican_insurance.regulatorio.reservas_tecnicas.reserva_riesgos_curso import (
+from suite_actuarial.regulatorio.reservas_tecnicas.reserva_riesgos_curso import (
     CalculadoraRRC,
 )
-from mexican_insurance.regulatorio.validaciones_sat.models import TipoSeguroFiscal
-from mexican_insurance.regulatorio.validaciones_sat.validador_primas import (
+from suite_actuarial.regulatorio.validaciones_sat.models import TipoSeguroFiscal
+from suite_actuarial.regulatorio.validaciones_sat.validador_primas import (
     ValidadorPrimasDeducibles,
 )
-from mexican_insurance.regulatorio.validaciones_sat.validador_retenciones import (
+from suite_actuarial.regulatorio.validaciones_sat.validador_retenciones import (
     CalculadoraRetencionesISR,
 )
 

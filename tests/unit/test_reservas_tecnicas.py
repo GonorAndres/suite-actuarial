@@ -9,7 +9,7 @@ from decimal import Decimal
 
 import pytest
 
-from mexican_insurance.regulatorio.reservas_tecnicas import (
+from suite_actuarial.regulatorio.reservas_tecnicas import (
     CalculadoraRM,
     CalculadoraRRC,
     ConfiguracionRM,

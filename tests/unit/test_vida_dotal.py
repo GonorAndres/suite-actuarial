@@ -7,14 +7,14 @@ from decimal import Decimal
 import pandas as pd
 import pytest
 
-from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
-from mexican_insurance.core.validators import (
+from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
     Moneda,
     Sexo,
 )
-from mexican_insurance.products.vida.dotal import VidaDotal
+from suite_actuarial.vida.dotal import VidaDotal
 
 
 @pytest.fixture
@@ -87,7 +87,7 @@ class TestVidaDotal:
         self, config_dotal_20, tabla_simple, asegurado_basico
     ):
         """Prima de dotal debe ser mayor que temporal (pago garantizado)"""
-        from mexican_insurance.products.vida.temporal import VidaTemporal
+        from suite_actuarial.vida.temporal import VidaTemporal
 
         # Dotal 20 años
         producto_dotal = VidaDotal(config_dotal_20, tabla_simple)
@@ -176,7 +176,7 @@ class TestVidaDotal:
         self, config_dotal_20, tabla_simple, asegurado_basico
     ):
         """Reserva del dotal debe ser mayor que temporal en todos los años"""
-        from mexican_insurance.products.vida.temporal import VidaTemporal
+        from suite_actuarial.vida.temporal import VidaTemporal
 
         producto_dotal = VidaDotal(config_dotal_20, tabla_simple)
         producto_temp = VidaTemporal(config_dotal_20, tabla_simple)

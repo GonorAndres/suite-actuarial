@@ -1,1 +1,1 @@
-"""Tests para mexican_insurance"""
+"""Tests para suite_actuarial"""

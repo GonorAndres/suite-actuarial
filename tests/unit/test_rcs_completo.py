@@ -8,12 +8,12 @@ from decimal import Decimal
 
 import pytest
 
-from mexican_insurance.core.validators import (
+from suite_actuarial.core.validators import (
     ConfiguracionRCSDanos,
     ConfiguracionRCSInversion,
     ConfiguracionRCSVida,
 )
-from mexican_insurance.regulatorio import (
+from suite_actuarial.regulatorio import (
     AgregadorRCS,
     RCSDanos,
     RCSInversion,

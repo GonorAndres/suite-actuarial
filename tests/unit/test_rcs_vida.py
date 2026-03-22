@@ -9,8 +9,8 @@ from decimal import Decimal
 
 import pytest
 
-from mexican_insurance.core.validators import ConfiguracionRCSVida
-from mexican_insurance.regulatorio.rcs_vida import RCSVida
+from suite_actuarial.core.validators import ConfiguracionRCSVida
+from suite_actuarial.regulatorio.rcs_vida import RCSVida
 
 
 @pytest.fixture

@@ -7,14 +7,14 @@ from decimal import Decimal
 import pandas as pd
 import pytest
 
-from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
-from mexican_insurance.core.validators import (
+from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
     Moneda,
     Sexo,
 )
-from mexican_insurance.products.vida.temporal import VidaTemporal
+from suite_actuarial.vida.temporal import VidaTemporal
 
 
 @pytest.fixture

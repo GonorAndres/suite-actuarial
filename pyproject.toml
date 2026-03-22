@@ -3,8 +3,8 @@ requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mexican-insurance"
-version = "1.0.0"
+name = "suite-actuarial"
+version = "2.0.0"
 description = "Suite de herramientas actuariales para el mercado asegurador mexicano"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -69,12 +69,12 @@ api = [
 
 # Todo junto
 all = [
-    "mexican-insurance[dev,viz,db,api]",
+    "suite-actuarial[dev,viz,db,api]",
 ]
 
 [project.scripts]
 # CLI para usar desde terminal
-seguros = "mexican_insurance.cli:main"
+seguros = "suite_actuarial.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/GonorAndres/Analisis_Seguros_Mexico"
@@ -90,7 +90,7 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
     "--strict-markers",
-    "--cov=mexican_insurance",
+    "--cov=suite_actuarial",
     "--cov-report=term-missing",
     "--cov-report=html",
 ]

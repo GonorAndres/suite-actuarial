@@ -9,7 +9,7 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from mexican_insurance.core.validators import (
+from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
     Fumador,

@@ -9,7 +9,7 @@ from decimal import Decimal
 
 import pytest
 
-from mexican_insurance.regulatorio.validaciones_sat import (
+from suite_actuarial.regulatorio.validaciones_sat import (
     CalculadoraRetencionesISR,
     TipoSeguroFiscal,
     ValidadorPrimasDeducibles,

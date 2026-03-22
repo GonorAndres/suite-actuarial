@@ -9,14 +9,14 @@ from decimal import Decimal
 
 import pytest
 
-from mexican_insurance.core.validators import (
+from suite_actuarial.core.validators import (
     Moneda,
     QuotaShareConfig,
     Siniestro,
     TipoContrato,
     TipoSiniestro,
 )
-from mexican_insurance.reinsurance.quota_share import QuotaShare
+from suite_actuarial.reaseguro.quota_share import QuotaShare
 
 
 @pytest.fixture

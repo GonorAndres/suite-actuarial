@@ -10,12 +10,12 @@ from decimal import Decimal
 import pandas as pd
 import pytest
 
-from mexican_insurance.core.validators import (
+from suite_actuarial.core.validators import (
     ConfiguracionChainLadder,
     MetodoPromedio,
 )
-from mexican_insurance.reservas.chain_ladder import ChainLadder
-from mexican_insurance.reservas.triangulo import crear_triangulo_ejemplo
+from suite_actuarial.reservas.chain_ladder import ChainLadder
+from suite_actuarial.reservas.triangulo import crear_triangulo_ejemplo
 
 
 @pytest.fixture

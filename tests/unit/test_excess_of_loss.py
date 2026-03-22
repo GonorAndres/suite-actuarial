@@ -9,7 +9,7 @@ from decimal import Decimal
 
 import pytest
 
-from mexican_insurance.core.validators import (
+from suite_actuarial.core.validators import (
     ExcessOfLossConfig,
     ModalidadXL,
     Moneda,
@@ -17,7 +17,7 @@ from mexican_insurance.core.validators import (
     TipoContrato,
     TipoSiniestro,
 )
-from mexican_insurance.reinsurance.excess_of_loss import ExcessOfLoss
+from suite_actuarial.reaseguro.excess_of_loss import ExcessOfLoss
 
 
 @pytest.fixture

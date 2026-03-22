@@ -7,8 +7,8 @@ from decimal import Decimal
 import pandas as pd
 import pytest
 
-from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
-from mexican_insurance.core.validators import Sexo
+from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.core.validators import Sexo
 
 
 @pytest.fixture

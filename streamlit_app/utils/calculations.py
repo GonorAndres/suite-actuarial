@@ -10,15 +10,15 @@ from decimal import Decimal
 import pandas as pd
 
 # Importar desde el paquete principal
-from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
-from mexican_insurance.core.validators import (
+from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
     Sexo,
 )
-from mexican_insurance.products.vida.dotal import VidaDotal
-from mexican_insurance.products.vida.ordinario import VidaOrdinario
-from mexican_insurance.products.vida.temporal import VidaTemporal
+from suite_actuarial.vida.dotal import VidaDotal
+from suite_actuarial.vida.ordinario import VidaOrdinario
+from suite_actuarial.vida.temporal import VidaTemporal
 
 
 def crear_asegurado(

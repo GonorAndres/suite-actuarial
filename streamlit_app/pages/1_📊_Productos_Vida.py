@@ -31,7 +31,7 @@ from utils.visualizations import (
     crear_tabla_metricas_producto,
 )
 
-from mexican_insurance.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 
 # Configuración de la página
 st.set_page_config(

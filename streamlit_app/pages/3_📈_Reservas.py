@@ -17,16 +17,16 @@ import streamlit as st
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
-from mexican_insurance.core.validators import (
+from suite_actuarial.core.validators import (
     ConfiguracionBootstrap,
     ConfiguracionBornhuetterFerguson,
     ConfiguracionChainLadder,
 )
-from mexican_insurance.reservas.bootstrap import Bootstrap
-from mexican_insurance.reservas.bornhuetter_ferguson import (
+from suite_actuarial.reservas.bootstrap import Bootstrap
+from suite_actuarial.reservas.bornhuetter_ferguson import (
     BornhuetterFerguson,
 )
-from mexican_insurance.reservas.chain_ladder import ChainLadder
+from suite_actuarial.reservas.chain_ladder import ChainLadder
 
 # Configuración de la página
 st.set_page_config(

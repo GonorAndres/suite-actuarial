@@ -10,7 +10,7 @@ from decimal import Decimal
 
 import pytest
 
-from mexican_insurance.reportes import (
+from suite_actuarial.reportes import (
     DatosInversionActivo,
     DatosReporteRCS,
     DatosSiniestrosRamo,
