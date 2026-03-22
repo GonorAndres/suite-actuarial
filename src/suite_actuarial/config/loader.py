@@ -32,13 +32,13 @@ def cargar_config(anio: int | None = None) -> ConfigAnual:
     if anio not in _CONFIGS:
         try:
             module = importlib.import_module(f"suite_actuarial.config.config_{anio}")
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as err:
             available = sorted(_CONFIGS.keys())
             raise ModuleNotFoundError(
                 f"No existe configuracion para el ano {anio}. "
                 f"Disponibles: {available or 'ninguno (use cargar_config con un ano valido)'}. "
                 f"Cree suite_actuarial/config/config_{anio}.py para agregarlo."
-            )
+            ) from err
         _CONFIGS[anio] = module.CONFIG
     return _CONFIGS[anio]
 

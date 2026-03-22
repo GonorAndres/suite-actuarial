@@ -7,7 +7,7 @@ Incluye:
 - Tabla de factores de tarificacion
 """
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 
 class FactorCredibilidad:

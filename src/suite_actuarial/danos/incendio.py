@@ -4,8 +4,7 @@ Seguro de incendio y danos a propiedad.
 Producto basico para inmuebles residenciales, comerciales e industriales.
 """
 
-from decimal import Decimal, ROUND_HALF_UP
-
+from decimal import ROUND_HALF_UP, Decimal
 
 # Tasas base por millar segun tipo de construccion
 TASAS_CONSTRUCCION: dict[str, Decimal] = {

@@ -80,12 +80,8 @@ class CalculadoraRM:
         """
         suma_asegurada = self.config.suma_asegurada
         edad_actual = self.config.edad_asegurado
-        edad_contratacion = self.config.edad_contratacion
         tasa = self.config.tasa_interes_tecnico
         prima_anual = self.config.prima_nivelada_anual
-
-        # Anios transcurridos desde contratacion
-        anos_transcurridos = edad_actual - edad_contratacion
 
         # Probabilidad de supervivencia
         prob_supervivencia = self._calcular_probabilidad_supervivencia(edad_actual)

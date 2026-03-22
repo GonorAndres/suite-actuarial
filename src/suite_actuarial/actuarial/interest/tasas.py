@@ -11,7 +11,7 @@ Soporta:
 Referencia: Banco de Mexico, vectores de precios de MBonos y CETES.
 """
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 
 class CurvaRendimiento:
@@ -49,7 +49,7 @@ class CurvaRendimiento:
             raise ValueError("Las tasas no pueden ser negativas.")
 
         # Sort by tenor
-        pares = sorted(zip(plazos, tasas))
+        pares = sorted(zip(plazos, tasas, strict=True))
         self.plazos = [p for p, _ in pares]
         self.tasas = [Decimal(str(t)) for _, t in pares]
 
@@ -187,7 +187,7 @@ class CurvaRendimiento:
             )
 
         pv = Decimal("0")
-        for flujo, plazo in zip(flujos, plazos):
+        for flujo, plazo in zip(flujos, plazos, strict=True):
             flujo_d = Decimal(str(flujo))
             descuento = self.factor_descuento(plazo)
             pv += flujo_d * descuento

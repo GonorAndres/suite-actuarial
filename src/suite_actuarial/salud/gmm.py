@@ -18,7 +18,7 @@ La prima se calcula por bandas de edad quinquenales (0-4, 5-9, ..., 60-64, 65+).
 Referencia: Circular Unica de Seguros y Fianzas (CUSF), CNSF
 """
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 
 

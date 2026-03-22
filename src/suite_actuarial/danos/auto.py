@@ -5,14 +5,13 @@ Integra las tablas de referencia AMIS, el sistema Bonus-Malus
 y el motor de factores para generar cotizaciones completas.
 """
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 
 from suite_actuarial.danos.tablas_amis import (
     FACTOR_DEDUCIBLE,
     FACTOR_EDAD_CONDUCTOR,
     TASAS_BASE,
-    ZONAS_RIESGO,
     obtener_depreciacion,
     obtener_grupo,
     obtener_zona,

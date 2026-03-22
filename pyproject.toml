@@ -5,16 +5,16 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "suite-actuarial"
 version = "2.0.0"
-description = "Suite de herramientas actuariales para el mercado asegurador mexicano"
+description = "Libreria actuarial fundamental para el mercado mexicano de seguros"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
     {name = "Andres Gonzalez Ortega", email = "andres@actuarial.dev"}
 ]
-keywords = ["seguros", "actuarial", "mexico", "cnsf", "reinsurance"]
+keywords = ["seguros", "actuarial", "mexico", "cnsf", "reinsurance", "pensiones", "danos", "salud", "gmm", "imss"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Financial and Insurance Industry",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.11",

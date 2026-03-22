@@ -5,8 +5,7 @@ Producto para empresas y profesionales que cubre danos a terceros
 causados por la actividad del asegurado.
 """
 
-from decimal import Decimal, ROUND_HALF_UP
-
+from decimal import ROUND_HALF_UP, Decimal
 
 # Tasas base por millar segun clase de actividad
 TASAS_ACTIVIDAD: dict[str, Decimal] = {

@@ -10,7 +10,7 @@ Cobertura mas simple que GMM, orientada a eventos de accidente:
 Referencia: CUSF Titulo 5, Capitulo de Accidentes y Enfermedades
 """
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 
 class AccidentesEnfermedades:

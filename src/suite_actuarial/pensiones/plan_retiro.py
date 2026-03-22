@@ -23,7 +23,6 @@ from suite_actuarial.pensiones.tablas_imss import (
     CUOTAS_IMSS,
     DIAS_AGUINALDO_PENSIONADOS,
     EDAD_CESANTIA,
-    EDAD_VEJEZ,
     PENSION_GARANTIZADA_2024,
     SEMANAS_MINIMAS_LEY73,
     obtener_factor_edad,

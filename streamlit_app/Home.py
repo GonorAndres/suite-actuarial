@@ -1,260 +1,230 @@
 """
-Dashboard Principal - Mexican Insurance Analytics Suite
+suite_actuarial -- Demo de la libreria actuarial para Mexico.
 
-Página principal de la suite de herramientas actuariales para el mercado
-asegurador mexicano.
+Pagina principal: vision general de la libreria, dominios y modulos.
 """
-
-from pathlib import Path
 
 import streamlit as st
 
-# Configuración de la página
 st.set_page_config(
-    page_title="Mexican Insurance Analytics Suite",
-    page_icon="H",
+    page_title="suite_actuarial -- Libreria Actuarial",
     layout="wide",
-    initial_sidebar_state="expanded",
 )
 
-# Título principal
-st.title("Mexican Insurance Analytics Suite")
-st.markdown("### Suite de Herramientas Actuariales para el Mercado Mexicano")
+# -----------------------------------------------------------------------
+# Sidebar
+# -----------------------------------------------------------------------
+with st.sidebar:
+    st.header("Configuracion")
 
-# Bienvenida
-st.markdown("""
-Bienvenido a la **Mexican Insurance Analytics Suite**, un conjunto de herramientas
-en Python para análisis actuarial, cálculo de primas, reservas técnicas y cumplimiento
-regulatorio para el mercado de seguros en México.
-""")
+    anio_config = st.selectbox(
+        "Ano regulatorio",
+        options=[2024, 2025, 2026],
+        index=2,
+        help="Ano de parametros regulatorios (UMA, pension garantizada, etc.)",
+    )
 
-# Columnas para estadísticas del proyecto
-col1, col2, col3, col4 = st.columns(4)
+    st.markdown("---")
+    st.markdown("**Version:** 2.0.0")
+    st.markdown("**Autor:** Andres Gonzalez Ortega")
+    st.markdown("**Licencia:** MIT")
+
+    st.markdown("---")
+    st.subheader("Instalacion")
+    st.code(
+        "pip install suite-actuarial",
+        language="bash",
+    )
+    st.caption(
+        "O bien clona el repositorio y usa:\n"
+        "`pip install -e ./src`"
+    )
+
+# -----------------------------------------------------------------------
+# Titulo
+# -----------------------------------------------------------------------
+st.title("suite_actuarial -- Libreria Actuarial para Mexico")
+
+st.markdown(
+    """
+**suite_actuarial** es una libreria en Python que implementa modelos actuariales
+completos para el mercado asegurador mexicano. Cubre las cuatro ramas principales
+de seguros, mas modulos transversales de reservas, reaseguro y cumplimiento regulatorio.
+
+Esta aplicacion es una **demo interactiva** de la libreria. Cada pagina muestra
+los resultados de la API en vivo junto con el codigo Python necesario para
+reproducirlos en tu propio proyecto.
+"""
+)
+
+# -----------------------------------------------------------------------
+# 4 domain cards (2 x 2)
+# -----------------------------------------------------------------------
+st.markdown("---")
+st.header("Dominios de seguros")
+
+col1, col2 = st.columns(2)
 
 with col1:
-    st.metric(
-        label="Productos de Vida",
-        value="3",
-        delta="Temporal, Ordinario, Dotal",
+    st.subheader("Vida")
+    st.markdown(
+        """
+- **3 productos**: Temporal, Ordinario, Dotal
+- Mortalidad **EMSSA-09** (tabla oficial mexicana)
+- Primas netas y comerciales con desglose de recargos
+- Reservas matematicas prospectivas por ano de poliza
+"""
     )
 
 with col2:
-    st.metric(
-        label="Estrategias de Reaseguro",
-        value="3",
-        delta="QS, XoL, Stop Loss",
+    st.subheader("Danos")
+    st.markdown(
+        """
+- Seguro de **auto** con tarificacion AMIS (grupos, zonas, factores)
+- Modelo colectivo **frecuencia-severidad** (Monte Carlo)
+- Sistema **Bonus-Malus** escala mexicana
+- **Credibilidad** de Buhlmann y Buhlmann-Straub
+"""
     )
 
+col3, col4 = st.columns(2)
+
 with col3:
-    st.metric(
-        label="Métodos de Reservas",
-        value="3",
-        delta="Chain Ladder, B-F, Bootstrap",
+    st.subheader("Salud")
+    st.markdown(
+        """
+- **Gastos Medicos Mayores** (GMM): prima por banda de edad, zona, nivel
+- Simulador deducible / coaseguro / tope
+- **Accidentes y Enfermedades** (A&E)
+- Bandas quinquenales de tarificacion
+"""
     )
 
 with col4:
-    st.metric(
-        label="Módulos Regulatorios",
-        value="4",
-        delta="RCS, CNSF, S-11.4, SAT",
-    )
-
-# Sección de información
-st.markdown("---")
-st.header("Dashboards Disponibles")
-
-# Crear tres columnas para los dashboards
-dash_col1, dash_col2, dash_col3 = st.columns(3)
-
-with dash_col1:
-    st.markdown("""
-    ### Productos de Vida
-
-    Calculadora interactiva de productos de seguros de vida:
-    - **Vida Temporal**: Protección por plazo definido
-    - **Vida Ordinario**: Protección vitalicia o pago limitado
-    - **Vida Dotal**: Ahorro + protección
-
-    **Características:**
-    - Cálculo de primas netas y comerciales
-    - Comparación entre productos
-    - Análisis de sensibilidad
-    - Visualización de reservas matemáticas
-    """)
-
-with dash_col2:
-    st.markdown("""
-    ### Cumplimiento Regulatorio
-
-    Monitor de cumplimiento normativo mexicano:
-    - **RCS**: Requerimientos de Capital de Solvencia
-    - **CNSF**: Reportes trimestrales automatizados
-    - **SAT**: Validaciones fiscales ISR
-    - **S-11.4**: Reservas técnicas normativas
-
-    **Características:**
-    - Calculadoras de indicadores
-    - Validación de deducibilidad
-    - Reportes automatizados
-    """)
-
-with dash_col3:
-    st.markdown("""
-    ### Reservas Técnicas
-
-    Análisis avanzado de reservas para siniestros:
-    - **Chain Ladder**: Método clásico de triángulos
-    - **Bornhuetter-Ferguson**: Combinación datos/esperados
-    - **Bootstrap**: Estimación de incertidumbre
-
-    **Características:**
-    - Triángulos de desarrollo
-    - Proyecciones de reservas
-    - Comparación de métodos
-    - Intervalos de confianza
-    """)
-
-# Información técnica
-st.markdown("---")
-st.header("Información Técnica")
-
-tech_col1, tech_col2 = st.columns(2)
-
-with tech_col1:
-    st.markdown("""
-    #### Tecnologías Utilizadas
-    - **Python 3.11+**: Lenguaje base
-    - **Pydantic**: Validación de datos
-    - **Decimal**: Precisión financiera
-    - **Pytest**: Suite de testing (>90% cobertura)
-    - **Streamlit**: Dashboards interactivos
-    - **Plotly**: Visualizaciones interactivas
-    """)
-
-with tech_col2:
-    st.markdown("""
-    #### Fundamentos Regulatorios
-    - **CNSF**: Circular Única de Seguros y Fianzas
-    - **LISR**: Ley del Impuesto Sobre la Renta
-    - **Circular S-11.4**: Reservas técnicas
-    - **Solvencia II adaptado**: RCS mexicano
-    - **EMSSA-09**: Tablas de mortalidad
-    """)
-
-# Recursos: Documentación y Resumen Ejecutivo
-st.markdown("---")
-st.header("Recursos")
-
-docs_root = Path(__file__).parent.parent / "docs"
-
-tab_doc, tab_resumen = st.tabs(["Documentación Técnica", "Resumen Ejecutivo"])
-
-with tab_doc:
-    journal_path = docs_root / "JOURNAL.md"
-    if journal_path.exists():
-        journal_text = journal_path.read_text(encoding="utf-8")
-        st.markdown(journal_text, unsafe_allow_html=False)
-    else:
-        st.warning("No se encontró el archivo docs/JOURNAL.md")
-
-with tab_resumen:
-    resumen_path = docs_root / "resumen_ejecutivo.html"
-    if resumen_path.exists():
-        html_content = resumen_path.read_text(encoding="utf-8")
-
-        # Download button for offline/PDF viewing
-        st.download_button(
-            label="Descargar Resumen Ejecutivo (HTML)",
-            data=html_content,
-            file_name="resumen_ejecutivo.html",
-            mime="text/html",
-            use_container_width=True,
-        )
-        st.caption(
-            "Descarga el archivo y abre en tu navegador para la experiencia completa. "
-            "Usa Ctrl+P para exportar a PDF."
-        )
-
-        # Extract just the body content, strip sidebar/nav, fix for embedding
-        import re
-
-        # Pull content between <body> and </body>
-        body_match = re.search(r"<body[^>]*>(.*)</body>", html_content, re.DOTALL)
-        if body_match:
-            body_html = body_match.group(1)
-            # Remove the fixed sidebar/table of contents (div with class containing "sidebar" or "toc")
-            body_html = re.sub(
-                r'<div[^>]*class="[^"]*(?:sidebar|toc|table-of-contents)[^"]*"[^>]*>.*?</div>',
-                "", body_html, flags=re.DOTALL | re.IGNORECASE,
-            )
-            # Remove any fixed-position nav
-            body_html = re.sub(r"<nav[^>]*>.*?</nav>", "", body_html, flags=re.DOTALL)
-
-        # Extract styles
-        style_match = re.search(r"<style[^>]*>(.*?)</style>", html_content, re.DOTALL)
-        styles = style_match.group(1) if style_match else ""
-
-        # Build clean embedded version
-        clean_html = f"""
-        <html><head><style>
-        {styles}
-        body {{ margin: 0; padding: 20px; font-family: sans-serif; }}
-        .sidebar, .toc, nav {{ display: none !important; }}
-        .main-content {{ margin-left: 0 !important; padding-left: 0 !important; }}
-        a[href^="#"] {{ pointer-events: none; color: inherit; text-decoration: none; }}
-        </style></head><body>
-        {body_html if body_match else '<p>No se pudo extraer el contenido.</p>'}
-        </body></html>
+    st.subheader("Pensiones")
+    st.markdown(
         """
-
-        st.components.v1.html(clean_html, height=800, scrolling=True)
-    else:
-        st.warning("No se encontró el archivo docs/resumen_ejecutivo.html")
-
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style="text-align: center; color: #666;">
-    <p><strong>Nota Legal:</strong> Esta librería es para propósitos educativos y de análisis.
-    Para uso en producción en una aseguradora, valida los resultados con un actuario certificado
-    y asegúrate de cumplir con todas las regulaciones de la CNSF.</p>
-    <p>Para preguntas o reportar bugs, abre un issue en GitHub.</p>
-    <p>Mexican Insurance Analytics Suite | MIT License</p>
-</div>
-""", unsafe_allow_html=True)
-
-# Sidebar con información adicional
-with st.sidebar:
-    st.header("Inicio Rápido")
-
-    st.markdown("""
-    **Navega usando el menú lateral:**
-
-    1. **Productos de Vida**: Calcula primas y compara productos
-    2. **Cumplimiento**: Valida requisitos regulatorios
-    3. **Reservas**: Analiza reservas técnicas
-    """)
-
-    st.markdown("---")
-
-    st.header("Recursos")
-
-    st.link_button(
-        "GitHub",
-        "https://github.com/GonorAndres/Analisis_Seguros_Mexico",
-        use_container_width=True,
+- Pension **IMSS Ley 73**: beneficio definido, tabla Art. 167
+- Pension **IMSS Ley 97**: contribucion definida, AFORE
+- **Renta vitalicia**: inmediata, diferida, con periodo cierto
+- **Funciones de conmutacion**: Dx, Nx, Cx, Mx (Bowers et al.)
+"""
     )
 
-    st.markdown("---")
+# -----------------------------------------------------------------------
+# Cross-cutting modules
+# -----------------------------------------------------------------------
+st.markdown("---")
+st.header("Modulos transversales")
 
-    st.markdown("""
-    **Versión:** 1.0.0
+m1, m2, m3 = st.columns(3)
 
-    **Fases Completadas:**
-    - [OK] Fase 1: Fundamentos
-    - [OK] Fase 2: Productos
-    - [OK] Fase 3: Reaseguro
-    - [OK] Fase 4: Reservas
-    - [OK] Fase 5A-D: Regulatorio
-    - Fase 6: Dashboards
-    """)
+with m1:
+    st.subheader("Reservas")
+    st.markdown(
+        """
+- Chain Ladder (triangulos de desarrollo)
+- Bornhuetter-Ferguson
+- Bootstrap con intervalos de confianza
+"""
+    )
+
+with m2:
+    st.subheader("Reaseguro")
+    st.markdown(
+        """
+- Cuota parte (Quota Share)
+- Exceso de perdida (Excess of Loss)
+- Stop Loss
+"""
+    )
+
+with m3:
+    st.subheader("Regulatorio")
+    st.markdown(
+        """
+- RCS (Capital de Solvencia)
+- Reportes CNSF trimestrales
+- Validaciones fiscales SAT / ISR
+- Reservas tecnicas S-11.4
+"""
+    )
+
+# -----------------------------------------------------------------------
+# Quick example
+# -----------------------------------------------------------------------
+st.markdown("---")
+st.header("Ejemplo rapido")
+
+st.code(
+    '''from suite_actuarial import (
+    VidaTemporal, SeguroAuto, GMM, RentaVitalicia,
+    TablaConmutacion, TablaMortalidad,
+    Asegurado, ConfiguracionProducto,
+    cargar_config,
+)
+from suite_actuarial.danos import ModeloColectivo, CalculadoraBonusMalus
+from suite_actuarial.pensiones import PensionLey73, PensionLey97
+from decimal import Decimal
+
+# --- Vida: prima de un temporal 20 anos ---
+tabla = TablaMortalidad.cargar_emssa09()
+config = ConfiguracionProducto(
+    nombre_producto="Temporal 20",
+    plazo_years=20,
+    tasa_interes_tecnico=Decimal("0.05"),
+)
+producto = VidaTemporal(config, tabla)
+asegurado = Asegurado(edad=35, sexo="H", suma_asegurada=Decimal("1000000"))
+resultado = producto.calcular_prima(asegurado, frecuencia_pago="mensual")
+print(f"Prima mensual: ${resultado.prima_total:,.2f}")
+
+# --- Danos: cotizacion de auto ---
+auto = SeguroAuto(
+    valor_vehiculo=Decimal("400000"),
+    tipo_vehiculo="sedan_mediano",
+    antiguedad_anos=2,
+    zona="guadalajara",
+    edad_conductor=35,
+)
+cotizacion = auto.generar_cotizacion()
+print(f"Prima total auto: ${cotizacion['prima_total']:,.2f}")
+
+# --- Salud: prima GMM ---
+from suite_actuarial.salud import GMM, ZonaGeografica, NivelHospitalario
+gmm = GMM(
+    edad=40, sexo="M",
+    suma_asegurada=Decimal("5000000"),
+    deducible=Decimal("50000"),
+    coaseguro_pct=Decimal("0.10"),
+    zona=ZonaGeografica.METRO,
+    nivel=NivelHospitalario.ALTO,
+)
+print(f"Prima GMM: ${gmm.calcular_prima_ajustada():,.2f}")
+
+# --- Pensiones: Ley 73 ---
+pension = PensionLey73(
+    semanas_cotizadas=1200,
+    salario_promedio_5_anos=Decimal("800"),
+    edad_retiro=65,
+)
+print(f"Pension mensual: ${pension.calcular_pension_mensual():,.2f}")
+''',
+    language="python",
+)
+
+# -----------------------------------------------------------------------
+# Footer
+# -----------------------------------------------------------------------
+st.markdown("---")
+st.markdown(
+    """
+<div style="text-align: center; color: #666;">
+    <p><strong>Nota legal:</strong> Esta libreria es para propositos educativos y de analisis.
+    Para uso en produccion, valida los resultados con un actuario certificado
+    y verifica el cumplimiento con las regulaciones vigentes de la CNSF.</p>
+    <p>suite_actuarial v2.0.0 | MIT License</p>
+</div>
+""",
+    unsafe_allow_html=True,
+)
