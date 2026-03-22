@@ -20,6 +20,7 @@ from suite_actuarial.config import cargar_config
 from suite_actuarial.core.models.common import Sexo
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 from suite_actuarial.pensiones.tablas_imss import (
+    CUOTAS_IMSS,
     DIAS_AGUINALDO_PENSIONADOS,
     EDAD_CESANTIA,
     EDAD_VEJEZ,
@@ -229,9 +230,17 @@ class PensionLey97:
 
         # Tasa total de aportacion a cuenta individual
         # Retiro (2%) + Cesantia patronal (3.15%) + Cesantia obrero (1.125%)
-        # + Cuota social (~4.5% promedio) = ~10.775%
-        # Simplified: use total contribution rate
-        tasa_aportacion = Decimal("0.065")  # ~6.5% of salary to AFORE
+        # = 6.275% base obligatoria
+        # + Cuota social (variable por nivel salarial, ~4.5% promedio)
+        # Total efectivo: ~10.775%
+        tasa_base = (
+            CUOTAS_IMSS["retiro"]["patronal"]
+            + CUOTAS_IMSS["cesantia_vejez"]["patronal"]
+            + CUOTAS_IMSS["cesantia_vejez"]["obrero"]
+        )
+        # Cuota social: variable por nivel salarial (promedio ~4.5%)
+        tasa_cuota_social = Decimal("0.045")
+        tasa_aportacion = tasa_base + tasa_cuota_social
 
         proyeccion = []
         inflacion_anual = Decimal("0.04")  # 4% assumed inflation

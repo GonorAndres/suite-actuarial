@@ -107,6 +107,7 @@ class GMM:
         tope_coaseguro: Decimal | None = None,
         zona: ZonaGeografica = ZonaGeografica.URBANO,
         nivel: NivelHospitalario = NivelHospitalario.MEDIO,
+        margen_operativo: Decimal = Decimal("0.30"),
     ) -> None:
         """
         Args:
@@ -156,6 +157,7 @@ class GMM:
         )
         self.zona = zona
         self.nivel = nivel
+        self.margen_operativo = Decimal(str(margen_operativo))
 
     def _obtener_banda_edad(self) -> str:
         """Map age to quinquennial band."""
@@ -250,9 +252,8 @@ class GMM:
         Se asume un margen operativo del 30% (gastos de administracion,
         adquisicion y utilidad).
         """
-        margen_operativo = Decimal("0.30")
         prima = self.calcular_prima_ajustada()
-        siniestralidad = prima / (Decimal("1") + margen_operativo)
+        siniestralidad = prima / (Decimal("1") + self.margen_operativo)
         return siniestralidad.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def desglose_prima(self) -> dict:

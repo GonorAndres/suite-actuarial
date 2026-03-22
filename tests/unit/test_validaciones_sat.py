@@ -308,6 +308,30 @@ class TestValidadorSiniestrosGravables:
         assert resultado.monto_gravado == Decimal("500000")
         assert "Art. 18" in resultado.fundamento_legal
 
+    def test_persona_moral_pensiones_gravable(self, validador_siniestros):
+        """PM fallback for non-danos, non-vida: gravable como ingreso acumulable"""
+        resultado = validador_siniestros.validar_gravabilidad(
+            tipo_seguro=TipoSeguroFiscal.PENSIONES,
+            monto_pago=Decimal("100000"),
+            es_persona_fisica=False,
+        )
+
+        assert resultado.esta_gravado is True
+        assert resultado.monto_gravado == Decimal("100000")
+        assert resultado.monto_exento == Decimal("0")
+        assert "Art. 18" in resultado.fundamento_legal
+
+    def test_persona_moral_invalidez_gravable(self, validador_siniestros):
+        """PM fallback for invalidez: gravable como ingreso"""
+        resultado = validador_siniestros.validar_gravabilidad(
+            tipo_seguro=TipoSeguroFiscal.INVALIDEZ,
+            monto_pago=Decimal("200000"),
+            es_persona_fisica=False,
+        )
+
+        assert resultado.esta_gravado is True
+        assert resultado.monto_gravado == Decimal("200000")
+
 
 # ======================================
 # Tests de CalculadoraRetencionesISR

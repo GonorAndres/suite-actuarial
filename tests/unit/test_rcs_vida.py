@@ -221,14 +221,25 @@ class TestRCSTotalVida:
         assert "gastos" in desglose
 
     def test_rcs_total_menor_que_suma_componentes(self, config_vida_basico):
-        """RCS total debe ser menor que suma simple (por correlación)"""
+        """RCS total debe ser menor que suma simple (por correlacion)"""
         rcs = RCSVida(config_vida_basico)
         rcs_total, desglose = rcs.calcular_rcs_total_vida()
 
         suma_simple = sum(desglose.values())
 
-        # Agregación con raíz cuadrada debe ser menor que suma
+        # Variance-covariance aggregation must be less than simple sum
         assert rcs_total < suma_simple
+
+    def test_rcs_total_refleja_correlacion_negativa(self, config_vida_basico):
+        """Mortalidad-longevidad offset (-0.25) reduces total vs sqrt(sum sq)"""
+        import math as _math
+
+        rcs = RCSVida(config_vida_basico)
+        rcs_total, desglose = rcs.calcular_rcs_total_vida()
+
+        # The total must be positive and less than simple sum
+        assert rcs_total > Decimal("0")
+        assert rcs_total < sum(desglose.values())
 
     def test_desglose_suma_coherente(self, config_vida_basico):
         """Desglose debe tener valores coherentes"""

@@ -185,6 +185,24 @@ class TestRCSInversion:
                 calificacion_promedio_bonos="ZZZ",  # Inválido
             )
 
+    def test_rcs_mercado_correlacion_menor_que_suma(self, config_inversion_basico):
+        """RCS mercado con correlacion 0.75 debe ser menor que suma simple"""
+        rcs = RCSInversion(config_inversion_basico)
+
+        # Compute individual components
+        rcs_acc = rcs.calcular_rcs_mercado_acciones()
+        rcs_bg = rcs.calcular_rcs_mercado_bonos_gubernamentales()
+        rcs_bc = rcs.calcular_rcs_mercado_bonos_corporativos()
+        rcs_inm = rcs.calcular_rcs_mercado_inmuebles()
+
+        suma_simple = rcs_acc + rcs_bg + rcs_bc + rcs_inm
+        rcs_mercado = rcs.calcular_rcs_mercado_total()
+
+        # Correlation 0.75 < 1.0 must yield a lower aggregate
+        assert rcs_mercado < suma_simple
+        # But it should still be meaningfully large
+        assert rcs_mercado > Decimal("0")
+
     def test_sin_inversiones(self):
         """Debe requerir al menos una inversión"""
         with pytest.raises(ValueError, match="al menos un tipo"):

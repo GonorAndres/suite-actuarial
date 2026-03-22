@@ -15,7 +15,7 @@ CONFIG = ConfigAnual(
     uma=UMAConfig(
         uma_diaria=Decimal("108.57"),
         uma_mensual=Decimal("3300.53"),
-        uma_anual=Decimal("39628.08"),
+        uma_anual=Decimal("39628.05"),
     ),
     tasas_sat=TasasSAT(
         tasa_retencion_rentas_vitalicias=Decimal("0.10"),

@@ -181,16 +181,31 @@ class RCSVida:
 
         return rcs_gastos.quantize(Decimal("0.01"))
 
+    # Correlation matrix for within-vida sub-risks
+    # Order: mortalidad, longevidad, invalidez, gastos
+    CORRELACION_VIDA = [
+        # mort   long   inv    gast
+        [1.00,  -0.25,  0.25,  0.25],  # mortalidad
+        [-0.25,  1.00,  0.00,  0.25],  # longevidad
+        [0.25,   0.00,  1.00,  0.50],  # invalidez
+        [0.25,   0.25,  0.50,  1.00],  # gastos
+    ]
+
     def calcular_rcs_total_vida(self) -> tuple[Decimal, dict[str, Decimal]]:
         """
-        Calcula RCS total de suscripción vida agregando todos los riesgos.
+        Calcula RCS total de suscripcion vida agregando todos los riesgos.
 
-        Los riesgos NO se suman directamente debido a correlaciones.
-        Se usa fórmula de raíz cuadrada de suma de cuadrados para riesgos
-        que tienen baja correlación entre sí.
+        Usa formula de varianza-covarianza con la matriz de correlacion
+        regulatoria entre sub-riesgos de vida:
+            RCS_vida = sqrt(sum_i sum_j rho_ij * RCS_i * RCS_j)
 
-        Fórmula:
-            RCS_vida = sqrt(RCS_mort² + RCS_long² + RCS_inv² + RCS_gastos²)
+        Correlaciones:
+        - mortalidad-longevidad: -0.25 (compensacion natural)
+        - mortalidad-invalidez: 0.25
+        - mortalidad-gastos: 0.25
+        - longevidad-invalidez: 0.00
+        - longevidad-gastos: 0.25
+        - invalidez-gastos: 0.50
 
         Returns:
             Tupla de (RCS_total, desglose_por_riesgo)
@@ -200,12 +215,16 @@ class RCSVida:
         rcs_inv = self.calcular_rcs_invalidez()
         rcs_gastos = self.calcular_rcs_gastos()
 
-        # Agregación con raíz cuadrada (asume correlación baja entre riesgos)
-        suma_cuadrados = (
-            rcs_mort**2 + rcs_long**2 + rcs_inv**2 + rcs_gastos**2
-        )
+        components = [rcs_mort, rcs_long, rcs_inv, rcs_gastos]
 
-        rcs_total = Decimal(str(math.sqrt(float(suma_cuadrados))))
+        # Variance-covariance aggregation
+        total = Decimal("0")
+        for i, ci in enumerate(components):
+            for j, cj in enumerate(components):
+                rho_ij = Decimal(str(self.CORRELACION_VIDA[i][j]))
+                total += rho_ij * ci * cj
+
+        rcs_total = Decimal(str(math.sqrt(float(total))))
 
         desglose = {
             "mortalidad": rcs_mort,

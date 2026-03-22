@@ -215,25 +215,38 @@ class RCSInversion:
             Decimal("0.01")
         )
 
+    # Default correlation between market sub-risks (Solvency II calibration)
+    CORRELACION_MERCADO = Decimal("0.75")
+
     def calcular_rcs_mercado_total(self) -> Decimal:
         """
         Calcula RCS total de mercado agregando todos los activos.
 
-        Los shocks de mercado se agregan de forma simple (suma) ya que en
-        escenarios de crisis, todos los activos tienden a caer juntos.
+        Usa formula de varianza-covarianza con correlacion entre sub-riesgos:
+            RCS_mercado = sqrt(sum_i sum_j rho_ij * RCS_i * RCS_j)
+
+        Con correlacion rho = 0.75 entre pares distintos (rho_ii = 1).
 
         Returns:
             RCS total de mercado
         """
+        import math as _math
+
         rcs_acciones = self.calcular_rcs_mercado_acciones()
         rcs_bonos_gub = self.calcular_rcs_mercado_bonos_gubernamentales()
         rcs_bonos_corp = self.calcular_rcs_mercado_bonos_corporativos()
         rcs_inmuebles = self.calcular_rcs_mercado_inmuebles()
 
-        # Suma simple (asume alta correlación en crisis)
-        rcs_mercado = (
-            rcs_acciones + rcs_bonos_gub + rcs_bonos_corp + rcs_inmuebles
-        )
+        components = [rcs_acciones, rcs_bonos_gub, rcs_bonos_corp, rcs_inmuebles]
+        rho = self.CORRELACION_MERCADO
+
+        total = Decimal("0")
+        for i, ci in enumerate(components):
+            for j, cj in enumerate(components):
+                corr = Decimal("1") if i == j else rho
+                total += corr * ci * cj
+
+        rcs_mercado = Decimal(str(_math.sqrt(float(total))))
 
         return rcs_mercado.quantize(Decimal("0.01"))
 

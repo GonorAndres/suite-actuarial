@@ -1,22 +1,28 @@
 """
-Calculadora de Reserva Matemática (RM) según Circular S-11.4.
+Calculadora de Reserva Matematica (RM) segun Circular S-11.4.
 
 La RM es la reserva para seguros de largo plazo (vida) calculada como
 el valor presente de obligaciones futuras menos primas futuras.
 """
 
+from __future__ import annotations
+
 import math
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from suite_actuarial.regulatorio.reservas_tecnicas.models import (
     ConfiguracionRM,
     ResultadoRM,
 )
 
+if TYPE_CHECKING:
+    from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+
 
 class CalculadoraRM:
     """
-    Calcula Reserva Matemática para seguros de vida y largo plazo.
+    Calcula Reserva Matematica para seguros de vida y largo plazo.
 
     La RM representa el valor presente de las obligaciones futuras netas:
     RM = VP(Beneficios Futuros) - VP(Primas Futuras)
@@ -35,20 +41,25 @@ class CalculadoraRM:
         >>> print(f"RM: ${resultado.reserva_matematica:,.0f}")
     """
 
-    def __init__(self, config: ConfiguracionRM):
+    def __init__(
+        self,
+        config: ConfiguracionRM,
+        tabla_mortalidad: TablaMortalidad | None = None,
+    ):
         self.config = config
+        self.tabla_mortalidad = tabla_mortalidad
 
     def calcular(self) -> ResultadoRM:
         """
-        Calcula la Reserva Matemática usando método prospectivo.
+        Calcula la Reserva Matematica usando metodo prospectivo.
 
-        El método prospectivo calcula:
+        El metodo prospectivo calcula:
         RM = VP(Beneficios) - VP(Primas)
 
         Donde VP = Valor Presente considerando:
-        - Tasa de interés técnico
+        - Tasa de interes tecnico
         - Probabilidades de supervivencia
-        - Duración del seguro
+        - Duracion del seguro
 
         Returns:
             ResultadoRM con reserva calculada y componentes
@@ -62,10 +73,10 @@ class CalculadoraRM:
         """
         Calcula RM para seguro de vida tradicional.
 
-        Usa fórmulas actuariales simplificadas basadas en:
-        - Factor de descuento por interés
-        - Probabilidad de supervivencia (tabla mortalidad simplificada)
-        - Duración del seguro
+        Usa formulas actuariales basadas en:
+        - Factor de descuento por interes
+        - Probabilidad de supervivencia (tabla mortalidad EMSSA-09 o aprox.)
+        - Duracion remanente del seguro
         """
         suma_asegurada = self.config.suma_asegurada
         edad_actual = self.config.edad_asegurado
@@ -73,41 +84,45 @@ class CalculadoraRM:
         tasa = self.config.tasa_interes_tecnico
         prima_anual = self.config.prima_nivelada_anual
 
-        # Años transcurridos desde contratación
-        edad_actual - edad_contratacion
+        # Anios transcurridos desde contratacion
+        anos_transcurridos = edad_actual - edad_contratacion
 
-        # Probabilidad de supervivencia simplificada (tabla mortalidad básica)
+        # Probabilidad de supervivencia
         prob_supervivencia = self._calcular_probabilidad_supervivencia(edad_actual)
 
-        # Esperanza de vida remanente (simplificado)
-        años_esperados_vida = max(85 - edad_actual, 1)
+        # Termino remanente del seguro (considerando duracion del contrato)
+        # Se asume cobertura hasta edad 85 como omega de la poliza
+        edad_omega_poliza = 85
+        anos_remanentes_cobertura = max(edad_omega_poliza - edad_actual, 1)
 
-        # Factor de descuento acumulado
-        # VP = suma / (1 + i)^n × probabilidad_muerte
-        factor_descuento_beneficio = Decimal(
-            str(1 / ((1 + float(tasa)) ** años_esperados_vida))
-        )
+        # VP de beneficios futuros para el termino remanente
+        # Se calcula como la suma del VP de beneficio por muerte en cada anio
+        # VP_beneficios = SA * sum_{t=1}^{n} v^t * (1 - px_t)
+        # Usando aproximacion simplificada:
+        v = Decimal(str(1 / (1 + float(tasa))))
+
+        # Factor de descuento acumulado para beneficios
+        vn = v ** anos_remanentes_cobertura
         prob_muerte = Decimal("1") - prob_supervivencia
 
-        # VP de beneficios = SA × factor_descuento × prob_muerte
-        vp_beneficios = suma_asegurada * factor_descuento_beneficio * prob_muerte
+        # VP de beneficios = SA * factor_descuento * prob_muerte
+        vp_beneficios = suma_asegurada * vn * prob_muerte
 
-        # VP de primas futuras (anualidad)
-        # Asumiendo que se pagan hasta edad 65 o 85, lo que ocurra primero
-        edad_fin_primas = min(65, 85)
-        años_primas_restantes = max(edad_fin_primas - edad_actual, 0)
+        # VP de primas futuras (anualidad para el termino remanente)
+        # Primas se pagan hasta edad 65 o fin de cobertura, lo que ocurra primero
+        edad_fin_primas = min(65, edad_omega_poliza)
+        anos_primas_restantes = max(edad_fin_primas - edad_actual, 0)
 
-        if años_primas_restantes > 0:
-            # Anualidad: a = (1 - v^n) / d, donde v = 1/(1+i), d = tasa efectiva
-            v = Decimal(str(1 / (1 + float(tasa))))
-            vn = v ** años_primas_restantes
-            anualidad = (Decimal("1") - vn) / (Decimal("1") - v)
+        if anos_primas_restantes > 0:
+            # Anualidad: a = (1 - v^n) / (1 - v)
+            vn_primas = v ** anos_primas_restantes
+            anualidad = (Decimal("1") - vn_primas) / (Decimal("1") - v)
 
             vp_primas = prima_anual * anualidad * prob_supervivencia
         else:
             vp_primas = Decimal("0")
 
-        # Reserva matemática = VP beneficios - VP primas
+        # Reserva matematica = VP beneficios - VP primas
         reserva = vp_beneficios - vp_primas
 
         # La reserva no puede ser negativa (significa que primas cubren sobradamente)
@@ -125,8 +140,8 @@ class CalculadoraRM:
         """
         Calcula RM para renta vitalicia.
 
-        Una renta vitalicia paga un monto periódico mientras el rentista viva.
-        RM = Renta_mensual × 12 × Factor_anualidad_vitalicia
+        Una renta vitalicia paga un monto periodico mientras el rentista viva.
+        RM = Renta_mensual * 12 * Factor_anualidad_vitalicia
         """
         if not self.config.monto_renta_mensual:
             raise ValueError(
@@ -139,17 +154,17 @@ class CalculadoraRM:
         tasa = self.config.tasa_interes_tecnico
 
         # Esperanza de vida remanente
-        años_esperados = max(85 - edad_actual, 1)
+        anos_esperados = max(85 - edad_actual, 1)
 
         # Probabilidad de supervivencia
         prob_supervivencia = self._calcular_probabilidad_supervivencia(edad_actual)
 
         # Factor de anualidad vitalicia (simplificado)
         v = Decimal(str(1 / (1 + float(tasa))))
-        vn = v ** años_esperados
+        vn = v ** anos_esperados
         anualidad_vitalicia = (Decimal("1") - vn) / (Decimal("1") - v)
 
-        # RM = Renta anual × anualidad × prob supervivencia
+        # RM = Renta anual * anualidad * prob supervivencia
         reserva = renta_anual * anualidad_vitalicia * prob_supervivencia
 
         return ResultadoRM(
@@ -162,10 +177,12 @@ class CalculadoraRM:
 
     def _calcular_probabilidad_supervivencia(self, edad: int) -> Decimal:
         """
-        Calcula probabilidad de supervivencia usando tabla mortalidad simplificada.
+        Calcula probabilidad de supervivencia.
 
-        Basado en tabla EMSSA-09 (Experiencia Mexicana de Seguros de Sobrevivencia)
-        simplificada.
+        Si se proporciono una TablaMortalidad (e.g. EMSSA-09), se usa
+        ``tabla.obtener_qx(edad, sexo)`` para obtener la tasa real de
+        mortalidad.  En caso contrario se recurre a la aproximacion
+        cuadratica original para mantener compatibilidad hacia atras.
 
         Args:
             edad: Edad del asegurado
@@ -173,18 +190,24 @@ class CalculadoraRM:
         Returns:
             Probabilidad de supervivencia (0 a 1)
         """
-        # Función de supervivencia simplificada: s(x) = exp(-k × x^2)
-        # Ajustada para mortalidad mexicana
-
         if edad < 0:
             return Decimal("1")
         if edad >= 120:
             return Decimal("0")
 
-        # Parámetro de mortalidad (ajustado para México)
-        k = 0.00008
+        # --- Ruta 1: tabla de mortalidad real (EMSSA-09 u otra) ---
+        if self.tabla_mortalidad is not None:
+            try:
+                qx = self.tabla_mortalidad.obtener_qx(edad, "H")
+                return Decimal("1") - qx
+            except (ValueError, KeyError):
+                # Edad fuera de rango en la tabla: caer al fallback
+                pass
 
-        # Probabilidad de supervivencia
+        # --- Ruta 2: aproximacion cuadratica (fallback) ---
+        # Funcion de supervivencia simplificada: s(x) = exp(-k * x^2)
+        # Ajustada para mortalidad mexicana
+        k = 0.00008
         prob = math.exp(-k * (edad ** 2))
 
         return Decimal(str(prob))

@@ -206,9 +206,9 @@ class ValidadorSiniestrosGravables:
 
         # Default: NO GRAVABLE (principio de que indemnizaciones no son ingreso)
         return ResultadoGravabilidadSiniestro(
-            es_gravable=False,
-            monto_pago=monto_pago,
-            monto_gravable=Decimal("0"),
+            esta_gravado=False,
+            monto_siniestro=monto_pago,
+            monto_gravado=Decimal("0"),
             monto_exento=monto_pago,
             tasa_isr_aplicable=Decimal("0"),
             fundamento_legal="LISR - Indemnizaciones generalmente no gravables",
@@ -252,11 +252,11 @@ class ValidadorSiniestrosGravables:
 
         # Otros seguros: generalmente GRAVABLES como ingreso
         return ResultadoGravabilidadSiniestro(
-            es_gravable=True,
-            monto_pago=monto_pago,
-            monto_gravable=monto_pago,
+            esta_gravado=True,
+            monto_siniestro=monto_pago,
+            monto_gravado=monto_pago,
             monto_exento=Decimal("0"),
-            porcentaje_gravable=Decimal("100"),
+            tasa_isr_aplicable=Decimal("1"),
             fundamento_legal="LISR Art. 18 - Ingresos acumulables de PM",
         )
 

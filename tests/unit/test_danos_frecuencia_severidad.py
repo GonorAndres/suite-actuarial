@@ -280,10 +280,10 @@ class TestDistribucionesSeveridad:
             "poisson", {"lambda_": 1},
             "pareto", {"alpha": 3, "scale": 1000},
         )
-        # E[X] para Pareto(alpha=3, scale=1000) = scale*alpha/(alpha-1) = 1500
-        # Pero scipy pareto E[X] = scale/(alpha-1) when alpha>1 = 1000/2 = 500
+        # Pareto(b=3, scale=1000): E[X] = b*scale/(b-1) = 3*1000/2 = 1500
+        # With Poisson(lambda=1), E[S] = E[N]*E[X] = 1 * 1500 = 1500
         pp = m.prima_pura()
-        assert pp > 0
+        assert pp == Decimal("1500.00")
 
     def test_gamma(self):
         m = ModeloColectivo(
