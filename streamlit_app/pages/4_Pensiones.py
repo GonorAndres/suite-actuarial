@@ -1,8 +1,8 @@
 """
-Demo: Modulo de Pensiones -- suite_actuarial
+Demo: Módulo de Pensiones -- suite_actuarial
 
 Calculadoras IMSS (Ley 73 / Ley 97), rentas vitalicias
-y funciones de conmutacion.
+y funciones de conmutación.
 """
 
 import sys
@@ -35,7 +35,7 @@ st.set_page_config(page_title="Pensiones -- suite_actuarial", layout="wide")
 st.title("Pensiones")
 st.markdown(
     "Calculadoras del sistema de pensiones mexicano (`suite_actuarial.pensiones`): "
-    "IMSS Ley 73 y Ley 97, rentas vitalicias y funciones de conmutacion."
+    "IMSS Ley 73 y Ley 97, rentas vitalicias y funciones de conmutación."
 )
 
 
@@ -50,24 +50,24 @@ tabla_mortalidad = cargar_tabla()
 # Tabs
 # -----------------------------------------------------------------------
 tab_imss, tab_rv, tab_conm = st.tabs(
-    ["Calculadora IMSS", "Renta Vitalicia", "Funciones de Conmutacion"]
+    ["Calculadora IMSS", "Renta Vitalicia", "Funciones de Conmutación"]
 )
 
 # ===== TAB 1: Calculadora IMSS =====
 with tab_imss:
-    st.subheader("Calculadora de pension IMSS")
+    st.subheader("Calculadora de pensión IMSS")
 
     regimen = st.radio(
-        "Regimen de pension",
-        ["Ley 73 (antes de julio 1997)", "Ley 97 (despues de julio 1997)"],
+        "Régimen de pensión",
+        ["Ley 73 (antes de julio 1997)", "Ley 97 (después de julio 1997)"],
         horizontal=True,
     )
 
     if regimen.startswith("Ley 73"):
         st.markdown(
-            "**Ley 73**: pension de beneficio definido. Se calcula como porcentaje "
-            "del salario promedio de las ultimas 250 semanas, multiplicado por "
-            "un factor segun la edad de retiro."
+            "**Ley 73**: pensión de beneficio definido. Se calcula como porcentaje "
+            "del salario promedio de las últimas 250 semanas, multiplicado por "
+            "un factor según la edad de retiro."
         )
 
         cl1, cl2 = st.columns(2)
@@ -80,7 +80,7 @@ with tab_imss:
                 step=52,
             )
             salario_promedio = st.number_input(
-                "Salario promedio diario (ultimas 250 semanas, MXN)",
+                "Salario promedio diario (últimas 250 semanas, MXN)",
                 min_value=100.0,
                 max_value=10_000.0,
                 value=800.0,
@@ -93,7 +93,7 @@ with tab_imss:
             st.markdown("**Factores por edad de retiro (Art. 171):**")
             for e, f in LEY73_FACTORES_EDAD.items():
                 marca = " <--" if e == edad_retiro else ""
-                st.text(f"  {e} anos: {float(f)*100:.0f}%{marca}")
+                st.text(f"  {e} años: {float(f)*100:.0f}%{marca}")
 
         pension73 = PensionLey73(
             semanas_cotizadas=semanas,
@@ -103,20 +103,20 @@ with tab_imss:
         resumen = pension73.resumen()
 
         p1, p2, p3 = st.columns(3)
-        p1.metric("Pension mensual", f"${float(resumen['pension_mensual']):,.2f}")
+        p1.metric("Pensión mensual", f"${float(resumen['pension_mensual']):,.2f}")
         p2.metric("Aguinaldo anual", f"${float(resumen['aguinaldo_anual']):,.2f}")
-        p3.metric("Pension anual total", f"${float(resumen['pension_anual_total']):,.2f}")
+        p3.metric("Pensión anual total", f"${float(resumen['pension_anual_total']):,.2f}")
 
         # Detail table
         detalle_73 = {
             "Concepto": [
                 "Semanas cotizadas",
                 "Salario promedio diario",
-                "Porcentaje de pension",
+                "Porcentaje de pensión",
                 "Factor por edad",
-                "Pension mensual",
+                "Pensión mensual",
                 "Aguinaldo anual",
-                "Pension anual total",
+                "Pensión anual total",
             ],
             "Valor": [
                 str(resumen["semanas_cotizadas"]),
@@ -130,7 +130,7 @@ with tab_imss:
         }
         st.dataframe(pd.DataFrame(detalle_73), use_container_width=True, hide_index=True)
 
-        with st.expander("Ver codigo Python"):
+        with st.expander("Ver código Python"):
             st.code(
                 f'''from decimal import Decimal
 from suite_actuarial.pensiones import PensionLey73
@@ -154,7 +154,7 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
     else:
         # Ley 97
         st.markdown(
-            "**Ley 97**: pension de contribucion definida. El saldo de la AFORE "
+            "**Ley 97**: pensión de contribución definida. El saldo de la AFORE "
             "se usa para comprar una renta vitalicia o un retiro programado."
         )
 
@@ -246,14 +246,14 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
         q1.metric(
             "Renta vitalicia (mensual)",
             f"${float(comparacion['renta_vitalicia']['pension_mensual']):,.2f}",
-            help="Pension garantizada de por vida con una aseguradora",
+            help="Pensión garantizada de por vida con una aseguradora",
         )
         q2.metric(
             "Retiro programado (mensual)",
             f"${float(comparacion['retiro_programado']['pension_mensual']):,.2f}",
             help="Se recalcula anualmente, puede agotarse",
         )
-        st.info(f"Recomendacion: **{comparacion['recomendacion']}**")
+        st.info(f"Recomendación: **{comparacion['recomendacion']}**")
 
         # Projection chart
         fig_proy = go.Figure()
@@ -269,7 +269,7 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
             )
         )
         fig_proy.update_layout(
-            title=f"Proyeccion de saldo AFORE (rendimiento {rendimiento}% real)",
+            title=f"Proyección de saldo AFORE (rendimiento {rendimiento}% real)",
             xaxis_title="Edad",
             yaxis_title="Saldo (MXN)",
             hovermode="x unified",
@@ -280,27 +280,27 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
         comp_df = pd.DataFrame([
             {
                 "Modalidad": "Renta vitalicia",
-                "Pension mensual": float(comparacion["renta_vitalicia"]["pension_mensual"]),
-                "Pension anual": float(comparacion["renta_vitalicia"]["pension_anual"]),
-                "Caracteristica": comparacion["renta_vitalicia"]["tipo"],
+                "Pensión mensual": float(comparacion["renta_vitalicia"]["pension_mensual"]),
+                "Pensión anual": float(comparacion["renta_vitalicia"]["pension_anual"]),
+                "Característica": comparacion["renta_vitalicia"]["tipo"],
             },
             {
                 "Modalidad": "Retiro programado",
-                "Pension mensual": float(comparacion["retiro_programado"]["pension_mensual"]),
-                "Pension anual": float(comparacion["retiro_programado"]["pension_anual"]),
-                "Caracteristica": comparacion["retiro_programado"]["tipo"],
+                "Pensión mensual": float(comparacion["retiro_programado"]["pension_mensual"]),
+                "Pensión anual": float(comparacion["retiro_programado"]["pension_anual"]),
+                "Característica": comparacion["retiro_programado"]["tipo"],
             },
         ])
         st.dataframe(
             comp_df.style.format({
-                "Pension mensual": "${:,.2f}",
-                "Pension anual": "${:,.2f}",
+                "Pensión mensual": "${:,.2f}",
+                "Pensión anual": "${:,.2f}",
             }),
             use_container_width=True,
             hide_index=True,
         )
 
-        with st.expander("Ver codigo Python"):
+        with st.expander("Ver código Python"):
             st.code(
                 f'''from decimal import Decimal
 from suite_actuarial import TablaMortalidad
@@ -339,7 +339,7 @@ print(f"Recomendacion: {{comparacion['recomendacion']}}")
 with tab_rv:
     st.subheader("Renta vitalicia")
     st.markdown(
-        "Calcula la prima unica para comprar una renta vitalicia y genera "
+        "Calcula la prima única para comprar una renta vitalicia y genera "
         "la tabla de pagos proyectados con probabilidades de supervivencia."
     )
 
@@ -363,7 +363,7 @@ with tab_rv:
             format="%d",
         )
         tasa_rv = st.slider(
-            "Tasa de interes tecnico (%)",
+            "Tasa de interés técnico (%)",
             min_value=2.0,
             max_value=8.0,
             value=4.0,
@@ -383,7 +383,7 @@ with tab_rv:
     factor_renta = rv.calcular_factor_renta()
 
     pu1, pu2 = st.columns(2)
-    pu1.metric("Prima unica", f"${float(prima_unica):,.2f}")
+    pu1.metric("Prima única", f"${float(prima_unica):,.2f}")
     pu2.metric("Factor de renta", f"{float(factor_renta):,.4f}")
 
     # Payment projection
@@ -419,7 +419,7 @@ with tab_rv:
             x=df_pagos["edad"],
             y=df_pagos["reserva"],
             mode="lines",
-            name="Reserva matematica",
+            name="Reserva matemática",
             line=dict(color="#E91E63", width=2),
             yaxis="y2",
         )
@@ -438,7 +438,7 @@ with tab_rv:
         st.dataframe(
             df_pagos[["ano", "edad", "pago_anual", "prob_supervivencia", "pago_esperado", "reserva"]].rename(
                 columns={
-                    "ano": "Ano",
+                    "ano": "Año",
                     "edad": "Edad",
                     "pago_anual": "Pago anual",
                     "prob_supervivencia": "P(supervivencia)",
@@ -455,7 +455,7 @@ with tab_rv:
             hide_index=True,
         )
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         st.code(
             f'''from decimal import Decimal
 from suite_actuarial import TablaMortalidad
@@ -489,10 +489,10 @@ for p in pagos[:10]:
 
 # ===== TAB 3: Funciones de Conmutacion =====
 with tab_conm:
-    st.subheader("Funciones de conmutacion")
+    st.subheader("Funciones de conmutación")
     st.markdown(
-        "Tabla clasica (Bowers et al.) basada en la mortalidad EMSSA-09. "
-        "Dx, Nx, Sx, Cx, Mx, Rx para un sexo y tasa de interes dados."
+        "Tabla clásica (Bowers et al.) basada en la mortalidad EMSSA-09. "
+        "Dx, Nx, Sx, Cx, Mx, Rx para un sexo y tasa de interés dados."
     )
 
     tc1, tc2, tc3 = st.columns(3)
@@ -506,7 +506,7 @@ with tab_conm:
         sexo_tc_code = "H" if sexo_tc == "Hombre" else "M"
     with tc2:
         tasa_tc = st.slider(
-            "Tasa de interes (%)",
+            "Tasa de interés (%)",
             min_value=1.0,
             max_value=10.0,
             value=5.0,
@@ -517,7 +517,7 @@ with tab_conm:
         edad_desde = st.slider("Edad desde", 0, 90, 20, key="tc_desde")
         edad_hasta = st.slider("Edad hasta", edad_desde + 1, 110, min(edad_desde + 30, 100), key="tc_hasta")
 
-    @st.cache_data(show_spinner="Construyendo tabla de conmutacion...")
+    @st.cache_data(show_spinner="Construyendo tabla de conmutación...")
     def _build_tc(sexo_code, tasa, _tn):
         tc = TablaConmutacion(
             tabla_mortalidad=tabla_mortalidad,
@@ -586,7 +586,7 @@ with tab_conm:
     )
     st.plotly_chart(fig_tc, use_container_width=True)
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         st.code(
             f'''from suite_actuarial import TablaMortalidad
 from suite_actuarial.pensiones import TablaConmutacion

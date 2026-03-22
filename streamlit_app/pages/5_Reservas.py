@@ -1,14 +1,14 @@
 """
-Reservas Tecnicas IBNR -- Demo interactivo de los tres metodos de reservas.
+Reservas Técnicas IBNR -- Demo interactivo de los tres métodos de reservas.
 
 Muestra el uso de ChainLadder, BornhuetterFerguson y Bootstrap
-de la libreria suite_actuarial.
+de la librería suite_actuarial.
 """
 
 import sys
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
 from decimal import Decimal
@@ -30,12 +30,12 @@ from suite_actuarial.core.validators import (
 # ---------------------------------------------------------------------------
 # Configuracion de pagina
 # ---------------------------------------------------------------------------
-st.set_page_config(page_title="Reservas Tecnicas", layout="wide")
+st.set_page_config(page_title="Reservas Técnicas", layout="wide")
 
-st.title("Reservas Tecnicas IBNR")
+st.title("Reservas Técnicas IBNR")
 st.markdown(
-    "Estimacion de reservas por siniestros incurridos pero no reportados (IBNR) "
-    "utilizando tres metodos actuariales estandar de la industria."
+    "Estimación de reservas por siniestros incurridos pero no reportados (IBNR) "
+    "utilizando tres métodos actuariales estándar de la industria."
 )
 
 # ---------------------------------------------------------------------------
@@ -58,7 +58,7 @@ def obtener_triangulo(editable: bool = True) -> pd.DataFrame:
     df.index.name = "Anio"
 
     if editable:
-        st.markdown("##### Triangulo de desarrollo acumulado (editable)")
+        st.markdown("##### Triángulo de desarrollo acumulado (editable)")
         edited = st.data_editor(
             df,
             use_container_width=True,
@@ -78,17 +78,17 @@ tab_cl, tab_bf, tab_bs = st.tabs(
 
 # ===== TAB 1: Chain Ladder ================================================
 with tab_cl:
-    st.header("Metodo Chain Ladder")
+    st.header("Método Chain Ladder")
     st.markdown(
-        "El metodo Chain Ladder calcula factores de desarrollo age-to-age "
-        "para proyectar el triangulo y estimar los ultimates y reservas."
+        "El método Chain Ladder calcula factores de desarrollo age-to-age "
+        "para proyectar el triángulo y estimar los ultimates y reservas."
     )
 
     col_cfg, col_tri = st.columns([1, 3])
     with col_cfg:
         metodo_prom = st.selectbox(
-            "Metodo de promedio",
-            options=["simple", "ponderado", "geometrico"],
+            "Método de promedio",
+            options=["simple", "ponderado", "geométrico"],
             index=0,
             key="cl_metodo",
         )
@@ -101,7 +101,7 @@ with tab_cl:
         metodo_map = {
             "simple": MetodoPromedio.SIMPLE,
             "ponderado": MetodoPromedio.PONDERADO,
-            "geometrico": MetodoPromedio.GEOMETRICO,
+            "geométrico": MetodoPromedio.GEOMETRICO,
         }
         config = ConfiguracionChainLadder(
             metodo_promedio=metodo_map[metodo_prom],
@@ -127,8 +127,8 @@ with tab_cl:
             )
             st.dataframe(factores_df, use_container_width=True, hide_index=True)
 
-            # -- Grafico de reservas por anio --
-            st.subheader("Reservas y ultimates por anio de origen")
+            # -- Gráfico de reservas por año --
+            st.subheader("Reservas y ultimates por año de origen")
             anios = sorted(resultado.reservas_por_anio.keys())
             fig = go.Figure()
             fig.add_trace(go.Bar(
@@ -145,23 +145,23 @@ with tab_cl:
             ))
             fig.update_layout(
                 barmode="stack",
-                xaxis_title="Anio de origen",
+                xaxis_title="Año de origen",
                 yaxis_title="Monto (MXN)",
                 height=450,
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            # -- Triangulo completo --
+            # -- Triángulo completo --
             tri_completo = cl.obtener_triangulo_completo()
             if tri_completo is not None:
-                st.subheader("Triangulo completo (proyectado)")
+                st.subheader("Triángulo completo (proyectado)")
                 st.dataframe(tri_completo.style.format("{:,.0f}"), use_container_width=True)
 
         except Exception as e:
-            st.error(f"Error en el calculo: {e}")
+            st.error(f"Error en el cálculo: {e}")
 
-    with st.expander("Codigo de ejemplo -- Chain Ladder"):
+    with st.expander("Código de ejemplo -- Chain Ladder"):
         st.code(
             """import pandas as pd
 from decimal import Decimal
@@ -201,10 +201,10 @@ for anio, reserva in resultado.reservas_por_anio.items():
 
 # ===== TAB 2: Bornhuetter-Ferguson ========================================
 with tab_bf:
-    st.header("Metodo Bornhuetter-Ferguson")
+    st.header("Método Bornhuetter-Ferguson")
     st.markdown(
         "Combina la experiencia observada del Chain Ladder con una expectativa "
-        "a priori del loss ratio, dando mayor estabilidad en anios recientes."
+        "a priori del loss ratio, dando mayor estabilidad en años recientes."
     )
 
     col_cfg2, col_tri2 = st.columns([1, 3])
@@ -217,7 +217,7 @@ with tab_bf:
             step=5,
             key="bf_lr",
         )
-        st.markdown("##### Primas ganadas por anio")
+        st.markdown("##### Primas ganadas por año")
         primas_default = {1: 10000, 2: 10500, 3: 11000, 4: 11500, 5: 12000, 6: 12500}
         primas_df = pd.DataFrame(
             {"Anio": list(primas_default.keys()), "Prima": list(primas_default.values())}
@@ -244,10 +244,10 @@ with tab_bf:
             m1, m2, m3 = st.columns(3)
             m1.metric("Reserva Total IBNR (B-F)", f"${float(resultado_bf.reserva_total):,.0f}")
             m2.metric("Ultimate Total", f"${float(resultado_bf.ultimate_total):,.0f}")
-            m3.metric("Loss Ratio implicito", resultado_bf.detalles.get("loss_ratio_implicito", "N/A"))
+            m3.metric("Loss Ratio implícito", resultado_bf.detalles.get("loss_ratio_implicito", "N/A"))
 
-            # Comparacion con Chain Ladder
-            st.subheader("Comparacion B-F vs Chain Ladder")
+            # Comparación con Chain Ladder
+            st.subheader("Comparación B-F vs Chain Ladder")
             comparacion = bf.comparar_con_chain_ladder(tri_bf, primas_por_anio)
             comparacion_fmt = comparacion.copy()
             for col in ["Ultimate_CL", "Ultimate_BF", "Reserva_CL", "Reserva_BF"]:
@@ -275,7 +275,7 @@ with tab_bf:
             ))
             fig2.update_layout(
                 barmode="group",
-                xaxis_title="Anio de origen",
+                xaxis_title="Año de origen",
                 yaxis_title="Reserva IBNR (MXN)",
                 height=450,
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
@@ -285,16 +285,16 @@ with tab_bf:
             # Porcentajes reportados
             pcts = bf.obtener_porcentajes_reportados()
             if pcts:
-                st.subheader("Porcentaje reportado por anio")
+                st.subheader("Porcentaje reportado por año")
                 pcts_df = pd.DataFrame(
                     {"Anio": list(pcts.keys()), "% Reportado": [f"{float(v)*100:.1f}%" for v in pcts.values()]}
                 )
                 st.dataframe(pcts_df, use_container_width=True, hide_index=True)
 
         except Exception as e:
-            st.error(f"Error en el calculo: {e}")
+            st.error(f"Error en el cálculo: {e}")
 
-    with st.expander("Codigo de ejemplo -- Bornhuetter-Ferguson"):
+    with st.expander("Código de ejemplo -- Bornhuetter-Ferguson"):
         st.code(
             """from decimal import Decimal
 from suite_actuarial.reservas import BornhuetterFerguson
@@ -329,16 +329,16 @@ print(comparacion)
 
 # ===== TAB 3: Bootstrap ===================================================
 with tab_bs:
-    st.header("Metodo Bootstrap")
+    st.header("Método Bootstrap")
     st.markdown(
-        "Genera una distribucion completa de reservas mediante simulacion Monte Carlo, "
+        "Genera una distribución completa de reservas mediante simulación Monte Carlo, "
         "permitiendo cuantificar la incertidumbre y calcular percentiles (VaR, TVaR)."
     )
 
     col_cfg3, col_tri3 = st.columns([1, 3])
     with col_cfg3:
         n_sims = st.number_input(
-            "Numero de simulaciones",
+            "Número de simulaciones",
             min_value=100,
             max_value=5000,
             value=500,
@@ -368,7 +368,7 @@ with tab_bs:
                 m3.metric("Reserva P99", f"${float(resultado_bs.percentiles[99]):,.0f}")
 
                 # Tabla de percentiles
-                st.subheader("Percentiles de la distribucion")
+                st.subheader("Percentiles de la distribución")
                 perc_df = pd.DataFrame(
                     {
                         "Percentil": [f"P{p}" for p in sorted(resultado_bs.percentiles.keys())],
@@ -378,12 +378,12 @@ with tab_bs:
                 st.dataframe(perc_df, use_container_width=True, hide_index=True)
 
                 # Estadisticas
-                st.subheader("Estadisticas de la simulacion")
+                st.subheader("Estadísticas de la simulación")
                 stats_cols = st.columns(4)
                 stats_cols[0].metric("Media", f"${float(resultado_bs.detalles['media']):,.0f}")
-                stats_cols[1].metric("Desv. Estandar", f"${float(resultado_bs.detalles['desviacion_estandar']):,.0f}")
-                stats_cols[2].metric("Minimo", f"${float(resultado_bs.detalles['minimo']):,.0f}")
-                stats_cols[3].metric("Maximo", f"${float(resultado_bs.detalles['maximo']):,.0f}")
+                stats_cols[1].metric("Desv. Estándar", f"${float(resultado_bs.detalles['desviacion_estandar']):,.0f}")
+                stats_cols[2].metric("Mínimo", f"${float(resultado_bs.detalles['minimo']):,.0f}")
+                stats_cols[3].metric("Máximo", f"${float(resultado_bs.detalles['maximo']):,.0f}")
 
                 # VaR y TVaR
                 var95 = bs.calcular_var(0.95)
@@ -393,7 +393,7 @@ with tab_bs:
                 v2.metric("TVaR 95%", f"${float(tvar95):,.0f}")
 
                 # Grafico de distribucion
-                st.subheader("Distribucion de reservas simuladas")
+                st.subheader("Distribución de reservas simuladas")
                 distribucion = bs.obtener_distribucion()
                 if distribucion:
                     valores = [float(v) for v in distribucion]
@@ -428,9 +428,9 @@ with tab_bs:
                     st.plotly_chart(fig3, use_container_width=True)
 
             except Exception as e:
-                st.error(f"Error en el calculo: {e}")
+                st.error(f"Error en el cálculo: {e}")
 
-    with st.expander("Codigo de ejemplo -- Bootstrap"):
+    with st.expander("Código de ejemplo -- Bootstrap"):
         st.code(
             """from suite_actuarial.reservas import Bootstrap
 from suite_actuarial.core.validators import ConfiguracionBootstrap
@@ -465,14 +465,14 @@ print(f"Simulaciones generadas: {len(distribucion)}")
 # Sidebar
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.header("Acerca de los metodos")
+    st.header("Acerca de los métodos")
     st.markdown("""
-**Chain Ladder** -- Proyeccion determinista basada en factores de desarrollo
-historicos. Estandar de la industria.
+**Chain Ladder** -- Proyección determinista basada en factores de desarrollo
+históricos. Estándar de la industria.
 
 **Bornhuetter-Ferguson** -- Combina la experiencia con un loss ratio a priori.
-Mas estable para anios recientes.
+Más estable para años recientes.
 
-**Bootstrap** -- Simulacion Monte Carlo que proporciona intervalos de confianza
+**Bootstrap** -- Simulación Monte Carlo que proporciona intervalos de confianza
 y medidas de riesgo (VaR, TVaR).
 """)

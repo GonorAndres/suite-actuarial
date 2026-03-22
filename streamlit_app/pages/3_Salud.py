@@ -1,7 +1,7 @@
 """
-Demo: Modulo de Salud -- suite_actuarial
+Demo: Módulo de Salud -- suite_actuarial
 
-Gastos Medicos Mayores (GMM): calculadora, simulador de gasto
+Gastos Médicos Mayores (GMM): calculadora, simulador de gasto
 y curva de prima por edad.
 """
 
@@ -23,9 +23,9 @@ st.set_page_config(page_title="Salud -- suite_actuarial", layout="wide")
 
 st.title("Seguros de Salud")
 st.markdown(
-    "Producto de **Gastos Medicos Mayores** (GMM) implementado en "
-    "`suite_actuarial.salud`. Tarificacion por bandas de edad quinquenales, "
-    "zona geografica, nivel hospitalario, deducible y coaseguro."
+    "Producto de **Gastos Médicos Mayores** (GMM) implementado en "
+    "`suite_actuarial.salud`. Tarificación por bandas de edad quinquenales, "
+    "zona geográfica, nivel hospitalario, deducible y coaseguro."
 )
 
 # -----------------------------------------------------------------------
@@ -34,11 +34,11 @@ st.markdown(
 ZONAS_LABELS = {
     ZonaGeografica.METRO: "Metro (CDMX, MTY, GDL)",
     ZonaGeografica.URBANO: "Urbano",
-    ZonaGeografica.FORANEO: "Foraneo",
+    ZonaGeografica.FORANEO: "Foráneo",
 }
 
 NIVELES_LABELS = {
-    NivelHospitalario.ESTANDAR: "Estandar",
+    NivelHospitalario.ESTANDAR: "Estándar",
     NivelHospitalario.MEDIO: "Medio",
     NivelHospitalario.ALTO: "Alto",
 }
@@ -84,7 +84,7 @@ with tab_calc:
             format_func=lambda x: f"{x}%",
         )
         zona = st.selectbox(
-            "Zona geografica",
+            "Zona geográfica",
             options=list(ZONAS_LABELS.keys()),
             format_func=lambda x: ZONAS_LABELS[x],
             index=1,
@@ -138,7 +138,7 @@ with tab_calc:
     fig_factors.update_layout(showlegend=False, yaxis_title="Multiplicador")
     st.plotly_chart(fig_factors, use_container_width=True)
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         st.code(
             f'''from decimal import Decimal
 from suite_actuarial.salud import GMM, ZonaGeografica, NivelHospitalario
@@ -172,14 +172,14 @@ for seccion, datos in desglose.items():
 
 # ===== TAB 2: Simulador de Gasto =====
 with tab_gasto:
-    st.subheader("Simulador de gasto medico")
+    st.subheader("Simulador de gasto médico")
     st.markdown(
-        "Ingresa un monto de reclamacion y observa como se reparte entre "
+        "Ingresa un monto de reclamación y observa cómo se reparte entre "
         "deducible, coaseguro del asegurado y pago de la aseguradora."
     )
 
     monto_reclamacion = st.number_input(
-        "Monto de la reclamacion medica (MXN)",
+        "Monto de la reclamación médica (MXN)",
         min_value=0,
         max_value=50_000_000,
         value=500_000,
@@ -195,7 +195,7 @@ with tab_gasto:
         suma_asegurada=Decimal(str(sa)),
         deducible=Decimal(str(deducible)),
         coaseguro_pct=Decimal(str(coaseguro_pct / 100)),
-        tope_coaseguro=Decimal(str(sa * 0.1)),  # Tope comun: 10% de SA
+        tope_coaseguro=Decimal(str(sa * 0.1)),  # Tope común: 10% de SA
         zona=zona,
         nivel=nivel,
     )
@@ -231,7 +231,7 @@ with tab_gasto:
         )
     )
     fig_waterfall.update_layout(
-        title="Distribucion del gasto medico",
+        title="Distribución del gasto médico",
         yaxis_title="MXN",
         showlegend=False,
     )
@@ -240,7 +240,7 @@ with tab_gasto:
     # Detail table
     detalle = {
         "Concepto": [
-            "Monto de reclamacion",
+            "Monto de reclamación",
             "Deducible aplicado",
             "Monto excedente",
             "Coaseguro asegurado",
@@ -264,7 +264,7 @@ with tab_gasto:
         hide_index=True,
     )
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         st.code(
             f'''from decimal import Decimal
 from suite_actuarial.salud import GMM, ZonaGeografica, NivelHospitalario
@@ -294,7 +294,7 @@ with tab_edad:
     st.subheader("Curva de prima GMM por edad")
     st.markdown(
         "Prima ajustada por banda de edad quinquenal, manteniendo fijos "
-        "el resto de los parametros."
+        "el resto de los parámetros."
     )
 
     # Compute primas for all age bands
@@ -352,7 +352,7 @@ with tab_edad:
         hide_index=True,
     )
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         st.code(
             f'''from decimal import Decimal
 from suite_actuarial.salud import GMM, ZonaGeografica, NivelHospitalario

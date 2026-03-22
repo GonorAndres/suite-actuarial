@@ -1,14 +1,14 @@
 """
-Cumplimiento Regulatorio -- Demo interactivo del modulo regulatorio.
+Cumplimiento Regulatorio -- Demo interactivo del módulo regulatorio.
 
-Muestra el uso de AgregadorRCS, reservas tecnicas y validaciones SAT
-de la libreria suite_actuarial.
+Muestra el uso de AgregadorRCS, reservas técnicas y validaciones SAT
+de la librería suite_actuarial.
 """
 
 import sys
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
 from decimal import Decimal
@@ -31,45 +31,45 @@ st.set_page_config(page_title="Regulatorio", layout="wide")
 
 st.title("Cumplimiento Regulatorio")
 st.markdown(
-    "Herramientas de calculo regulatorio para aseguradoras mexicanas: "
-    "RCS (CNSF), reservas tecnicas y validaciones fiscales (SAT)."
+    "Herramientas de cálculo regulatorio para aseguradoras mexicanas: "
+    "RCS (CNSF), reservas técnicas y validaciones fiscales (SAT)."
 )
 
 # ---------------------------------------------------------------------------
 # Sidebar: selector de anio de configuracion
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.header("Configuracion")
+    st.header("Configuración")
     anio_config = st.selectbox(
-        "Anio regulatorio",
+        "Año regulatorio",
         options=[2024, 2025, 2026],
         index=2,
         key="anio_reg",
     )
     try:
         cfg = cargar_config(anio_config)
-        st.success(f"Configuracion {anio_config} cargada")
+        st.success(f"Configuración {anio_config} cargada")
         st.markdown(f"- UMA diaria: ${cfg.uma.uma_diaria}")
         st.markdown(f"- UMA anual: ${cfg.uma.uma_anual}")
         st.markdown(f"- ISR PM: {float(cfg.tasas_sat.tasa_isr_personas_morales)*100:.0f}%")
         st.markdown(f"- IVA: {float(cfg.tasas_sat.tasa_iva)*100:.0f}%")
     except Exception as e:
-        st.error(f"Error cargando configuracion: {e}")
+        st.error(f"Error cargando configuración: {e}")
         cfg = None
 
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------
 tab_rcs, tab_reservas, tab_sat = st.tabs(
-    ["RCS", "Reservas Tecnicas", "Validaciones SAT"]
+    ["RCS", "Reservas Técnicas", "Validaciones SAT"]
 )
 
 # ===== TAB 1: RCS ==========================================================
 with tab_rcs:
     st.header("Requerimiento de Capital de Solvencia (RCS)")
     st.markdown(
-        "Calculo del RCS agregado con matriz de correlacion CNSF, "
-        "combinando riesgos de suscripcion (vida y danos) e inversion."
+        "Cálculo del RCS agregado con matriz de correlación CNSF, "
+        "combinando riesgos de suscripción (vida y daños) e inversión."
     )
 
     col_vida, col_danos, col_inv = st.columns(3)
@@ -85,7 +85,7 @@ with tab_rcs:
             key="rcs_sa",
         )
         reserva_mat = st.number_input(
-            "Reserva matematica (MDP)",
+            "Reserva matemática (MDP)",
             min_value=0.0,
             max_value=100000.0,
             value=350.0,
@@ -93,13 +93,13 @@ with tab_rcs:
             key="rcs_rm",
         )
         edad_prom = st.slider("Edad promedio asegurados", 18, 80, 45, key="rcs_edad")
-        dur_prom = st.slider("Duracion promedio polizas (anios)", 1, 40, 15, key="rcs_dur")
+        dur_prom = st.slider("Duración promedio pólizas (años)", 1, 40, 15, key="rcs_dur")
         num_aseg = st.number_input(
-            "Numero de asegurados", min_value=1, max_value=1000000, value=10000, key="rcs_naseg"
+            "Número de asegurados", min_value=1, max_value=1000000, value=10000, key="rcs_naseg"
         )
 
     with col_danos:
-        st.subheader("RCS Danos")
+        st.subheader("RCS Daños")
         primas_ret = st.number_input(
             "Primas retenidas 12m (MDP)",
             min_value=1.0,
@@ -117,7 +117,7 @@ with tab_rcs:
             key="rcs_ressini",
         )
         cv = st.slider(
-            "Coeficiente de variacion",
+            "Coeficiente de variación",
             min_value=0.05,
             max_value=0.50,
             value=0.15,
@@ -126,17 +126,17 @@ with tab_rcs:
         )
 
     with col_inv:
-        st.subheader("RCS Inversion")
+        st.subheader("RCS Inversión")
         v_acciones = st.number_input("Acciones (MDP)", min_value=0.0, value=50.0, step=10.0, key="rcs_acc")
         v_gob = st.number_input("Bonos gubernamentales (MDP)", min_value=0.0, value=300.0, step=50.0, key="rcs_gob")
         v_corp = st.number_input("Bonos corporativos (MDP)", min_value=0.0, value=150.0, step=25.0, key="rcs_corp")
         v_inm = st.number_input("Inmuebles (MDP)", min_value=0.0, value=100.0, step=25.0, key="rcs_inm")
-        dur_bonos = st.slider("Duracion promedio bonos (anios)", 1.0, 25.0, 7.5, step=0.5, key="rcs_durbonos")
-        calif = st.selectbox("Calificacion promedio", ["AAA", "AA", "A", "BBB", "BB", "B"], index=1, key="rcs_calif")
+        dur_bonos = st.slider("Duración promedio bonos (años)", 1.0, 25.0, 7.5, step=0.5, key="rcs_durbonos")
+        calif = st.selectbox("Calificación promedio", ["AAA", "AA", "A", "BBB", "BB", "B"], index=1, key="rcs_calif")
 
     st.markdown("---")
     capital_min = st.number_input(
-        "Capital minimo pagado (MDP)",
+        "Capital mínimo pagado (MDP)",
         min_value=1.0,
         max_value=500000.0,
         value=1000.0,
@@ -193,9 +193,9 @@ with tab_rcs:
 
             with col_tabla:
                 componentes = {
-                    "Suscripcion Vida": float(resultado.rcs_suscripcion_vida) / 1e6,
-                    "Suscripcion Danos": float(resultado.rcs_suscripcion_danos) / 1e6,
-                    "Inversion": float(resultado.rcs_inversion) / 1e6,
+                    "Suscripción Vida": float(resultado.rcs_suscripcion_vida) / 1e6,
+                    "Suscripción Daños": float(resultado.rcs_suscripcion_danos) / 1e6,
+                    "Inversión": float(resultado.rcs_inversion) / 1e6,
                 }
                 import pandas as pd
                 df_comp = pd.DataFrame(
@@ -248,9 +248,9 @@ with tab_rcs:
                 st.plotly_chart(fig_bar, use_container_width=True)
 
         except Exception as e:
-            st.error(f"Error en el calculo: {e}")
+            st.error(f"Error en el cálculo: {e}")
 
-    with st.expander("Codigo de ejemplo -- RCS"):
+    with st.expander("Código de ejemplo -- RCS"):
         st.code(
             """from decimal import Decimal
 from suite_actuarial.regulatorio import AgregadorRCS
@@ -296,28 +296,28 @@ print(f"Ratio solvencia: {resultado.ratio_solvencia:.2%}")
 
 # ===== TAB 2: Reservas Tecnicas ============================================
 with tab_reservas:
-    st.header("Reservas Tecnicas")
+    st.header("Reservas Técnicas")
     st.markdown(
-        "Calculadoras de Reserva Matematica (RM) y Reserva de Riesgos en Curso (RRC) "
+        "Calculadoras de Reserva Matemática (RM) y Reserva de Riesgos en Curso (RRC) "
         "conforme a la Circular S-11.4 de la CNSF."
     )
 
     col_rm, col_rrc = st.columns(2)
 
     with col_rm:
-        st.subheader("Reserva Matematica (RM)")
+        st.subheader("Reserva Matemática (RM)")
         st.markdown(
-            "La reserva matematica es el pasivo actuarial que respalda las obligaciones "
+            "La reserva matemática es el pasivo actuarial que respalda las obligaciones "
             "futuras de seguros de vida de largo plazo."
         )
 
         rm_sa = st.number_input("Suma asegurada ($)", min_value=10000, value=1000000, step=50000, key="rm_sa")
         rm_edad = st.slider("Edad del asegurado", 18, 80, 35, key="rm_edad")
-        rm_plazo = st.slider("Plazo de la poliza (anios)", 5, 30, 20, key="rm_plazo")
-        rm_anios = st.slider("Anios transcurridos", 0, rm_plazo, 5, key="rm_anios")
-        rm_tasa = st.slider("Tasa tecnica (%)", 1.0, 8.0, 5.5, step=0.5, key="rm_tasa")
+        rm_plazo = st.slider("Plazo de la póliza (años)", 5, 30, 20, key="rm_plazo")
+        rm_anios = st.slider("Años transcurridos", 0, rm_plazo, 5, key="rm_anios")
+        rm_tasa = st.slider("Tasa técnica (%)", 1.0, 8.0, 5.5, step=0.5, key="rm_tasa")
 
-        if st.button("Calcular Reserva Matematica", key="btn_rm"):
+        if st.button("Calcular Reserva Matemática", key="btn_rm"):
             try:
                 from suite_actuarial.vida import VidaTemporal
                 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
@@ -337,7 +337,7 @@ with tab_reservas:
                 )
 
                 reserva = producto.calcular_reserva(asegurado, anio=rm_anios)
-                st.metric("Reserva Matematica", f"${float(reserva):,.2f}")
+                st.metric("Reserva Matemática", f"${float(reserva):,.2f}")
                 st.metric("% de Suma Asegurada", f"{float(reserva) / rm_sa * 100:.2f}%")
 
                 if cfg:
@@ -355,13 +355,13 @@ with tab_reservas:
         st.subheader("Reserva de Riesgos en Curso (RRC)")
         st.markdown(
             "La RRC se calcula como la parte proporcional de la prima no devengada "
-            "mas un margen de seguridad conforme a la regulacion."
+            "más un margen de seguridad conforme a la regulación."
         )
 
         rrc_prima = st.number_input("Prima emitida ($)", min_value=1000, value=120000, step=5000, key="rrc_prima")
         rrc_inicio = st.date_input("Fecha inicio vigencia", key="rrc_inicio")
         rrc_fin = st.date_input("Fecha fin vigencia", key="rrc_fin")
-        rrc_hoy = st.date_input("Fecha de calculo", key="rrc_hoy")
+        rrc_hoy = st.date_input("Fecha de cálculo", key="rrc_hoy")
 
         if st.button("Calcular RRC", key="btn_rrc"):
             dias_total = (rrc_fin - rrc_inicio).days
@@ -373,7 +373,7 @@ with tab_reservas:
 
                 st.metric("Dias totales", f"{dias_total}")
                 st.metric("Dias transcurridos", f"{dias_transcurridos}")
-                st.metric("Fraccion no devengada", f"{fraccion_no_devengada:.4f}")
+                st.metric("Fracción no devengada", f"{fraccion_no_devengada:.4f}")
                 st.metric("RRC base", f"${rrc_base:,.2f}")
 
                 if cfg:
@@ -386,7 +386,7 @@ with tab_reservas:
             else:
                 st.warning("Las fechas no son consistentes. Verifica los valores.")
 
-    with st.expander("Codigo de ejemplo -- Reservas Tecnicas"):
+    with st.expander("Código de ejemplo -- Reservas Técnicas"):
         st.code(
             """from decimal import Decimal
 from suite_actuarial.vida import VidaTemporal
@@ -421,7 +421,7 @@ print(f"RM con margen S-11.4: ${rm_regulatoria:,.2f}")
 with tab_sat:
     st.header("Validaciones SAT")
     st.markdown(
-        "Calculadoras de deducibilidad fiscal y retencion de ISR "
+        "Calculadoras de deducibilidad fiscal y retención de ISR "
         "conforme a la Ley del Impuesto Sobre la Renta (LISR)."
     )
 
@@ -431,7 +431,7 @@ with tab_sat:
         st.subheader("Verificador de deducibilidad")
         st.markdown(
             "Las primas de seguros de vida con componente de ahorro son deducibles "
-            "hasta el limite de UMAs anuales establecido en el Art. 151 LISR."
+            "hasta el límite de UMAs anuales establecido en el Art. 151 LISR."
         )
 
         ded_prima = st.number_input(
@@ -453,8 +453,8 @@ with tab_sat:
                 no_deducible = ded_prima - deducible
 
                 st.markdown("---")
-                st.markdown(f"**Limite por UMAs:** {limite_umas} UMAs anuales = ${limite_deduccion:,.2f}")
-                st.markdown(f"**Limite 15% ingresos:** ${limite_15_pct:,.2f}")
+                st.markdown(f"**Límite por UMAs:** {limite_umas} UMAs anuales = ${limite_deduccion:,.2f}")
+                st.markdown(f"**Límite 15% ingresos:** ${limite_15_pct:,.2f}")
                 st.markdown(f"**Tope aplicable:** ${tope:,.2f}")
                 st.markdown("---")
 
@@ -474,12 +474,12 @@ with tab_sat:
                 fig_ded.update_layout(height=350, showlegend=False)
                 st.plotly_chart(fig_ded, use_container_width=True)
             else:
-                st.warning("No se pudo cargar la configuracion regulatoria.")
+                st.warning("No se pudo cargar la configuración regulatoria.")
 
     with col_isr:
-        st.subheader("Calculadora de retencion ISR")
+        st.subheader("Calculadora de retención ISR")
         st.markdown(
-            "Calculo de la retencion de ISR sobre pagos de rentas vitalicias "
+            "Cálculo de la retención de ISR sobre pagos de rentas vitalicias "
             "y retiros de planes de ahorro."
         )
 
@@ -492,7 +492,7 @@ with tab_sat:
             "Monto del pago ($)", min_value=0, value=50000, step=5000, key="isr_monto"
         )
 
-        if st.button("Calcular retencion", key="btn_isr"):
+        if st.button("Calcular retención", key="btn_isr"):
             if cfg:
                 if tipo_pago == "Renta vitalicia":
                     tasa = float(cfg.tasas_sat.tasa_retencion_rentas_vitalicias)
@@ -503,16 +503,16 @@ with tab_sat:
                 neto = monto_pago - retencion
 
                 st.markdown("---")
-                st.markdown(f"**Tasa de retencion:** {tasa*100:.0f}%")
+                st.markdown(f"**Tasa de retención:** {tasa*100:.0f}%")
 
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Monto bruto", f"${monto_pago:,.2f}")
-                m2.metric("Retencion ISR", f"${retencion:,.2f}")
+                m2.metric("Retención ISR", f"${retencion:,.2f}")
                 m3.metric("Pago neto", f"${neto:,.2f}")
 
                 # Grafico
                 fig_isr = go.Figure(data=[go.Bar(
-                    x=["Bruto", "Retencion ISR", "Neto"],
+                    x=["Bruto", "Retención ISR", "Neto"],
                     y=[monto_pago, retencion, neto],
                     marker_color=["#1f77b4", "#d62728", "#2ca02c"],
                     text=[f"${monto_pago:,.0f}", f"${retencion:,.0f}", f"${neto:,.0f}"],
@@ -524,9 +524,9 @@ with tab_sat:
                 )
                 st.plotly_chart(fig_isr, use_container_width=True)
             else:
-                st.warning("No se pudo cargar la configuracion regulatoria.")
+                st.warning("No se pudo cargar la configuración regulatoria.")
 
-    with st.expander("Codigo de ejemplo -- Validaciones SAT"):
+    with st.expander("Código de ejemplo -- Validaciones SAT"):
         st.code(
             """from suite_actuarial.config import cargar_config
 

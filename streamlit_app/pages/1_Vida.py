@@ -1,5 +1,5 @@
 """
-Demo: Modulo de Vida -- suite_actuarial
+Demo: Módulo de Vida -- suite_actuarial
 
 Calculadora interactiva de productos de seguros de vida
 (Temporal, Ordinario, Dotal) con tabla EMSSA-09.
@@ -16,8 +16,9 @@ import streamlit as st
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
+sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
-from streamlit_app.utils.calculations import (
+from utils.calculations import (
     calcular_prima_dotal,
     calcular_prima_ordinario,
     calcular_prima_temporal,
@@ -49,7 +50,7 @@ tabla = cargar_tabla()
 # Inputs comunes en sidebar
 # -----------------------------------------------------------------------
 with st.sidebar:
-    st.header("Parametros del asegurado")
+    st.header("Parámetros del asegurado")
     edad = st.slider("Edad", 18, 70, 35)
     sexo = st.radio("Sexo", ["Hombre", "Mujer"], horizontal=True)
     suma_asegurada = st.number_input(
@@ -60,9 +61,9 @@ with st.sidebar:
         step=100_000,
         format="%d",
     )
-    plazo = st.slider("Plazo (anos)", 5, 40, 20)
+    plazo = st.slider("Plazo (años)", 5, 40, 20)
     tasa_interes = st.slider(
-        "Tasa de interes tecnico (%)",
+        "Tasa de interés técnico (%)",
         min_value=1.0,
         max_value=10.0,
         value=5.0,
@@ -74,7 +75,7 @@ with st.sidebar:
 # Tabs
 # -----------------------------------------------------------------------
 tab_calc, tab_comp, tab_reservas = st.tabs(
-    ["Calculadora", "Comparacion", "Reservas"]
+    ["Calculadora", "Comparación", "Reservas"]
 )
 
 # ===== TAB 1: Calculadora =====
@@ -103,7 +104,7 @@ with tab_calc:
         st.markdown("#### Vida Temporal")
         st.metric("Prima neta mensual", f"${res_temporal['prima_neta']:,.2f}")
         st.metric("Prima total mensual", f"${res_temporal['prima_total']:,.2f}")
-        st.caption(f"Plazo: {plazo} anos -- solo cobertura por muerte")
+        st.caption(f"Plazo: {plazo} años -- solo cobertura por muerte")
 
     with col_o:
         st.markdown("#### Vida Ordinario")
@@ -115,9 +116,9 @@ with tab_calc:
         st.markdown("#### Vida Dotal")
         st.metric("Prima neta mensual", f"${res_dotal['prima_neta']:,.2f}")
         st.metric("Prima total mensual", f"${res_dotal['prima_total']:,.2f}")
-        st.caption(f"Plazo: {plazo} anos -- muerte + supervivencia")
+        st.caption(f"Plazo: {plazo} años -- muerte + supervivencia")
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         st.code(
             f'''from decimal import Decimal
 from suite_actuarial import (
@@ -168,9 +169,9 @@ print(f"Dotal -- prima total mensual: ${{res_dot.prima_total:,.2f}}")
         )
 
 
-# ===== TAB 2: Comparacion =====
+# ===== TAB 2: Comparación =====
 with tab_comp:
-    st.subheader("Comparacion entre productos")
+    st.subheader("Comparación entre productos")
 
     @st.cache_data(show_spinner=False)
     def _tabla_comparacion(e, s, sa, p, t, _tn):
@@ -202,7 +203,7 @@ with tab_comp:
     fig.update_layout(showlegend=False, yaxis_title="MXN / mes")
     st.plotly_chart(fig, use_container_width=True)
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         st.code(
             f'''from suite_actuarial import (
     VidaTemporal, VidaOrdinario, VidaDotal,
@@ -247,7 +248,7 @@ print(df.to_string(index=False))
 
 # ===== TAB 3: Reservas =====
 with tab_reservas:
-    st.subheader("Proyeccion de reservas matematicas")
+    st.subheader("Proyección de reservas matemáticas")
 
     producto_reserva = st.selectbox(
         "Producto para reservas",
@@ -265,16 +266,16 @@ with tab_reservas:
     fig_res = go.Figure()
     fig_res.add_trace(
         go.Scatter(
-            x=df_res["Ano"],
-            y=df_res["Reserva Matematica"],
+            x=df_res["Año"],
+            y=df_res["Reserva Matemática"],
             mode="lines+markers",
             name="Reserva (MXN)",
             line=dict(color="#1976D2", width=2),
         )
     )
     fig_res.update_layout(
-        title=f"Reserva matematica -- {producto_reserva} (edad {edad}, plazo {plazo})",
-        xaxis_title="Ano de poliza",
+        title=f"Reserva matemática -- {producto_reserva} (edad {edad}, plazo {plazo})",
+        xaxis_title="Año de póliza",
         yaxis_title="Reserva (MXN)",
         hovermode="x unified",
     )
@@ -283,13 +284,13 @@ with tab_reservas:
     with st.expander("Tabla de reservas"):
         st.dataframe(
             df_res.style.format(
-                {"Reserva Matematica": "${:,.2f}", "% Suma Asegurada": "{:.2f}%"}
+                {"Reserva Matemática": "${:,.2f}", "% Suma Asegurada": "{:.2f}%"}
             ),
             use_container_width=True,
             hide_index=True,
         )
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         sexo_enum = "HOMBRE" if sexo == "Hombre" else "MUJER"
         st.code(
             f'''from decimal import Decimal

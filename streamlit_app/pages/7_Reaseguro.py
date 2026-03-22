@@ -2,13 +2,13 @@
 Reaseguro -- Demo interactivo de contratos de reaseguro.
 
 Muestra el uso de QuotaShare, ExcessOfLoss y StopLoss
-de la libreria suite_actuarial.
+de la librería suite_actuarial.
 """
 
 import sys
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
 from datetime import date
@@ -67,7 +67,7 @@ def crear_tabla_siniestros(siniestros: list[Siniestro]) -> pd.DataFrame:
 # Tabs
 # ---------------------------------------------------------------------------
 tab_qs, tab_xl, tab_sl, tab_comp = st.tabs(
-    ["Quota Share", "Excess of Loss", "Stop Loss", "Comparacion"]
+    ["Quota Share", "Excess of Loss", "Stop Loss", "Comparación"]
 )
 
 # ===== TAB 1: Quota Share ==================================================
@@ -75,16 +75,16 @@ with tab_qs:
     st.header("Quota Share (Cuota Parte)")
     st.markdown(
         "El reasegurador acepta un porcentaje fijo de cada riesgo y paga "
-        "una comision a la cedente por los gastos de adquisicion."
+        "una comisión a la cedente por los gastos de adquisición."
     )
 
     col_cfg, col_res = st.columns([1, 2])
 
     with col_cfg:
-        st.subheader("Parametros del contrato")
-        qs_cesion = st.slider("Porcentaje de cesion (%)", 5, 90, 30, step=5, key="qs_cesion")
-        qs_comision = st.slider("Comision de reaseguro (%)", 0, 45, 25, step=1, key="qs_comision")
-        qs_override = st.slider("Comision override (%)", 0, 10, 0, step=1, key="qs_override")
+        st.subheader("Parámetros del contrato")
+        qs_cesion = st.slider("Porcentaje de cesión (%)", 5, 90, 30, step=5, key="qs_cesion")
+        qs_comision = st.slider("Comisión de reaseguro (%)", 0, 45, 25, step=1, key="qs_comision")
+        qs_override = st.slider("Comisión override (%)", 0, 10, 0, step=1, key="qs_override")
 
         st.markdown("---")
         st.subheader("Cartera")
@@ -119,8 +119,8 @@ with tab_qs:
                 m2.metric("Prima cedida", f"${float(resultado.monto_cedido):,.0f}")
 
                 m3, m4 = st.columns(2)
-                m3.metric("Comision recibida", f"${float(resultado.comision_recibida):,.0f}")
-                m4.metric("Recuperacion siniestros", f"${float(resultado.recuperacion_reaseguro):,.0f}")
+                m3.metric("Comisión recibida", f"${float(resultado.comision_recibida):,.0f}")
+                m4.metric("Recuperación siniestros", f"${float(resultado.recuperacion_reaseguro):,.0f}")
 
                 st.metric("Resultado neto cedente", f"${float(resultado.resultado_neto_cedente):,.0f}")
 
@@ -135,7 +135,7 @@ with tab_qs:
                         marker_colors=["#1f77b4", "#ff7f0e"],
                         textinfo="label+percent",
                     )])
-                    fig_prima.update_layout(title="Distribucion de primas", height=350, showlegend=False)
+                    fig_prima.update_layout(title="Distribución de primas", height=350, showlegend=False)
                     st.plotly_chart(fig_prima, use_container_width=True)
 
                 with col_g2:
@@ -171,13 +171,13 @@ with tab_qs:
                         marker_colors=["#1f77b4", "#ff7f0e"],
                         textinfo="label+percent",
                     )])
-                    fig_sin2.update_layout(title="Distribucion de siniestros", height=350, showlegend=False)
+                    fig_sin2.update_layout(title="Distribución de siniestros", height=350, showlegend=False)
                     st.plotly_chart(fig_sin2, use_container_width=True)
 
             except Exception as e:
                 st.error(f"Error: {e}")
 
-    with st.expander("Codigo de ejemplo -- Quota Share"):
+    with st.expander("Código de ejemplo -- Quota Share"):
         st.code(
             """from datetime import date
 from decimal import Decimal
@@ -218,21 +218,21 @@ print(f"Recuperacion:    ${resultado.recuperacion_reaseguro:,.2f}")
 
 # ===== TAB 2: Excess of Loss ==============================================
 with tab_xl:
-    st.header("Excess of Loss (Exceso de Perdida)")
+    st.header("Excess of Loss (Exceso de Pérdida)")
     st.markdown(
-        "El reasegurador paga cuando un siniestro individual excede la retencion "
-        "de la cedente, hasta un limite maximo. Protege contra siniestros grandes."
+        "El reasegurador paga cuando un siniestro individual excede la retención "
+        "de la cedente, hasta un límite máximo. Protege contra siniestros grandes."
     )
 
     col_cfg2, col_res2 = st.columns([1, 2])
 
     with col_cfg2:
-        st.subheader("Parametros del contrato")
+        st.subheader("Parámetros del contrato")
         xl_retencion = st.number_input(
-            "Retencion ($)", min_value=10000, value=200000, step=25000, key="xl_ret"
+            "Retención ($)", min_value=10000, value=200000, step=25000, key="xl_ret"
         )
         xl_limite = st.number_input(
-            "Limite ($)", min_value=50000, value=500000, step=50000, key="xl_lim"
+            "Límite ($)", min_value=50000, value=500000, step=50000, key="xl_lim"
         )
         xl_tasa = st.slider("Tasa de prima (%)", 1.0, 20.0, 5.0, step=0.5, key="xl_tasa")
 
@@ -244,7 +244,7 @@ with tab_xl:
         if st.button("Aplicar Excess of Loss", key="btn_xl"):
             try:
                 if xl_limite <= xl_retencion:
-                    st.error("El limite debe ser mayor que la retencion.")
+                    st.error("El límite debe ser mayor que la retención.")
                 else:
                     config_xl = ExcessOfLossConfig(
                         tipo_contrato=TipoContrato.EXCESS_OF_LOSS,
@@ -265,7 +265,7 @@ with tab_xl:
                     # Metricas
                     m1, m2, m3 = st.columns(3)
                     m1.metric("Prima de reaseguro", f"${float(prima_xl):,.0f}")
-                    m2.metric("Recuperacion total", f"${float(resultado_xl.recuperacion_reaseguro):,.0f}")
+                    m2.metric("Recuperación total", f"${float(resultado_xl.recuperacion_reaseguro):,.0f}")
                     m3.metric("Resultado neto", f"${float(resultado_xl.resultado_neto_cedente):,.0f}")
 
                     # Detalle por siniestro
@@ -313,7 +313,7 @@ with tab_xl:
                         y=xl_retencion,
                         line_dash="dash",
                         line_color="red",
-                        annotation_text=f"Retencion: ${xl_retencion:,.0f}",
+                        annotation_text=f"Retención: ${xl_retencion:,.0f}",
                     )
                     fig_xl.update_layout(
                         barmode="stack",
@@ -327,7 +327,7 @@ with tab_xl:
             except Exception as e:
                 st.error(f"Error: {e}")
 
-    with st.expander("Codigo de ejemplo -- Excess of Loss"):
+    with st.expander("Código de ejemplo -- Excess of Loss"):
         st.code(
             """from datetime import date
 from decimal import Decimal
@@ -368,7 +368,7 @@ print(f"Retenido:      ${resultado.monto_retenido:,.2f}")
 
 # ===== TAB 3: Stop Loss ===================================================
 with tab_sl:
-    st.header("Stop Loss (Limitacion de Perdidas)")
+    st.header("Stop Loss (Limitación de Pérdidas)")
     st.markdown(
         "Protege cuando la siniestralidad agregada de la cartera "
         "excede un porcentaje objetivo (attachment point) de las primas."
@@ -377,9 +377,9 @@ with tab_sl:
     col_cfg3, col_res3 = st.columns([1, 2])
 
     with col_cfg3:
-        st.subheader("Parametros del contrato")
+        st.subheader("Parámetros del contrato")
         sl_attachment = st.slider("Attachment point (%)", 50, 150, 80, step=5, key="sl_att")
-        sl_limite = st.slider("Limite de cobertura (%)", 5, 50, 20, step=5, key="sl_lim")
+        sl_limite = st.slider("Límite de cobertura (%)", 5, 50, 20, step=5, key="sl_lim")
         sl_primas = st.number_input(
             "Primas sujetas ($)", min_value=100000, value=2500000, step=100000, key="sl_primas"
         )
@@ -413,12 +413,12 @@ with tab_sl:
                 m2.metric("Siniestralidad neta", resultado_sl.detalles.get("siniestralidad_neta", "N/A"))
 
                 m3, m4, m5 = st.columns(3)
-                m3.metric("Recuperacion", f"${float(resultado_sl.recuperacion_reaseguro):,.0f}")
+                m3.metric("Recuperación", f"${float(resultado_sl.recuperacion_reaseguro):,.0f}")
                 m4.metric("Prima reaseguro", f"${float(resultado_sl.prima_reaseguro_pagada):,.0f}")
                 m5.metric("Contrato activado", "SI" if resultado_sl.detalles.get("contrato_activado") else "NO")
 
                 # Grafico de siniestralidad
-                st.subheader("Visualizacion del contrato")
+                st.subheader("Visualización del contrato")
                 attachment_monto = sl_primas * sl_attachment / 100
                 techo_monto = sl_primas * (sl_attachment + sl_limite) / 100
 
@@ -444,7 +444,7 @@ with tab_sl:
                         fig_sl.add_trace(go.Bar(
                             x=["Cartera"],
                             y=[exceso_sobre_techo],
-                            name="Sobre el limite (retenido)",
+                            name="Sobre el límite (retenido)",
                             marker_color="#d62728",
                         ))
 
@@ -471,7 +471,7 @@ with tab_sl:
             except Exception as e:
                 st.error(f"Error: {e}")
 
-    with st.expander("Codigo de ejemplo -- Stop Loss"):
+    with st.expander("Código de ejemplo -- Stop Loss"):
         st.code(
             """from datetime import date
 from decimal import Decimal
@@ -510,24 +510,24 @@ print(f"Contrato activado:    {resultado.detalles['contrato_activado']}")
 
 # ===== TAB 4: Comparacion =================================================
 with tab_comp:
-    st.header("Comparacion de estrategias de reaseguro")
+    st.header("Comparación de estrategias de reaseguro")
     st.markdown(
-        "Comparacion lado a lado de las tres estrategias aplicadas "
+        "Comparación lado a lado de las tres estrategias aplicadas "
         "a los mismos siniestros de ejemplo."
     )
 
-    st.subheader("Parametros para la comparacion")
+    st.subheader("Parámetros para la comparación")
     c1, c2, c3 = st.columns(3)
     with c1:
-        comp_cesion = st.slider("QS: Cesion (%)", 5, 90, 30, step=5, key="comp_qs")
-        comp_comision = st.slider("QS: Comision (%)", 0, 45, 25, step=1, key="comp_qs_com")
+        comp_cesion = st.slider("QS: Cesión (%)", 5, 90, 30, step=5, key="comp_qs")
+        comp_comision = st.slider("QS: Comisión (%)", 0, 45, 25, step=1, key="comp_qs_com")
     with c2:
-        comp_ret = st.number_input("XL: Retencion ($)", min_value=10000, value=200000, step=25000, key="comp_ret")
-        comp_lim = st.number_input("XL: Limite ($)", min_value=50000, value=500000, step=50000, key="comp_lim")
+        comp_ret = st.number_input("XL: Retención ($)", min_value=10000, value=200000, step=25000, key="comp_ret")
+        comp_lim = st.number_input("XL: Límite ($)", min_value=50000, value=500000, step=50000, key="comp_lim")
         comp_tasa = st.slider("XL: Tasa prima (%)", 1.0, 20.0, 5.0, step=0.5, key="comp_tasa")
     with c3:
         comp_att = st.slider("SL: Attachment (%)", 50, 150, 80, step=5, key="comp_att")
-        comp_sl_lim = st.slider("SL: Limite (%)", 5, 50, 20, step=5, key="comp_sl_lim")
+        comp_sl_lim = st.slider("SL: Límite (%)", 5, 50, 20, step=5, key="comp_sl_lim")
         comp_sl_prima = st.number_input("SL: Primas sujetas ($)", min_value=100000, value=2500000, step=100000, key="comp_sl_p")
 
     if st.button("Comparar las 3 estrategias", key="btn_comp"):
@@ -582,7 +582,7 @@ with tab_comp:
             for nombre, res in results.items():
                 comp_data.append({
                     "Estrategia": nombre,
-                    "Recuperacion": f"${float(res.recuperacion_reaseguro):,.0f}",
+                    "Recuperación": f"${float(res.recuperacion_reaseguro):,.0f}",
                     "Siniestros retenidos": f"${total_sin - float(res.recuperacion_reaseguro):,.0f}",
                     "Prima/Costo reaseguro": f"${float(res.prima_reaseguro_pagada):,.0f}",
                     "Resultado neto": f"${float(res.resultado_neto_cedente):,.0f}",
@@ -594,7 +594,7 @@ with tab_comp:
 
             df_comp = pd.DataFrame(comp_data)
             st.dataframe(
-                df_comp[["Estrategia", "Recuperacion", "Siniestros retenidos", "Prima/Costo reaseguro", "Resultado neto"]],
+                df_comp[["Estrategia", "Recuperación", "Siniestros retenidos", "Prima/Costo reaseguro", "Resultado neto"]],
                 use_container_width=True,
                 hide_index=True,
             )
@@ -621,7 +621,7 @@ with tab_comp:
                     textposition="outside",
                 ))
                 fig_comp1.update_layout(
-                    title="Retencion vs Recuperacion",
+                    title="Retención vs Recuperación",
                     barmode="group",
                     yaxis_title="Monto (MXN)",
                     height=400,
@@ -669,7 +669,7 @@ with st.sidebar:
 El reasegurador acepta un % fijo de cada riesgo. Simple y predecible.
 
 **Excess of Loss** (No proporcional)
-Protege contra siniestros individuales grandes que excedan la retencion.
+Protege contra siniestros individuales grandes que excedan la retención.
 
 **Stop Loss** (No proporcional)
 Protege cuando la siniestralidad agregada excede un umbral.

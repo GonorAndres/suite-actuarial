@@ -1,5 +1,5 @@
 """
-Demo: Modulo de Danos -- suite_actuarial
+Demo: Módulo de Daños -- suite_actuarial
 
 Seguro de auto (AMIS), modelo colectivo frecuencia-severidad,
 y sistema Bonus-Malus.
@@ -21,11 +21,11 @@ sys.path.insert(0, str(ROOT_DIR / "src"))
 from suite_actuarial.danos import SeguroAuto, ModeloColectivo, CalculadoraBonusMalus, Cobertura
 from suite_actuarial.danos.tablas_amis import GRUPOS_VEHICULO, ZONAS_RIESGO
 
-st.set_page_config(page_title="Danos -- suite_actuarial", layout="wide")
+st.set_page_config(page_title="Daños -- suite_actuarial", layout="wide")
 
-st.title("Seguros de Danos")
+st.title("Seguros de Daños")
 st.markdown(
-    "Motor de tarificacion para seguros de propiedad y responsabilidad civil "
+    "Motor de tarificación para seguros de propiedad y responsabilidad civil "
     "(`suite_actuarial.danos`): auto AMIS, modelo colectivo y Bonus-Malus."
 )
 
@@ -50,30 +50,30 @@ OPCIONES_DEDUCIBLE = {
 # Tabs
 # -----------------------------------------------------------------------
 tab_auto, tab_colectivo, tab_bms = st.tabs(
-    ["Cotizacion Auto", "Modelo Colectivo", "Bonus-Malus"]
+    ["Cotización Auto", "Modelo Colectivo", "Bonus-Malus"]
 )
 
-# ===== TAB 1: Cotizacion Auto =====
+# ===== TAB 1: Cotización Auto =====
 with tab_auto:
-    st.subheader("Cotizacion de seguro de auto")
+    st.subheader("Cotización de seguro de auto")
 
     c1, c2 = st.columns(2)
     with c1:
         tipo_vehiculo_label = st.selectbox(
-            "Tipo de vehiculo",
+            "Tipo de vehículo",
             options=TIPOS_VEHICULO,
             format_func=lambda x: f"{NOMBRES_VEHICULO[x]} (grupo {GRUPOS_VEHICULO[x]})",
             index=1,
         )
         valor_vehiculo = st.number_input(
-            "Valor del vehiculo (MXN)",
+            "Valor del vehículo (MXN)",
             min_value=50_000,
             max_value=5_000_000,
             value=400_000,
             step=50_000,
             format="%d",
         )
-        antiguedad = st.slider("Antiguedad (anos)", 0, 10, 2)
+        antiguedad = st.slider("Antigüedad (años)", 0, 10, 2)
 
     with c2:
         zona_label = st.selectbox(
@@ -130,11 +130,11 @@ with tab_auto:
         df_cob,
         values="Prima anual (MXN)",
         names="Cobertura",
-        title="Distribucion de prima por cobertura",
+        title="Distribución de prima por cobertura",
     )
     st.plotly_chart(fig_cob, use_container_width=True)
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         st.code(
             f'''from decimal import Decimal
 from suite_actuarial.danos import SeguroAuto
@@ -165,15 +165,15 @@ with tab_colectivo:
     st.subheader("Modelo colectivo de riesgo (frecuencia-severidad)")
     st.markdown(
         "S = X1 + X2 + ... + XN, donde N ~ frecuencia y Xi ~ severidad. "
-        "Simulacion Monte Carlo de perdidas agregadas."
+        "Simulación Monte Carlo de pérdidas agregadas."
     )
 
     mc1, mc2 = st.columns(2)
 
     with mc1:
-        st.markdown("**Distribucion de frecuencia**")
+        st.markdown("**Distribución de frecuencia**")
         dist_freq = st.selectbox(
-            "Distribucion",
+            "Distribución",
             ["poisson", "negbinom", "binomial"],
             key="freq_dist",
         )
@@ -181,8 +181,8 @@ with tab_colectivo:
             lam = st.number_input("lambda", min_value=0.1, max_value=100.0, value=5.0, step=0.5)
             params_freq = {"lambda_": lam}
         elif dist_freq == "negbinom":
-            n_nb = st.number_input("n (exitos)", min_value=1.0, max_value=50.0, value=5.0, step=1.0)
-            p_nb = st.number_input("p (prob. exito)", min_value=0.01, max_value=0.99, value=0.30, step=0.05)
+            n_nb = st.number_input("n (éxitos)", min_value=1.0, max_value=50.0, value=5.0, step=1.0)
+            p_nb = st.number_input("p (prob. éxito)", min_value=0.01, max_value=0.99, value=0.30, step=0.05)
             params_freq = {"n": n_nb, "p": p_nb}
         else:
             n_b = st.number_input("n (ensayos)", min_value=1, max_value=100, value=20, step=1)
@@ -190,9 +190,9 @@ with tab_colectivo:
             params_freq = {"n": n_b, "p": p_b}
 
     with mc2:
-        st.markdown("**Distribucion de severidad**")
+        st.markdown("**Distribución de severidad**")
         dist_sev = st.selectbox(
-            "Distribucion",
+            "Distribución",
             ["lognormal", "gamma", "pareto", "weibull", "exponencial"],
             key="sev_dist",
         )
@@ -216,9 +216,9 @@ with tab_colectivo:
             lam_e = st.number_input("lambda (tasa)", min_value=0.000001, max_value=0.01, value=0.0001, step=0.00001, format="%.6f")
             params_sev = {"lambda_": lam_e}
 
-    n_sim = st.slider("Numero de simulaciones", 1_000, 100_000, 10_000, step=1_000)
+    n_sim = st.slider("Número de simulaciones", 1_000, 100_000, 10_000, step=1_000)
 
-    @st.cache_data(show_spinner="Simulando perdidas...")
+    @st.cache_data(show_spinner="Simulando pérdidas...")
     def _simular(df, pf, ds, ps, ns, seed):
         modelo = ModeloColectivo(df, pf, ds, ps)
         stats = modelo.estadisticas(n_simulaciones=ns, seed=seed)
@@ -230,7 +230,7 @@ with tab_colectivo:
     # Metrics
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Prima pura E[S]", f"${float(stats_mc['prima_pura']):,.2f}")
-    m2.metric("Desv. estandar", f"${float(stats_mc['desviacion_estandar']):,.2f}")
+    m2.metric("Desv. estándar", f"${float(stats_mc['desviacion_estandar']):,.2f}")
     m3.metric("VaR 95%", f"${float(stats_mc['var_95']):,.2f}")
     m4.metric("TVaR 95%", f"${float(stats_mc['tvar_95']):,.2f}")
 
@@ -238,8 +238,8 @@ with tab_colectivo:
     fig_hist = px.histogram(
         x=perdidas,
         nbins=80,
-        title="Distribucion de perdidas agregadas (simulacion Monte Carlo)",
-        labels={"x": "Perdida agregada (MXN)", "count": "Frecuencia"},
+        title="Distribución de pérdidas agregadas (simulación Monte Carlo)",
+        labels={"x": "Pérdida agregada (MXN)", "count": "Frecuencia"},
     )
     fig_hist.add_vline(
         x=float(stats_mc["prima_pura"]),
@@ -262,11 +262,11 @@ with tab_colectivo:
     fig_hist.update_layout(showlegend=False)
     st.plotly_chart(fig_hist, use_container_width=True)
 
-    with st.expander("Estadisticas completas"):
+    with st.expander("Estadísticas completas"):
         stats_display = {k: str(v) for k, v in stats_mc.items()}
         st.json(stats_display)
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         freq_params_str = str(params_freq)
         sev_params_str = str(params_sev)
         st.code(
@@ -304,11 +304,11 @@ with tab_bms:
     st.subheader("Sistema Bonus-Malus")
     st.markdown(
         "Escala mexicana de descuentos/recargos por historial de siniestros. "
-        "Sin siniestros: -5% por ano (max -30%). Con siniestro: +15% a +50%."
+        "Sin siniestros: -5% por año (máx -30%). Con siniestro: +15% a +50%."
     )
 
-    st.markdown("**Ingresa el historial de siniestros por ano:**")
-    n_anos_bms = st.slider("Anos de historial", 1, 15, 5, key="bms_anos")
+    st.markdown("**Ingresa el historial de siniestros por año:**")
+    n_anos_bms = st.slider("Años de historial", 1, 15, 5, key="bms_anos")
 
     cols_bms = st.columns(min(n_anos_bms, 5))
     historial = []
@@ -316,7 +316,7 @@ with tab_bms:
         col_idx = i % min(n_anos_bms, 5)
         with cols_bms[col_idx]:
             s = st.number_input(
-                f"Ano {i + 1}",
+                f"Año {i + 1}",
                 min_value=0,
                 max_value=5,
                 value=0,
@@ -337,7 +337,7 @@ with tab_bms:
     st.dataframe(
         df_bms[["ano", "siniestros", "nivel_previo", "nivel_nuevo", "factor", "descuento_recargo"]].rename(
             columns={
-                "ano": "Ano",
+                "ano": "Año",
                 "siniestros": "Siniestros",
                 "nivel_previo": "Nivel previo",
                 "nivel_nuevo": "Nivel nuevo",
@@ -363,13 +363,13 @@ with tab_bms:
     fig_bms.add_hline(y=1.0, line_dash="dash", line_color="gray", annotation_text="Base (1.00)")
     fig_bms.update_layout(
         title="Trayectoria del factor Bonus-Malus",
-        xaxis_title="Ano",
+        xaxis_title="Año",
         yaxis_title="Factor de prima",
         yaxis=dict(range=[0.6, 1.6]),
     )
     st.plotly_chart(fig_bms, use_container_width=True)
 
-    with st.expander("Ver codigo Python"):
+    with st.expander("Ver código Python"):
         st.code(
             f'''from suite_actuarial.danos import CalculadoraBonusMalus
 
