@@ -12,22 +12,21 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from plotly.subplots import make_subplots
 
 # Agregar src al path para imports
 ROOT_DIR = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR / "src"))
 
+from mexican_insurance.core.validators import (
+    ConfiguracionBootstrap,
+    ConfiguracionBornhuetterFerguson,
+    ConfiguracionChainLadder,
+)
+from mexican_insurance.reservas.bootstrap import Bootstrap
 from mexican_insurance.reservas.bornhuetter_ferguson import (
     BornhuetterFerguson,
 )
-from mexican_insurance.reservas.bootstrap import Bootstrap
 from mexican_insurance.reservas.chain_ladder import ChainLadder
-from mexican_insurance.core.validators import (
-    ConfiguracionChainLadder,
-    ConfiguracionBornhuetterFerguson,
-    ConfiguracionBootstrap,
-)
 
 # Configuración de la página
 st.set_page_config(
@@ -298,7 +297,7 @@ with tab1:
         st.metric(
             "Incremento Anual",
             f"{incremento_anual:+.1f}%",
-            delta=f"vs año anterior",
+            delta="vs año anterior",
             help="Cambio en siniestralidad año a año",
         )
 

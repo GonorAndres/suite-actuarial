@@ -6,7 +6,6 @@ en los diferentes dashboards.
 """
 
 from decimal import Decimal
-from typing import Dict, List, Tuple
 
 import pandas as pd
 
@@ -54,7 +53,7 @@ def calcular_prima_temporal(
     plazo: int,
     tasa_interes: float,
     tabla: TablaMortalidad,
-) -> Dict:
+) -> dict:
     """
     Calcula prima para Vida Temporal.
 
@@ -87,7 +86,7 @@ def calcular_prima_ordinario(
     plazo_pago: int | None,
     tasa_interes: float,
     tabla: TablaMortalidad,
-) -> Dict:
+) -> dict:
     """
     Calcula prima para Vida Ordinario.
 
@@ -126,7 +125,7 @@ def calcular_prima_dotal(
     plazo: int,
     tasa_interes: float,
     tabla: TablaMortalidad,
-) -> Dict:
+) -> dict:
     """
     Calcula prima para Vida Dotal.
 

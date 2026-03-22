@@ -87,6 +87,7 @@ Thumbs.db
 .DS_Store
 
 # Project specific
-data/raw/  # Datos crudos no versionados
-data/processed/  # Datos procesados temporales
-outputs/  # Resultados temporales
+data/raw/
+data/processed/
+outputs/
+subagents_outputs/

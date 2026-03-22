@@ -40,9 +40,6 @@ from mexican_insurance.regulatorio.validaciones_sat.validador_primas import (
 from mexican_insurance.regulatorio.validaciones_sat.validador_retenciones import (
     CalculadoraRetencionesISR,
 )
-from mexican_insurance.regulatorio.validaciones_sat.validador_siniestros import (
-    ValidadorSiniestrosGravables,
-)
 
 # Configuración de la página
 st.set_page_config(
