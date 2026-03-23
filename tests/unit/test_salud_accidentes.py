@@ -15,7 +15,6 @@ import pytest
 
 from suite_actuarial.salud.accidentes import AccidentesEnfermedades
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

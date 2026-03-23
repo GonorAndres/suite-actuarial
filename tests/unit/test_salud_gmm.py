@@ -17,7 +17,6 @@ import pytest
 
 from suite_actuarial.salud.gmm import GMM, NivelHospitalario, ZonaGeografica
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

@@ -11,9 +11,7 @@ import pandas as pd
 import pytest
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
-from suite_actuarial.core.models.common import Sexo
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
-
 
 # ======================================================================
 # Fixtures

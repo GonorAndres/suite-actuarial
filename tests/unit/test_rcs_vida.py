@@ -232,7 +232,6 @@ class TestRCSTotalVida:
 
     def test_rcs_total_refleja_correlacion_negativa(self, config_vida_basico):
         """Mortalidad-longevidad offset (-0.25) reduces total vs sqrt(sum sq)"""
-        import math as _math
 
         rcs = RCSVida(config_vida_basico)
         rcs_total, desglose = rcs.calcular_rcs_total_vida()

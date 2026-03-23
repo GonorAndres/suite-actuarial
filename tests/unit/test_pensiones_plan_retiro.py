@@ -8,26 +8,20 @@ comparacion de modalidades y determinacion de regimen.
 from datetime import date
 from decimal import Decimal
 
-import pandas as pd
 import pytest
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
-from suite_actuarial.core.models.common import Sexo
 from suite_actuarial.pensiones.plan_retiro import (
     CalculadoraIMSS,
     PensionLey73,
     PensionLey97,
 )
 from suite_actuarial.pensiones.tablas_imss import (
-    DIAS_AGUINALDO_PENSIONADOS,
     LEY73_FACTORES_EDAD,
-    LEY73_PORCENTAJES,
     PENSION_GARANTIZADA_2024,
-    SEMANAS_MINIMAS_LEY73,
     obtener_factor_edad,
     obtener_porcentaje_ley73,
 )
-
 
 # ======================================================================
 # Fixtures

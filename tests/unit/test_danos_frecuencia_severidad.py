@@ -17,7 +17,6 @@ import pytest
 
 from suite_actuarial.danos.frecuencia_severidad import ModeloColectivo
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

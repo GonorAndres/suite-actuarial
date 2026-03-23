@@ -18,7 +18,6 @@ import pytest
 
 from suite_actuarial.actuarial.interest.tasas import CurvaRendimiento
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

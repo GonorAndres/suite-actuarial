@@ -13,19 +13,13 @@ from decimal import Decimal
 
 import pytest
 
-from suite_actuarial.danos.auto import Cobertura, SeguroAuto, COBERTURAS_BASICAS
+from suite_actuarial.danos.auto import COBERTURAS_BASICAS, Cobertura, SeguroAuto
 from suite_actuarial.danos.tablas_amis import (
-    FACTOR_DEDUCIBLE,
-    FACTOR_EDAD_CONDUCTOR,
-    GRUPOS_VEHICULO,
-    TASAS_BASE,
-    ZONAS_RIESGO,
     obtener_depreciacion,
     obtener_grupo,
     obtener_zona,
     rango_edad_conductor,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -117,7 +111,7 @@ class TestTarificacion:
     def test_tarifa_todas_coberturas(self, auto_compacto):
         tarifas = auto_compacto.calcular_tarifa()
         assert len(tarifas) == len(Cobertura)
-        for cob, prima in tarifas.items():
+        for _cob, prima in tarifas.items():
             assert isinstance(prima, Decimal)
             assert prima > 0
 
