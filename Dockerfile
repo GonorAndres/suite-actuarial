@@ -14,6 +14,10 @@ COPY streamlit_app/ streamlit_app/
 
 RUN pip install --no-cache-dir -e ".[viz]"
 
+# Inject Google Analytics into Streamlit's index.html
+RUN STHTML=$(python -c "import streamlit,os;print(os.path.join(os.path.dirname(streamlit.__file__),'static','index.html'))") && \
+    sed -i 's|</head>|<script async src="https://www.googletagmanager.com/gtag/js?id=G-098V02NCB0"></script><script>window.dataLayer=window.dataLayer\|\|[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-098V02NCB0");</script></head>|' "$STHTML"
+
 EXPOSE 8080
 
 CMD ["streamlit", "run", "streamlit_app/Home.py", \
