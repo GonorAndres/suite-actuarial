@@ -126,6 +126,7 @@ def api_client():
     """TestClient for FastAPI integration tests."""
     try:
         from fastapi.testclient import TestClient
+
         from suite_actuarial.api.main import app
         return TestClient(app)
     except ImportError:
