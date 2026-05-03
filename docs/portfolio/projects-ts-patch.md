@@ -17,7 +17,7 @@ Find the existing `actuarial-suite` entry and add/update these fields:
     },
     // ADD: link to live demo once deployed
     url: '<STREAMLIT_CLOUD_URL>',
-    repo: 'https://github.com/GonorAndres/Analisis_Seguros_Mexico',
+    repo: 'https://github.com/GonorAndres/suite-actuarial',
     platform: 'Streamlit',
     category: 'actuarial',
     tags: ['Python', 'Pydantic', 'Streamlit', 'LISF', 'RCS', 'EMSSA-09', 'Chain Ladder'],
@@ -43,7 +43,7 @@ Capture the Streamlit dashboard home page and save as:
 ## 4. Deploy Streamlit to Streamlit Community Cloud
 
 1. Go to https://share.streamlit.io
-2. Connect repo: GonorAndres/Analisis_Seguros_Mexico
+2. Connect repo: GonorAndres/suite-actuarial
 3. Main file path: streamlit_app/Home.py
 4. Python version: 3.11
 5. The root `requirements.txt` will be auto-detected

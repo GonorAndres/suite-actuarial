@@ -18,7 +18,7 @@ web dashboard.
 ### As a Python library
 
 ```bash
-pip install git+https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
+pip install git+https://github.com/GonorAndres/suite-actuarial.git
 ```
 
 ```python
@@ -41,7 +41,7 @@ print(f"Prima mensual: ${resultado.prima_total:,.2f}")
 ### As a web application
 
 ```bash
-git clone https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
+git clone https://github.com/GonorAndres/suite-actuarial.git
 cd suite-actuarial
 docker-compose up
 ```
@@ -107,13 +107,13 @@ frontend/               -- Next.js 16 + React 19 + Tailwind CSS 4 + Recharts
 ### Library only
 
 ```bash
-pip install git+https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
+pip install git+https://github.com/GonorAndres/suite-actuarial.git
 ```
 
 ### Full stack (Docker)
 
 ```bash
-git clone https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
+git clone https://github.com/GonorAndres/suite-actuarial.git
 cd suite-actuarial
 docker-compose up
 ```
@@ -125,7 +125,7 @@ Services:
 ### Development
 
 ```bash
-git clone https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
+git clone https://github.com/GonorAndres/suite-actuarial.git
 cd suite-actuarial
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,api]"
@@ -292,7 +292,7 @@ GitHub Actions runs Python tests (3.11 + 3.12) and frontend build on every push.
 
 ## Repository Name
 
-The GitHub repository is named `Analisis_Seguros_Mexico` (original name).
+The GitHub repository is named `suite-actuarial` (original name).
 The package has been `suite_actuarial` since v2.0:
 
 ```python

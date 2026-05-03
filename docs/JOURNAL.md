@@ -3006,7 +3006,7 @@ FUNCIÓN calcular_rcs_completo():
 
 **Comando de ejecución**:
 ```bash
-PYTHONPATH=/home/user/Analisis_Seguros_Mexico/src \
+PYTHONPATH=/home/user/suite-actuarial/src \
 python -m pytest tests/unit/test_rcs_vida.py \
                  tests/unit/test_rcs_completo.py \
                  -v

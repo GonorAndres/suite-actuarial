@@ -220,10 +220,10 @@ export default function Home() {
 
 const CODE_SNIPPETS = {
   install: `# Instalar desde GitHub
-pip install git+https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
+pip install git+https://github.com/GonorAndres/suite-actuarial.git
 
 # O clonar y desarrollar localmente
-git clone https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
+git clone https://github.com/GonorAndres/suite-actuarial.git
 cd suite-actuarial
 pip install -e ".[dev]"`,
 

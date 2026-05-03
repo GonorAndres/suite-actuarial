@@ -77,9 +77,9 @@ all = [
 seguros = "suite_actuarial.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/GonorAndres/Analisis_Seguros_Mexico"
-Documentation = "https://github.com/GonorAndres/Analisis_Seguros_Mexico#readme"
-Repository = "https://github.com/GonorAndres/Analisis_Seguros_Mexico"
+Homepage = "https://github.com/GonorAndres/suite-actuarial"
+Documentation = "https://github.com/GonorAndres/suite-actuarial#readme"
+Repository = "https://github.com/GonorAndres/suite-actuarial"
 
 [tool.setuptools.packages.find]
 where = ["src"]
