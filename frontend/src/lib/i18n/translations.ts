@@ -179,6 +179,20 @@ export const translations = {
     feature_bilingual_title: "Bilingüe ES/EN",
     feature_bilingual_desc: "Interfaz completa en español e inglés con cambio de idioma instantáneo.",
 
+    // -- Quick Start / Python tutorial --
+    quickstart_title: "Inicio rápido en Python",
+    quickstart_subtitle: "Instala e importa suite_actuarial en tu proyecto en segundos.",
+    quickstart_install_title: "Instalación",
+    quickstart_vida_title: "Calcular prima de vida",
+    quickstart_pension_title: "Calcular pensión IMSS",
+    quickstart_reservas_title: "Estimar reservas IBNR",
+    quickstart_tab_install: "Instalación",
+    quickstart_tab_vida: "Vida",
+    quickstart_tab_pension: "Pensión",
+    quickstart_tab_reservas: "Reservas",
+    quickstart_pip_note: "Requiere Python 3.11+. Incluye tabla EMSSA-09 y configuración regulatoria (2024-2026).",
+    quickstart_api_note: "También disponible como API REST -- inicia el servidor con:",
+
     // -- Vida compare tab --
     vida_comparar: "Comparar",
     vida_compare_desc: "Comparación lado a lado de los tres productos de vida.",
@@ -582,6 +596,20 @@ export const translations = {
     feature_domains_desc: "Life, P&C, health, pensions, reserves, regulatory, reinsurance, and configuration.",
     feature_bilingual_title: "Bilingual ES/EN",
     feature_bilingual_desc: "Full interface in Spanish and English with instant language switching.",
+
+    // -- Quick Start / Python tutorial --
+    quickstart_title: "Python Quick Start",
+    quickstart_subtitle: "Install and import suite_actuarial into your project in seconds.",
+    quickstart_install_title: "Installation",
+    quickstart_vida_title: "Calculate life premium",
+    quickstart_pension_title: "Calculate IMSS pension",
+    quickstart_reservas_title: "Estimate IBNR reserves",
+    quickstart_tab_install: "Install",
+    quickstart_tab_vida: "Life",
+    quickstart_tab_pension: "Pension",
+    quickstart_tab_reservas: "Reserves",
+    quickstart_pip_note: "Requires Python 3.11+. Includes EMSSA-09 table and regulatory config (2024-2026).",
+    quickstart_api_note: "Also available as a REST API -- start the server with:",
 
     // -- Vida compare tab --
     vida_comparar: "Compare",

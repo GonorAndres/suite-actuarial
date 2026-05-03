@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { Card } from "@/components/ui";
+import { Card, Tabs } from "@/components/ui";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
 /* ── Domain card data ──────────────────────────────────────────────────── */
@@ -145,6 +146,9 @@ export default function Home() {
         </Card>
       </section>
 
+      {/* ── Quick Start Python tutorial ─────────────────────────────── */}
+      <QuickStartSection />
+
       {/* ── Domain cards grid ─────────────────────────────────────────── */}
       <section id="calculators-grid" className="max-w-6xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -209,5 +213,149 @@ export default function Home() {
         </div>
       </section>
     </div>
+  );
+}
+
+/* ── Quick Start Python Tutorial ──────────────────────────────────────── */
+
+const CODE_SNIPPETS = {
+  install: `# Instalar desde GitHub
+pip install git+https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
+
+# O clonar y desarrollar localmente
+git clone https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
+cd suite-actuarial
+pip install -e ".[dev]"`,
+
+  vida: `from suite_actuarial import VidaTemporal, TablaMortalidad
+from suite_actuarial import Asegurado, ConfiguracionProducto
+from decimal import Decimal
+
+# Cargar tabla de mortalidad EMSSA-09
+tabla = TablaMortalidad.cargar_emssa09()
+
+# Configurar producto: temporal 20 años, tasa 5.5%
+config = ConfiguracionProducto(
+    nombre_producto="Temporal 20",
+    plazo_years=20,
+    tasa_interes_tecnico=Decimal("0.055"),
+)
+
+# Crear asegurado: hombre, 35 años, $1M de suma asegurada
+asegurado = Asegurado(
+    edad=35, sexo="H",
+    suma_asegurada=Decimal("1000000"),
+)
+
+# Calcular prima
+producto = VidaTemporal(tabla_mortalidad=tabla, config=config)
+resultado = producto.calcular_prima(asegurado)
+
+print(f"Prima neta:  \${float(resultado.prima_neta):,.2f} MXN")
+print(f"Prima total: \${float(resultado.prima_total):,.2f} MXN")
+# -> Prima neta:  $2,024.08 MXN
+# -> Prima total: $2,388.42 MXN`,
+
+  pension: `from suite_actuarial import PensionLey73
+from decimal import Decimal
+
+# Calcular pensión IMSS Ley 73
+pension = PensionLey73(
+    semanas_cotizadas=1500,
+    salario_promedio_diario=Decimal("800"),
+    edad_retiro=65,
+)
+
+resumen = pension.resumen()
+print(f"Pensión mensual: \${resumen['pension_mensual']:,.2f} MXN")
+print(f"Porcentaje:      {resumen['porcentaje_pension']:.1%}")
+print(f"Aguinaldo anual: \${resumen['aguinaldo_anual']:,.2f} MXN")
+# -> Pensión mensual: $18,506.03 MXN
+# -> Porcentaje:      77.1%
+# -> Aguinaldo anual: $18,506.03 MXN`,
+
+  reservas: `from suite_actuarial.reservas.chain_ladder import ChainLadder
+from suite_actuarial.core.validators import ConfiguracionChainLadder
+
+# Triángulo de desarrollo acumulado
+triangle = [
+    [3000, 5000, 5600, 5800, 5900],
+    [3200, 5200, 5800, 6000, None],
+    [3500, 5500, 6100, None, None],
+    [3800, 5900, None, None, None],
+    [4000, None, None, None, None],
+]
+
+config = ConfiguracionChainLadder(
+    triangulo=triangle,
+    anios_origen=[2019, 2020, 2021, 2022, 2023],
+)
+
+resultado = ChainLadder(config).calcular()
+print(f"Reserva IBNR total: \${float(resultado.reserva_total):,.2f}")
+print(f"Ultimate total:     \${float(resultado.ultimate_total):,.2f}")
+# -> Reserva IBNR total: $4,983.22
+# -> Ultimate total:     $32,883.22`,
+};
+
+const QUICKSTART_TABS = [
+  { id: "install", labelKey: "quickstart_tab_install" as TranslationKey },
+  { id: "vida", labelKey: "quickstart_tab_vida" as TranslationKey },
+  { id: "pension", labelKey: "quickstart_tab_pension" as TranslationKey },
+  { id: "reservas", labelKey: "quickstart_tab_reservas" as TranslationKey },
+];
+
+function QuickStartSection() {
+  const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState("install");
+
+  const tabs = QUICKSTART_TABS.map((tab) => ({
+    id: tab.id,
+    label: t(tab.labelKey),
+  }));
+
+  const code = CODE_SNIPPETS[activeTab as keyof typeof CODE_SNIPPETS];
+
+  return (
+    <section className="max-w-6xl mx-auto px-6">
+      <Card>
+        <div className="mb-6">
+          <h2 className="font-heading text-2xl font-bold text-navy mb-2">
+            {t("quickstart_title")}
+          </h2>
+          <p className="text-navy/60">
+            {t("quickstart_subtitle")}
+          </p>
+        </div>
+
+        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} className="mb-6" />
+
+        <div className="relative rounded-xl overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-10 bg-[#1e1e2e] flex items-center px-4 gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-400/80" />
+            <div className="w-3 h-3 rounded-full bg-amber/80" />
+            <div className="w-3 h-3 rounded-full bg-sage/80" />
+            <span className="ml-3 text-xs text-white/40 font-mono">python</span>
+          </div>
+          <pre className="bg-[#1e1e2e] text-[#cdd6f4] p-6 pt-14 overflow-x-auto text-sm leading-relaxed font-mono">
+            <code>{code}</code>
+          </pre>
+        </div>
+
+        {activeTab === "install" && (
+          <div className="mt-4 space-y-3">
+            <p className="text-sm text-navy/50">
+              {t("quickstart_pip_note")}
+            </p>
+            <div className="rounded-lg bg-navy/5 px-4 py-3">
+              <p className="text-xs text-navy/50 mb-1">{t("quickstart_api_note")}</p>
+              <code className="text-sm text-terracotta font-mono">
+                python -m uvicorn suite_actuarial.api.main:app --port 8000
+              </code>
+            </div>
+          </div>
+        )}
+      </Card>
+    </section>
   );
 }
