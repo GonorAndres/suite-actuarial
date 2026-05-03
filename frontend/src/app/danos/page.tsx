@@ -108,7 +108,7 @@ const DEFAULT_AUTO: AutoFormState = {
   valor_vehiculo: 350_000,
   tipo_vehiculo: "sedan_compacto",
   antiguedad_anos: 3,
-  zona: "ciudad_mexico",
+  zona: "cdmx_norte",
   edad_conductor: 35,
   deducible_pct: 5,
 };
@@ -116,7 +116,7 @@ const DEFAULT_AUTO: AutoFormState = {
 const DEFAULT_INCENDIO: IncendioFormState = {
   valor_inmueble: 2_000_000,
   tipo_construccion: "concreto",
-  zona: "ciudad_mexico",
+  zona: "cdmx_norte",
   uso: "habitacional",
 };
 
@@ -198,15 +198,29 @@ export default function DanosPage() {
 
   const zonaOptions = useMemo(
     () => [
-      { value: "ciudad_mexico", label: t("zona_ciudad_mexico") },
-      { value: "guadalajara", label: t("zona_guadalajara") },
-      { value: "monterrey", label: t("zona_monterrey") },
-      { value: "puebla", label: t("zona_puebla") },
-      { value: "queretaro", label: t("zona_queretaro") },
-      { value: "merida", label: t("zona_merida") },
-      { value: "tijuana", label: t("zona_tijuana") },
-      { value: "leon", label: t("zona_leon") },
-      { value: "resto_republica", label: t("zona_resto_republica") },
+      { value: "cdmx_norte", label: "CDMX Norte" },
+      { value: "cdmx_sur", label: "CDMX Sur" },
+      { value: "cdmx_poniente", label: "CDMX Poniente" },
+      { value: "cdmx_oriente", label: "CDMX Oriente" },
+      { value: "edo_mex_ecatepec", label: "Edo. Mex. Ecatepec" },
+      { value: "edo_mex_naucalpan", label: "Edo. Mex. Naucalpan" },
+      { value: "edo_mex_tlalnepantla", label: "Edo. Mex. Tlalnepantla" },
+      { value: "guadalajara", label: "Guadalajara" },
+      { value: "monterrey", label: "Monterrey" },
+      { value: "puebla", label: "Puebla" },
+      { value: "merida", label: "Mérida" },
+      { value: "queretaro", label: "Querétaro" },
+      { value: "leon", label: "León" },
+      { value: "cancun", label: "Cancún" },
+      { value: "tijuana", label: "Tijuana" },
+      { value: "chihuahua", label: "Chihuahua" },
+      { value: "veracruz", label: "Veracruz" },
+      { value: "oaxaca", label: "Oaxaca" },
+      { value: "aguascalientes", label: "Aguascalientes" },
+      { value: "san_luis_potosi", label: "San Luis Potosí" },
+      { value: "morelia", label: "Morelia" },
+      { value: "toluca", label: "Toluca" },
+      { value: "resto_pais", label: t("zona_resto_republica") },
     ],
     [t],
   );
