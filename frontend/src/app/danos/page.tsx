@@ -116,7 +116,7 @@ const DEFAULT_AUTO: AutoFormState = {
 const DEFAULT_INCENDIO: IncendioFormState = {
   valor_inmueble: 2_000_000,
   tipo_construccion: "concreto",
-  zona: "cdmx_norte",
+  zona: "urbana_media",
   uso: "habitacional",
 };
 
@@ -128,7 +128,7 @@ const DEFAULT_RC: RCFormState = {
 
 const DEFAULT_BM: BonusMalusFormState = {
   nivel_actual: 0,
-  numero_siniestros: 0,
+  numero_siniestros: 1,
 };
 
 const DEFAULT_FS: FreqSevFormState = {
@@ -190,8 +190,8 @@ export default function DanosPage() {
       { value: "suv_lujo", label: t("vehiculo_suv_lujo") },
       { value: "pickup", label: t("vehiculo_pickup") },
       { value: "deportivo", label: t("vehiculo_deportivo") },
-      { value: "van", label: t("vehiculo_van") },
-      { value: "camion_ligero", label: t("vehiculo_camion_ligero") },
+      { value: "electrico", label: t("vehiculo_electrico") },
+      { value: "motocicleta", label: t("vehiculo_motocicleta") },
     ],
     [t],
   );
@@ -225,14 +225,26 @@ export default function DanosPage() {
     [t],
   );
 
+  const zonaIncendioOptions = useMemo(
+    () => [
+      { value: "urbana_baja", label: t("zona_incendio_urbana_baja") },
+      { value: "urbana_media", label: t("zona_incendio_urbana_media") },
+      { value: "urbana_alta", label: t("zona_incendio_urbana_alta") },
+      { value: "industrial", label: t("zona_incendio_industrial") },
+      { value: "rural", label: t("zona_incendio_rural") },
+      { value: "forestal", label: t("zona_incendio_forestal") },
+    ],
+    [t],
+  );
+
   const tipoConstruccionOptions = useMemo(
     () => [
       { value: "concreto", label: t("construccion_concreto") },
+      { value: "acero", label: t("construccion_acero") },
+      { value: "ladrillo", label: t("construccion_ladrillo") },
       { value: "mixta", label: t("construccion_mixta") },
       { value: "madera", label: t("construccion_madera") },
       { value: "lamina", label: t("construccion_lamina") },
-      { value: "adobe", label: t("construccion_adobe") },
-      { value: "prefabricada", label: t("construccion_prefabricada") },
     ],
     [t],
   );
@@ -241,8 +253,10 @@ export default function DanosPage() {
     () => [
       { value: "habitacional", label: t("uso_habitacional") },
       { value: "comercial", label: t("uso_comercial") },
-      { value: "industrial", label: t("uso_industrial") },
       { value: "oficinas", label: t("uso_oficinas") },
+      { value: "industrial", label: t("uso_industrial") },
+      { value: "bodega", label: t("uso_bodega") },
+      { value: "restaurante", label: t("uso_restaurante") },
     ],
     [t],
   );
@@ -250,11 +264,17 @@ export default function DanosPage() {
   const claseActividadOptions = useMemo(
     () => [
       { value: "oficinas", label: t("actividad_oficinas") },
-      { value: "comercio", label: t("actividad_comercio") },
+      { value: "comercio_minorista", label: t("actividad_comercio_minorista") },
+      { value: "restaurante", label: t("actividad_restaurante") },
       { value: "manufactura_ligera", label: t("actividad_manufactura_ligera") },
       { value: "manufactura_pesada", label: t("actividad_manufactura_pesada") },
       { value: "construccion", label: t("actividad_construccion") },
-      { value: "alimentos", label: t("actividad_alimentos") },
+      { value: "transporte", label: t("actividad_transporte") },
+      { value: "servicios_profesionales", label: t("actividad_servicios_profesionales") },
+      { value: "salud", label: t("actividad_salud") },
+      { value: "educacion", label: t("actividad_educacion") },
+      { value: "hoteleria", label: t("actividad_hoteleria") },
+      { value: "inmobiliaria", label: t("actividad_inmobiliaria") },
     ],
     [t],
   );
@@ -262,7 +282,8 @@ export default function DanosPage() {
   const distFrecuenciaOptions = useMemo(
     () => [
       { value: "poisson", label: "Poisson" },
-      { value: "binomial_negativa", label: t("dist_binomial_negativa") },
+      { value: "negbinom", label: t("dist_binomial_negativa") },
+      { value: "binomial", label: t("dist_binomial") },
     ],
     [t],
   );
@@ -270,11 +291,12 @@ export default function DanosPage() {
   const distSeveridadOptions = useMemo(
     () => [
       { value: "lognormal", label: "Lognormal" },
-      { value: "gamma", label: "Gamma" },
       { value: "pareto", label: "Pareto" },
+      { value: "gamma", label: "Gamma" },
       { value: "weibull", label: "Weibull" },
+      { value: "exponencial", label: t("dist_exponencial") },
     ],
-    [],
+    [t],
   );
 
   /* ── Form field updaters ────────────────────────────────────────────── */
@@ -350,15 +372,24 @@ export default function DanosPage() {
         });
         break;
       case "freq_sev": {
-        const paramsFrecuencia: Record<string, number> = { lambda: fsForm.param_freq_lambda };
+        // Poisson uses lambda_, negbinom and binomial use n+p
+        const paramsFrecuencia: Record<string, number> =
+          fsForm.dist_frecuencia === "poisson"
+            ? { lambda_: fsForm.param_freq_lambda }
+            : fsForm.dist_frecuencia === "negbinom"
+              ? { n: fsForm.param_freq_lambda, p: 0.5 }
+              : { n: Math.round(fsForm.param_freq_lambda), p: 0.5 };
+        // Severidad params per backend expectations
         const paramsSeveridad: Record<string, number> =
           fsForm.dist_severidad === "lognormal"
             ? { mu: fsForm.param_sev_mu, sigma: fsForm.param_sev_sigma }
             : fsForm.dist_severidad === "gamma"
               ? { alpha: fsForm.param_sev_mu, beta: fsForm.param_sev_sigma }
               : fsForm.dist_severidad === "pareto"
-                ? { alpha: fsForm.param_sev_mu, xm: fsForm.param_sev_sigma }
-                : { k: fsForm.param_sev_mu, lambda: fsForm.param_sev_sigma };
+                ? { alpha: fsForm.param_sev_mu, scale: fsForm.param_sev_sigma }
+                : fsForm.dist_severidad === "weibull"
+                  ? { c: fsForm.param_sev_mu, scale: fsForm.param_sev_sigma }
+                  : { lambda_: fsForm.param_freq_lambda };
         await freqSev.calculate({
           dist_frecuencia: fsForm.dist_frecuencia,
           params_frecuencia: paramsFrecuencia,
@@ -485,7 +516,7 @@ export default function DanosPage() {
               <Select
                 label={t("zona")}
                 name="zona_incendio"
-                options={zonaOptions}
+                options={zonaIncendioOptions}
                 value={incendioForm.zona}
                 onChange={(e) => updateIncendio("zona", e.target.value)}
               />
@@ -536,7 +567,7 @@ export default function DanosPage() {
                 name="nivel_actual"
                 type="number"
                 min={-5}
-                max={10}
+                max={3}
                 value={bmForm.nivel_actual}
                 onChange={(e) => updateBM("nivel_actual", Number(e.target.value))}
               />

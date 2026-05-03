@@ -113,9 +113,9 @@ const DEFAULT_XL: ExcessOfLossForm = {
 };
 
 const DEFAULT_SL: StopLossForm = {
-  attachment_point: 0.7,
-  limite_cobertura: 1.2,
-  primas_sujetas: 4_000_000,
+  attachment_point: 70,
+  limite_cobertura: 30,
+  primas_sujetas: 5_000_000,
   primas_totales: 5_000_000,
   vigencia_inicio: "2024-01-01",
   vigencia_fin: "2024-12-31",
@@ -573,12 +573,12 @@ export default function ReaseguroPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <Input
-                label={t("reas_attachment_point")}
+                label={t("reas_attachment_point") + " (%)"}
                 name="attachment_point"
                 type="number"
-                step={0.01}
-                min={0}
-                max={2}
+                step={1}
+                min={60}
+                max={100}
                 value={slForm.attachment_point}
                 onChange={(e) =>
                   setSlForm((prev) => ({
@@ -588,12 +588,12 @@ export default function ReaseguroPage() {
                 }
               />
               <Input
-                label={t("reas_limite_cobertura")}
+                label={t("reas_limite_cobertura") + " (%)"}
                 name="limite_cobertura"
                 type="number"
-                step={0.01}
-                min={0}
-                max={5}
+                step={1}
+                min={1}
+                max={100}
                 value={slForm.limite_cobertura}
                 onChange={(e) =>
                   setSlForm((prev) => ({

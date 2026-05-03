@@ -53,10 +53,10 @@ const DEFAULT_GMM: GMMFormState = {
   edad: 35,
   sexo: "M",
   suma_asegurada: 5_000_000,
-  deducible: 20_000,
+  deducible: 50_000,
   coaseguro_pct: 0.10,
   tope_coaseguro: "",
-  zona: "metro",
+  zona: "urbano",
   nivel: "medio",
 };
 
@@ -64,7 +64,7 @@ const DEFAULT_ACCIDENTES: AccidentesFormState = {
   edad: 35,
   sexo: "M",
   suma_asegurada: 500_000,
-  ocupacion: "oficinista",
+  ocupacion: "oficina",
   indemnizacion_diaria: "",
 };
 
@@ -124,12 +124,11 @@ export default function SaludPage() {
 
   const ocupacionOptions = useMemo(
     () => [
-      { value: "oficinista", label: t("salud_ocup_oficinista") },
-      { value: "tecnico", label: t("salud_ocup_tecnico") },
-      { value: "obrero", label: t("salud_ocup_obrero") },
-      { value: "profesional", label: t("salud_ocup_profesional") },
-      { value: "ejecutivo", label: t("salud_ocup_ejecutivo") },
-      { value: "riesgo_alto", label: t("salud_ocup_riesgo_alto") },
+      { value: "oficina", label: t("salud_ocup_oficina") },
+      { value: "comercio", label: t("salud_ocup_comercio") },
+      { value: "industrial_ligero", label: t("salud_ocup_industrial_ligero") },
+      { value: "industrial_pesado", label: t("salud_ocup_industrial_pesado") },
+      { value: "alto_riesgo", label: t("salud_ocup_alto_riesgo") },
     ],
     [t],
   );
