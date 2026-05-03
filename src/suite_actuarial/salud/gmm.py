@@ -21,6 +21,13 @@ Referencia: Circular Unica de Seguros y Fianzas (CUSF), CNSF
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 
+DISCLAIMER = (
+    "AVISO: Las tasas base por banda de edad en este modulo son ILUSTRATIVAS "
+    "y no representan datos oficiales del mercado asegurador mexicano. "
+    "Para uso en produccion, reemplace con las tasas vigentes de su aseguradora "
+    "o las publicadas por la AMIS/CNSF."
+)
+
 
 class NivelHospitalario(StrEnum):
     ESTANDAR = "estandar"

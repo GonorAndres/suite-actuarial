@@ -5,9 +5,16 @@ Soporta las principales tablas usadas en México:
 - EMSSA-09 (Experiencia Mexicana de Seguridad Social Actualizada)
 - CNSF-2000-I y CNSF-2000-II
 - Tablas personalizadas
+
+Nota sobre q_omega en EMSSA-09: la tabla publica q_100_H = 0.442 y
+q_100_M = 0.2455, es decir, q_omega != 1.0. El metodo ``calcular_lx``
+acepta un parametro ``omega_convention`` para elegir entre forzar lx=0
+en la edad terminal ("force_zero", default) o respetar los valores
+publicados ("table_as_is").
 """
 
 from decimal import Decimal
+from importlib import resources
 from pathlib import Path
 
 import pandas as pd
@@ -193,6 +200,7 @@ class TablaMortalidad:
         self,
         sexo: Sexo | str,
         raiz: int = 100000,
+        omega_convention: str = "force_zero",
     ) -> pd.DataFrame:
         """
         Calcula lx (número de sobrevivientes) a partir de qx.
@@ -200,6 +208,9 @@ class TablaMortalidad:
         Args:
             sexo: Sexo para el cálculo
             raiz: Número inicial de personas (típicamente 100,000)
+            omega_convention: Tratamiento de la edad terminal.
+                - "force_zero": lx[omega+1] = 0 (todos mueren al final).
+                - "table_as_is": lx[omega+1] = lx[omega] * (1 - qx[omega]).
 
         Returns:
             DataFrame con edad, qx, lx, dx
@@ -208,24 +219,29 @@ class TablaMortalidad:
             >>> tabla_vida = tabla.calcular_lx(Sexo.MUJER, raiz=100000)
             >>> print(tabla_vida[['edad', 'lx', 'dx']].head())
         """
+        if omega_convention not in ("force_zero", "table_as_is"):
+            raise ValueError(
+                f"omega_convention debe ser 'force_zero' o 'table_as_is', "
+                f"recibido: '{omega_convention}'"
+            )
+
         tabla = self.obtener_tabla_completa(sexo).copy()
         tabla = tabla.sort_values("edad").reset_index(drop=True)
 
-        # Inicializar lx
         lx = [raiz]
 
-        # Calcular lx recursivamente: lx[t+1] = lx[t] * (1 - qx[t])
         for i in range(len(tabla) - 1):
             qx = tabla.iloc[i]["qx"]
             lx_siguiente = lx[-1] * (1 - qx)
             lx.append(lx_siguiente)
 
-        # Agregar última entrada (lx final = 0)
-        lx.append(0)
-
-        # Asignar a la tabla (lx tiene un elemento más)
-        tabla["lx"] = lx[:-1]
-        tabla["dx"] = [lx[i] - lx[i + 1] for i in range(len(lx) - 1)]
+        if omega_convention == "force_zero":
+            lx.append(0)
+            tabla["lx"] = lx[:-1]
+            tabla["dx"] = [lx[i] - lx[i + 1] for i in range(len(lx) - 1)]
+        else:
+            tabla["lx"] = lx
+            tabla["dx"] = tabla["lx"] * tabla["qx"]
 
         return tabla
 
@@ -272,7 +288,17 @@ class TablaMortalidad:
         Raises:
             FileNotFoundError: Si no encuentra el archivo
         """
-        # Buscar en directorio de datos
+        # 1. Try importlib.resources (works after pip install)
+        try:
+            data_pkg = resources.files("suite_actuarial.data.mortality_tables")
+            csv_resource = data_pkg.joinpath("emssa_09.csv")
+            with resources.as_file(csv_resource) as csv_path:
+                if csv_path.exists():
+                    return cls.desde_csv(csv_path, nombre="EMSSA-09")
+        except (ModuleNotFoundError, FileNotFoundError, TypeError):
+            pass
+
+        # 2. Fallback: search relative paths (works in dev/editable install)
         posibles_rutas = [
             Path("data/mortality_tables/emssa_09.csv"),
             Path("../data/mortality_tables/emssa_09.csv"),
@@ -285,8 +311,8 @@ class TablaMortalidad:
                 return cls.desde_csv(ruta, nombre="EMSSA-09")
 
         raise FileNotFoundError(
-            "No se encontró la tabla EMSSA-09. "
-            "Ejecuta el script de descarga o coloca el archivo en data/mortality_tables/"
+            "No se encontro la tabla EMSSA-09. "
+            "Instala el paquete con: pip install suite-actuarial"
         )
 
     def guardar_csv(self, path: str | Path) -> None:

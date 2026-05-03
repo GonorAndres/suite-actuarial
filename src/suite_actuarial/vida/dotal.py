@@ -350,21 +350,13 @@ class VidaDotal(ProductoSeguro):
         return True, None
 
     def _obtener_factor_frecuencia(self, frecuencia: str) -> Decimal:
-        """Obtiene factor de conversión para frecuencias de pago"""
-        factores = {
-            "anual": Decimal("1.00"),
-            "semestral": Decimal("0.51"),
-            "trimestral": Decimal("0.26"),
-            "mensual": Decimal("0.087"),
-        }
+        """Obtiene factor de conversión para frecuencias de pago.
 
-        if frecuencia not in factores:
-            raise ValueError(
-                f"Frecuencia '{frecuencia}' no soportada. "
-                f"Usa una de: {list(factores.keys())}"
-            )
-
-        return factores[frecuencia]
+        Delegates to the shared implementation in vida_pricing, passing
+        this product's technical interest rate.
+        """
+        from suite_actuarial.actuarial.pricing.vida_pricing import _obtener_factor_frecuencia
+        return _obtener_factor_frecuencia(frecuencia, self.config.tasa_interes_tecnico)
 
     def __repr__(self) -> str:
         """Representación en string"""

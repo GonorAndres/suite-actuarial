@@ -11,6 +11,12 @@ valor asegurado) y corresponden a la tarifa de referencia de mercado.
 
 from decimal import Decimal
 
+DISCLAIMER = (
+    "AVISO: Las tasas y tablas en este modulo son REPRESENTATIVAS y no constituyen "
+    "las tablas oficiales vigentes de la AMIS. Para uso en produccion, consulte "
+    "las tablas de tarificacion vigentes publicadas por la AMIS."
+)
+
 # ---------------------------------------------------------------------------
 # Grupos de vehiculo (1 = mas barato de reparar, 10 = mas costoso)
 # ---------------------------------------------------------------------------

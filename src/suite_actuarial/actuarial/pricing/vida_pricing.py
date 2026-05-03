@@ -223,40 +223,83 @@ def calcular_prima_neta_temporal(
     prima_neta = prima_unitaria * suma_asegurada
 
     # Ajustar por frecuencia de pago
-    factor_frecuencia = _obtener_factor_frecuencia(frecuencia_pago)
+    factor_frecuencia = _obtener_factor_frecuencia(frecuencia_pago, tasa_interes)
     prima_neta_ajustada = prima_neta * factor_frecuencia
 
     return prima_neta_ajustada
 
 
-def _obtener_factor_frecuencia(frecuencia: str) -> Decimal:
-    """
-    Obtiene el factor de conversión para diferentes frecuencias de pago.
+def factor_frecuencia_udd(m: int, tasa_interes: Decimal) -> Decimal:
+    """UDD fractional premium factor. Under UDD assumption:
+    alpha(m) = i*d / (i^(m) * d^(m))
+    where i^(m) = m * ((1+i)^(1/m) - 1)
 
-    En la práctica, las primas fraccionarias son ligeramente más caras
-    que (prima_anual / m) debido a costos administrativos.
+    For annual (m=1) the factor is exactly 1.
+    For zero interest rate the factor degenerates to 1/m.
+
+    Args:
+        m: Number of payments per year (1, 2, 4, or 12)
+        tasa_interes: Annual effective interest rate
+
+    Returns:
+        Fractional premium factor under UDD
+    """
+    if m == 1:
+        return Decimal("1")
+    i = float(tasa_interes)
+    if i == 0.0:
+        return Decimal(str(1.0 / m))
+    i_m = m * ((1 + i) ** (1.0 / m) - 1)
+    return Decimal(str(1.0 / m * i / i_m))
+
+
+_FACTORES_TRADICIONALES = {
+    "anual": Decimal("1.00"),
+    "semestral": Decimal("0.51"),
+    "trimestral": Decimal("0.26"),
+    "mensual": Decimal("0.087"),
+}
+
+_FRECUENCIA_A_M = {
+    "anual": 1,
+    "semestral": 2,
+    "trimestral": 4,
+    "mensual": 12,
+}
+
+
+def _obtener_factor_frecuencia(
+    frecuencia: str,
+    tasa_interes: Decimal = Decimal("0.055"),
+    metodo: str = "tradicional",
+) -> Decimal:
+    """
+    Obtiene el factor de conversion para diferentes frecuencias de pago.
+
+    Soporta dos metodos:
+    - "tradicional": factores hardcodeados de mercado (default, backward-compatible)
+    - "udd": calculo actuarial bajo supuesto de distribucion uniforme de fallecimiento
 
     Args:
         frecuencia: "anual", "semestral", "trimestral", "mensual"
+        tasa_interes: Tasa de interes tecnico (solo usada con metodo "udd")
+        metodo: "tradicional" o "udd"
 
     Returns:
         Factor multiplicador
 
-    Note:
-        Estos factores son aproximados. Cada aseguradora puede usar
-        sus propios factores basados en costos administrativos.
+    Raises:
+        ValueError: Si la frecuencia o el metodo no son soportados
     """
-    factores = {
-        "anual": Decimal("1.00"),
-        "semestral": Decimal("0.51"),  # Ligeramente más que 1/2
-        "trimestral": Decimal("0.26"),  # Ligeramente más que 1/4
-        "mensual": Decimal("0.087"),  # Ligeramente más que 1/12
-    }
-
-    if frecuencia not in factores:
+    if frecuencia not in _FRECUENCIA_A_M:
         raise ValueError(
             f"Frecuencia '{frecuencia}' no soportada. "
-            f"Usa una de: {list(factores.keys())}"
+            f"Usa una de: {list(_FRECUENCIA_A_M.keys())}"
         )
-
-    return factores[frecuencia]
+    if metodo == "tradicional":
+        return _FACTORES_TRADICIONALES[frecuencia]
+    elif metodo == "udd":
+        m = _FRECUENCIA_A_M[frecuencia]
+        return factor_frecuencia_udd(m, tasa_interes)
+    else:
+        raise ValueError(f"Metodo '{metodo}' no soportado. Usa 'tradicional' o 'udd'.")

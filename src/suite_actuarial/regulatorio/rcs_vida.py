@@ -11,6 +11,12 @@ from decimal import Decimal
 
 from suite_actuarial.core.validators import ConfiguracionRCSVida
 
+DISCLAIMER = (
+    "AVISO: Los factores de RCS en este modulo son aproximaciones pedagogicas "
+    "simplificadas, no el modelo estocastico completo de la CNSF. Los resultados "
+    "son indicativos y pueden subestimar el requerimiento de capital real."
+)
+
 
 class RCSVida:
     """

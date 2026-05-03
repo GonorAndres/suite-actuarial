@@ -8,7 +8,16 @@ calculations used in the Mexican insurance market.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from suite_actuarial.api.routers import pricing, regulatory, reinsurance, reserves
+from suite_actuarial.api.routers import (
+    config,
+    danos,
+    pensiones,
+    pricing,
+    regulatory,
+    reinsurance,
+    reserves,
+    salud,
+)
 
 app = FastAPI(
     title="Mexican Insurance Analytics Suite API",
@@ -30,10 +39,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(config.router, prefix="/api/v1")
+app.include_router(danos.router, prefix="/api/v1")
+app.include_router(pensiones.router, prefix="/api/v1")
 app.include_router(pricing.router, prefix="/api/v1")
 app.include_router(reinsurance.router, prefix="/api/v1")
 app.include_router(reserves.router, prefix="/api/v1")
 app.include_router(regulatory.router, prefix="/api/v1")
+app.include_router(salud.router, prefix="/api/v1")
 
 
 @app.get("/", tags=["root"])
@@ -43,10 +56,14 @@ def root():
         "name": "Mexican Insurance Analytics Suite API",
         "version": "1.0.0",
         "modules": [
+            "config",
+            "danos",
+            "pensiones",
             "pricing",
             "reinsurance",
             "reserves",
             "regulatory",
+            "salud",
         ],
         "docs_url": "/docs",
     }

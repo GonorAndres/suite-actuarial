@@ -512,3 +512,307 @@ class TestExportadorExcel:
 
             # Limpiar
             ruta.unlink()
+
+
+# ======================================
+# NEW -- Generator & Exporter Coverage Tests
+# ======================================
+
+
+class TestGeneradorSiniestrosDetallado:
+    """Tests adicionales para GeneradorReporteSiniestros: resumen, vacío, multi-ramo."""
+
+    def test_generar_reporte_estructura_completa(
+        self, metadata_basico, datos_siniestros_autos
+    ):
+        """generar_dataframe() debe tener las columnas esperadas y fila TOTAL."""
+        reporte = ReporteSiniestros(
+            metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
+        )
+        generador = GeneradorReporteSiniestros()
+        df = generador.generar_dataframe(reporte)
+
+        columnas_esperadas = {
+            "Ramo",
+            "Siniestros Ocurridos",
+            "Siniestros Pagados",
+            "Reserva Siniestros",
+            "Número Siniestros",
+            "Pendientes",
+            "Costo Promedio",
+        }
+        assert columnas_esperadas.issubset(set(df.columns))
+        assert df.iloc[-1]["Ramo"] == "TOTAL"
+
+    def test_generar_resumen_ejecutivo(
+        self, metadata_basico, datos_siniestros_autos
+    ):
+        """generar_resumen() debe devolver métricas clave."""
+        reporte = ReporteSiniestros(
+            metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
+        )
+        generador = GeneradorReporteSiniestros()
+        resumen = generador.generar_resumen(reporte)
+
+        assert resumen["total_siniestros_ocurridos"] == 35_000_000.0
+        assert resumen["total_siniestros_pagados"] == 28_000_000.0
+        assert resumen["numero_casos"] == 450
+        assert resumen["numero_pendientes"] == 85
+        assert resumen["ramo_mas_siniestros"] == "Autos"
+
+    def test_generar_dataframe_vacio(self, metadata_basico):
+        """generar_dataframe() con lista de ramos vacía debe devolver DataFrame vacío."""
+        reporte = ReporteSiniestros(
+            metadata=metadata_basico, datos_por_ramo=[]
+        )
+        generador = GeneradorReporteSiniestros()
+        df = generador.generar_dataframe(reporte)
+
+        assert df.empty
+
+    def test_generar_resumen_vacio(self, metadata_basico):
+        """generar_resumen() con lista vacía debe devolver dict vacío."""
+        reporte = ReporteSiniestros(
+            metadata=metadata_basico, datos_por_ramo=[]
+        )
+        generador = GeneradorReporteSiniestros()
+        resumen = generador.generar_resumen(reporte)
+
+        assert resumen == {}
+
+    def test_multiples_ramos_totales(self, metadata_basico, datos_siniestros_autos):
+        """Con dos ramos, la fila TOTAL debe sumar ambos."""
+        datos_vida = DatosSiniestrosRamo(
+            ramo=TipoRamo.VIDA_INDIVIDUAL,
+            siniestros_ocurridos=Decimal("20000000"),
+            siniestros_pagados=Decimal("15000000"),
+            reserva_siniestros=Decimal("10000000"),
+            numero_siniestros=200,
+            numero_siniestros_pendientes=30,
+        )
+        reporte = ReporteSiniestros(
+            metadata=metadata_basico,
+            datos_por_ramo=[datos_siniestros_autos, datos_vida],
+        )
+        generador = GeneradorReporteSiniestros()
+        df = generador.generar_dataframe(reporte)
+
+        assert len(df) == 3  # 2 ramos + TOTAL
+        total_row = df.iloc[-1]
+        assert total_row["Siniestros Ocurridos"] == 55_000_000.0  # 35M + 20M
+        assert total_row["Número Siniestros"] == 650  # 450 + 200
+
+
+class TestGeneradorInversionesDetallado:
+    """Tests adicionales para GeneradorReporteInversiones: resumen, cero, single."""
+
+    def test_generar_resumen_ejecutivo(
+        self, metadata_basico, datos_inversion_gubernamentales, datos_inversion_acciones
+    ):
+        """generar_resumen() debe incluir composición y rendimiento."""
+        reporte = ReporteInversiones(
+            metadata=metadata_basico,
+            datos_por_activo=[datos_inversion_gubernamentales, datos_inversion_acciones],
+        )
+        generador = GeneradorReporteInversiones()
+        resumen = generador.generar_resumen(reporte)
+
+        assert resumen["total_valor_mercado"] == 350_000_000.0
+        assert resumen["activo_principal"] == "Valores Gubernamentales"
+        assert resumen["numero_tipos_activos"] == 2
+        assert "composicion_detallada" in resumen
+
+    def test_activo_con_valor_cero(self, metadata_basico):
+        """Activo con valor de mercado cero no debe generar errores."""
+        dato_cero = DatosInversionActivo(
+            tipo_activo=TipoActivoInversion.DEPOSITOS,
+            valor_mercado=Decimal("0"),
+            valor_libros=Decimal("0"),
+            rendimiento_trimestre=Decimal("0"),
+        )
+        dato_normal = DatosInversionActivo(
+            tipo_activo=TipoActivoInversion.VALORES_GUBERNAMENTALES,
+            valor_mercado=Decimal("100000000"),
+            valor_libros=Decimal("100000000"),
+            rendimiento_trimestre=Decimal("0.01"),
+        )
+        reporte = ReporteInversiones(
+            metadata=metadata_basico,
+            datos_por_activo=[dato_normal, dato_cero],
+        )
+        generador = GeneradorReporteInversiones()
+        df = generador.generar_dataframe(reporte)
+
+        assert len(df) == 3  # 2 activos + TOTAL
+        # La composición del activo cero debe ser 0
+        fila_cero = df[df["Tipo de Activo"] == "Depósitos"].iloc[0]
+        assert fila_cero["Composición %"] == 0.0
+
+    def test_generar_dataframe_vacio(self, metadata_basico):
+        """generar_dataframe() con lista vacía debe devolver DataFrame vacío."""
+        reporte = ReporteInversiones(
+            metadata=metadata_basico, datos_por_activo=[]
+        )
+        generador = GeneradorReporteInversiones()
+        df = generador.generar_dataframe(reporte)
+
+        assert df.empty
+
+    def test_activo_unico_composicion_100(self, metadata_basico):
+        """Un solo activo debe tener composición de 100%."""
+        dato = DatosInversionActivo(
+            tipo_activo=TipoActivoInversion.INMUEBLES,
+            valor_mercado=Decimal("500000000"),
+            valor_libros=Decimal("480000000"),
+            rendimiento_trimestre=Decimal("0.02"),
+        )
+        reporte = ReporteInversiones(
+            metadata=metadata_basico, datos_por_activo=[dato]
+        )
+        generador = GeneradorReporteInversiones()
+        df = generador.generar_dataframe(reporte)
+
+        # Primera fila (activo único) debe tener 100%
+        assert df.iloc[0]["Composición %"] == 100.0
+
+
+class TestGeneradorRCSDetallado:
+    """Tests adicionales para GeneradorReporteRCS: resumen, no-cumple, operacional."""
+
+    def test_generar_resumen_cumple(self, metadata_basico, datos_rcs):
+        """generar_resumen() debe reflejar ratio de solvencia y cumplimiento."""
+        reporte = ReporteRCS(metadata=metadata_basico, datos_rcs=datos_rcs)
+        generador = GeneradorReporteRCS()
+        resumen = generador.generar_resumen(reporte)
+
+        assert resumen["cumple_regulacion"] is True
+        assert resumen["ratio_solvencia"] == 1.2
+        assert resumen["excedente_deficit"] == 25_000_000.0
+        assert resumen["componente_principal"] == "Suscripción Daños"
+
+    def test_generar_resumen_no_cumple(self, metadata_basico):
+        """Cuando ratio < 1, cumple_regulacion debe ser False."""
+        datos_insuficientes = DatosReporteRCS(
+            rcs_suscripcion_vida=Decimal("18000000"),
+            rcs_suscripcion_danos=Decimal("95000000"),
+            rcs_inversion=Decimal("62000000"),
+            rcs_total=Decimal("125000000"),
+            capital_pagado=Decimal("80000000"),
+            superavit=Decimal("30000000"),
+        )
+        reporte = ReporteRCS(
+            metadata=metadata_basico, datos_rcs=datos_insuficientes
+        )
+        generador = GeneradorReporteRCS()
+        resumen = generador.generar_resumen(reporte)
+
+        assert resumen["cumple_regulacion"] is False
+        assert resumen["excedente_deficit"] == -15_000_000.0
+
+    def test_dataframe_con_rcs_operacional(self, metadata_basico):
+        """Si rcs_operacional > 0, debe aparecer como fila extra."""
+        datos_op = DatosReporteRCS(
+            rcs_suscripcion_vida=Decimal("10000000"),
+            rcs_suscripcion_danos=Decimal("50000000"),
+            rcs_inversion=Decimal("30000000"),
+            rcs_operacional=Decimal("10000000"),
+            rcs_total=Decimal("100000000"),
+            capital_pagado=Decimal("120000000"),
+            superavit=Decimal("20000000"),
+        )
+        reporte = ReporteRCS(metadata=metadata_basico, datos_rcs=datos_op)
+        generador = GeneradorReporteRCS()
+        df = generador.generar_dataframe(reporte)
+
+        componentes = df["Componente"].tolist()
+        assert "RCS Operacional" in componentes
+
+
+class TestExportadoresIO:
+    """Tests de I/O para ExportadorCSV y ExportadorExcel usando tmp_path."""
+
+    def test_csv_exporta_con_headers(
+        self, tmp_path, metadata_basico, datos_siniestros_autos
+    ):
+        """ExportadorCSV debe crear archivo con encabezados correctos."""
+        reporte = ReporteSiniestros(
+            metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
+        )
+        df = GeneradorReporteSiniestros().generar_dataframe(reporte)
+
+        ruta = tmp_path / "siniestros.csv"
+        exportador = ExportadorCSV()
+        resultado = exportador.exportar_dataframe(df, str(ruta))
+
+        assert resultado.exists()
+        contenido = resultado.read_text(encoding="utf-8-sig")
+        lineas = contenido.strip().splitlines()
+        # Encabezado es la primera línea
+        assert "Ramo" in lineas[0]
+        assert "Siniestros Ocurridos" in lineas[0]
+        # Debe tener encabezado + 1 ramo + TOTAL = 3 líneas
+        assert len(lineas) == 3
+
+    def test_csv_exportar_multiples(
+        self, tmp_path, metadata_basico, datos_siniestros_autos, datos_inversion_gubernamentales
+    ):
+        """exportar_multiples() debe crear un CSV por DataFrame."""
+        df_sin = GeneradorReporteSiniestros().generar_dataframe(
+            ReporteSiniestros(
+                metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
+            )
+        )
+        df_inv = GeneradorReporteInversiones().generar_dataframe(
+            ReporteInversiones(
+                metadata=metadata_basico,
+                datos_por_activo=[datos_inversion_gubernamentales],
+            )
+        )
+
+        exportador = ExportadorCSV()
+        rutas = exportador.exportar_multiples(
+            dataframes={"siniestros": df_sin, "inversiones": df_inv},
+            directorio_salida=str(tmp_path),
+            prefijo="Q1_",
+        )
+
+        assert len(rutas) == 2
+        nombres = {r.name for r in rutas}
+        assert "Q1_siniestros.csv" in nombres
+        assert "Q1_inversiones.csv" in nombres
+
+    def test_excel_exportar_y_verificar(
+        self, tmp_path, metadata_basico, datos_siniestros_autos, datos_rcs
+    ):
+        """ExportadorExcel debe crear archivo .xlsx válido."""
+        try:
+            exportador = ExportadorExcel()
+        except ImportError:
+            pytest.skip("openpyxl no instalado")
+
+        df_sin = GeneradorReporteSiniestros().generar_dataframe(
+            ReporteSiniestros(
+                metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
+            )
+        )
+        df_rcs = GeneradorReporteRCS().generar_dataframe(
+            ReporteRCS(metadata=metadata_basico, datos_rcs=datos_rcs)
+        )
+
+        ruta = tmp_path / "reporte.xlsx"
+        resultado = exportador.exportar_reporte_completo(
+            ruta_salida=str(ruta),
+            df_siniestros=df_sin,
+            df_rcs=df_rcs,
+            metadata={
+                "clave_aseguradora": "A0123",
+                "nombre_aseguradora": "Seguros XYZ S.A.",
+                "trimestre": "Q1",
+                "anio": 2024,
+                "fecha_presentacion": "2024-04-30",
+            },
+        )
+        assert resultado.exists()
+        assert resultado.suffix == ".xlsx"
+        # File should have actual content
+        assert resultado.stat().st_size > 0

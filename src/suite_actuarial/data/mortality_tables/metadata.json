@@ -1,0 +1,25 @@
+{
+  "tablas": {
+    "emssa_09": {
+      "nombre_completo": "Experiencia Mexicana de Seguridad Social Actualizada 2009",
+      "fuente": "CNSF",
+      "año_publicacion": 2009,
+      "descripcion": "Tabla de mortalidad basada en la experiencia del IMSS y otras instituciones de seguridad social en México",
+      "rango_edades": {
+        "minima": 18,
+        "maxima": 100
+      },
+      "sexos": ["H", "M"],
+      "uso_recomendado": [
+        "Seguros de vida individuales",
+        "Seguros temporales",
+        "Seguros ordinarios de vida"
+      ],
+      "notas": [
+        "Esta es una versión simplificada con datos de ejemplo",
+        "Para uso en producción, descarga las tablas oficiales de la CNSF",
+        "Las probabilidades son aproximadas para propósitos demostrativos"
+      ]
+    }
+  }
+}

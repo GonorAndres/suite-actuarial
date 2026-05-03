@@ -79,6 +79,30 @@ class TestTablaMortalidad:
         # Verificar que dx existe
         assert "dx" in tabla_vida.columns
 
+    def test_calcular_lx_force_zero_convention(self, tabla_ejemplo):
+        """Under force_zero, last dx equals last lx (all die at omega)"""
+        tabla_vida = tabla_ejemplo.calcular_lx(
+            Sexo.HOMBRE, raiz=100000, omega_convention="force_zero"
+        )
+        last = tabla_vida.iloc[-1]
+        assert last["dx"] == pytest.approx(last["lx"])
+
+    def test_calcular_lx_table_as_is_convention(self, tabla_ejemplo):
+        """Under table_as_is, last dx < last lx (some survive past omega)"""
+        tabla_vida = tabla_ejemplo.calcular_lx(
+            Sexo.HOMBRE, raiz=100000, omega_convention="table_as_is"
+        )
+        last = tabla_vida.iloc[-1]
+        assert last["dx"] < last["lx"]
+
+    def test_omega_convention_default_backward_compatible(self, tabla_ejemplo):
+        """Default behavior matches explicit force_zero exactly"""
+        default = tabla_ejemplo.calcular_lx(Sexo.HOMBRE, raiz=100000)
+        explicit = tabla_ejemplo.calcular_lx(
+            Sexo.HOMBRE, raiz=100000, omega_convention="force_zero"
+        )
+        pd.testing.assert_frame_equal(default, explicit)
+
 
 class TestCargaEMSSA09:
     """Tests para cargar la tabla EMSSA-09 de ejemplo"""

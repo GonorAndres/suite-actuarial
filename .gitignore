@@ -86,6 +86,17 @@ site/
 Thumbs.db
 .DS_Store
 
+# Frontend build artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Playwright MCP working files
+.playwright-mcp/
+
+# Screenshots (temporary)
+*.png
+
 # Project specific
 data/raw/
 data/processed/
