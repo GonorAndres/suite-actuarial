@@ -419,12 +419,20 @@ function GMMResults({
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Hero metric */}
-      <MetricCard
-        label={t("salud_siniestralidad_esperada")}
-        value={formatCurrency(result.siniestralidad_esperada)}
-        variant="accent"
-      />
+      {/* Hero metrics -- premium is the main output */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <MetricCard
+          label={t("prima_total")}
+          value={formatCurrency(Number(result.tarificacion?.prima_ajustada ?? 0))}
+          variant="accent"
+        />
+        <MetricCard
+          label={t("salud_siniestralidad_esperada")}
+          value={formatCurrency(result.siniestralidad_esperada)}
+          sublabel={t("salud_descripcion")}
+          variant="default"
+        />
+      </div>
 
       {tarificacionRows.length > 0 && (
         <Card title={t("salud_tarificacion")}>
