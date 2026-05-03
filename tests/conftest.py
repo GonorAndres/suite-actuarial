@@ -124,8 +124,9 @@ def origin_years_5():
 @pytest.fixture(scope="session")
 def api_client():
     """TestClient for FastAPI integration tests."""
-    from fastapi.testclient import TestClient
-
-    from suite_actuarial.api.main import app
-
-    return TestClient(app)
+    try:
+        from fastapi.testclient import TestClient
+        from suite_actuarial.api.main import app
+        return TestClient(app)
+    except ImportError:
+        pytest.skip("fastapi/httpx not installed (install with: pip install -e '.[dev,api]')")
