@@ -15,6 +15,7 @@ export const translations = {
     nav_reservas: "Reservas",
     nav_regulatorio: "Regulatorio",
     nav_reaseguro: "Reaseguro",
+    nav_api: "API",
 
     // -- Common UI --
     calcular: "Calcular",
@@ -409,6 +410,24 @@ export const translations = {
     reas_primas_sujetas: "Primas sujetas",
     reas_primas_totales: "Primas totales",
 
+    // -- API Docs --
+    api_docs_title: "Documentación de la API",
+    api_docs_subtitle: "Referencia completa de los 26 endpoints REST disponibles.",
+    api_docs_base_url: "URL base",
+    api_docs_auth: "Sin autenticación requerida",
+    api_docs_swagger: "Ver documentación interactiva en",
+    api_docs_try_it: "Probar en calculadora",
+    api_docs_params: "Parámetros",
+    api_docs_example_req: "Ejemplo de solicitud",
+    api_docs_example_res: "Ejemplo de respuesta",
+    api_docs_required: "Requerido",
+    api_docs_optional: "Opcional",
+    api_docs_default: "Default",
+    api_docs_param_name: "Nombre",
+    api_docs_param_type: "Tipo",
+    api_docs_param_desc: "Descripción",
+    api_docs_tab_config: "Config",
+
     // -- Home "What is" section --
     home_what_title: "¿Qué es suite_actuarial?",
     home_what_text: "suite_actuarial es una plataforma actuarial de código abierto diseñada para profesionales del mercado asegurador mexicano. Calcula primas, estima reservas, valida cumplimiento regulatorio y modela esquemas de reaseguro — todo basado en la normativa vigente de la CNSF, SAT e IMSS. Selecciona un dominio para comenzar.",
@@ -433,6 +452,7 @@ export const translations = {
     nav_reservas: "Reserves",
     nav_regulatorio: "Regulatory",
     nav_reaseguro: "Reinsurance",
+    nav_api: "API",
 
     // -- Common UI --
     calcular: "Calculate",
@@ -826,6 +846,24 @@ export const translations = {
     reas_limite_cobertura: "Coverage limit (loss ratio)",
     reas_primas_sujetas: "Subject premiums",
     reas_primas_totales: "Total premiums",
+
+    // -- API Docs --
+    api_docs_title: "API Documentation",
+    api_docs_subtitle: "Complete reference for all 26 available REST endpoints.",
+    api_docs_base_url: "Base URL",
+    api_docs_auth: "No authentication required",
+    api_docs_swagger: "View interactive documentation at",
+    api_docs_try_it: "Try in calculator",
+    api_docs_params: "Parameters",
+    api_docs_example_req: "Example request",
+    api_docs_example_res: "Example response",
+    api_docs_required: "Required",
+    api_docs_optional: "Optional",
+    api_docs_default: "Default",
+    api_docs_param_name: "Name",
+    api_docs_param_type: "Type",
+    api_docs_param_desc: "Description",
+    api_docs_tab_config: "Config",
 
     // -- Home "What is" section --
     home_what_title: "What is suite_actuarial?",

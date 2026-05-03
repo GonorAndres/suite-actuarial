@@ -15,6 +15,7 @@ const NAV_ITEMS: { key: TranslationKey; href: string }[] = [
   { key: "nav_reservas", href: "/reservas" },
   { key: "nav_regulatorio", href: "/regulatorio" },
   { key: "nav_reaseguro", href: "/reaseguro" },
+  { key: "nav_api", href: "/api-docs" },
 ];
 
 export function Header() {

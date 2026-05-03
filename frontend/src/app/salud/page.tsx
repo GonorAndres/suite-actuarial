@@ -389,9 +389,19 @@ function GMMResults({
     String(val),
   ]);
 
+  const CURRENCY_KEYS = new Set(["prima_base", "prima_ajustada", "siniestralidad_esperada"]);
+  const RATE_KEYS = new Set(["tasa_banda_edad"]);
   const tarificacionRows = Object.entries(result.tarificacion).map(([key, val]) => [
     key,
-    typeof val === "number" ? formatCurrency(val) : String(val),
+    typeof val !== "number"
+      ? String(val)
+      : CURRENCY_KEYS.has(key)
+        ? formatCurrency(val)
+        : RATE_KEYS.has(key)
+          ? `${val.toFixed(2)} ‰`
+          : key.startsWith("factor_")
+            ? val.toFixed(4)
+            : formatNumber(val),
   ]);
 
   const csvData = {
