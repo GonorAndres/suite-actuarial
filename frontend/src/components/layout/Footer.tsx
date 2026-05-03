@@ -33,7 +33,7 @@ export function Footer() {
               GitHub
             </a>
             <Link
-              href="/docs"
+              href="/api-docs"
               className="relative text-cream/60 hover:text-cream transition-colors after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1px] after:bg-amber after:transition-all after:duration-300 hover:after:w-full"
             >
               API Docs
