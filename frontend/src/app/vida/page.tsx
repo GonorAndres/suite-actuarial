@@ -242,6 +242,7 @@ export default function VidaPage() {
           {t("vida_titulo")}
         </h1>
         <p className="text-navy/60 text-lg">{t("vida_descripcion")}</p>
+        <p className="text-navy/60 text-lg max-w-3xl mt-2">{t("vida_contexto")}</p>
       </div>
 
       {/* Tabs */}

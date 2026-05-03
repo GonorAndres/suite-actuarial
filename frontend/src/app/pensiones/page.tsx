@@ -251,6 +251,7 @@ export default function PensionesPage() {
           {t("pensiones_titulo")}
         </h1>
         <p className="text-navy/60 text-lg">{t("pensiones_descripcion")}</p>
+        <p className="text-navy/60 text-lg max-w-3xl mt-2">{t("pensiones_contexto")}</p>
       </div>
 
       {/* Tabs */}

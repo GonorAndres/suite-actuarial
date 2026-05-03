@@ -133,6 +133,18 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── "What is suite_actuarial?" section ─────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6">
+        <Card>
+          <h2 className="font-heading text-xl font-bold text-navy mb-3">
+            {t("home_what_title")}
+          </h2>
+          <p className="text-navy/60 text-base leading-relaxed">
+            {t("home_what_text")}
+          </p>
+        </Card>
+      </section>
+
       {/* ── Domain cards grid ─────────────────────────────────────────── */}
       <section id="calculators-grid" className="max-w-6xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

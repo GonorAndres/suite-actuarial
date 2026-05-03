@@ -349,6 +349,7 @@ export default function DanosPage() {
           {t("danos_titulo")}
         </h1>
         <p className="text-navy/60 text-lg">{t("danos_descripcion")}</p>
+        <p className="text-navy/60 text-lg max-w-3xl mt-2">{t("danos_contexto")}</p>
       </div>
 
       {/* Tabs */}
