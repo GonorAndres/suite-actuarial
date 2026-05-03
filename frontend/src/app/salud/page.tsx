@@ -481,10 +481,13 @@ function AccidentesResults({
   result: AccidentesResponse;
   t: (key: TranslationKey) => string;
 }) {
-  const perdidasRows = Object.entries(result.perdidas_organicas).map(([key, val]) => [
-    key,
-    typeof val === "number" ? formatCurrency(val) : String(val),
-  ]);
+  const perdidasRows = Object.entries(result.perdidas_organicas).map(([key, val]) => {
+    const entry = val as { porcentaje?: number; monto?: number } | number;
+    if (typeof entry === "object" && entry !== null && "monto" in entry) {
+      return [key, formatPercent(entry.porcentaje ?? 0), formatCurrency(entry.monto ?? 0)];
+    }
+    return [key, "", typeof entry === "number" ? formatCurrency(entry) : String(entry)];
+  });
 
   const indemnizacionRows = Object.entries(result.indemnizacion_diaria).map(([key, val]) => [
     key,
@@ -496,7 +499,10 @@ function AccidentesResults({
     prima_anual: result.prima_anual,
     gastos_funerarios: result.gastos_funerarios,
     ...Object.fromEntries(
-      Object.entries(result.perdidas_organicas).map(([k, v]) => [`perdida_${k}`, v]),
+      Object.entries(result.perdidas_organicas).map(([k, v]) => {
+        const entry = v as { monto?: number } | number;
+        return [`perdida_${k}`, typeof entry === "object" && entry !== null ? entry.monto : entry];
+      }),
     ),
     ...Object.fromEntries(
       Object.entries(result.indemnizacion_diaria).map(([k, v]) => [`indemnizacion_${k}`, v]),
@@ -521,7 +527,7 @@ function AccidentesResults({
 
       {perdidasRows.length > 0 && (
         <Card title={t("salud_perdidas_organicas")}>
-          <Table headers={[t("danos_concepto"), t("danos_valor")]} rows={perdidasRows} />
+          <Table headers={[t("danos_concepto"), "%", t("danos_valor")]} rows={perdidasRows} />
         </Card>
       )}
 
