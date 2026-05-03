@@ -9,6 +9,8 @@ import {
   Tabs,
   LoadingSpinner,
   Table,
+  MetricCard,
+  ProgressBar,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -161,40 +163,44 @@ function ReinsuranceResultCard({
   } as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      {/* Main results */}
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("monto_cedido")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatCurrency(result.monto_cedido)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("monto_retenido")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.monto_retenido)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("recuperacion")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.recuperacion_reaseguro)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">
-              {t("reas_resultado_neto")}
-            </p>
-            <p
-              className={`text-3xl font-heading font-bold tabular-nums ${result.resultado_neto_cedente >= 0 ? "text-sage" : "text-terracotta"}`}
-            >
-              {formatCurrency(result.resultado_neto_cedente)}
-            </p>
-          </div>
-        </div>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      {/* Main results -- metric cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          label={t("monto_cedido")}
+          value={formatCurrency(result.monto_cedido)}
+          variant="accent"
+        />
+        <MetricCard
+          label={t("monto_retenido")}
+          value={formatCurrency(result.monto_retenido)}
+          variant="primary"
+        />
+        <MetricCard
+          label={t("recuperacion")}
+          value={formatCurrency(result.recuperacion_reaseguro)}
+          variant="default"
+        />
+        <MetricCard
+          label={t("reas_resultado_neto")}
+          value={formatCurrency(result.resultado_neto_cedente)}
+          variant="default"
+          className={result.resultado_neto_cedente >= 0 ? "ring-2 ring-sage/30" : "ring-2 ring-terracotta/30"}
+        />
+      </div>
+
+      {/* Cedido vs Retenido stacked bar */}
+      {(result.monto_cedido > 0 || result.monto_retenido > 0) && (
+        <Card title={t("reas_ratio_cesion")}>
+          <ProgressBar
+            segments={[
+              { label: t("monto_cedido"), value: result.monto_cedido, color: "#C17654" },
+              { label: t("monto_retenido"), value: result.monto_retenido, color: "#1B2A4A" },
+            ]}
+            formatValue={(v) => formatCurrency(v)}
+          />
+        </Card>
+      )}
 
       {/* Summary table */}
       <Card title={t("reas_resumen_contrato")}>

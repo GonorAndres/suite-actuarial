@@ -31,7 +31,9 @@ export default function Table({
         <thead>
           <tr
             className={[
-              highlightHeader ? "bg-navy" : "bg-navy/80",
+              highlightHeader
+                ? "bg-gradient-to-r from-navy to-navy/90"
+                : "bg-navy/80",
               "first:[&>th]:rounded-tl-xl last:[&>th]:rounded-tr-xl",
             ].join(" ")}
           >
@@ -39,7 +41,7 @@ export default function Table({
               <th
                 key={header}
                 scope="col"
-                className="text-cream text-left text-sm font-medium px-4 py-3"
+                className="text-cream text-left text-sm font-medium px-5 py-3.5 tracking-wide"
               >
                 {header}
               </th>
@@ -51,7 +53,8 @@ export default function Table({
             <tr
               key={rowIdx}
               className={[
-                "border-b border-navy/5 hover:bg-amber/8 transition-colors duration-150",
+                "border-b border-navy/5 transition-all duration-200",
+                "hover:bg-terracotta/[0.04] hover:shadow-[inset_3px_0_0_0_var(--color-terracotta)]",
                 rowIdx % 2 === 1 ? "bg-navy/[0.02]" : "",
               ]
                 .filter(Boolean)
@@ -64,9 +67,10 @@ export default function Table({
                   <td
                     key={cellIdx}
                     className={[
-                      "px-4 py-3 text-sm",
+                      "px-5 py-3.5 text-sm",
                       numeric ? "text-right tabular-nums" : "",
                       currency ? "font-semibold" : "",
+                      cellIdx === 0 ? "font-medium text-navy/70" : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}

@@ -10,6 +10,7 @@ import {
   Tabs,
   LoadingSpinner,
   Table,
+  MetricCard,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -520,23 +521,21 @@ function Ley73Results({
   const csvData = { ...result } as unknown as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("pension_mensual")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatCurrency(result.pension_mensual)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("pension_anual")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.pension_anual_total)}
-            </p>
-          </div>
-        </div>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard
+          label={t("pension_mensual")}
+          value={formatCurrency(result.pension_mensual)}
+          variant="accent"
+        />
+        <MetricCard
+          label={t("pension_anual")}
+          value={formatCurrency(result.pension_anual_total)}
+          variant="primary"
+          sublabel={`${t("pensiones_aguinaldo_anual")}: ${formatCurrency(result.aguinaldo_anual)}`}
+        />
+      </div>
 
       <Card title={t("danos_detalle_calculo")}>
         <Table headers={[t("danos_campo"), t("danos_valor")]} rows={rows} />
@@ -597,16 +596,34 @@ function Ley97Results({
   } as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <Card title={t("pensiones_comparacion_modalidades")} className="result-accent">
-        <Table
-          headers={[
-            t("danos_concepto"),
-            t("pensiones_renta_vitalicia"),
-            t("pensiones_retiro_programado"),
-          ]}
-          rows={compareRows}
+    <div className="space-y-6 animate-fade-in">
+      {/* Side by side comparison cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <MetricCard
+          label={t("pensiones_renta_vitalicia")}
+          value={formatCurrency(result.renta_vitalicia.pension_mensual)}
+          variant="accent"
+          sublabel={`${t("pension_anual")}: ${formatCurrency(result.renta_vitalicia.pension_anual)}`}
         />
+        <MetricCard
+          label={t("pensiones_retiro_programado")}
+          value={formatCurrency(result.retiro_programado.pension_mensual)}
+          variant="primary"
+          sublabel={`${t("pension_anual")}: ${formatCurrency(result.retiro_programado.pension_anual)}`}
+        />
+      </div>
+
+      {/* Recommendation badge */}
+      <Card>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sage/20 text-sage border border-sage/30">
+            {t("pensiones_recomendacion")}
+          </span>
+          <span className="text-sm font-medium text-navy">{result.recomendacion}</span>
+          <span className="text-sm text-navy/50 ml-auto tabular-nums">
+            {t("pensiones_diferencia_mensual")}: {formatCurrency(result.diferencia_mensual)}
+          </span>
+        </div>
       </Card>
 
       <Card title={t("pensiones_info_general")}>
@@ -639,23 +656,21 @@ function RentaVitaliciaResults({
   const csvData = { ...result } as unknown as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("pensiones_prima_unica")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatCurrency(result.prima_unica)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("pensiones_factor_renta")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatNumber(result.factor_renta, 6)}
-            </p>
-          </div>
-        </div>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard
+          label={t("pensiones_prima_unica")}
+          value={formatCurrency(result.prima_unica)}
+          variant="accent"
+          sublabel={`${t("monto_mensual")}: ${formatCurrency(result.monto_mensual)}`}
+        />
+        <MetricCard
+          label={t("pensiones_factor_renta")}
+          value={formatNumber(result.factor_renta, 6)}
+          variant="primary"
+        />
+      </div>
 
       <Card title={t("danos_detalle_calculo")}>
         <Table headers={[t("danos_campo"), t("danos_valor")]} rows={rows} />

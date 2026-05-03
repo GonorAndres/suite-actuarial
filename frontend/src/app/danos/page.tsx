@@ -10,6 +10,8 @@ import {
   Tabs,
   LoadingSpinner,
   Table,
+  MetricCard,
+  ProgressBar,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -28,6 +30,15 @@ import type {
   FrecuenciaSeveridadResponse,
 } from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -69,6 +80,27 @@ interface FreqSevFormState {
   n_simulaciones: number;
   seed: number;
 }
+
+/* ── Chart colors ────────────────────────────────────────────────────── */
+
+const CHART_COLORS = {
+  navy: "#1B2A4A",
+  terracotta: "#C17654",
+  sage: "#7A9E7E",
+  amber: "#D4A853",
+  cream: "#F5F0EA",
+};
+
+const COVERAGE_COLORS = [
+  CHART_COLORS.terracotta,
+  CHART_COLORS.navy,
+  CHART_COLORS.sage,
+  CHART_COLORS.amber,
+  "#8B5A6B",
+  "#4A7C8B",
+  "#9B8B6B",
+  "#6B4A8B",
+];
 
 /* ── Defaults ──────────────────────────────────────────────────────────── */
 
@@ -279,7 +311,7 @@ export default function DanosPage() {
           antiguedad_anos: autoForm.antiguedad_anos,
           zona: autoForm.zona,
           edad_conductor: autoForm.edad_conductor,
-          deducible_pct: autoForm.deducible_pct,
+          deducible_pct: autoForm.deducible_pct / 100,
         });
         break;
       case "incendio":
@@ -634,15 +666,14 @@ function AutoResults({
   result: AutoResponse;
   t: (key: TranslationKey) => string;
 }) {
-  const coverageRows = Object.entries(result.coberturas).map(([key, val]) => [
-    key,
-    formatCurrency(val),
-  ]);
+  const coverageEntries = Object.entries(result.coberturas);
 
-  const vehicleRows = Object.entries(result.vehiculo).map(([key, val]) => [
-    key,
-    String(val),
-  ]);
+  const chartData = coverageEntries.map(([key, val]) => ({
+    name: key,
+    value: val,
+  }));
+
+  const vehicleEntries = Object.entries(result.vehiculo);
 
   const csvData = {
     prima_total: result.prima_total,
@@ -654,33 +685,82 @@ function AutoResults({
   } as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("danos_subtotal")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.subtotal)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("prima_total")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatCurrency(result.prima_total)}
-            </p>
-          </div>
-        </div>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard
+          label={t("danos_subtotal")}
+          value={formatCurrency(result.subtotal)}
+          variant="primary"
+        />
+        <MetricCard
+          label={t("prima_total")}
+          value={formatCurrency(result.prima_total)}
+          variant="accent"
+        />
+      </div>
 
-      {coverageRows.length > 0 && (
+      {/* Coverage breakdown -- horizontal bar chart */}
+      {coverageEntries.length > 0 && (
         <Card title={t("coberturas")}>
-          <Table headers={[t("danos_concepto"), t("danos_monto")]} rows={coverageRows} />
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+              >
+                <XAxis
+                  type="number"
+                  tick={{ fill: CHART_COLORS.navy, fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v: number) =>
+                    `$${(v / 1000).toLocaleString("es-MX")}k`
+                  }
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fill: CHART_COLORS.navy, fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={120}
+                />
+                <RechartsTooltip
+                  formatter={(value) => [formatCurrency(Number(value)), ""]}
+                  contentStyle={{
+                    background: CHART_COLORS.navy,
+                    border: "none",
+                    borderRadius: "8px",
+                    color: CHART_COLORS.cream,
+                    fontSize: "13px",
+                  }}
+                />
+                <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={24}>
+                  {chartData.map((_, i) => (
+                    <Cell key={i} fill={COVERAGE_COLORS[i % COVERAGE_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       )}
 
-      {vehicleRows.length > 0 && (
+      {/* Vehicle info card */}
+      {vehicleEntries.length > 0 && (
         <Card title={t("danos_info_vehiculo")}>
-          <Table headers={[t("danos_campo"), t("danos_valor")]} rows={vehicleRows} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+            {vehicleEntries.map(([key, val]) => (
+              <div key={key} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5 last:border-0">
+                <span className="text-sm text-navy/50 shrink-0">{key}</span>
+                <span className="text-sm font-medium text-navy tabular-nums text-right">
+                  {String(val)}
+                </span>
+              </div>
+            ))}
+          </div>
         </Card>
       )}
 
@@ -696,31 +776,57 @@ function IncendioResults({
   result: IncendioResponse;
   t: (key: TranslationKey) => string;
 }) {
-  const rows: [string, string][] = [
-    [t("valor_inmueble"), formatCurrency(result.valor_inmueble)],
-    [t("tipo_construccion"), result.tipo_construccion],
-    [t("danos_tasa_base"), formatPercent(result.tasa_base)],
-    [t("zona"), result.zona],
-    [t("danos_factor_zona"), formatNumber(result.factor_zona, 4)],
-    [t("uso_inmueble"), result.uso],
-    [t("danos_factor_uso"), formatNumber(result.factor_uso, 4)],
-  ];
-
   const csvData = { ...result } as unknown as Record<string, unknown>;
 
-  return (
-    <div className="space-y-4 animate-fade-in">
-      <Card className="result-accent">
-        <div>
-          <p className="text-sm text-navy/60 mb-1">{t("danos_prima_anual")}</p>
-          <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-            {formatCurrency(result.prima_anual)}
-          </p>
-        </div>
-      </Card>
+  // Factor pipeline data
+  const pipelineSteps = [
+    { label: t("danos_tasa_base"), value: formatPercent(result.tasa_base), sublabel: result.tipo_construccion },
+    { label: t("danos_factor_zona"), value: formatNumber(result.factor_zona, 4), sublabel: result.zona },
+    { label: t("danos_factor_uso"), value: formatNumber(result.factor_uso, 4), sublabel: result.uso },
+  ];
 
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metric */}
+      <MetricCard
+        label={t("danos_prima_anual")}
+        value={formatCurrency(result.prima_anual)}
+        variant="accent"
+        sublabel={`${t("valor_inmueble")}: ${formatCurrency(result.valor_inmueble)}`}
+      />
+
+      {/* Factor pipeline */}
       <Card title={t("danos_detalle_calculo")}>
-        <Table headers={[t("danos_campo"), t("danos_valor")]} rows={rows} />
+        <div className="flex flex-col sm:flex-row items-stretch gap-3">
+          {pipelineSteps.map((step, i) => (
+            <div key={i} className="flex items-center gap-3 flex-1">
+              <div className="flex-1 bg-navy/[0.03] rounded-lg p-4 text-center">
+                <p className="text-xs text-navy/50 uppercase tracking-wide mb-1">
+                  {step.label}
+                </p>
+                <p className="text-xl font-heading font-bold text-navy tabular-nums">
+                  {step.value}
+                </p>
+                <p className="text-xs text-navy/40 mt-1">{step.sublabel}</p>
+              </div>
+              {i < pipelineSteps.length - 1 && (
+                <svg
+                  className="w-5 h-5 text-terracotta/40 shrink-0 hidden sm:block"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              )}
+            </div>
+          ))}
+        </div>
       </Card>
 
       <DownloadButton data={csvData} filename="danos_incendio" label={t("descargar_csv")} />
@@ -735,29 +841,55 @@ function RCResults({
   result: RCResponse;
   t: (key: TranslationKey) => string;
 }) {
-  const rows: [string, string][] = [
-    [t("limite_responsabilidad"), formatCurrency(result.limite_responsabilidad)],
-    [t("deducible"), formatCurrency(result.deducible)],
-    [t("clase_actividad"), result.clase_actividad],
-    [t("danos_tasa_base"), formatPercent(result.tasa_base)],
-    [t("danos_factor_deducible"), formatNumber(result.factor_deducible, 4)],
-  ];
-
   const csvData = { ...result } as unknown as Record<string, unknown>;
 
-  return (
-    <div className="space-y-4 animate-fade-in">
-      <Card className="result-accent">
-        <div>
-          <p className="text-sm text-navy/60 mb-1">{t("danos_prima_anual")}</p>
-          <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-            {formatCurrency(result.prima_anual)}
-          </p>
-        </div>
-      </Card>
+  const pipelineSteps = [
+    { label: t("danos_tasa_base"), value: formatPercent(result.tasa_base), sublabel: result.clase_actividad },
+    { label: t("danos_factor_deducible"), value: formatNumber(result.factor_deducible, 4), sublabel: formatCurrency(result.deducible) },
+  ];
 
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metric */}
+      <MetricCard
+        label={t("danos_prima_anual")}
+        value={formatCurrency(result.prima_anual)}
+        variant="accent"
+        sublabel={`${t("limite_responsabilidad")}: ${formatCurrency(result.limite_responsabilidad)}`}
+      />
+
+      {/* Factor pipeline */}
       <Card title={t("danos_detalle_calculo")}>
-        <Table headers={[t("danos_campo"), t("danos_valor")]} rows={rows} />
+        <div className="flex flex-col sm:flex-row items-stretch gap-3">
+          {pipelineSteps.map((step, i) => (
+            <div key={i} className="flex items-center gap-3 flex-1">
+              <div className="flex-1 bg-navy/[0.03] rounded-lg p-4 text-center">
+                <p className="text-xs text-navy/50 uppercase tracking-wide mb-1">
+                  {step.label}
+                </p>
+                <p className="text-xl font-heading font-bold text-navy tabular-nums">
+                  {step.value}
+                </p>
+                <p className="text-xs text-navy/40 mt-1">{step.sublabel}</p>
+              </div>
+              {i < pipelineSteps.length - 1 && (
+                <svg
+                  className="w-5 h-5 text-terracotta/40 shrink-0 hidden sm:block"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              )}
+            </div>
+          ))}
+        </div>
       </Card>
 
       <DownloadButton data={csvData} filename="danos_rc" label={t("descargar_csv")} />
@@ -772,36 +904,51 @@ function BonusMalusResults({
   result: BonusMalusResponse;
   t: (key: TranslationKey) => string;
 }) {
-  const rows: [string, string][] = [
-    [t("danos_nivel_previo"), String(result.nivel_previo)],
-    [t("danos_siniestros"), String(result.siniestros)],
-    [t("danos_nivel_nuevo"), String(result.nivel_nuevo)],
-    [t("danos_factor_bm"), formatNumber(result.factor, 4)],
-  ];
-
   const csvData = { ...result } as unknown as Record<string, unknown>;
 
+  // Gauge scale from -5 to +3 (typical BM range)
+  const minLevel = -5;
+  const maxLevel = 3;
+  const range = maxLevel - minLevel;
+  const clampedLevel = Math.max(minLevel, Math.min(maxLevel, result.nivel_nuevo));
+  const pctPosition = ((clampedLevel - minLevel) / range) * 100;
+
   return (
-    <div className="space-y-4 animate-fade-in">
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("danos_nivel_nuevo")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {result.nivel_nuevo}
-            </p>
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard
+          label={t("danos_nivel_nuevo")}
+          value={String(result.nivel_nuevo)}
+          variant="primary"
+          sublabel={`${t("danos_nivel_previo")}: ${result.nivel_previo}`}
+        />
+        <MetricCard
+          label={t("danos_factor_bm")}
+          value={formatNumber(result.factor, 4)}
+          variant={result.factor > 1 ? "accent" : "default"}
+          sublabel={`${t("danos_siniestros")}: ${result.siniestros}`}
+        />
+      </div>
+
+      {/* Visual gauge */}
+      <Card title="Bonus-Malus">
+        <div className="space-y-3">
+          <div className="relative h-6 rounded-full overflow-hidden">
+            {/* Background gradient */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-sage via-amber to-terracotta" />
+            {/* Position marker */}
+            <div
+              className="absolute top-0 h-full w-1.5 bg-navy rounded-full shadow-lg transition-all duration-500 -translate-x-1/2"
+              style={{ left: `${pctPosition}%` }}
+            />
           </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("danos_factor_bm")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatNumber(result.factor, 4)}
-            </p>
+          <div className="flex justify-between text-xs text-navy/50">
+            <span>{minLevel} (Bonus)</span>
+            <span>0</span>
+            <span>+{maxLevel} (Malus)</span>
           </div>
         </div>
-      </Card>
-
-      <Card title={t("danos_detalle_calculo")}>
-        <Table headers={[t("danos_campo"), t("danos_valor")]} rows={rows} />
       </Card>
 
       <DownloadButton data={csvData} filename="danos_bonus_malus" label={t("descargar_csv")} />
@@ -816,43 +963,73 @@ function FreqSevResults({
   result: FrecuenciaSeveridadResponse;
   t: (key: TranslationKey) => string;
 }) {
-  const rows: [string, string][] = [
-    [t("danos_prima_pura"), formatCurrency(result.prima_pura)],
-    [t("danos_varianza_agregada"), formatNumber(result.varianza_agregada)],
-    [t("danos_desviacion_estandar"), formatNumber(result.desviacion_estandar)],
-    [t("danos_asimetria"), formatNumber(result.asimetria, 4)],
-    ["VaR 95%", formatCurrency(result.var_95)],
-    ["TVaR 95%", formatCurrency(result.tvar_95)],
-    ["VaR 99%", formatCurrency(result.var_99)],
-    ["TVaR 99%", formatCurrency(result.tvar_99)],
-    [t("danos_minimo"), formatCurrency(result.minimo)],
-    [t("danos_maximo"), formatCurrency(result.maximo)],
-    [t("num_simulaciones"), formatNumber(result.simulaciones, 0)],
-  ];
-
   const csvData = { ...result } as unknown as Record<string, unknown>;
 
+  const riskMetrics = [
+    { label: "VaR 95%", value: formatCurrency(result.var_95) },
+    { label: "TVaR 95%", value: formatCurrency(result.tvar_95) },
+    { label: "VaR 99%", value: formatCurrency(result.var_99) },
+    { label: "TVaR 99%", value: formatCurrency(result.tvar_99) },
+  ];
+
   return (
-    <div className="space-y-4 animate-fade-in">
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("danos_prima_pura")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatCurrency(result.prima_pura)}
-            </p>
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard
+          label={t("danos_prima_pura")}
+          value={formatCurrency(result.prima_pura)}
+          variant="accent"
+        />
+        <MetricCard
+          label="VaR 99%"
+          value={formatCurrency(result.var_99)}
+          variant="primary"
+        />
+      </div>
+
+      {/* Risk metrics grid */}
+      <Card title={t("danos_estadisticas")}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {riskMetrics.map((m) => (
+            <div key={m.label} className="bg-navy/[0.03] rounded-lg p-4 text-center">
+              <p className="text-xs text-navy/50 uppercase tracking-wide mb-1">
+                {m.label}
+              </p>
+              <p className="text-lg font-heading font-bold text-navy tabular-nums">
+                {m.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Additional stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 mt-6 pt-4 border-t border-navy/5">
+          <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5">
+            <span className="text-sm text-navy/50">{t("danos_varianza_agregada")}</span>
+            <span className="text-sm font-medium text-navy tabular-nums">{formatNumber(result.varianza_agregada)}</span>
           </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">VaR 99%</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.var_99)}
-            </p>
+          <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5">
+            <span className="text-sm text-navy/50">{t("danos_desviacion_estandar")}</span>
+            <span className="text-sm font-medium text-navy tabular-nums">{formatNumber(result.desviacion_estandar)}</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5">
+            <span className="text-sm text-navy/50">{t("danos_asimetria")}</span>
+            <span className="text-sm font-medium text-navy tabular-nums">{formatNumber(result.asimetria, 4)}</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5">
+            <span className="text-sm text-navy/50">{t("num_simulaciones")}</span>
+            <span className="text-sm font-medium text-navy tabular-nums">{formatNumber(result.simulaciones, 0)}</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5">
+            <span className="text-sm text-navy/50">{t("danos_minimo")}</span>
+            <span className="text-sm font-medium text-navy tabular-nums">{formatCurrency(result.minimo)}</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5">
+            <span className="text-sm text-navy/50">{t("danos_maximo")}</span>
+            <span className="text-sm font-medium text-navy tabular-nums">{formatCurrency(result.maximo)}</span>
           </div>
         </div>
-      </Card>
-
-      <Card title={t("danos_estadisticas")}>
-        <Table headers={[t("danos_metrica"), t("danos_valor")]} rows={rows} />
       </Card>
 
       <DownloadButton data={csvData} filename="danos_frecuencia_severidad" label={t("descargar_csv")} />

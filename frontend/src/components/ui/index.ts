@@ -6,3 +6,5 @@ export { default as Table } from "./Table";
 export { default as Badge } from "./Badge";
 export { default as LoadingSpinner } from "./LoadingSpinner";
 export { default as Tabs } from "./Tabs";
+export { default as MetricCard } from "./MetricCard";
+export { default as ProgressBar } from "./ProgressBar";

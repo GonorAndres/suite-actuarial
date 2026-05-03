@@ -10,6 +10,8 @@ import {
   Tabs,
   LoadingSpinner,
   Table,
+  MetricCard,
+  ProgressBar,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -17,6 +19,17 @@ import { pricingApi } from "@/lib/api";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import type { PricingRequest, PricingResponse, CompareResponse } from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie,
+} from "recharts";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -48,6 +61,16 @@ const DEFAULT_FORM: FormState = {
   recargo_utilidad: 0.03,
 };
 
+/* ── Chart color palette ──────────────────────────────────────────────── */
+
+const CHART_COLORS = {
+  navy: "#1B2A4A",
+  terracotta: "#C17654",
+  sage: "#7A9E7E",
+  amber: "#D4A853",
+  cream: "#F5F0EA",
+};
+
 /* ── Result display component ──────────────────────────────────────────── */
 
 function ResultCard({
@@ -57,14 +80,28 @@ function ResultCard({
   result: PricingResponse;
   t: (key: TranslationKey) => string;
 }) {
-  const recargosRows = Object.entries(result.desglose_recargos).map(
-    ([key, val]) => [key, formatCurrency(val)],
-  );
+  const [showMetadata, setShowMetadata] = useState(false);
 
-  const metadataRows = Object.entries(result.metadata).map(([key, val]) => [
-    key,
-    String(val),
-  ]);
+  const recargosEntries = Object.entries(result.desglose_recargos);
+  const totalRecargos = recargosEntries.reduce((sum, [, val]) => sum + val, 0);
+
+  const recargosSegments = recargosEntries.map(([key, val], i) => ({
+    label: key,
+    value: val,
+    color: [CHART_COLORS.navy, CHART_COLORS.terracotta, CHART_COLORS.sage, CHART_COLORS.amber][
+      i % 4
+    ],
+  }));
+
+  const pieData = recargosEntries.map(([key, val], i) => ({
+    name: key,
+    value: val,
+    color: [CHART_COLORS.navy, CHART_COLORS.terracotta, CHART_COLORS.sage, CHART_COLORS.amber][
+      i % 4
+    ],
+  }));
+
+  const metadataEntries = Object.entries(result.metadata);
 
   const csvData = {
     producto: result.producto,
@@ -78,40 +115,104 @@ function ResultCard({
   } as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      {/* Main premiums */}
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("prima_neta")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.prima_neta)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("prima_total")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatCurrency(result.prima_total)}
-            </p>
-          </div>
-        </div>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard
+          label={t("prima_neta")}
+          value={formatCurrency(result.prima_neta)}
+          variant="primary"
+        />
+        <MetricCard
+          label={t("prima_total")}
+          value={formatCurrency(result.prima_total)}
+          variant="accent"
+          sublabel={`${t("desglose_recargos")}: +${formatCurrency(totalRecargos)}`}
+        />
+      </div>
 
-      {/* Loading breakdown */}
-      {recargosRows.length > 0 && (
+      {/* Recargos breakdown -- donut + progress bar */}
+      {recargosEntries.length > 0 && (
         <Card title={t("desglose_recargos")}>
-          <Table
-            headers={["Concepto", "Monto"]}
-            rows={recargosRows}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+            {/* Donut chart */}
+            <div className="flex justify-center">
+              <ResponsiveContainer width={220} height={220}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="value"
+                    strokeWidth={0}
+                  >
+                    {pieData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(value) => formatCurrency(Number(value))}
+                    contentStyle={{
+                      background: CHART_COLORS.navy,
+                      border: "none",
+                      borderRadius: "8px",
+                      color: CHART_COLORS.cream,
+                      fontSize: "13px",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Progress bar breakdown */}
+            <ProgressBar
+              segments={recargosSegments}
+              formatValue={(v) => formatCurrency(v)}
+            />
+          </div>
         </Card>
       )}
 
-      {/* Metadata */}
-      {metadataRows.length > 0 && (
-        <Card title={t("metadata")}>
-          <Table headers={["Campo", "Valor"]} rows={metadataRows} />
-        </Card>
+      {/* Metadata -- collapsible info grid */}
+      {metadataEntries.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowMetadata(!showMetadata)}
+            className="flex items-center gap-2 text-sm font-medium text-navy/60 hover:text-terracotta transition-colors mb-3"
+          >
+            <svg
+              className={`w-4 h-4 transition-transform ${showMetadata ? "rotate-90" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+            {t("metadata")}
+          </button>
+          {showMetadata && (
+            <Card className="animate-fade-in">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                {metadataEntries.map(([key, val]) => (
+                  <div key={key} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5 last:border-0">
+                    <span className="text-sm text-navy/50 shrink-0">{key}</span>
+                    <span className="text-sm font-medium text-navy tabular-nums text-right">
+                      {String(val)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Download */}
@@ -455,36 +556,18 @@ function CompareResults({
     { key: "dotal", label: t("vida_dotal"), result: data.dotal },
   ];
 
-  const comparisonRows: [string, string, string, string][] = [
-    [
-      t("prima_neta"),
-      formatCurrency(data.temporal.prima_neta),
-      formatCurrency(data.ordinario.prima_neta),
-      formatCurrency(data.dotal.prima_neta),
-    ],
-    [
-      t("prima_total"),
-      formatCurrency(data.temporal.prima_total),
-      formatCurrency(data.ordinario.prima_total),
-      formatCurrency(data.dotal.prima_total),
-    ],
-  ];
+  // Find cheapest product
+  const cheapestKey = products.reduce(
+    (min, p) => (p.result.prima_total < min.result.prima_total ? p : min),
+    products[0],
+  ).key;
 
-  // Add recargos rows
-  const allRecargosKeys = new Set<string>();
-  products.forEach((p) => {
-    Object.keys(p.result.desglose_recargos).forEach((k) =>
-      allRecargosKeys.add(k),
-    );
-  });
-  allRecargosKeys.forEach((key) => {
-    comparisonRows.push([
-      key,
-      formatCurrency(data.temporal.desglose_recargos[key] ?? 0),
-      formatCurrency(data.ordinario.desglose_recargos[key] ?? 0),
-      formatCurrency(data.dotal.desglose_recargos[key] ?? 0),
-    ]);
-  });
+  // Grouped bar chart data
+  const chartData = products.map((p) => ({
+    name: p.label,
+    prima_neta: p.result.prima_neta,
+    prima_total: p.result.prima_total,
+  }));
 
   const csvData = products.map((p) => ({
     producto: p.label,
@@ -495,46 +578,113 @@ function CompareResults({
   })) as Record<string, unknown>[];
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <Card title={t("vida_compare_desc")} className="result-accent">
-        <Table
-          headers={[
-            "Concepto",
-            t("vida_temporal"),
-            t("vida_ordinario"),
-            t("vida_dotal"),
-          ]}
-          rows={comparisonRows}
-        />
-      </Card>
-
-      {/* Individual cards row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="space-y-6 animate-fade-in">
+      {/* Product comparison cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {products.map((p) => (
-          <Card key={p.key} title={p.label}>
-            <div className="space-y-3">
+          <Card
+            key={p.key}
+            className={`relative ${p.key === cheapestKey ? "ring-2 ring-sage/60" : ""}`}
+          >
+            {/* Cheapest badge */}
+            {p.key === cheapestKey && (
+              <span className="absolute -top-3 left-4 bg-sage text-white text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                {t("vida_temporal") === p.label ? t("vida_temporal") : ""}{" "}
+                {/* fallback */}
+                Mas economico
+              </span>
+            )}
+            <div className="pt-2 space-y-4">
+              <h4 className="font-heading text-lg font-bold text-navy">
+                {p.label}
+              </h4>
               <div>
-                <p className="text-sm text-navy/60">{t("prima_neta")}</p>
-                <p className="text-xl font-heading font-bold text-navy">
+                <p className="text-xs text-navy/50 uppercase tracking-wide">
+                  {t("prima_neta")}
+                </p>
+                <p className="text-2xl font-heading font-bold text-navy tabular-nums">
                   {formatCurrency(p.result.prima_neta)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-navy/60">{t("prima_total")}</p>
-                <p className="text-xl font-heading font-bold text-terracotta">
+                <p className="text-xs text-navy/50 uppercase tracking-wide">
+                  {t("prima_total")}
+                </p>
+                <p className="text-2xl font-heading font-bold text-terracotta tabular-nums">
                   {formatCurrency(p.result.prima_total)}
                 </p>
               </div>
-              {Object.entries(p.result.metadata).map(([mk, mv]) => (
-                <div key={mk}>
-                  <p className="text-xs text-navy/50">{mk}</p>
-                  <p className="text-sm text-navy/80">{String(mv)}</p>
-                </div>
-              ))}
+              {/* Metadata mini */}
+              <div className="pt-2 border-t border-navy/5 space-y-1">
+                {Object.entries(p.result.metadata).map(([mk, mv]) => (
+                  <div
+                    key={mk}
+                    className="flex justify-between items-baseline text-xs"
+                  >
+                    <span className="text-navy/40">{mk}</span>
+                    <span className="text-navy/70 tabular-nums">
+                      {String(mv)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </Card>
         ))}
       </div>
+
+      {/* Grouped bar chart */}
+      <Card title={t("vida_compare_desc")}>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+              barGap={4}
+            >
+              <XAxis
+                dataKey="name"
+                tick={{ fill: CHART_COLORS.navy, fontSize: 13 }}
+                axisLine={{ stroke: CHART_COLORS.navy, strokeOpacity: 0.15 }}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fill: CHART_COLORS.navy, fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) =>
+                  `$${(v / 1000).toLocaleString("es-MX")}k`
+                }
+              />
+              <RechartsTooltip
+                formatter={(value, name) => [
+                  formatCurrency(Number(value)),
+                  name === "prima_neta" ? t("prima_neta") : t("prima_total"),
+                ]}
+                contentStyle={{
+                  background: CHART_COLORS.navy,
+                  border: "none",
+                  borderRadius: "8px",
+                  color: CHART_COLORS.cream,
+                  fontSize: "13px",
+                }}
+              />
+              <Bar
+                dataKey="prima_neta"
+                name={t("prima_neta")}
+                fill={CHART_COLORS.navy}
+                radius={[6, 6, 0, 0]}
+              />
+              <Bar
+                dataKey="prima_total"
+                name={t("prima_total")}
+                fill={CHART_COLORS.terracotta}
+                radius={[6, 6, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
 
       <DownloadButton
         data={csvData}

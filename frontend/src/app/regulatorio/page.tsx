@@ -11,6 +11,7 @@ import {
   LoadingSpinner,
   Table,
   Badge,
+  MetricCard,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -142,36 +143,33 @@ function RCSResultCard({
   } as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      {/* Main summary */}
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("reg_rcs_total")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatCurrency(result.rcs_total)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("ratio_solvencia")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatPercent(result.ratio_solvencia)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("reg_excedente")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.excedente_solvencia)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("cumple_regulacion")}</p>
-            <Badge variant={result.cumple_regulacion ? "success" : "error"}>
-              {result.cumple_regulacion ? t("reg_si_cumple") : t("reg_no_cumple")}
-            </Badge>
-          </div>
+    <div className="space-y-6 animate-fade-in">
+      {/* Main summary -- metric cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          label={t("reg_rcs_total")}
+          value={formatCurrency(result.rcs_total)}
+          variant="accent"
+        />
+        <MetricCard
+          label={t("ratio_solvencia")}
+          value={formatPercent(result.ratio_solvencia)}
+          variant="primary"
+        />
+        <MetricCard
+          label={t("reg_excedente")}
+          value={formatCurrency(result.excedente_solvencia)}
+          variant="default"
+        />
+        <div className="rounded-xl p-5 shadow-sm border border-navy/8 bg-offwhite flex flex-col justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-navy/50 mb-2">
+            {t("cumple_regulacion")}
+          </p>
+          <Badge variant={result.cumple_regulacion ? "success" : "error"}>
+            {result.cumple_regulacion ? t("reg_si_cumple") : t("reg_no_cumple")}
+          </Badge>
         </div>
-      </Card>
+      </div>
 
       {/* RCS breakdown */}
       <Card title={t("reg_desglose_rcs")}>

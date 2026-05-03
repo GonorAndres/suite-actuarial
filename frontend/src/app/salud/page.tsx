@@ -10,6 +10,7 @@ import {
   Tabs,
   LoadingSpinner,
   Table,
+  MetricCard,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -407,15 +408,13 @@ function GMMResults({
   } as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <Card className="result-accent">
-        <div>
-          <p className="text-sm text-navy/60 mb-1">{t("salud_siniestralidad_esperada")}</p>
-          <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-            {formatCurrency(result.siniestralidad_esperada)}
-          </p>
-        </div>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metric */}
+      <MetricCard
+        label={t("salud_siniestralidad_esperada")}
+        value={formatCurrency(result.siniestralidad_esperada)}
+        variant="accent"
+      />
 
       {tarificacionRows.length > 0 && (
         <Card title={t("salud_tarificacion")}>
@@ -423,16 +422,34 @@ function GMMResults({
         </Card>
       )}
 
-      {aseguradoRows.length > 0 && (
-        <Card title={t("salud_datos_asegurado")}>
-          <Table headers={[t("danos_campo"), t("danos_valor")]} rows={aseguradoRows} />
-        </Card>
-      )}
-
-      {productoRows.length > 0 && (
-        <Card title={t("salud_datos_producto")}>
-          <Table headers={[t("danos_campo"), t("danos_valor")]} rows={productoRows} />
-        </Card>
+      {/* Asegurado and Producto as info grids */}
+      {(aseguradoRows.length > 0 || productoRows.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {aseguradoRows.length > 0 && (
+            <Card title={t("salud_datos_asegurado")}>
+              <div className="space-y-2">
+                {aseguradoRows.map(([key, val]) => (
+                  <div key={String(key)} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5 last:border-0">
+                    <span className="text-sm text-navy/50">{key}</span>
+                    <span className="text-sm font-medium text-navy tabular-nums text-right">{val}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+          {productoRows.length > 0 && (
+            <Card title={t("salud_datos_producto")}>
+              <div className="space-y-2">
+                {productoRows.map(([key, val]) => (
+                  <div key={String(key)} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5 last:border-0">
+                    <span className="text-sm text-navy/50">{key}</span>
+                    <span className="text-sm font-medium text-navy tabular-nums text-right">{val}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
       )}
 
       <DownloadButton data={csvData} filename="salud_gmm" label={t("descargar_csv")} />
@@ -470,23 +487,20 @@ function AccidentesResults({
   } as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("danos_prima_anual")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatCurrency(result.prima_anual)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("salud_gastos_funerarios")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.gastos_funerarios)}
-            </p>
-          </div>
-        </div>
-      </Card>
+    <div className="space-y-6 animate-fade-in">
+      {/* Hero metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard
+          label={t("danos_prima_anual")}
+          value={formatCurrency(result.prima_anual)}
+          variant="accent"
+        />
+        <MetricCard
+          label={t("salud_gastos_funerarios")}
+          value={formatCurrency(result.gastos_funerarios)}
+          variant="primary"
+        />
+      </div>
 
       {perdidasRows.length > 0 && (
         <Card title={t("salud_perdidas_organicas")}>

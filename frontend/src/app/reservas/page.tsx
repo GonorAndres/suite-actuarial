@@ -11,6 +11,7 @@ import {
   LoadingSpinner,
   Table,
   Badge,
+  MetricCard,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -130,30 +131,25 @@ function ReserveResultCard({
   } as Record<string, unknown>;
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Main totals */}
-      <Card className="result-accent">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("reserva_total")}</p>
-            <p className="text-3xl font-heading font-bold text-terracotta tabular-nums">
-              {formatCurrency(result.reserva_total)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("ultimate_total")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.ultimate_total)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-navy/60 mb-1">{t("reservas_pagado_total")}</p>
-            <p className="text-3xl font-heading font-bold text-navy tabular-nums">
-              {formatCurrency(result.pagado_total)}
-            </p>
-          </div>
-        </div>
-      </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <MetricCard
+          label={t("reserva_total")}
+          value={formatCurrency(result.reserva_total)}
+          variant="accent"
+        />
+        <MetricCard
+          label={t("ultimate_total")}
+          value={formatCurrency(result.ultimate_total)}
+          variant="primary"
+        />
+        <MetricCard
+          label={t("reservas_pagado_total")}
+          value={formatCurrency(result.pagado_total)}
+          variant="default"
+        />
+      </div>
 
       {/* Method badge */}
       <Card>
