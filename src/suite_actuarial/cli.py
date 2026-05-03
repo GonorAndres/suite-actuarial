@@ -64,7 +64,7 @@ Ejemplos:
   seguros --version     # Muestra la version
 
 Para más información, visita:
-https://github.com/GonorAndres/Analisis_Seguros_Mexico
+https://github.com/GonorAndres/suite-actuarial
 """
     print(ayuda)
 

@@ -205,4 +205,4 @@ La suite tiene 34 modulos de produccion distribuidos en 7 subpaquetes (`core`, `
 
 La Suite Actuarial Mexicana demuestra que es posible cubrir el ciclo operativo completo de una aseguradora -- desde la mortalidad cruda hasta el reporte regulatorio -- en una sola libreria de Python con validacion rigurosa y precision decimal, sin depender de software propietario.
 
-**Repositorio**: [github.com/GonorAndres/Analisis_Seguros_Mexico](https://github.com/GonorAndres/Analisis_Seguros_Mexico)
+**Repositorio**: [github.com/GonorAndres/suite-actuarial](https://github.com/GonorAndres/suite-actuarial)

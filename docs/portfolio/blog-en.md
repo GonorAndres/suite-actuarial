@@ -205,4 +205,4 @@ The suite has 34 production modules distributed across 7 sub-packages (`core`, `
 
 The Mexican Actuarial Suite demonstrates that it is possible to cover the complete operating cycle of an insurer -- from raw mortality to regulatory reporting -- in a single Python library with rigorous validation and decimal precision, without relying on proprietary software.
 
-**Repository**: [github.com/GonorAndres/Analisis_Seguros_Mexico](https://github.com/GonorAndres/Analisis_Seguros_Mexico)
+**Repository**: [github.com/GonorAndres/suite-actuarial](https://github.com/GonorAndres/suite-actuarial)

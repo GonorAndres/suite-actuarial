@@ -77,11 +77,15 @@ all = [
 seguros = "suite_actuarial.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/GonorAndres/Analisis_Seguros_Mexico"
-Repository = "https://github.com/GonorAndres/Analisis_Seguros_Mexico"
+Homepage = "https://github.com/GonorAndres/suite-actuarial"
+Documentation = "https://github.com/GonorAndres/suite-actuarial#readme"
+Repository = "https://github.com/GonorAndres/suite-actuarial"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+suite_actuarial = ["data/mortality_tables/*.csv", "data/mortality_tables/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

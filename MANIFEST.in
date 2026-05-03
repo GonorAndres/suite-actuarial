@@ -1,0 +1,5 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+recursive-include src/suite_actuarial/data *.csv *.json
+recursive-include data/mortality_tables *.csv *.json *.md

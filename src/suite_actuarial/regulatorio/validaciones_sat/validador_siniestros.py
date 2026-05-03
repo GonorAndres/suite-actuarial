@@ -12,6 +12,12 @@ from suite_actuarial.regulatorio.validaciones_sat.models import (
     TipoSeguroFiscal,
 )
 
+DISCLAIMER = (
+    "AVISO: La gravabilidad de rentas vitalicias (Art. 142 LISR) usa una "
+    "simplificacion 50/50. La tabla actuarial completa de gravabilidad no esta "
+    "implementada. Para uso en produccion, consulte la tabla vigente del SAT."
+)
+
 
 class ValidadorSiniestrosGravables:
     """

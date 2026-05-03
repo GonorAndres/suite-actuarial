@@ -75,9 +75,13 @@ Desviacion maxima sobre todas las edades (18-100): 0.0000000000
 
 ## 6. Limitaciones conocidas
 
-- EMSSA-09 no fuerza q_omega = 1 en edad terminal (qx_100_H = 0.442)
-- GMM: tasas base son ilustrativas, no datos reales del mercado
-- AMIS: tablas de tarificacion son representativas, no las tablas oficiales vigentes
-- Art. 142 LISR: se usa simplificacion 50/50 para gravabilidad de rentas vitalicias
+Cada modulo con datos ilustrativos o simplificados expone una constante `DISCLAIMER`
+a nivel de modulo para facilitar su identificacion programatica.
+
+- **EMSSA-09**: No fuerza q_omega = 1 en edad terminal (qx_100_H = 0.442). Ver `data/mortality_tables/README.md`.
+- **GMM** (`salud/gmm.py`): Tasas base por banda de edad son ilustrativas, no datos reales del mercado.
+- **AMIS** (`danos/tablas_amis.py`): Tablas de tarificacion son representativas, no las tablas oficiales vigentes.
+- **Art. 142 LISR** (`regulatorio/validaciones_sat/validador_siniestros.py`): Simplificacion 50/50 para gravabilidad de rentas vitalicias.
+- **RCS Vida/Danos/Inversion** (`regulatorio/rcs_vida.py`, `rcs_danos.py`, `rcs_inversion.py`): Factores son aproximaciones pedagogicas simplificadas, no el modelo estocastico completo de la CNSF.
 - Tabla EMSSA-09 incluida es version simplificada para propositos demostrativos
-  (ver metadata.json); para produccion usar tablas oficiales de la CNSF
+  (ver metadata.json); para produccion usar tablas oficiales de la CNSF.

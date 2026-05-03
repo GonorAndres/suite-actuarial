@@ -7,8 +7,8 @@ Gracias por tu interes en contribuir a **suite_actuarial**.
 ### 1. Fork y Clone
 
 ```bash
-git clone https://github.com/GonorAndres/Analisis_Seguros_Mexico.git
-cd Analisis_Seguros_Mexico
+git clone https://github.com/GonorAndres/suite-actuarial.git
+cd suite-actuarial
 ```
 
 ### 2. Configurar Entorno de Desarrollo
