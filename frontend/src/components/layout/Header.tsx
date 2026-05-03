@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import type { TranslationKey } from "@/lib/i18n/translations";
@@ -31,9 +31,11 @@ export function Header() {
   }, []);
 
   // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+  const prevPathname = useRef(pathname);
+  if (prevPathname.current !== pathname) {
+    prevPathname.current = pathname;
+    if (mobileOpen) setMobileOpen(false);
+  }
 
   return (
     <>

@@ -1,6 +1,5 @@
 """Integration tests for the pensiones API endpoints."""
 
-import pytest
 
 
 class TestLey73Calcular:

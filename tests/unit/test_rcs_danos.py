@@ -14,7 +14,6 @@ import pytest
 from suite_actuarial.core.validators import ConfiguracionRCSDanos
 from suite_actuarial.regulatorio.rcs_danos import RCSDanos
 
-
 # ------------------------------------------------------------------
 # Helpers / local fixtures
 # ------------------------------------------------------------------

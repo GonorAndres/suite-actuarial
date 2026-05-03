@@ -1,6 +1,5 @@
 """Integration tests for the regulatory API endpoints."""
 
-import pytest
 
 
 VALID_RCS_PAYLOAD = {

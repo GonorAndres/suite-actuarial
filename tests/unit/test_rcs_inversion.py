@@ -14,7 +14,6 @@ import pytest
 from suite_actuarial.core.validators import ConfiguracionRCSInversion
 from suite_actuarial.regulatorio.rcs_inversion import RCSInversion
 
-
 # ------------------------------------------------------------------
 # Helpers / local fixtures
 # ------------------------------------------------------------------

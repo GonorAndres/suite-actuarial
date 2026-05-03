@@ -1,6 +1,5 @@
 """Integration tests for the reinsurance API endpoints."""
 
-import pytest
 
 SINIESTROS = [
     {

@@ -12,10 +12,10 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from suite_actuarial.danos.auto import SeguroAuto
+from suite_actuarial.danos.frecuencia_severidad import ModeloColectivo
 from suite_actuarial.danos.incendio import SeguroIncendio
 from suite_actuarial.danos.rc import SeguroRC
 from suite_actuarial.danos.tarifas import CalculadoraBonusMalus
-from suite_actuarial.danos.frecuencia_severidad import ModeloColectivo
 
 router = APIRouter(prefix="/danos", tags=["danos"])
 

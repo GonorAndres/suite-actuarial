@@ -1,6 +1,5 @@
 """Integration tests for the danos (P&C) API endpoints."""
 
-import pytest
 
 
 class TestAutoCalcuar:

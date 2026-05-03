@@ -1,6 +1,5 @@
 """Integration tests for the pricing API endpoints."""
 
-import pytest
 
 VALID_PRICING_PAYLOAD = {
     "edad": 35,

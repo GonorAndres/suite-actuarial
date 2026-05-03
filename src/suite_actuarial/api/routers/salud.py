@@ -11,8 +11,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from suite_actuarial.salud.gmm import GMM, NivelHospitalario, ZonaGeografica
 from suite_actuarial.salud.accidentes import AccidentesEnfermedades
+from suite_actuarial.salud.gmm import GMM, NivelHospitalario, ZonaGeografica
 
 router = APIRouter(prefix="/salud", tags=["salud"])
 

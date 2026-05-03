@@ -94,7 +94,8 @@ frontend/out/
 # Playwright MCP working files
 .playwright-mcp/
 
-# Screenshots (temporary)
+# Screenshots
+screenshots/
 *.png
 
 # Project specific

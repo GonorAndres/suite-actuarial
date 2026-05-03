@@ -15,7 +15,6 @@ from decimal import ROUND_HALF_UP, Decimal
 import pytest
 
 from suite_actuarial.danos.rc import (
-    FACTOR_DEDUCIBLE_RC,
     TASAS_ACTIVIDAD,
     SeguroRC,
 )

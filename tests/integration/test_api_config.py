@@ -1,6 +1,5 @@
 """Integration tests for the config API endpoints."""
 
-import pytest
 
 
 class TestConfigFull:

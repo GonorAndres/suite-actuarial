@@ -311,6 +311,39 @@ function WithholdingResultCard({
 
 /* ── Page component ────────────────────────────────────────────────────── */
 
+function SectionToggle({
+  label,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  label: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-navy/10 rounded-lg">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-medium text-navy/80 hover:text-terracotta transition-colors"
+      >
+        <span>{label}</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-90" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+      {isOpen && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  );
+}
+
 export default function RegulatorioPage() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<RegTab>("rcs");
@@ -434,44 +467,6 @@ export default function RegulatorioPage() {
       { value: "B", label: "B" },
     ],
     [],
-  );
-
-  /* ── Toggle section helper ──────────────────────────────────────── */
-
-  const SectionToggle = ({
-    label,
-    isOpen,
-    onToggle,
-    children,
-  }: {
-    label: string;
-    isOpen: boolean;
-    onToggle: () => void;
-    children: React.ReactNode;
-  }) => (
-    <div className="border border-navy/10 rounded-lg">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-medium text-navy/80 hover:text-terracotta transition-colors"
-      >
-        <span>{label}</span>
-        <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-90" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
-      </button>
-      {isOpen && <div className="px-4 pb-4">{children}</div>}
-    </div>
   );
 
   /* ── Render ─────────────────────────────────────────────────────────── */

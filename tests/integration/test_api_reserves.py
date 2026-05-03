@@ -1,6 +1,5 @@
 """Integration tests for the reserves API endpoints."""
 
-import pytest
 
 VALID_TRIANGLE = [
     [3000, 5000, 5600, 5800, 5900],

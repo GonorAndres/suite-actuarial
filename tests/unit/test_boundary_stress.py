@@ -14,7 +14,6 @@ from decimal import Decimal
 import pandas as pd
 import pytest
 
-from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.actuarial.pricing.vida_pricing import calcular_seguro_vida
 from suite_actuarial.core.validators import (
     Asegurado,
@@ -35,7 +34,6 @@ from suite_actuarial.reaseguro.excess_of_loss import ExcessOfLoss
 from suite_actuarial.reaseguro.quota_share import QuotaShare
 from suite_actuarial.reservas.chain_ladder import ChainLadder
 from suite_actuarial.vida.temporal import VidaTemporal
-
 
 # =====================================================================
 # VIDA BOUNDARY TESTS

@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -19,20 +18,17 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 const STORAGE_KEY = "suite_actuarial_lang";
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("es");
+function getInitialLang(): Lang {
+  if (typeof window === "undefined") return "es";
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "en" || stored === "es") return stored;
+  } catch { /* SSR or storage unavailable */ }
+  return "es";
+}
 
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "en" || stored === "es") {
-        setLangState(stored);
-      }
-    } catch {
-      // SSR or storage unavailable -- keep default
-    }
-  }, []);
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>(getInitialLang);
 
   const setLang = useCallback((next: Lang) => {
     setLangState(next);

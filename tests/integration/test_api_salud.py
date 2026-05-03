@@ -1,6 +1,5 @@
 """Integration tests for the salud (health) API endpoints."""
 
-import pytest
 
 
 class TestGMMCalcular:
