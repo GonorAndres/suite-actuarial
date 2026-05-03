@@ -334,7 +334,7 @@ export default function ReaseguroPage() {
           {t("reaseguro_titulo")}
         </h1>
         <p className="text-navy/60 text-lg">{t("reaseguro_descripcion")}</p>
-        <p className="text-navy/60 text-lg max-w-3xl mt-2">{t("reaseguro_contexto")}</p>
+        <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("reaseguro_contexto")}</p>
       </div>
 
       {/* Tabs */}

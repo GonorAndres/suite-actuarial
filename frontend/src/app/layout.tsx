@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
-import { Inter, Lora } from "next/font/google";
+import { Source_Sans_3, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
-const inter = Inter({
+const sourceSans = Source_Sans_3({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
-const lora = Lora({
+const playfair = Playfair_Display({
   variable: "--font-lora",
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${lora.variable} h-full antialiased`}
+      className={`${sourceSans.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <LanguageProvider>

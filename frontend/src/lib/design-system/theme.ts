@@ -17,8 +17,8 @@ export const theme = {
   },
 
   fonts: {
-    heading: "Lora, Georgia, serif",
-    body: "Inter, system-ui, sans-serif",
+    heading: "Playfair Display, Georgia, serif",
+    body: "Source Sans 3, system-ui, sans-serif",
   },
 
   spacing: {
