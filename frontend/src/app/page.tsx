@@ -212,6 +212,45 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* ── Community / Contribute section ────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 pb-20">
+        <Card className="text-center">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 rounded-full bg-sage/15 flex items-center justify-center">
+                <svg className="w-7 h-7 text-sage" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="font-heading text-2xl font-bold text-navy mb-3">
+              {t("community_title")}
+            </h2>
+            <p className="text-navy/55 leading-relaxed mb-6">
+              {t("community_text")}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href="https://github.com/GonorAndres/suite-actuarial"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2.5 bg-sage text-cream rounded-full font-medium hover:bg-sage/90 transition-all duration-200"
+              >
+                {t("community_cta")}
+              </a>
+              <a
+                href="https://github.com/GonorAndres/suite-actuarial/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2.5 border border-sage/40 text-navy/60 rounded-full font-medium hover:bg-sage/10 hover:text-sage transition-all duration-200"
+              >
+                {t("community_discuss")}
+              </a>
+            </div>
+          </div>
+        </Card>
+      </section>
     </div>
   );
 }

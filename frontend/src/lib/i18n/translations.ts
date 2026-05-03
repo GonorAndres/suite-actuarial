@@ -180,6 +180,12 @@ export const translations = {
     feature_bilingual_title: "Bilingüe ES/EN",
     feature_bilingual_desc: "Interfaz completa en español e inglés con cambio de idioma instantáneo.",
 
+    // -- Community / Contribute --
+    community_title: "Contribuye al proyecto",
+    community_text: "suite_actuarial es un proyecto abierto para compartir conocimiento actuarial y estandarizar procesos del mercado asegurador mexicano. Si eres actuario, desarrollador o estudiante, tu experiencia puede mejorar esta herramienta. Reporta errores, sugiere mejoras, agrega nuevos modelos o mejora la documentación.",
+    community_cta: "Contribuir en GitHub",
+    community_discuss: "Abrir un issue",
+
     // -- Quick Start / Python tutorial --
     quickstart_title: "Inicio rápido en Python",
     quickstart_subtitle: "Instala e importa suite_actuarial en tu proyecto en segundos.",
@@ -633,6 +639,12 @@ export const translations = {
     feature_domains_desc: "Life, P&C, health, pensions, reserves, regulatory, reinsurance, and configuration.",
     feature_bilingual_title: "Bilingual ES/EN",
     feature_bilingual_desc: "Full interface in Spanish and English with instant language switching.",
+
+    // -- Community / Contribute --
+    community_title: "Contribute to the project",
+    community_text: "suite_actuarial is an open project to share actuarial knowledge and standardize processes in the Mexican insurance market. Whether you are an actuary, developer, or student, your experience can improve this tool. Report bugs, suggest improvements, add new models, or improve the documentation.",
+    community_cta: "Contribute on GitHub",
+    community_discuss: "Open an issue",
 
     // -- Quick Start / Python tutorial --
     quickstart_title: "Python Quick Start",
