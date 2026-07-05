@@ -89,6 +89,7 @@ Thumbs.db
 # Frontend build artifacts
 frontend/node_modules/
 frontend/.next/
+/.next/
 frontend/out/
 
 # Playwright MCP working files
