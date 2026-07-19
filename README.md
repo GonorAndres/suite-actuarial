@@ -1,13 +1,15 @@
 # suite_actuarial
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-977%20passed-brightgreen.svg)]()
-[![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-automated-blue.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-CI%20reported-blue.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status: Beta](https://img.shields.io/badge/status-Beta-orange.svg)]()
 
-Open-source actuarial library for the Mexican insurance market. Covers life, P&C,
-health, pensions, reserves, reinsurance, and regulatory compliance (CNSF, SAT, IMSS).
+Open-source actuarial workbench for the Mexican insurance market. Covers life, P&C,
+health, pensions, reserves, reinsurance, and regulatory reference calculations.
+It is not a filing-grade replacement for registered actuarial methods, CNSF systems,
+tax advice, or IMSS determinations.
 Usable as a Python library, a REST API with 26 endpoints, or a bilingual (ES/EN)
 web dashboard.
 
@@ -54,12 +56,12 @@ docker-compose up
 ## Features
 
 - **8 actuarial domains** -- vida, danos, salud, pensiones, reservas, regulatorio, reaseguro, config
-- **26 REST API endpoints** via FastAPI with automatic OpenAPI documentation
+- **REST API endpoints** via FastAPI with automatic OpenAPI documentation
 - **Next.js bilingual dashboard** (ES/EN) with 9 pages and CSV export on every page
-- **977 tests, 93% coverage** -- unit, integration, property-based (Hypothesis), and actuarial rigor tests
+- **Automated test suite** -- unit, integration, property-based (Hypothesis), and actuarial rigor tests
 - **EMSSA-09 mortality tables** bundled as package data
-- **Mexican regulatory compliance** -- CNSF circulars, SAT articles, IMSS pension laws
-- **Versioned configuration** -- regulatory parameters for 2024, 2025, and 2026
+- **Regulatory reference with provenance** -- effective dates, sources, hashes, and support tiers
+- **Versioned configuration** -- reviewed snapshots for 2024, 2025, and 2026 (no future official values)
 
 ---
 
@@ -169,30 +171,32 @@ Visit http://localhost:8000/docs for the interactive Swagger UI. All endpoints
 accept and return JSON. Example:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/pricing/vida-temporal \
+curl -X POST http://localhost:8000/api/v1/pricing/temporal \
   -H "Content-Type: application/json" \
-  -d '{"edad": 35, "sexo": "hombre", "suma_asegurada": 1000000, "plazo_years": 20}'
+  -d '{"edad": 35, "sexo": "H", "suma_asegurada": 1000000, "plazo_years": 20}'
 ```
 
 ---
 
 ## Examples
 
+Worked, self-verifying cases for every domain live in
+[`examples/casos/`](examples/casos/) — realistic Mexican scenarios with the
+actuarial identities asserted in code. Start there if you are new to the suite.
+
 ### Pension calculation (IMSS Ley 73)
 
 ```python
 from decimal import Decimal
-from suite_actuarial import PensionLey73, CalculadoraIMSS
+from suite_actuarial import CalculadoraIMSS, PensionLey73
 
-calc = CalculadoraIMSS()
+regimen = CalculadoraIMSS().determinar_regimen("1990-03-15")  # "Ley 73"
 pension = PensionLey73(
-    salario_promedio_5a=Decimal("25000"),
     semanas_cotizadas=1800,
-    edad=65,
-    calculadora=calc,
+    salario_promedio_5_anos=Decimal("900"),  # salario diario promedio
+    edad_retiro=65,
 )
-resultado = pension.calcular()
-print(f"Pension mensual: ${resultado.pension_mensual:,.2f}")
+print(f"Pension mensual: ${pension.calcular_pension_mensual():,.2f}")
 ```
 
 ### Major medical (GMM)
@@ -203,14 +207,14 @@ from suite_actuarial import GMM, NivelHospitalario, ZonaGeografica
 
 gmm = GMM(
     edad=40,
-    sexo="masculino",
-    nivel_hospitalario=NivelHospitalario.ALTO,
-    zona=ZonaGeografica.CDMX,
+    sexo="M",
     suma_asegurada=Decimal("20000000"),
     deducible=Decimal("30000"),
-    coaseguro=Decimal("0.10"),
+    coaseguro_pct=Decimal("0.10"),
+    nivel=NivelHospitalario.ALTO,
+    zona=ZonaGeografica.METRO,
 )
-prima = gmm.calcular_prima()
+prima = gmm.calcular_prima_ajustada()
 print(f"Prima anual GMM: ${prima:,.2f}")
 ```
 
@@ -225,27 +229,28 @@ print(f"Tasa ISR PM: {cfg.tasas_sat.tasa_isr_personas_morales}")
 print(f"Tasa tecnica vida: {cfg.factores_tecnicos.tasa_interes_tecnico_vida}")
 ```
 
-Configurations available: **2024**, **2025**, **2026**.
+Reviewed snapshots available: **2024**, **2025**, **2026**. Use
+`cargar_config_fecha("2026-02-01")` for effective-date selection.
 
 ---
 
 ## Configuration
 
-The regulatory configuration system stores official parameters for each fiscal year:
-UMA values, SAT tax rates (ISR, IVA, withholdings), CNSF factors, and technical
-actuarial parameters.
+The configuration system stores reviewed parameters with source and status metadata.
+Some legacy SAT/CNSF/technical values remain experimental and are not claims of
+regulatory compliance.
 
 To add a new year (e.g. 2027), create `src/suite_actuarial/config/config_2027.py`
 following the structure of `config_2026.py` and register it in the loader.
 
 ---
 
-## Regulatory Compliance
+## Regulatory reference and experimental models
 
 ### CNSF (Comision Nacional de Seguros y Fianzas)
 
 - **Circular S-11.4**: RRC and Mathematical Reserve (`CalculadoraRRC`, `CalculadoraRM`)
-- **RCS**: Solvency Capital Requirement for vida, danos, and investment risk
+- **RCS**: Simplified experimental scenarios for vida, danos, and investment risk
   (`RCSVida`, `RCSDanos`, `RCSInversion`, `AgregadorRCS`)
 
 ### SAT (Servicio de Administracion Tributaria)

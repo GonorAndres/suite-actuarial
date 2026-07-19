@@ -25,7 +25,7 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.markdown("**Versión:** 2.0.0")
+    st.markdown("**Versión:** 2.1.0")
     st.markdown("**Autor:** Andrés González Ortega")
     st.markdown("**Licencia:** MIT")
 
@@ -223,7 +223,7 @@ st.markdown(
     <p><strong>Nota legal:</strong> Esta librería es para propósitos educativos y de análisis.
     Para uso en producción, valida los resultados con un actuario certificado
     y verifica el cumplimiento con las regulaciones vigentes de la CNSF.</p>
-    <p>suite_actuarial v2.0.0 | MIT License</p>
+    <p>suite_actuarial v2.1.0 | MIT License</p>
 </div>
 """,
     unsafe_allow_html=True,

@@ -12,6 +12,7 @@ from suite_actuarial.pensiones.plan_retiro import (
     PensionLey97,
 )
 from suite_actuarial.pensiones.renta_vitalicia import RentaVitalicia
+from suite_actuarial.pensiones.tablas_imss import obtener_semanas_minimas_ley97
 
 __all__ = [
     "TablaConmutacion",
@@ -19,4 +20,5 @@ __all__ = [
     "PensionLey73",
     "PensionLey97",
     "CalculadoraIMSS",
+    "obtener_semanas_minimas_ley97",
 ]

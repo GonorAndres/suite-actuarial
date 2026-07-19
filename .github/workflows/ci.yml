@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -31,9 +31,17 @@ jobs:
         ruff check src/ tests/
 
     - name: Type check with mypy
+      # Non-blocking until the pre-existing type-error backlog is cleared;
+      # the config/ package is checked strictly in local verification.
       continue-on-error: true
       run: |
         mypy src/ --ignore-missing-imports
+
+    - name: Build and install wheel
+      run: |
+        python -m pip install build
+        python -m build --wheel --outdir /tmp/suite-actuarial-dist
+        python -m pip install --force-reinstall /tmp/suite-actuarial-dist/*.whl
 
     - name: Test with pytest
       run: |

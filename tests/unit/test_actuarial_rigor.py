@@ -9,6 +9,7 @@ Author: Test Architect (adversarial audit)
 """
 
 import math
+from datetime import date
 from decimal import Decimal
 
 import numpy as np
@@ -17,7 +18,7 @@ import pytest
 
 from suite_actuarial.actuarial.interest.tasas import CurvaRendimiento
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
-from suite_actuarial.config import cargar_config
+from suite_actuarial.config import cargar_config, cargar_config_fecha
 from suite_actuarial.core.models.common import Sexo
 from suite_actuarial.core.validators import (
     Asegurado,
@@ -779,14 +780,15 @@ class TestRCSAggregation:
 class TestConfigConsistency:
     """Verify regulatory config values are internally consistent."""
 
-    def test_uma_annual_equals_daily_times_365(self):
-        """UMA anual should equal UMA diaria * 365 (definition)."""
+    def test_uma_annual_follows_ley_uma_formula(self):
+        """UMA anual = mensual * 12, not diaria * 365 (Ley UMA Art. 4, fracc. III).
+
+        INEGI's published annual values (39,606.36 / 41,273.52 / 42,794.64)
+        confirm the monthly-times-twelve formula.
+        """
         config = cargar_config(2026)
-        expected_annual = config.uma.uma_diaria * Decimal("365")
-        actual = config.uma.uma_anual
-        assert abs(float(actual) - float(expected_annual)) < 1.0, (
-            f"UMA anual {actual} != diaria*365 = {expected_annual}"
-        )
+        assert config.uma.uma_anual == config.uma.uma_mensual * 12
+        assert config.uma.uma_anual == Decimal("42794.64")
 
     def test_uma_monthly_approximately_daily_times_30_4(self):
         """UMA mensual ~= UMA diaria * 30.4 (standard approximation).
@@ -814,9 +816,41 @@ class TestConfigConsistency:
             cargar_config(1999)
 
     def test_config_2026_correct_uma_diaria(self):
-        """2026 UMA diaria should be 117.67 per config."""
+        """2026 UMA diaria should use the INEGI snapshot."""
         config = cargar_config(2026)
-        assert config.uma.uma_diaria == Decimal("117.67")
+        assert config.uma.uma_diaria == Decimal("117.31")
+
+    def test_uma_effective_date_boundary(self):
+        """January retains the prior UMA and February selects the new snapshot."""
+        assert cargar_config_fecha("2026-01-31").uma.uma_diaria == Decimal("113.14")
+        assert cargar_config_fecha("2026-02-01").uma.uma_diaria == Decimal("117.31")
+
+    def test_uma_2026_effective_through_january_2027(self):
+        """UMA 2026 is legally vigente through 2027-01-31 (INEGI/DOF)."""
+        assert cargar_config_fecha("2027-01-31").uma.uma_diaria == Decimal("117.31")
+
+    def test_dates_outside_bundled_coverage_raise(self):
+        """Dates before the first or after the last snapshot fail explicitly."""
+        with pytest.raises(ModuleNotFoundError):
+            cargar_config_fecha("2024-01-31")
+        with pytest.raises(ModuleNotFoundError):
+            cargar_config_fecha("2027-02-01")
+
+    def test_default_config_matches_date_lookup(self):
+        """cargar_config() and cargar_config_fecha(today) agree on the profile."""
+        assert cargar_config() is cargar_config_fecha(date.today())
+
+    def test_uma_anual_is_mensual_times_twelve(self):
+        """UMA anual = mensual * 12 per Ley UMA Art. 4, fracc. III."""
+        for anio in (2024, 2025, 2026):
+            config = cargar_config(anio)
+            assert config.uma.uma_anual == config.uma.uma_mensual * 12
+
+    def test_imss_transition_weeks_are_sourced(self):
+        """Ley 97 transition schedule is 825/850/875 for 2024-2026."""
+        assert cargar_config(2024).imss.semanas_minimas_ley97[2024] == 825
+        assert cargar_config(2025).imss.semanas_minimas_ley97[2025] == 850
+        assert cargar_config(2026).imss.semanas_minimas_ley97[2026] == 875
 
 
 # ======================================================================

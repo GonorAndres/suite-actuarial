@@ -149,8 +149,10 @@ CUOTAS_IMSS: dict[str, dict[str, Decimal]] = {
 # ======================================================================
 
 PENSION_GARANTIZADA_2024 = Decimal("7467.40")   # MXN mensuales (2024)
-PENSION_GARANTIZADA_2025 = Decimal("7800.00")   # Estimado
-PENSION_GARANTIZADA_2026 = Decimal("8100.00")   # Estimado
+# Escenarios ilustrativos: CONSAR/IMSS deben confirmar el monto vigente para
+# una determinacion individual. No son valores oficiales de este paquete.
+PENSION_GARANTIZADA_2025 = Decimal("7800.00")
+PENSION_GARANTIZADA_2026 = Decimal("8100.00")
 
 # Pension minima por anos cotizados (reforma 2020)
 # Semanas cotizadas -> pension garantizada mensual (como multiplo de UMA mensual)
@@ -180,10 +182,28 @@ TOPE_SBC_UMAS = 25
 SEMANAS_MINIMAS_LEY73 = 500
 
 # Semanas minimas para pension Ley 97 (reforma 2020, transitorio)
-SEMANAS_MINIMAS_LEY97_2024 = 775    # Incremento anual de 25 semanas
-SEMANAS_MINIMAS_LEY97_2025 = 800
-SEMANAS_MINIMAS_LEY97_2026 = 825
+SEMANAS_MINIMAS_LEY97_2024 = 825    # Tabla transitoria IMSS
+SEMANAS_MINIMAS_LEY97_2025 = 850
+SEMANAS_MINIMAS_LEY97_2026 = 875
 SEMANAS_MINIMAS_LEY97_META = 1000   # Meta final (2031)
+
+
+def obtener_semanas_minimas_ley97(anio: int) -> int:
+    """Obtiene el minimo transitorio publicado para el año solicitado."""
+    transicion = {
+        2024: SEMANAS_MINIMAS_LEY97_2024,
+        2025: SEMANAS_MINIMAS_LEY97_2025,
+        2026: SEMANAS_MINIMAS_LEY97_2026,
+    }
+    if anio in transicion:
+        return transicion[anio]
+    if anio < 2024:
+        raise ValueError("No hay tabla transitoria soportada para años anteriores a 2024")
+    if anio >= 2031:
+        return SEMANAS_MINIMAS_LEY97_META
+    # La progresion anual de 25 semanas es una proyeccion matematica; se marca
+    # como tal en la documentacion y no se presenta como snapshot oficial.
+    return SEMANAS_MINIMAS_LEY97_2026 + 25 * (anio - 2026)
 
 # Edad minima de retiro
 EDAD_CESANTIA = 60      # Cesantia en edad avanzada

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "suite-actuarial"
-version = "2.0.0"
+version = "2.1.0"
 description = "Libreria actuarial fundamental para el mercado mexicano de seguros"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -28,11 +28,6 @@ dependencies = [
     "numpy>=1.25.0",
     "scipy>=1.11.0",
     "pydantic>=2.5.0",
-    "polars>=0.19.0",
-    "chainladder>=0.8.18",  # Para reservas
-    "lifelines>=0.27.8",    # Análisis de supervivencia
-    "openpyxl>=3.1.0",      # Excel I/O
-    "pyarrow>=14.0.0",      # Parquet support
 ]
 
 [project.optional-dependencies]
@@ -46,6 +41,15 @@ dev = [
     "mypy>=1.7.0",
     "pre-commit>=3.5.0",
     "ipython>=8.18.0",
+]
+
+# Analitica y formatos opcionales; no son necesarios para importar el nucleo.
+analytics = [
+    "polars>=0.19.0",
+    "chainladder>=0.8.18",
+    "lifelines>=0.27.8",
+    "openpyxl>=3.1.0",
+    "pyarrow>=14.0.0",
 ]
 
 # Para visualización y apps
@@ -70,7 +74,7 @@ api = [
 
 # Todo junto
 all = [
-    "suite-actuarial[dev,viz,db,api]",
+    "suite-actuarial[dev,analytics,viz,db,api]",
 ]
 
 [project.scripts]

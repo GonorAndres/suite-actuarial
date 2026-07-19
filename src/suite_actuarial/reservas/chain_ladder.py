@@ -9,11 +9,17 @@ from decimal import Decimal
 
 import pandas as pd
 
+from suite_actuarial.core.models.common import CalculationMetadata
 from suite_actuarial.core.validators import (
     ConfiguracionChainLadder,
     MetodoPromedio,
     MetodoReserva,
     ResultadoReserva,
+)
+from suite_actuarial.reservas.diagnosticos import (
+    MackUncertainty,
+    calcular_mack_uncertainty,
+    validar_reserva,
 )
 from suite_actuarial.reservas.triangulo import (
     acumular_triangulo,
@@ -254,6 +260,13 @@ class ChainLadder:
         # 3. Calcular ultimates
         ultimates = self.calcular_ultimates(self.triangulo_completo)
 
+        # 3b. El factor de cola representa desarrollo posterior al ultimo
+        # periodo observado, asi que se aplica sobre el ultimate proyectado
+        # (completar_triangulo solo llena columnas dentro del triangulo).
+        if self.config.calcular_tail_factor or self.config.tail_factor is not None:
+            tail = self.factores_desarrollo[-1]
+            ultimates = {anio: ultimate * tail for anio, ultimate in ultimates.items()}
+
         # 4. Calcular reservas
         reservas = self.calcular_reservas(self.triangulo_original, ultimates)
 
@@ -290,6 +303,11 @@ class ChainLadder:
             factores_desarrollo=self.factores_desarrollo,
             percentiles=None,  # No aplica en Chain Ladder básico
             detalles=detalles,
+            calculation_metadata=CalculationMetadata(
+                validation_tier="supported",
+                warnings=["Revisar estabilidad de factores y factor de cola"],
+                assumptions_snapshot=detalles,
+            ),
         )
 
         return resultado
@@ -311,6 +329,22 @@ class ChainLadder:
             DataFrame con factores age-to-age o None si no se ha calculado
         """
         return self.factores_age_to_age
+
+    def calcular_mack(self, triangulo: pd.DataFrame) -> MackUncertainty:
+        """Devuelve incertidumbre Mack y banda de reserva tras el calculo."""
+        resultado = self.calcular(triangulo)
+        return calcular_mack_uncertainty(triangulo, resultado.reserva_total)
+
+    def reporte_validacion(self, triangulo: pd.DataFrame):
+        """Devuelve diagnosticos de calidad y supuestos materiales."""
+        resultado = self.calcular(triangulo)
+        tail = self.factores_desarrollo[-1] if self.factores_desarrollo else None
+        return validar_reserva(
+            triangulo,
+            resultado.reserva_total,
+            metodo=MetodoReserva.CHAIN_LADDER.value,
+            tail_factor=tail,
+        )
 
     def __repr__(self) -> str:
         """Representación string del método"""

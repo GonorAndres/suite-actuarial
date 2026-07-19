@@ -5,12 +5,17 @@ Exposes GET endpoints for retrieving year-specific regulatory parameters
 (UMA, SAT rates, CNSF factors) via the configuration loader.
 """
 
+from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from suite_actuarial.config.loader import cargar_config
+from suite_actuarial.config.loader import (
+    cargar_config,
+    cargar_config_fecha,
+    validar_configuraciones,
+)
 
 router = APIRouter(prefix="/config", tags=["config"])
 
@@ -92,6 +97,10 @@ class ConfigAnualResponse(BaseModel):
     tasas_sat: TasasSATResponse
     factores_cnsf: FactoresCNSFResponse
     factores_tecnicos: FactoresTecnicosResponse
+    effective_from: date | None = None
+    effective_to: date | None = None
+    validation_tier: str = "experimental"
+    provenance: dict = Field(default_factory=dict)
 
 
 # -- Helpers ------------------------------------------------------------------
@@ -167,10 +176,32 @@ def _config_to_response(config) -> ConfigAnualResponse:
                 config.factores_tecnicos.margen_seguridad_s114
             ),
         ),
+        effective_from=config.effective_from,
+        effective_to=config.effective_to,
+        validation_tier=config.validation_tier.value,
+        provenance=config.provenance(),
     )
 
 
 # -- Endpoints ----------------------------------------------------------------
+
+
+@router.get("/fecha/{fecha}", response_model=ConfigAnualResponse)
+def get_config_fecha(fecha: date):
+    """Return the reviewed profile effective on an ISO date."""
+    try:
+        return _config_to_response(cargar_config_fecha(fecha))
+    except (ModuleNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/validate", response_model=list[str])
+def validate_config():
+    """Validate bundled periods, units and source completeness."""
+    try:
+        return validar_configuraciones()
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/{anio}", response_model=ConfigAnualResponse)

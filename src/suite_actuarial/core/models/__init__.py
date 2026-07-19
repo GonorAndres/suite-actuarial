@@ -5,7 +5,7 @@ Organizado por dominio: common, asegurado, producto, reaseguro, reservas, regula
 """
 
 from suite_actuarial.core.models.asegurado import Asegurado, RegistroMortalidad
-from suite_actuarial.core.models.common import Fumador, Moneda, Sexo
+from suite_actuarial.core.models.common import CalculationMetadata, Fumador, Moneda, Sexo
 from suite_actuarial.core.models.producto import ConfiguracionProducto, ResultadoCalculo
 from suite_actuarial.core.models.reaseguro import (
     ConfiguracionReaseguro,
@@ -40,6 +40,7 @@ __all__ = [
     "Sexo",
     "Fumador",
     "Moneda",
+    "CalculationMetadata",
     "Asegurado",
     "RegistroMortalidad",
     "ConfiguracionProducto",

@@ -12,12 +12,14 @@ Tambien incluye CalculadoraIMSS como interfaz unificada.
 Referencia: Ley del Seguro Social, CONSAR, Circular CONSAR 17-2
 """
 
+import warnings
 from datetime import date
 from decimal import Decimal
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.config import cargar_config
 from suite_actuarial.core.models.common import Sexo
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 from suite_actuarial.pensiones.tablas_imss import (
     CUOTAS_IMSS,
@@ -72,6 +74,11 @@ class PensionLey73:
         self.salario_promedio = Decimal(str(salario_promedio_5_anos))
         self.edad_retiro = edad_retiro
         self.config = config or cargar_config()
+        warnings.warn(
+            "Las proyecciones de pensiones IMSS son experimentales y no determinan derechos.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
 
         # Lookup table values
         self._porcentaje = obtener_porcentaje_ley73(semanas_cotizadas)
@@ -183,6 +190,11 @@ class PensionLey97:
         self.sexo = sexo
         self.semanas_cotizadas = semanas_cotizadas
         self.config = config or cargar_config()
+        warnings.warn(
+            "Las proyecciones de pensiones IMSS son experimentales y no determinan derechos.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
 
         # Defaults
         self.tasa_interes = (

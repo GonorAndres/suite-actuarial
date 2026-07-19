@@ -17,6 +17,7 @@ from suite_actuarial.actuarial.pricing.vida_pricing import (
     calcular_seguro_vida,
 )
 from suite_actuarial.core.base_product import ProductoSeguro, TipoProducto
+from suite_actuarial.core.models.common import CalculationMetadata
 from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
@@ -152,6 +153,11 @@ class VidaTemporal(ProductoSeguro):
                 "edad": asegurado.edad,
                 "sexo": asegurado.sexo.value,
             },
+            calculation_metadata=CalculationMetadata(
+                validation_tier="experimental" if self.tabla_mortalidad.metadata.get("data_status") == "illustrative" else "supported",
+                sources=[self.tabla_mortalidad.metadata.get("source", self.tabla_mortalidad.nombre)],
+                assumptions_snapshot={"tabla_mortalidad": self.tabla_mortalidad.nombre},
+            ),
         )
 
     def calcular_reserva(

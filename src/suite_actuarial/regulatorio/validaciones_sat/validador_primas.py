@@ -8,6 +8,7 @@ y sus límites aplicables.
 from decimal import Decimal
 
 from suite_actuarial.regulatorio.validaciones_sat.models import (
+    EstadoFiscal,
     ResultadoDeducibilidadPrima,
     TipoSeguroFiscal,
 )
@@ -47,6 +48,9 @@ class ValidadorPrimasDeducibles:
         tipo_seguro: TipoSeguroFiscal,
         monto_prima: Decimal,
         es_persona_fisica: bool = True,
+        ingreso_anual: Decimal | None = None,
+        metodo_pago: str | None = None,
+        relacion_beneficiario: str | None = None,
     ) -> ResultadoDeducibilidadPrima:
         """
         Valida si una prima es deducible y hasta qué monto.
@@ -60,12 +64,28 @@ class ValidadorPrimasDeducibles:
             ResultadoDeducibilidadPrima con análisis de deducibilidad
         """
         if es_persona_fisica:
-            return self._validar_persona_fisica(tipo_seguro, monto_prima)
+            resultado = self._validar_persona_fisica(
+                tipo_seguro, monto_prima, ingreso_anual=ingreso_anual
+            )
         else:
-            return self._validar_persona_moral(tipo_seguro, monto_prima)
+            resultado = self._validar_persona_moral(tipo_seguro, monto_prima)
+        faltantes: list[str] = []
+        if metodo_pago is None:
+            faltantes.append("metodo_pago")
+        if es_persona_fisica and tipo_seguro == TipoSeguroFiscal.PENSIONES and ingreso_anual is None:
+            faltantes.append("ingreso_anual")
+        if not es_persona_fisica and relacion_beneficiario is None:
+            faltantes.append("relacion_beneficiario")
+        if faltantes:
+            resultado.estado = EstadoFiscal.INDETERMINATE
+            resultado.factores_faltantes = faltantes
+        return resultado
 
     def _validar_persona_fisica(
-        self, tipo_seguro: TipoSeguroFiscal, monto_prima: Decimal
+        self,
+        tipo_seguro: TipoSeguroFiscal,
+        monto_prima: Decimal,
+        ingreso_anual: Decimal | None = None,
     ) -> ResultadoDeducibilidadPrima:
         """
         Valida deducibilidad para personas físicas.
@@ -98,7 +118,15 @@ class ValidadorPrimasDeducibles:
         elif tipo_seguro == TipoSeguroFiscal.PENSIONES:
             # Aportaciones a planes de pensiones: deducible hasta 10% ingresos o 5 UMAs
             limite_uma = self.uma_anual * 5
-            monto_deducible = min(monto_prima, limite_uma)
+            limite_ingreso = (
+                ingreso_anual * Decimal("0.15") if ingreso_anual is not None else None
+            )
+            limite_aplicable = (
+                min(limite_uma, limite_ingreso)
+                if limite_ingreso is not None
+                else limite_uma
+            )
+            monto_deducible = min(monto_prima, limite_aplicable)
 
             return ResultadoDeducibilidadPrima(
                 es_deducible=True,
@@ -109,7 +137,11 @@ class ValidadorPrimasDeducibles:
                 )
                 if monto_prima > 0
                 else Decimal("0"),
-                limite_aplicado=f"5 UMAs anuales (${limite_uma:,.2f})",
+                limite_aplicado=(
+                    f"Menor de 5 UMAs (${limite_uma:,.2f}) y 15% del ingreso"
+                    if limite_ingreso is not None
+                    else f"5 UMAs anuales (${limite_uma:,.2f})"
+                ),
                 fundamento_legal="LISR Art. 151, fracc. V - Planes personales de retiro",
             )
 

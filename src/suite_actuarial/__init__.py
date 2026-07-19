@@ -9,19 +9,26 @@ Uso rapido:
     from suite_actuarial import cargar_config
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__ = "Andres Gonzalez Ortega"
 
 # --- Core ---
 from suite_actuarial.actuarial.interest.tasas import CurvaRendimiento
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
-from suite_actuarial.config import cargar_config, config_vigente
+from suite_actuarial.actuarial.valuation import (
+    AssumptionSet,
+    LifeCashFlowValuator,
+    LifeValuationResult,
+    PortfolioValuationResult,
+)
+from suite_actuarial.config import cargar_config, cargar_config_fecha, config_vigente
 from suite_actuarial.core.base_product import ProductoSeguro, TipoProducto
 from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
     ResultadoCalculo,
 )
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 
 # --- Danos ---
 from suite_actuarial.danos import (
@@ -72,7 +79,13 @@ __all__ = [
     "TablaMortalidad",
     "CurvaRendimiento",
     "cargar_config",
+    "cargar_config_fecha",
     "config_vigente",
+    "AssumptionSet",
+    "LifeCashFlowValuator",
+    "LifeValuationResult",
+    "PortfolioValuationResult",
+    "ExperimentalModelWarning",
     # Vida
     "VidaTemporal",
     "VidaOrdinario",

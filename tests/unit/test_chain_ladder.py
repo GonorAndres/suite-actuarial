@@ -300,6 +300,40 @@ class TestChainLadderCalculoCompleto:
         assert resultado.detalles["numero_anios"] == 5
 
 
+class TestChainLadderTailFactor:
+    """El factor de cola debe afectar ultimates y reservas"""
+
+    def test_tail_factor_manual_incrementa_ultimates(self, triangulo_simple, config_simple):
+        """Un tail manual de 1.05 debe escalar cada ultimate en 5%"""
+        base = ChainLadder(config_simple).calcular(triangulo_simple)
+        config_tail = ConfiguracionChainLadder(
+            metodo_promedio=MetodoPromedio.SIMPLE,
+            tail_factor=Decimal("1.05"),
+        )
+        con_tail = ChainLadder(config_tail).calcular(triangulo_simple)
+
+        for anio, ultimate_base in base.ultimates_por_anio.items():
+            esperado = ultimate_base * Decimal("1.05")
+            assert abs(con_tail.ultimates_por_anio[anio] - esperado) < Decimal("0.01")
+        assert con_tail.reserva_total > base.reserva_total
+
+    def test_tail_factor_calculado_incrementa_reserva(
+        self, triangulo_simple, config_simple, config_con_tail
+    ):
+        """calcular_tail_factor=True debe producir reserva mayor que sin cola"""
+        base = ChainLadder(config_simple).calcular(triangulo_simple)
+        con_tail = ChainLadder(config_con_tail).calcular(triangulo_simple)
+
+        assert con_tail.reserva_total > base.reserva_total
+        # El ultimate nunca puede quedar por debajo de lo pagado
+        ultima_diagonal = {
+            int(anio): Decimal(str(triangulo_simple.loc[anio].dropna().iloc[-1]))
+            for anio in triangulo_simple.index
+        }
+        for anio, ultimate in con_tail.ultimates_por_anio.items():
+            assert ultimate >= ultima_diagonal[anio]
+
+
 class TestChainLadderTrianguloEjemplo:
     """Tests con triángulo de ejemplo"""
 

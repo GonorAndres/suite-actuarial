@@ -5,9 +5,11 @@ Implementa el cálculo del Requerimiento de Capital de Solvencia (RCS)
 para riesgos de inversión conforme a la normativa de la CNSF.
 """
 
+import warnings
 from decimal import Decimal
 
 from suite_actuarial.core.validators import ConfiguracionRCSInversion
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 
 DISCLAIMER = (
     "AVISO: Los factores de RCS de inversion en este modulo son aproximaciones "
@@ -56,6 +58,11 @@ class RCSInversion:
             config: Configuración con cartera de inversiones
         """
         self.config = config
+        warnings.warn(
+            "El RCS de inversion implementado es un escenario simplificado experimental.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
 
     def calcular_rcs_mercado_acciones(self) -> Decimal:
         """

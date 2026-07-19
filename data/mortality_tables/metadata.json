@@ -3,6 +3,10 @@
     "emssa_09": {
       "nombre_completo": "Experiencia Mexicana de Seguridad Social Actualizada 2009",
       "fuente": "CNSF",
+      "version": "EMSSA-09-simplified",
+      "content_hash": "sha256:31786604a174ddc1a07352bbb331643c633da2f804949d9e639f0b6924df1b58",
+      "data_status": "illustrative",
+      "terminal_age_convention": "table_as_is",
       "año_publicacion": 2009,
       "descripcion": "Tabla de mortalidad basada en la experiencia del IMSS y otras instituciones de seguridad social en México",
       "rango_edades": {

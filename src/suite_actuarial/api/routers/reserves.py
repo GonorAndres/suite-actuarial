@@ -12,6 +12,7 @@ import pandas as pd
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from suite_actuarial.core.models.common import CalculationMetadata
 from suite_actuarial.core.validators import (
     ConfiguracionBootstrap,
     ConfiguracionBornhuetterFerguson,
@@ -84,6 +85,7 @@ class ReserveResponse(BaseModel):
     factores_desarrollo: list[float] | None = None
     percentiles: dict[int, float] | None = None
     detalles: dict[str, Any] = {}
+    calculation_metadata: CalculationMetadata | None = None
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -123,6 +125,7 @@ def _resultado_to_response(resultado) -> ReserveResponse:
             k: (float(v) if isinstance(v, Decimal) else v)
             for k, v in resultado.detalles.items()
         },
+        calculation_metadata=resultado.calculation_metadata,
     )
 
 

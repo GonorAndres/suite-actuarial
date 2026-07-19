@@ -21,13 +21,14 @@ from suite_actuarial.api.routers import (
 
 app = FastAPI(
     title="Mexican Insurance Analytics Suite API",
-    version="1.0.0",
+    version="2.1.0",
     description=(
         "REST API for actuarial calculations in the Mexican insurance market. "
         "Includes life product pricing (temporal, ordinario, dotal), "
         "reinsurance analysis (quota share, excess of loss, stop loss), "
         "reserve estimation (Chain Ladder, Bornhuetter-Ferguson, Bootstrap), "
-        "and regulatory compliance (RCS, SAT deductibility, ISR withholding)."
+        "and regulatory reference calculations. Simplified regulatory, fiscal, "
+        "pension and market models are explicitly experimental."
     ),
 )
 
@@ -54,7 +55,7 @@ def root():
     """Return basic API information."""
     return {
         "name": "Mexican Insurance Analytics Suite API",
-        "version": "1.0.0",
+        "version": "2.1.0",
         "modules": [
             "config",
             "danos",

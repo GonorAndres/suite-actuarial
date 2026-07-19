@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.core.models.common import CalculationMetadata
 from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
@@ -64,6 +65,7 @@ class PricingResponse(BaseModel):
     moneda: str
     desglose_recargos: dict[str, float]
     metadata: dict[str, Any]
+    calculation_metadata: CalculationMetadata | None = None
 
 
 class CompareResponse(BaseModel):
@@ -107,6 +109,7 @@ def _resultado_to_response(producto_nombre: str, resultado) -> PricingResponse:
             k: (float(v) if isinstance(v, Decimal) else v)
             for k, v in resultado.metadata.items()
         },
+        calculation_metadata=resultado.calculation_metadata,
     )
 
 

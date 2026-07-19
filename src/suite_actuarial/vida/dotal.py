@@ -19,6 +19,7 @@ from decimal import Decimal
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.actuarial.pricing.vida_pricing import calcular_anualidad
 from suite_actuarial.core.base_product import ProductoSeguro, TipoProducto
+from suite_actuarial.core.models.common import CalculationMetadata
 from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
@@ -177,6 +178,11 @@ class VidaDotal(ProductoSeguro):
                 "sexo": asegurado.sexo.value,
                 "componentes": "muerte + supervivencia",
             },
+            calculation_metadata=CalculationMetadata(
+                validation_tier="experimental" if self.tabla_mortalidad.metadata.get("data_status") == "illustrative" else "supported",
+                sources=[self.tabla_mortalidad.metadata.get("source", self.tabla_mortalidad.nombre)],
+                assumptions_snapshot={"tabla_mortalidad": self.tabla_mortalidad.nombre},
+            ),
         )
 
     def _calcular_seguro_dotal(

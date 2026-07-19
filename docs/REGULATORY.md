@@ -1,4 +1,7 @@
-# Cumplimiento Regulatorio -- suite_actuarial
+# Referencia regulatoria y modelos experimentales -- suite_actuarial
+
+Este documento describe referencias de modelado, no certifica cumplimiento CNSF,
+SAT, CONSAR o IMSS. Los cálculos simplificados están marcados como experimentales.
 
 Mapeo de modulos del codigo fuente a normatividad mexicana aplicable.
 

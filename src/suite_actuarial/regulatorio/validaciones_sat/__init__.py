@@ -32,6 +32,7 @@ Ejemplo:
 """
 
 from suite_actuarial.regulatorio.validaciones_sat.models import (
+    EstadoFiscal,
     ResultadoDeducibilidadPrima,
     ResultadoGravabilidadSiniestro,
     ResultadoIVA,
@@ -51,6 +52,7 @@ from suite_actuarial.regulatorio.validaciones_sat.validador_siniestros import (
 __all__ = [
     # Modelos
     "TipoSeguroFiscal",
+    "EstadoFiscal",
     "ResultadoDeducibilidadPrima",
     "ResultadoGravabilidadSiniestro",
     "ResultadoRetencion",

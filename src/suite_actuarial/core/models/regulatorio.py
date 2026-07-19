@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from suite_actuarial.core.models.common import CalculationMetadata
+
 
 class TipoRiesgoRCS(StrEnum):
     """Tipos de riesgo para calculo de RCS"""
@@ -318,7 +320,11 @@ class ResultadoRCS(BaseModel):
         ..., gt=0, description="Ratio RCS/Capital (debe ser <= 1.0 para cumplir)"
     )
     cumple_regulacion: bool = Field(
-        ..., description="True si cumple con RCS (capital >= RCS)"
+        ..., description="Deprecated: use cumple_umbral_modelo; no implica cumplimiento CNSF"
+    )
+    cumple_umbral_modelo: bool | None = Field(
+        default=None,
+        description="Resultado del umbral de este modelo simplificado (experimental)",
     )
 
     # Desglose detallado
@@ -326,10 +332,13 @@ class ResultadoRCS(BaseModel):
         default_factory=dict,
         description="Desglose detallado de RCS por cada tipo de riesgo",
     )
+    calculation_metadata: CalculationMetadata | None = None
 
     @model_validator(mode="after")
     def validar_agregacion(self) -> "ResultadoRCS":
         """Validar que los agregados sean consistentes"""
+        if self.cumple_umbral_modelo is None:
+            self.cumple_umbral_modelo = self.cumple_regulacion
         # Validar que RCS total >= cada componente
         if self.rcs_total < self.rcs_suscripcion_vida:
             raise ValueError(

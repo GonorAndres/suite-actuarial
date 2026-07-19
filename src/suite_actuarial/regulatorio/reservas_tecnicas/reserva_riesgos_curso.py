@@ -6,8 +6,10 @@ de corto plazo (típicamente daños) para cubrir la porción no devengada
 de las primas.
 """
 
+import warnings
 from decimal import Decimal
 
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.regulatorio.reservas_tecnicas.models import (
     ConfiguracionRRC,
     MetodoCalculoRRC,
@@ -40,6 +42,11 @@ class CalculadoraRRC:
 
     def __init__(self, config: ConfiguracionRRC):
         self.config = config
+        warnings.warn(
+            "La RRC pro-rata es experimental/deprecated y no demuestra cumplimiento CUSF.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
 
     def calcular(self) -> ResultadoRRC:
         """

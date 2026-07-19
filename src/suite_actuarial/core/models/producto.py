@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from suite_actuarial.core.models.common import Moneda
+from suite_actuarial.core.models.common import CalculationMetadata, Moneda
 
 
 class ConfiguracionProducto(BaseModel):
@@ -132,6 +132,10 @@ class ResultadoCalculo(BaseModel):
     metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Informacion adicional sobre el calculo",
+    )
+    calculation_metadata: CalculationMetadata | None = Field(
+        default=None,
+        description="Linaje, fuentes y nivel de validacion del calculo",
     )
 
     @model_validator(mode="after")

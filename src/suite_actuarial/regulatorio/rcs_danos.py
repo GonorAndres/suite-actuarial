@@ -7,9 +7,11 @@ la normativa de la CNSF.
 """
 
 import math
+import warnings
 from decimal import Decimal
 
 from suite_actuarial.core.validators import ConfiguracionRCSDanos
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 
 DISCLAIMER = (
     "AVISO: Los factores de RCS en este modulo son aproximaciones pedagogicas "
@@ -40,6 +42,11 @@ class RCSDanos:
             config: Configuración con parámetros de la cartera de daños
         """
         self.config = config
+        warnings.warn(
+            "El RCS de danos implementado es un escenario simplificado experimental.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
 
     def calcular_rcs_prima(self) -> Decimal:
         """

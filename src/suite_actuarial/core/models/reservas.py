@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from suite_actuarial.core.models.common import CalculationMetadata
+
 
 class TipoTriangulo(StrEnum):
     """Tipo de triangulo de desarrollo"""
@@ -173,6 +175,10 @@ class ResultadoReserva(BaseModel):
     detalles: dict[str, Any] = Field(
         default_factory=dict,
         description="Detalles adicionales del calculo",
+    )
+    calculation_metadata: CalculationMetadata | None = Field(
+        default=None,
+        description="Linaje, fuentes y diagnosticos del calculo",
     )
 
     @model_validator(mode="after")

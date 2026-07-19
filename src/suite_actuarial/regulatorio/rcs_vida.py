@@ -7,9 +7,11 @@ de la CNSF (Comisión Nacional de Seguros y Fianzas de México).
 """
 
 import math
+import warnings
 from decimal import Decimal
 
 from suite_actuarial.core.validators import ConfiguracionRCSVida
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 
 DISCLAIMER = (
     "AVISO: Los factores de RCS en este modulo son aproximaciones pedagogicas "
@@ -40,6 +42,7 @@ class RCSVida:
             config: Configuración con parámetros de la cartera
         """
         self.config = config
+        warnings.warn(DISCLAIMER, ExperimentalModelWarning, stacklevel=2)
 
     def calcular_rcs_mortalidad(self) -> Decimal:
         """
