@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.1.0 (2026-07-19)
+
+- Added effective-dated regulatory profiles with source references, hashes,
+  support tiers, and deterministic date loading.
+- Corrected 2026 UMA to 117.31 daily / 3,566.22 monthly / 42,794.64 annual
+  from 1 February, and IMSS Ley 97 transition weeks to 825/850/875.
+- Corrected 2024/2025 UMA anual to the official INEGI figures 39,606.36 and
+  41,273.52 (annual = monthly x 12 per Ley UMA Art. 4; previous values used
+  daily x 365).
+- Config coverage now ends at the last profile's effective_to (31 January
+  2027), derived from the bundled profiles instead of a hardcoded date;
+  dates outside coverage raise explicitly.
+- cargar_config() without arguments now delegates to cargar_config_fecha(),
+  so January dates resolve to the prior year's UMA on both public paths.
+- Added auditable life cash-flow valuation, calculation metadata, Mack-style
+  reserve diagnostics, and explicit experimental-model warnings.
+- Fiscal validation now exposes eligible/not_eligible/indeterminate status;
+  legacy boolean fields remain for compatibility.
+- Added examples/casos/: seven self-verifying worked cases (one per domain)
+  with realistic Mexican scenarios, asserted actuarial identities, and cited
+  sources; fixed stale README/CLI usage snippets to match the real API.
+- Added an interactive illustrative case to each frontend domain page: a
+  concrete scenario with sliders that recalculate against the API in real
+  time, followed by a technical reading of the result (ES/EN).
+- Fixed Chain Ladder tail factor: manual and calculated tail factors were
+  appended to the factor list but never applied, so ultimates and reserves
+  ignored them; the tail now scales each projected ultimate (with tests).
+
 ## 2.0.0 (2026-03-22)
 
 ### Nuevo
