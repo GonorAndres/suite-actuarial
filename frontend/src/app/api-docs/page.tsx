@@ -861,7 +861,7 @@ const DOMAINS: DomainGroup[] = [
   "uma": {
     "uma_diaria": 113.14,
     "uma_mensual": 3439.46,
-    "uma_anual": 41296.10
+    "uma_anual": 41273.52
   },
   "tasas_sat": {
     "tasa_retencion_rentas_vitalicias": 0.20,
@@ -886,7 +886,7 @@ const DOMAINS: DomainGroup[] = [
         example_res: `{
   "uma_diaria": 113.14,
   "uma_mensual": 3439.46,
-  "uma_anual": 41296.10
+  "uma_anual": 41273.52
 }`,
         try_link: "/regulatorio",
       },

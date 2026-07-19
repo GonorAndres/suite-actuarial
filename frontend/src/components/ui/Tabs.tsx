@@ -1,7 +1,5 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
-
 interface Tab {
   id: string;
   label: string;
@@ -20,46 +18,12 @@ export default function Tabs({
   onTabChange,
   className = "",
 }: TabsProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
-
-  const updateIndicator = useCallback(() => {
-    if (!containerRef.current) return;
-    const activeEl = containerRef.current.querySelector(
-      `[data-tab-id="${activeTab}"]`,
-    ) as HTMLElement | null;
-    if (activeEl) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const activeRect = activeEl.getBoundingClientRect();
-      setIndicator({
-        left: activeRect.left - containerRect.left,
-        width: activeRect.width,
-      });
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    updateIndicator();
-    window.addEventListener("resize", updateIndicator);
-    return () => window.removeEventListener("resize", updateIndicator);
-  }, [updateIndicator]);
-
   return (
     <div
-      ref={containerRef}
       role="tablist"
       aria-label="Tabs"
-      className={`relative flex gap-1 bg-navy/5 rounded-full p-1 overflow-x-auto ${className}`}
+      className={`flex gap-6 border-b border-navy/15 overflow-x-auto ${className}`}
     >
-      {/* Sliding indicator */}
-      <div
-        className="absolute top-1 h-[calc(100%-8px)] bg-terracotta rounded-full shadow-sm transition-all duration-300 ease-out"
-        style={{
-          left: `${indicator.left}px`,
-          width: `${indicator.width}px`,
-        }}
-        aria-hidden="true"
-      />
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
@@ -93,10 +57,11 @@ export default function Tabs({
               }
             }}
             className={[
-              "relative z-10 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
+              "-mb-px px-1 pb-2.5 pt-1 text-sm font-semibold uppercase tracking-wider whitespace-nowrap",
+              "border-b-2 transition-colors duration-150",
               isActive
-                ? "text-cream"
-                : "text-navy/60 hover:text-navy hover:bg-amber/10",
+                ? "border-terracotta text-navy"
+                : "border-transparent text-navy/50 hover:text-navy hover:border-navy/30",
             ].join(" ")}
           >
             {tab.label}

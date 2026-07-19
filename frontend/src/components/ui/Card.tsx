@@ -17,16 +17,19 @@ export default function Card({
   return (
     <div
       className={cn(
-        "bg-offwhite rounded-xl border border-navy/8 shadow-sm p-6",
+        "bg-white rounded-md border border-navy/15 shadow-sm p-6",
         hoverable &&
-          "gradient-border-hover hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300",
+          "transition-all duration-200 hover:border-navy/40 hover:shadow-md",
         className,
       )}
     >
       {title && (
-        <h3 className="font-heading text-xl font-bold text-navy mb-4">
-          {title}
-        </h3>
+        <>
+          <h3 className="font-heading text-xl font-bold text-navy mb-2">
+            {title}
+          </h3>
+          <div className="h-px bg-navy/15 mb-4" aria-hidden="true" />
+        </>
       )}
       {children}
     </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { PensionesStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -493,6 +494,8 @@ export default function PensionesPage() {
       {activeTab === "conmutacion" && conmData && (
         <ConmutacionResults data={conmData} t={t} />
       )}
+
+      <PensionesStory />
     </div>
   );
 }

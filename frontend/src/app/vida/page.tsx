@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { VidaStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -12,6 +13,7 @@ import {
   Table,
   MetricCard,
   ProgressBar,
+  Badge,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -64,12 +66,16 @@ const DEFAULT_FORM: FormState = {
 /* ── Chart color palette ──────────────────────────────────────────────── */
 
 const CHART_COLORS = {
-  navy: "#1B2A4A",
-  terracotta: "#C17654",
-  sage: "#7A9E7E",
-  amber: "#D4A853",
-  cream: "#F5F0EA",
+  navy: "#1A2740",
+  terracotta: "#BC4B3C",
+  sage: "#1F6B3A",
+  amber: "#C99117",
+  cream: "#FBF9F5",
 };
+
+// Validated categorical order (blue, brick, gold, green) -- assign in this
+// fixed order, never cycled past what the data needs.
+const SERIES_COLORS = ["#2A5FA8", "#BC4B3C", "#C99117", "#1F6B3A"];
 
 /* ── Result display component ──────────────────────────────────────────── */
 
@@ -88,17 +94,13 @@ function ResultCard({
   const recargosSegments = recargosEntries.map(([key, val], i) => ({
     label: key,
     value: val,
-    color: [CHART_COLORS.navy, CHART_COLORS.terracotta, CHART_COLORS.sage, CHART_COLORS.amber][
-      i % 4
-    ],
+    color: SERIES_COLORS[i % SERIES_COLORS.length],
   }));
 
   const pieData = recargosEntries.map(([key, val], i) => ({
     name: key,
     value: val,
-    color: [CHART_COLORS.navy, CHART_COLORS.terracotta, CHART_COLORS.sage, CHART_COLORS.amber][
-      i % 4
-    ],
+    color: SERIES_COLORS[i % SERIES_COLORS.length],
   }));
 
   const metadataEntries = Object.entries(result.metadata);
@@ -116,6 +118,26 @@ function ResultCard({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {result.calculation_metadata && (
+        <div className="flex items-center gap-3">
+          <Badge
+            variant={
+              result.calculation_metadata.validation_tier === "supported"
+                ? "success"
+                : result.calculation_metadata.validation_tier === "deprecated"
+                  ? "error"
+                  : "warning"
+            }
+          >
+            {result.calculation_metadata.validation_tier}
+          </Badge>
+          {result.calculation_metadata.warnings.map((warning) => (
+            <span key={warning} className="text-xs text-amber">
+              {warning}
+            </span>
+          ))}
+        </div>
+      )}
       {/* Hero metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <MetricCard
@@ -158,7 +180,7 @@ function ResultCard({
                     contentStyle={{
                       background: CHART_COLORS.navy,
                       border: "none",
-                      borderRadius: "8px",
+                      borderRadius: "4px",
                       color: CHART_COLORS.cream,
                       fontSize: "13px",
                     }}
@@ -537,6 +559,8 @@ export default function VidaPage() {
       {activeTab === "comparar" && compare.data && (
         <CompareResults data={compare.data} t={t} />
       )}
+
+      <VidaStory />
     </div>
   );
 }
@@ -664,7 +688,7 @@ function CompareResults({
                 contentStyle={{
                   background: CHART_COLORS.navy,
                   border: "none",
-                  borderRadius: "8px",
+                  borderRadius: "4px",
                   color: CHART_COLORS.cream,
                   fontSize: "13px",
                 }}
@@ -672,14 +696,14 @@ function CompareResults({
               <Bar
                 dataKey="prima_neta"
                 name={t("prima_neta")}
-                fill={CHART_COLORS.navy}
-                radius={[6, 6, 0, 0]}
+                fill={SERIES_COLORS[0]}
+                radius={[4, 4, 0, 0]}
               />
               <Bar
                 dataKey="prima_total"
                 name={t("prima_total")}
-                fill={CHART_COLORS.terracotta}
-                radius={[6, 6, 0, 0]}
+                fill={SERIES_COLORS[1]}
+                radius={[4, 4, 0, 0]}
               />
             </BarChart>
           </ResponsiveContainer>

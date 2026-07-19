@@ -13,22 +13,21 @@ interface MetricCardProps {
 }
 
 const variantStyles = {
-  default: "bg-offwhite border border-navy/8 text-navy",
-  primary: "bg-navy text-cream",
-  accent:
-    "bg-gradient-to-r from-terracotta to-amber text-white",
+  default: "bg-white border-t-2 border-t-navy text-navy",
+  primary: "bg-navy border-t-2 border-t-navy text-offwhite",
+  accent: "bg-white border-t-2 border-t-terracotta text-navy",
 } as const;
 
 const labelStyles = {
-  default: "text-navy/50",
-  primary: "text-cream/60",
-  accent: "text-white/70",
+  default: "text-navy/55",
+  primary: "text-offwhite/70",
+  accent: "text-terracotta",
 } as const;
 
 const sublabelStyles = {
-  default: "text-navy/40",
-  primary: "text-cream/50",
-  accent: "text-white/60",
+  default: "text-navy/45",
+  primary: "text-offwhite/55",
+  accent: "text-navy/45",
 } as const;
 
 export default function MetricCard({
@@ -42,7 +41,7 @@ export default function MetricCard({
   return (
     <div
       className={cn(
-        "rounded-xl p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+        "rounded-sm border border-navy/15 p-5 shadow-sm",
         variantStyles[variant],
         className,
       )}
@@ -51,7 +50,7 @@ export default function MetricCard({
         <div className="min-w-0 flex-1">
           <p
             className={cn(
-              "text-xs font-semibold uppercase tracking-wider mb-2",
+              "text-xs font-semibold uppercase tracking-widest mb-2",
               labelStyles[variant],
             )}
           >

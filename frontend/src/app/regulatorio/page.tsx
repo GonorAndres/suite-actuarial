@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { RegulatorioStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -942,6 +943,8 @@ export default function RegulatorioPage() {
       {activeTab === "retenciones" && withholding.data && (
         <WithholdingResultCard result={withholding.data} t={t} />
       )}
+
+      <RegulatorioStory />
     </div>
   );
 }

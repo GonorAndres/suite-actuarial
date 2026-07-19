@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { SaludStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -365,6 +366,8 @@ export default function SaludPage() {
       {activeTab === "accidentes" && accidentes.data && (
         <AccidentesResults result={accidentes.data} t={t} />
       )}
+
+      <SaludStory />
     </div>
   );
 }

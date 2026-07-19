@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { ReaseguroStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -194,8 +195,8 @@ function ReinsuranceResultCard({
         <Card title={t("reas_ratio_cesion")}>
           <ProgressBar
             segments={[
-              { label: t("monto_cedido"), value: result.monto_cedido, color: "#C17654" },
-              { label: t("monto_retenido"), value: result.monto_retenido, color: "#1B2A4A" },
+              { label: t("monto_cedido"), value: result.monto_cedido, color: "#BC4B3C" },
+              { label: t("monto_retenido"), value: result.monto_retenido, color: "#1A2740" },
             ]}
             formatValue={(v) => formatCurrency(v)}
           />
@@ -711,6 +712,8 @@ export default function ReaseguroPage() {
       {activeTab === "stoploss" && stopLoss.data && (
         <ReinsuranceResultCard result={stopLoss.data} t={t} />
       )}
+
+      <ReaseguroStory />
     </div>
   );
 }

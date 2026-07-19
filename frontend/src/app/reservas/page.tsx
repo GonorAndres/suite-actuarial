@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { ReservasStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -596,6 +597,8 @@ export default function ReservasPage() {
       {activeTab === "bootstrap" && bootstrap.data && (
         <ReserveResultCard result={bootstrap.data} t={t} />
       )}
+
+      <ReservasStory />
     </div>
   );
 }

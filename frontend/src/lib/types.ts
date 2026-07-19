@@ -6,6 +6,18 @@
 
 // ── Pricing (Vida) ──────────────────────────────────────────────────────────
 
+export interface CalculationMetadata {
+  model_version: string;
+  valuation_date?: string | null;
+  assumption_id?: string | null;
+  assumption_hash?: string | null;
+  validation_tier: "supported" | "experimental" | "deprecated" | string;
+  sources: string[];
+  warnings: string[];
+  reproducibility_id?: string | null;
+  assumptions_snapshot: Record<string, unknown>;
+}
+
 export interface PricingRequest {
   edad: number;
   sexo: "H" | "M";
@@ -25,6 +37,7 @@ export interface PricingResponse {
   moneda: string;
   desglose_recargos: Record<string, number>;
   metadata: Record<string, unknown>;
+  calculation_metadata?: CalculationMetadata | null;
 }
 
 export interface CompareResponse {
@@ -263,6 +276,7 @@ export interface ReserveResponse {
   factores_desarrollo?: number[] | null;
   percentiles?: Record<number, number> | null;
   detalles: Record<string, unknown>;
+  calculation_metadata?: CalculationMetadata | null;
 }
 
 // ── Regulatory ──────────────────────────────────────────────────────────────
@@ -452,4 +466,8 @@ export interface ConfigAnualResponse {
   tasas_sat: TasasSATResponse;
   factores_cnsf: FactoresCNSFResponse;
   factores_tecnicos: FactoresTecnicosResponse;
+  effective_from?: string | null;
+  effective_to?: string | null;
+  validation_tier: string;
+  provenance: Record<string, unknown>;
 }
