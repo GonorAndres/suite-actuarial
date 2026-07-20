@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "suite-actuarial"
 version = "2.1.0"
-description = "Libreria actuarial fundamental para el mercado mexicano de seguros"
+description = "Laboratorio actuarial abierto para construir, probar y comprender productos"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}

@@ -16,6 +16,7 @@ import streamlit as st
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
+sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
 from suite_actuarial import TablaMortalidad
 from suite_actuarial.pensiones import (
@@ -29,13 +30,16 @@ from suite_actuarial.pensiones.tablas_imss import (
     LEY73_PORCENTAJES,
     SEMANAS_MINIMAS_LEY73,
 )
+from utils.theme import apply_studio_theme, render_workbench_intro
 
 st.set_page_config(page_title="Pensiones -- suite_actuarial", layout="wide")
 
-st.title("Pensiones")
-st.markdown(
-    "Calculadoras del sistema de pensiones mexicano (`suite_actuarial.pensiones`): "
-    "IMSS Ley 73 y Ley 97, rentas vitalicias y funciones de conmutación."
+apply_studio_theme()
+render_workbench_intro(
+    "MODEL WORKBENCH · PENSIONES",
+    "¿Cómo se convierte historia laboral o ahorro en ingreso vitalicio?",
+    "Contrasta Ley 73 y Ley 97, calcula rentas vitalicias y examina las funciones "
+    "de conmutación que conectan mortalidad, descuento y beneficio.",
 )
 
 

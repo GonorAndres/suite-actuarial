@@ -4,12 +4,22 @@ suite_actuarial -- Demo de la librería actuarial para México.
 Página principal: visión general de la librería, dominios y módulos.
 """
 
+import sys
+from pathlib import Path
+
 import streamlit as st
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
+
+from utils.theme import apply_studio_theme, render_workbench_intro
+
 st.set_page_config(
-    page_title="suite_actuarial -- Librería Actuarial",
+    page_title="suite_actuarial -- Analyst Sandbox",
     layout="wide",
 )
+
+apply_studio_theme()
 
 # -----------------------------------------------------------------------
 # Sidebar
@@ -43,25 +53,26 @@ with st.sidebar:
 # -----------------------------------------------------------------------
 # Titulo
 # -----------------------------------------------------------------------
-st.title("suite_actuarial -- Librería Actuarial para México")
+render_workbench_intro(
+    "ANALYST SANDBOX · MÉXICO",
+    "Construye, prueba y comprende modelos actuariales",
+    "Interfaz de exploración libre para modificar supuestos, comparar métodos y "
+    "examinar evidencia. La experiencia guiada principal vive en el laboratorio "
+    "Next.js; este espacio favorece análisis densos y rápidos.",
+)
 
 st.markdown(
-    """
-**suite_actuarial** es una librería en Python que implementa modelos actuariales
-completos para el mercado asegurador mexicano. Cubre las cuatro ramas principales
-de seguros, más módulos transversales de reservas, reaseguro y cumplimiento regulatorio.
-
-Esta aplicación es una **demo interactiva** de la librería. Cada página muestra
-los resultados de la API en vivo junto con el código Python necesario para
-reproducirlos en tu propio proyecto.
-"""
+    '<div class="studio-note"><strong>Método común:</strong> propósito → beneficios '
+    "→ supuestos → cálculo → sensibilidad → validación. Los modelos ilustrativos no "
+    "sustituyen métodos registrados ni revisión actuarial independiente.</div>",
+    unsafe_allow_html=True,
 )
 
 # -----------------------------------------------------------------------
 # 4 domain cards (2 x 2)
 # -----------------------------------------------------------------------
 st.markdown("---")
-st.header("Dominios de seguros")
+st.header("Biblioteca de preguntas actuariales")
 
 col1, col2 = st.columns(2)
 
@@ -70,7 +81,7 @@ with col1:
     st.markdown(
         """
 - **3 productos**: Temporal, Ordinario, Dotal
-- Mortalidad **EMSSA-09** (tabla oficial mexicana)
+- Mortalidad **EMSSA-09** (versión simplificada e ilustrativa)
 - Primas netas y comerciales con desglose de recargos
 - Reservas matemáticas prospectivas por año de póliza
 """
@@ -143,10 +154,10 @@ with m3:
     st.subheader("Regulatorio")
     st.markdown(
         """
-- RCS (Capital de Solvencia)
-- Reportes CNSF trimestrales
-- Validaciones fiscales SAT / ISR
-- Reservas técnicas S-11.4
+- Escenarios de referencia RCS (Capital de Solvencia)
+- Estructuras de datos para reportes; no XML oficial CNSF
+- Validaciones de referencia SAT / ISR
+- Referencias de reservas técnicas S-11.4
 """
     )
 
@@ -154,7 +165,7 @@ with m3:
 # Quick example
 # -----------------------------------------------------------------------
 st.markdown("---")
-st.header("Ejemplo rápido")
+st.header("Código reproducible")
 
 st.code(
     '''from suite_actuarial import (
@@ -220,9 +231,11 @@ st.markdown("---")
 st.markdown(
     """
 <div style="text-align: center; color: #666;">
-    <p><strong>Nota legal:</strong> Esta librería es para propósitos educativos y de análisis.
-    Para uso en producción, valida los resultados con un actuario certificado
-    y verifica el cumplimiento con las regulaciones vigentes de la CNSF.</p>
+    <p><strong>Nota de alcance:</strong> Esta librería es para propósitos educativos,
+    de referencia y de análisis profesional. Los modelos simplificados y los datos
+    ilustrativos no sustituyen métodos registrados, asesoría fiscal ni determinaciones
+    oficiales de CNSF, SAT o IMSS. Valida los resultados con un actuario certificado
+    antes de usarlos en producción.</p>
     <p>suite_actuarial v2.1.0 | MIT License</p>
 </div>
 """,

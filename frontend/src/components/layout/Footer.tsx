@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function Footer() {
+  const { lang } = useLanguage();
   return (
     <footer className="bg-navy text-offwhite/80 mt-16">
       {/* Thin gold rule */}
@@ -11,7 +15,7 @@ export function Footer() {
           {/* Left: wordmark + version */}
           <div className="flex items-baseline gap-3">
             <span className="font-heading font-bold text-lg text-offwhite">
-              Suite Actuarial
+              suite_actuarial · {lang === "es" ? "modelación actuarial en código abierto" : "open actuarial platform"}
             </span>
             <span className="text-sm text-offwhite/40 tabular-nums">
               v2.1.0
@@ -32,7 +36,7 @@ export function Footer() {
               href="/api-docs"
               className="text-offwhite/60 hover:text-offwhite transition-colors"
             >
-              API Docs
+              {lang === "es" ? "Referencia técnica" : "Developer reference"}
             </Link>
           </div>
 

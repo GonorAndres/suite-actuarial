@@ -8,7 +8,7 @@ ARG NEXT_PUBLIC_API_URL=/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
-# Stage 2: Python backend + static frontend
+# Stage 2: Python backend + exported laboratory
 FROM python:3.12-slim
 WORKDIR /app
 
@@ -23,10 +23,8 @@ COPY data/ data/
 
 RUN pip install --no-cache-dir -e ".[api]"
 
-# Copy built frontend
-COPY --from=frontend-build /app/frontend/.next/standalone ./frontend-standalone
-COPY --from=frontend-build /app/frontend/.next/static ./frontend-standalone/.next/static
-COPY --from=frontend-build /app/frontend/public ./frontend-standalone/public
+# FastAPI serves the static export in production. API routes remain under /api/v1.
+COPY --from=frontend-build /app/frontend/out ./frontend-static
 
 EXPOSE 8080
 

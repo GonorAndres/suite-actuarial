@@ -18,7 +18,7 @@ def main() -> int:
     Returns:
         Exit code (0 = éxito, 1 = error)
     """
-    print(f"Mexican Insurance Analytics Suite v{__version__}")
+    print(f"suite_actuarial · laboratorio actuarial abierto v{__version__}")
     print("=" * 60)
 
     if len(sys.argv) < 2:
@@ -72,8 +72,8 @@ def mostrar_ayuda() -> None:
 Uso: seguros [comando] [opciones]
 
 Comandos disponibles:
-  demo              Ejecuta un ejemplo de calculo de primas
-  api               Inicia el servidor REST API (FastAPI)
+  demo              Ejecuta un experimento actuarial reproducible
+  api               Inicia la interfaz tecnica para aplicaciones
   config            Muestra parametros y fuentes (--date YYYY-MM-DD opcional)
   validate-config   Valida periodos, unidades y fuentes regulatorias
   --help, -h       Muestra esta ayuda
@@ -172,8 +172,8 @@ def ejecutar_api() -> None:
         print("Error: FastAPI no instalado. Ejecuta: pip install mexican-insurance[api]")
         return
 
-    print("Iniciando API REST en http://localhost:8000")
-    print("Documentacion interactiva en http://localhost:8000/docs")
+    print("Iniciando interfaz tecnica en http://localhost:8000")
+    print("Referencia interactiva en http://localhost:8000/docs")
     print("Presiona Ctrl+C para detener\n")
     uvicorn.run(
         "suite_actuarial.api.main:app",

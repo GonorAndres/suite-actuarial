@@ -17,7 +17,7 @@ import {
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
 import { reservesApi } from "@/lib/api";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatNumber } from "@/lib/utils";
 import type {
   ChainLadderRequest,
   BornhuetterFergusonRequest,
@@ -45,16 +45,6 @@ const SAMPLE_PRIMAS: Record<number, number> = {
   2022: 8000,
   2023: 8500,
 };
-
-const SAMPLE_SINIESTROS_JSON = JSON.stringify(
-  [
-    { id_siniestro: "S001", fecha_ocurrencia: "2024-01-15", monto_bruto: 150000 },
-    { id_siniestro: "S002", fecha_ocurrencia: "2024-03-22", monto_bruto: 85000 },
-    { id_siniestro: "S003", fecha_ocurrencia: "2024-06-10", monto_bruto: 220000 },
-  ],
-  null,
-  2,
-);
 
 /* ── Default form values ───────────────────────────────────────────────── */
 
@@ -113,21 +103,26 @@ function ReserveResultCard({
   result: ReserveResponse;
   t: (key: TranslationKey) => string;
 }) {
+  const formatMillions = (value: number) => `$${formatNumber(value, 2)} M`;
   const reservasPorAnio = Object.entries(result.reservas_por_anio).map(
-    ([year, val]) => [year, formatCurrency(val)],
+    ([year, val]) => [year, formatMillions(val)],
   );
 
   const ultimatesPorAnio = Object.entries(result.ultimates_por_anio).map(
-    ([year, val]) => [year, formatCurrency(val)],
+    ([year, val]) => [year, formatMillions(val)],
   );
 
   const csvData = {
     metodo: result.metodo,
-    reserva_total: result.reserva_total,
-    ultimate_total: result.ultimate_total,
-    pagado_total: result.pagado_total,
+    unidad_monetaria: result.unidad_monetaria,
+    reserva_total_millones_mxn: result.reserva_total,
+    ultimate_total_millones_mxn: result.ultimate_total,
+    pagado_total_millones_mxn: result.pagado_total,
     ...Object.fromEntries(
-      Object.entries(result.reservas_por_anio).map(([k, v]) => [`reserva_${k}`, v]),
+      Object.entries(result.reservas_por_anio).map(([k, v]) => [
+        `reserva_${k}_millones_mxn`,
+        v,
+      ]),
     ),
   } as Record<string, unknown>;
 
@@ -137,18 +132,21 @@ function ReserveResultCard({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <MetricCard
           label={t("reserva_total")}
-          value={formatCurrency(result.reserva_total)}
+          value={formatMillions(result.reserva_total)}
           variant="accent"
+          sublabel={t("reservas_unidad_millones")}
         />
         <MetricCard
           label={t("ultimate_total")}
-          value={formatCurrency(result.ultimate_total)}
+          value={formatMillions(result.ultimate_total)}
           variant="primary"
+          sublabel={t("reservas_unidad_millones")}
         />
         <MetricCard
           label={t("reservas_pagado_total")}
-          value={formatCurrency(result.pagado_total)}
+          value={formatMillions(result.pagado_total)}
           variant="default"
+          sublabel={t("reservas_unidad_millones")}
         />
       </div>
 
@@ -208,7 +206,7 @@ function ReserveResultCard({
             headers={[t("reservas_percentil"), t("reserva_total")]}
             rows={Object.entries(result.percentiles).map(([pct, val]) => [
               `${pct}%`,
-              formatCurrency(val),
+              formatMillions(val),
             ])}
           />
         </Card>
@@ -276,6 +274,7 @@ export default function ReservasPage() {
             origin_years: parseOriginYears(clForm.origin_years),
             metodo_promedio: clForm.metodo_promedio,
             tail_factor: clForm.tail_factor ? Number(clForm.tail_factor) : null,
+            unidad_monetaria: "millones_mxn",
           };
           await chainLadder.calculate(req);
           break;
@@ -288,6 +287,7 @@ export default function ReservasPage() {
             primas_por_anio: primasObj,
             loss_ratio_apriori: bfForm.loss_ratio_apriori,
             metodo_promedio: bfForm.metodo_promedio,
+            unidad_monetaria: "millones_mxn",
           };
           await bornhuetter.calculate(req);
           break;
@@ -301,6 +301,7 @@ export default function ReservasPage() {
             percentiles: bsForm.percentiles
               .split(",")
               .map((s) => Number(s.trim())),
+            unidad_monetaria: "millones_mxn",
           };
           await bootstrap.calculate(req);
           break;
@@ -336,15 +337,17 @@ export default function ReservasPage() {
   /* ── Render ─────────────────────────────────────────────────────────── */
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <div className="domain-workbench max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Page header */}
-      <div>
+      <div className="domain-workbench-header">
         <h1 className="font-heading text-3xl md:text-4xl font-bold text-navy mb-2">
           {t("reservas_titulo")}
         </h1>
         <p className="text-navy/60 text-lg">{t("reservas_descripcion")}</p>
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("reservas_contexto")}</p>
       </div>
+
+      <ReservasStory />
 
       {/* Tabs */}
       <Tabs
@@ -353,13 +356,27 @@ export default function ReservasPage() {
         onTabChange={(id) => setActiveTab(id as ReserveTab)}
       />
 
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-navy/15 bg-white/65 px-4 py-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-terracotta">
+            {t("reservas_unidad")}
+          </p>
+          <p className="font-heading font-bold text-navy">
+            {t("reservas_unidad_millones")}
+          </p>
+        </div>
+        <p className="text-sm text-navy/55 max-w-xl">
+          {t("reservas_unidad_explicacion")}
+        </p>
+      </div>
+
       {/* ── Chain Ladder Form ──────��───────────────────────────────── */}
       {activeTab === "chainladder" && (
         <Card className="form-depth">
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-navy mb-1">
-                {t("triangulo")}
+                {t("triangulo")} · {t("reservas_unidad_millones")}
               </label>
               <textarea
                 className="w-full rounded-lg border border-navy/20 bg-white px-4 py-3 text-sm text-navy font-mono focus:border-terracotta focus:ring-1 focus:ring-terracotta"
@@ -427,7 +444,7 @@ export default function ReservasPage() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-navy mb-1">
-                {t("triangulo")}
+                {t("triangulo")} · {t("reservas_unidad_millones")}
               </label>
               <textarea
                 className="w-full rounded-lg border border-navy/20 bg-white px-4 py-3 text-sm text-navy font-mono focus:border-terracotta focus:ring-1 focus:ring-terracotta"
@@ -468,7 +485,7 @@ export default function ReservasPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-navy mb-1">
-                {t("primas_por_anio")}
+                {t("primas_por_anio")} · {t("reservas_unidad_millones")}
               </label>
               <textarea
                 className="w-full rounded-lg border border-navy/20 bg-white px-4 py-3 text-sm text-navy font-mono focus:border-terracotta focus:ring-1 focus:ring-terracotta"
@@ -503,7 +520,7 @@ export default function ReservasPage() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-navy mb-1">
-                {t("triangulo")}
+                {t("triangulo")} · {t("reservas_unidad_millones")}
               </label>
               <textarea
                 className="w-full rounded-lg border border-navy/20 bg-white px-4 py-3 text-sm text-navy font-mono focus:border-terracotta focus:ring-1 focus:ring-terracotta"
@@ -598,7 +615,6 @@ export default function ReservasPage() {
         <ReserveResultCard result={bootstrap.data} t={t} />
       )}
 
-      <ReservasStory />
     </div>
   );
 }

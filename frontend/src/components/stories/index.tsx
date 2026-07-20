@@ -35,6 +35,10 @@ function compactMXN(v: number): string {
   return `$${v.toLocaleString("es-MX")}`;
 }
 
+function compactMillionsMXN(v: number): string {
+  return `$${v.toLocaleString("es-MX", { maximumFractionDigits: 1 })} M MXN`;
+}
+
 /* ── Building blocks ───────────────────────────────────────────────────── */
 
 function Slider({
@@ -182,8 +186,9 @@ function StorySection({
           ) : (
             children
           )}
-          <div className="border-l-2 border-amber bg-cream/60 rounded-sm px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-navy/60 mb-1.5">
+          <div className="bg-white/55 border border-navy/10 rounded-sm px-5 py-4">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-navy/60 mb-1.5">
+              <span className="inline-block w-5 h-px bg-amber" aria-hidden="true" />
               {t("hist_leccion")}
             </p>
             <p className="text-sm text-navy/80 leading-relaxed">{lesson}</p>
@@ -449,12 +454,12 @@ export function PensionesStory() {
 /* ── Reservas ──────────────────────────────────────────────────────────── */
 
 const TRIANGLE: (number | null)[][] = [
-  [12480, 18720, 21580, 23090, 23780, 24020],
-  [13650, 20475, 23600, 25250, 26010, null],
-  [14820, 22230, 25640, 27430, null, null],
-  [16090, 24135, 27830, null, null, null],
-  [17510, 26265, null, null, null, null],
-  [18930, null, null, null, null, null],
+  [12.48, 18.72, 21.58, 23.09, 23.78, 24.02],
+  [13.65, 20.475, 23.6, 25.25, 26.01, null],
+  [14.82, 22.23, 25.64, 27.43, null, null],
+  [16.09, 24.135, 27.83, null, null, null],
+  [17.51, 26.265, null, null, null, null],
+  [18.93, null, null, null, null, null],
 ];
 const ORIGIN_YEARS = [2019, 2020, 2021, 2022, 2023, 2024];
 
@@ -469,6 +474,7 @@ export function ReservasStory() {
       metodo_promedio: "weighted" as const,
       calcular_tail_factor: false,
       tail_factor: tailPct > 0 ? 1 + tailPct / 100 : null,
+      unidad_monetaria: "millones_mxn" as const,
     }),
     [tailPct],
   );
@@ -494,12 +500,12 @@ export function ReservasStory() {
       <div className="grid sm:grid-cols-2 gap-4">
         <BigFigure
           label={t("hist5_reserva")}
-          value={data ? compactMXN(data.reserva_total * 1000) : "—"}
+          value={data ? compactMillionsMXN(data.reserva_total) : "—"}
           loading={loading}
         />
         <BigFigure
           label={t("hist5_ultimate")}
-          value={data ? compactMXN(data.ultimate_total * 1000) : "—"}
+          value={data ? compactMillionsMXN(data.ultimate_total) : "—"}
           loading={loading}
         />
       </div>

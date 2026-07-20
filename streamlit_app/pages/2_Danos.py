@@ -17,16 +17,20 @@ import streamlit as st
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
+sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
 from suite_actuarial.danos import SeguroAuto, ModeloColectivo, CalculadoraBonusMalus, Cobertura
 from suite_actuarial.danos.tablas_amis import GRUPOS_VEHICULO, ZONAS_RIESGO
+from utils.theme import apply_studio_theme, render_workbench_intro
 
 st.set_page_config(page_title="Daños -- suite_actuarial", layout="wide")
 
-st.title("Seguros de Daños")
-st.markdown(
-    "Motor de tarificación para seguros de propiedad y responsabilidad civil "
-    "(`suite_actuarial.danos`): auto AMIS, modelo colectivo y Bonus-Malus."
+apply_studio_theme()
+render_workbench_intro(
+    "MODEL WORKBENCH · DAÑOS",
+    "¿Cómo emerge y se distribuye una pérdida?",
+    "Explora tarificación de auto, frecuencia-severidad, riesgo agregado y la "
+    "respuesta de un sistema bonus-malus ante experiencia observada.",
 )
 
 # -----------------------------------------------------------------------

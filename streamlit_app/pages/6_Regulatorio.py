@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
+sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
 from decimal import Decimal
 
@@ -23,16 +24,19 @@ from suite_actuarial.core.validators import (
     ConfiguracionRCSVida,
 )
 from suite_actuarial.config import cargar_config
+from utils.theme import apply_studio_theme, render_workbench_intro
 
 # ---------------------------------------------------------------------------
 # Configuracion de pagina
 # ---------------------------------------------------------------------------
 st.set_page_config(page_title="Regulatorio", layout="wide")
 
-st.title("Cumplimiento Regulatorio")
-st.markdown(
-    "Herramientas de cálculo regulatorio para aseguradoras mexicanas: "
-    "RCS (CNSF), reservas técnicas y validaciones fiscales (SAT)."
+apply_studio_theme()
+render_workbench_intro(
+    "REFERENCE WORKBENCH · REGULATORIO",
+    "¿Cómo examinar capital, reservas y reglas sin ocultar sus límites?",
+    "Modelos de referencia para RCS, reservas técnicas y SAT. Los escenarios "
+    "simplificados no certifican cumplimiento ni sustituyen métodos institucionales.",
 )
 
 # ---------------------------------------------------------------------------

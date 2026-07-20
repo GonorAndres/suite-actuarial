@@ -1,5 +1,9 @@
 # Casos de uso por dominio
 
+Si busca un recorrido de producto de principio a fin, comience con
+[`examples/labs/lab_01_dotal_educativo.py`](../labs/lab_01_dotal_educativo.py). Los casos de
+esta carpeta funcionan como una biblioteca de benchmarks más compactos por dominio.
+
 Siete casos trabajados, uno por dominio actuarial, pensados para que un
 actuario, un estudiante o un desarrollador entienda QUE hace la suite y COMO
 usarla sin tener que leer la API primero. Cada caso:

@@ -46,6 +46,36 @@ export interface CompareResponse {
   dotal: PricingResponse;
 }
 
+export interface DotalLabRequest extends PricingRequest {
+  plazo_pago: number;
+}
+
+export interface ReservaDotalPoint {
+  anio: number;
+  edad_alcanzada: number;
+  reserva: number;
+}
+
+export interface DotalLabChecks {
+  descomposicion_beneficios: boolean;
+  principio_equivalencia: boolean;
+  reserva_inicial_cero: boolean;
+  reserva_final_igual_beneficio: boolean;
+  diferencia_equivalencia: number;
+}
+
+export interface DotalLabResponse {
+  prima: PricingResponse;
+  plazo_pago: number;
+  vp_beneficio_muerte: number;
+  vp_beneficio_supervivencia: number;
+  vp_beneficios_total: number;
+  factor_anualidad_primas: number;
+  prima_neta_anual_equivalente: number;
+  reservas: ReservaDotalPoint[];
+  verificaciones: DotalLabChecks;
+}
+
 // ── Danos (P&C) ─────────────────────────────────────────────────────────────
 
 export interface AutoRequest {
@@ -248,6 +278,7 @@ export interface ChainLadderRequest {
   metodo_promedio?: "simple" | "weighted" | "geometric";
   calcular_tail_factor?: boolean;
   tail_factor?: number | null;
+  unidad_monetaria?: "millones_mxn";
 }
 
 export interface BornhuetterFergusonRequest {
@@ -256,6 +287,7 @@ export interface BornhuetterFergusonRequest {
   primas_por_anio: Record<number, number>;
   loss_ratio_apriori: number;
   metodo_promedio?: string;
+  unidad_monetaria?: "millones_mxn";
 }
 
 export interface BootstrapRequest {
@@ -264,10 +296,12 @@ export interface BootstrapRequest {
   num_simulaciones?: number;
   seed?: number | null;
   percentiles?: number[];
+  unidad_monetaria?: "millones_mxn";
 }
 
 export interface ReserveResponse {
   metodo: string;
+  unidad_monetaria: "millones_mxn";
   reserva_total: number;
   ultimate_total: number;
   pagado_total: number;

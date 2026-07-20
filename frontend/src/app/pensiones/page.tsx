@@ -246,15 +246,17 @@ export default function PensionesPage() {
   /* ── Render ─────────────────────────────────────────────────────────── */
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <div className="domain-workbench max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Page header */}
-      <div>
+      <div className="domain-workbench-header">
         <h1 className="font-heading text-3xl md:text-4xl font-bold text-navy mb-2">
           {t("pensiones_titulo")}
         </h1>
         <p className="text-navy/60 text-lg">{t("pensiones_descripcion")}</p>
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("pensiones_contexto")}</p>
       </div>
+
+      <PensionesStory />
 
       {/* Tabs */}
       <Tabs
@@ -495,7 +497,6 @@ export default function PensionesPage() {
         <ConmutacionResults data={conmData} t={t} />
       )}
 
-      <PensionesStory />
     </div>
   );
 }

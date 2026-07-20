@@ -6,7 +6,7 @@ pandas DataFrames, then delegates to the library reserve calculators.
 """
 
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException
@@ -47,6 +47,10 @@ class ChainLadderRequest(BaseModel):
     tail_factor: float | None = Field(
         default=None, ge=1.0, le=2.0, description="Manual tail factor (if not auto-calculated)"
     )
+    unidad_monetaria: Literal["millones_mxn"] = Field(
+        default="millones_mxn",
+        description="Reporting scale for every monetary value in the triangle",
+    )
 
 
 class BornhuetterFergusonRequest(BaseModel):
@@ -61,6 +65,7 @@ class BornhuetterFergusonRequest(BaseModel):
         ..., gt=0, le=2.0, description="A-priori expected loss ratio (e.g. 0.65)"
     )
     metodo_promedio: str = Field(default="simple")
+    unidad_monetaria: Literal["millones_mxn"] = "millones_mxn"
 
 
 class BootstrapRequest(BaseModel):
@@ -71,12 +76,14 @@ class BootstrapRequest(BaseModel):
     num_simulaciones: int = Field(default=1000, ge=100, le=10000)
     seed: int | None = Field(default=None)
     percentiles: list[int] = Field(default=[50, 75, 90, 95, 99])
+    unidad_monetaria: Literal["millones_mxn"] = "millones_mxn"
 
 
 class ReserveResponse(BaseModel):
     """Unified reserve calculation response."""
 
     metodo: str
+    unidad_monetaria: Literal["millones_mxn"] = "millones_mxn"
     reserva_total: float
     ultimate_total: float
     pagado_total: float

@@ -218,3 +218,40 @@ class TestVidaDotal:
             VidaDotal(config, tabla_simple, plazo_pago=25)  # 25 > 20
 
         assert "mayor" in str(exc_info.value).lower()
+
+    def test_analisis_dotal_limitado_verifica_identidades(
+        self, config_dotal_20, tabla_simple, asegurado_basico
+    ):
+        """El laboratorio debe publicar componentes, reservas y checks."""
+        producto = VidaDotal(config_dotal_20, tabla_simple, plazo_pago=10)
+
+        analisis = producto.analizar_producto(asegurado_basico)
+
+        assert analisis.vp_beneficios_total == (
+            analisis.vp_beneficio_muerte + analisis.vp_beneficio_supervivencia
+        )
+        assert analisis.verificaciones.descomposicion_beneficios
+        assert analisis.verificaciones.principio_equivalencia
+        assert analisis.verificaciones.reserva_inicial_cero
+        assert analisis.verificaciones.reserva_final_igual_beneficio
+        assert analisis.reservas[0].reserva == Decimal("0")
+        assert analisis.reservas[-1].reserva == asegurado_basico.suma_asegurada
+        assert len(analisis.reservas) == config_dotal_20.plazo_years + 1
+
+    def test_pago_limitado_eleva_prima_anual(
+        self, config_dotal_20, tabla_simple, asegurado_basico
+    ):
+        """Financiar el mismo beneficio en menos anos eleva cada prima."""
+        prima_10 = VidaDotal(
+            config_dotal_20, tabla_simple, plazo_pago=10
+        ).calcular_prima(asegurado_basico).prima_neta
+        prima_20 = VidaDotal(
+            config_dotal_20, tabla_simple, plazo_pago=20
+        ).calcular_prima(asegurado_basico).prima_neta
+
+        assert prima_10 > prima_20
+
+    def test_error_plazo_pago_cero(self, config_dotal_20, tabla_simple):
+        """Un producto no puede tener un periodo de pago vacio."""
+        with pytest.raises(ValueError, match="al menos 1"):
+            VidaDotal(config_dotal_20, tabla_simple, plazo_pago=0)

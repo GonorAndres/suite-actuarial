@@ -1,23 +1,29 @@
 ---
-title: "Suite Actuarial Mexicana: Tarificacion, Reaseguro, Reservas y Cumplimiento Regulatorio en Python"
-description: "Libreria actuarial en Python con 6 fases: tablas EMSSA-09, primas de vida (temporal, ordinario, dotal), reaseguro (QS, XoL, SL), reservas (Chain Ladder, BF, Bootstrap), RCS bajo LISF, reportes CNSF y validaciones SAT. 307 tests, 87% cobertura, dashboard Streamlit interactivo."
+title: "Suite Actuarial Mexicana: Tarificacion, Reaseguro, Reservas y Referencia Regulatoria en Python"
+description: "Toolkit actuarial open-source y workbench para analistas: mortalidad EMSSA-09 de referencia, tarificacion de vida, reaseguro, reservas y modelos regulatorios mexicanos simplificados."
 date: "2026-03-19"
 category: "proyectos-y-analisis"
 lang: "es"
 tags: ["Python", "Pydantic", "LISF", "CUSF", "CNSF", "RCS", "Reservas", "Chain Ladder", "Reaseguro", "Streamlit", "EMSSA-09", "SAT"]
 ---
 
-# Suite Actuarial Mexicana: Tarificacion, Reaseguro, Reservas y Cumplimiento Regulatorio en Python
+# Suite Actuarial Mexicana: Tarificacion, Reaseguro, Reservas y Referencia Regulatoria en Python
+
+> Nota de alcance: este proyecto es un toolkit educativo/de referencia y un
+> workbench para analistas profesionales. Sus modelos simplificados y datos
+> ilustrativos sirven para inspección y experimentación, pero no sustituyen
+> métodos registrados, sistemas oficiales CNSF/SAT/IMSS, asesoría fiscal ni
+> validación institucional.
 
 En el area tecnica de una aseguradora mexicana tipica, el ciclo operativo trimestral se fragmenta en hojas de calculo que no se comunican entre si. Un actuario tarifica con una tabla EMSSA-09 pegada en Excel, otro calcula reservas con un triangulo de desarrollo separado, un tercero alimenta el formato RCS a mano, y al final alguien intenta cuadrar todo para el reporte que se entrega a la CNSF. Cada trimestre, el mismo ejercicio de reconciliacion manual.
 
-La **Suite Actuarial Mexicana** unifica esos flujos en una sola libreria Python. Cubre desde la tabla de mortalidad EMSSA-09 hasta el reporte trimestral CNSF, pasando por tarificacion de productos de vida, tres estrategias de reaseguro, metodos avanzados de reservas y validaciones fiscales del SAT. A diferencia de [SIMA](/proyectos-y-analisis/sima), que construye su propio modelo de mortalidad desde datos crudos del INEGI via Lee-Carter, esta suite utiliza directamente la tabla regulatoria EMSSA-09 y se enfoca en la amplitud del ciclo asegurador: productos, reaseguro, reservas, cumplimiento y reporteo.
+La **Suite Actuarial Mexicana** reúne cálculos relacionados en una librería Python inspeccionable. Cubre mortalidad EMSSA-09 de referencia, tarificación de productos de vida, tres estrategias de reaseguro, métodos de reservas y modelos regulatorios/fiscales mexicanos simplificados. A diferencia de [SIMA](/proyectos-y-analisis/sima), que construye su propio modelo de mortalidad desde datos crudos del INEGI vía Lee-Carter, esta suite se enfoca en flujos transparentes para analistas y en el contexto mexicano, no en producir reportes oficiales.
 
 ## El Problema -- Por que una Suite Actuarial en Python
 
 El mercado asegurador mexicano esta regulado por la Comision Nacional de Seguros y Fianzas (CNSF) bajo el marco de la Ley de Instituciones de Seguros y de Fianzas (LISF) y la Circular Unica de Seguros y Fianzas (CUSF). Este marco normativo impone requerimientos especificos que no existen en ninguna otra jurisdiccion: tablas de mortalidad propias (EMSSA-09), formatos de reporte trimestrales con estructura definida, calculo del Requerimiento de Capital de Solvencia (RCS) con parametros calibrados al mercado mexicano, y reglas fiscales de deducibilidad que dependen de la Ley del ISR.
 
-La mayoria del trabajo actuarial en Mexico se realiza en Excel o en sistemas propietarios como Prophet o MoSes. Para aseguradoras medianas y chicas, los costos de licenciamiento de herramientas comerciales son prohibitivos, y el resultado suele ser una coleccion de hojas de calculo donde cada celda es un punto potencial de error. Existe software actuarial de codigo abierto en Python -- el paquete `chainladder` para reservas, `lifelines` para analisis de supervivencia -- pero ninguno integra los requisitos regulatorios mexicanos. No hay una libreria que sepa lo que es una EMSSA-09, que calcule el RCS conforme a la LISF, o que valide la deducibilidad de primas segun el articulo 151 de la LISR.
+La mayoría del trabajo actuarial en México se realiza en Excel o en sistemas propietarios como Prophet o MoSes. Para aseguradoras medianas y chicas, los costos de licenciamiento de herramientas comerciales son prohibitivos, y el resultado suele ser una colección de hojas de cálculo donde cada celda es un punto potencial de error. Existe software actuarial de código abierto en Python -- el paquete `chainladder` para reservas, `lifelines` para análisis de supervivencia -- mientras que el contexto regulatorio mexicano suele quedar en código específico de cada proyecto. Esta suite proporciona un punto de partida inspeccionable para referencias EMSSA-09, escenarios RCS y ejemplos de deducibilidad, sin afirmar que sustituya sistemas oficiales.
 
 La suite llena ese hueco con dos decisiones de diseno fundamentales. La primera es usar Pydantic v2 como guardia de dominio: cada dato que entra al sistema -- edad del asegurado, suma asegurada, configuracion de producto, triangulo de siniestros -- se valida antes de que toque una formula. Un asegurado con edad negativa, una tasa de interes tecnico del 200%, o una suma asegurada de cero simplemente no entran al sistema. La segunda es usar `Decimal` en lugar de `float` en toda la cadena de calculo. En un contexto donde las diferencias de centavos se acumulan sobre carteras de miles de polizas, la precision aritmetica no es un lujo academico: es un requisito operativo.
 
@@ -114,9 +120,9 @@ El modulo Bootstrap responde con una distribucion completa. El proceso es:
 
 La diferencia entre el percentil 50 (mediana) y el percentil 75 revela la incertidumbre del proceso. Si P50 = $2.5M y P75 = $3.1M, hay un 25% de probabilidad de que la reserva necesaria sea al menos $600,000 mayor que la mediana. Esa diferencia es directamente relevante para la decision de cuanto capital mantener. En un `ConfiguracionBootstrap`, Pydantic valida que los percentiles solicitados esten entre 1 y 99, y que el numero de simulaciones este entre 100 y 10,000.
 
-## Cumplimiento Regulatorio -- RCS, CNSF, S-11.4, SAT
+## Referencia Regulatoria -- RCS, CNSF, S-11.4, SAT
 
-Esta es la seccion que diferencia a la suite de cualquier otro paquete actuarial de codigo abierto. No existe, hasta donde he investigado, ninguna libreria publica que implemente el calculo del RCS mexicano, las reglas de la Circular S-11.4, o las validaciones fiscales del SAT para primas de seguros. Estos modulos requirieron la mayor investigacion con las menores referencias disponibles.
+Estos módulos de referencia hacen útil a la suite para estudiar el contexto actuarial mexicano. Son implementaciones de conceptos seleccionados y escenarios simplificados, no afirmaciones de que se hayan reproducido los métodos regulatorios completos o las reglas vigentes de presentación. Estos módulos requirieron la mayor investigación con las menores referencias disponibles.
 
 ### RCS: Requerimiento de Capital de Solvencia
 
@@ -147,7 +153,7 @@ La agregacion final la realiza el `AgregadorRCS` usando una **matriz de correlac
 
 La correlacion vida-danos es 0.00 (riesgos independientes: que alguien muera no esta correlacionado con que un coche choque). La correlacion vida-inversion y danos-inversion es 0.25 (las inversiones respaldan las reservas de ambos ramos; una caida de mercado afecta la capacidad de cumplir con ambos tipos de obligaciones). La formula de agregacion es la raiz cuadrada de la forma cuadratica: RCS_total = sqrt(Rv^2 + Rd^2 + Ri^2 + 2*rho_vi*Rv*Ri + 2*rho_di*Rd*Ri), donde Rv, Rd, Ri son los RCS por categoria y rho los coeficientes de correlacion.
 
-Como ejemplo concreto, usando los valores que aparecen en el schema del `ResultadoRCS`: RCS vida $28M, RCS danos $30M, RCS inversion $35M. La suma lineal daria $93M, pero la agregacion con correlaciones da $75M -- un ahorro de capital de $18M que refleja el beneficio de la diversificacion. La aseguradora con capital de $100M tendria un ratio de solvencia de 0.75 y cumpliria con la regulacion.
+Como ejemplo educativo, usando los valores que aparecen en el schema del `ResultadoRCS`: RCS vida $28M, RCS danos $30M, RCS inversion $35M. La suma lineal daria $93M, pero la agregacion con correlaciones da $75M. Esto ilustra la diversificacion en la formula; no demuestra que una aseguradora cumpla un requisito de capital regulatorio.
 
 ### Circular S-11.4: Reservas Tecnicas
 
@@ -173,15 +179,15 @@ El validador recibe la UMA anual vigente como parametro, calcula limites en peso
 
 ### Reportes CNSF
 
-El modulo de reportes estructura los datos trimestrales que las aseguradoras presentan a la CNSF. Cuatro generadores especializados producen reportes de suscripcion (primas emitidas, devengadas y canceladas por ramo), siniestros (ocurridos, pagados y pendientes), inversiones (portafolio por tipo de activo) y RCS (desglose completo por tipo de riesgo).
+El modulo de reportes estructura conjuntos de datos de ejemplo para suscripcion (primas emitidas, devengadas y canceladas por ramo), siniestros (ocurridos, pagados y pendientes), inversiones (portafolio por tipo de activo) y RCS (desglose por tipo de riesgo). No produce los formatos XML oficiales de presentacion CNSF.
 
 El modelo `MetadatosReporte` valida que la fecha de presentacion sea posterior al trimestre reportado (no puedes presentar el reporte del Q1 antes de que termine marzo), y los `DatosSuscripcionRamo` verifican coherencia entre primas emitidas, devengadas y canceladas. Son validaciones que en Excel dependen de que alguien haya puesto una formula condicional en la celda correcta; aqui son reglas de negocio inamovibles.
 
-Estos modulos regulatorios se benefician mutuamente de todo lo construido en las fases anteriores. La tarificacion alimenta los calculos de RCS vida (sumas aseguradas, reservas matematicas). Las reservas avanzadas alimentan el RCS danos (reservas de siniestros). Y los tres convergen en el reporte CNSF. Es la misma integracion que motivo construir una suite en lugar de scripts sueltos. Para una vision complementaria de como funciona la modelacion de mortalidad desde datos crudos, [SIMA](/proyectos-y-analisis/sima) recorre ese camino con el metodo Lee-Carter sobre datos del INEGI.
+Algunos modulos pueden componerse en flujos de analisis, pero el repositorio todavia no es el ciclo operativo completo de una aseguradora. Tarificacion, reservas, reaseguro y reportes siguen siendo capacidades separadas con puntos de integracion parciales. Para una vision complementaria de como funciona la modelacion de mortalidad desde datos crudos, [SIMA](/proyectos-y-analisis/sima) recorre ese camino con el metodo Lee-Carter sobre datos del INEGI.
 
 ## Decisiones de Ingenieria
 
-La suite tiene 34 modulos de produccion distribuidos en 7 subpaquetes (`core`, `actuarial`, `products`, `reinsurance`, `reservas`, `regulatorio`, `reportes`) y 16 archivos de prueba con 307 tests y 87% de cobertura. Son aproximadamente 6,500 lineas de codigo de produccion y 5,500 de pruebas.
+El repositorio actual está organizado como un paquete Python con módulos de dominio, un adaptador FastAPI y un dashboard Next.js. El checkout actual recopila 985 tests; ejecuta la suite localmente para conocer el resultado actual de aprobación y cobertura.
 
 **Dependencias unidireccionales.** El flujo de dependencias sigue una sola direccion: `core` no importa de nadie; `products`, `reinsurance`, `reservas` y `regulatorio` importan de `core`; `reportes` importa de `regulatorio`. No hay ciclos. Esto permite que cualquier modulo se pruebe de forma aislada.
 
@@ -191,18 +197,18 @@ La suite tiene 34 modulos de produccion distribuidos en 7 subpaquetes (`core`, `
 
 **CI con GitHub Actions.** La suite se prueba automaticamente contra Python 3.11 y 3.12. El pipeline ejecuta `ruff` para linting (line-length 100, target-version py311), `mypy` con el plugin de Pydantic para verificacion de tipos, y `pytest` con medicion de cobertura. La configuracion de `mypy` activa `disallow_untyped_defs` y `warn_return_any` -- decisiones que duelen al momento de escribir el codigo pero que pagan dividendos cuando la base crece.
 
-**Dashboard Streamlit.** Tres paginas interactivas con Plotly: calculadora de productos de vida (comparacion entre temporal, ordinario y dotal con analisis de sensibilidad), monitor de cumplimiento regulatorio (calculadoras de RCS y validaciones SAT), y analisis de reservas tecnicas (triangulos de desarrollo, proyecciones y comparacion de metodos). El layout `wide` aprovecha el espacio para metricas y columnas lado a lado.
+**Laboratorio.** La interfaz principal es un estudio bilingüe Next.js que organiza el trabajo por propósito, beneficios, supuestos, método, resultados y validación. El dotal educativo 20/10 es el primer recorrido guiado. Streamlit permanece como banco de trabajo secundario y la documentación de integración queda como referencia técnica.
 
 ## Lo que Aprendi
 
 **Primera** leccion: Pydantic como guardia de dominio es cualitativamente diferente de las pruebas unitarias. Un `model_validator` que verifica que los recargos totales no excedan el 100% captura una clase entera de errores en el punto de entrada, antes de que los datos toquen una formula. Con pruebas unitarias, necesitas imaginar y escribir cada caso invalido. Con Pydantic, defines la regla una vez y el modelo rechaza todo lo que no cumpla, incluyendo casos que nunca imaginaste. Los mensajes de error son para el usuario, no para el desarrollador -- "Recargos totales (115%) superan el 100%" comunica el problema de forma inmediata. Esto es especialmente valioso en software actuarial, donde el usuario es un actuario que entiende el dominio pero no necesariamente el stack tecnologico.
 
-**Segunda** leccion: la matriz de correlacion del RCS esconde juicio regulatorio. La formula de agregacion es algebra vectorial sencilla -- una raiz cuadrada de forma cuadratica. Lo dificil no es implementar la formula sino entender **por que** la CNSF eligio esas correlaciones especificas: 0.00 entre vida y danos, 0.25 entre vida e inversion, 0.25 entre danos e inversion. El 0.00 entre vida y danos refleja la independencia estadistica entre mortalidad y siniestros de automoviles. El 0.25 con inversion refleja que una crisis financiera afecta la capacidad de pago de ambos tipos de obligaciones a traves de la cartera de inversiones. Estos numeros codifican la vision del regulador sobre como interactuan los riesgos en el mercado mexicano. Implementar la formula sin entender la logica detras de los parametros es mecanografia, no ingenieria actuarial.
+**Segunda** lección: la matriz de correlación del RCS contiene decisiones de modelación. La fórmula de agregación es álgebra vectorial sencilla — una raíz cuadrada de forma cuadrática. Lo importante es distinguir entre implementar un escenario y demostrar que sus factores reproducen el método CNSF vigente. Estas correlaciones ilustrativas sirven para estudiar diversificación, pero requieren fuentes autoritativas y revisión institucional antes de cualquier uso regulatorio.
 
-**Tercera** leccion: la especificidad regulatoria mexicana es la parte dificil. Chain Ladder es Chain Ladder en Mexico, en Francia o en Japon. La formula de una anualidad anticipada es identica en cualquier jurisdiccion. Lo que hace que esta suite sea util **especificamente para Mexico** son los modulos que no existen en ningun otro paquete: la EMSSA-09 como tabla base de tarificacion, la Circular S-11.4 para reservas tecnicas, las reglas de deducibilidad del articulo 151 de la LISR, los formatos de reporte CNSF con sus validaciones de fechas y trimestres. Esos modulos fueron los que requirieron mas horas de investigacion en documentos de la CNSF, circulares y textos de ley, con las menores referencias de implementacion disponibles.
+**Tercera** leccion: la especificidad regulatoria mexicana es la parte dificil. Chain Ladder es Chain Ladder en Mexico, Francia o Japon. La formula de una anualidad anticipada es identica en cualquier jurisdiccion. Lo que hace util a esta suite **especificamente para Mexico** son los modulos de referencia para EMSSA-09, conceptos seleccionados de reservas, reglas fiscales y escenarios regulatorios. Su valor esta en hacer visibles los supuestos y las brechas para que el analista los investigue, no en ocultarlos detras de una afirmacion de cumplimiento.
 
 ## Cierre
 
-La Suite Actuarial Mexicana demuestra que es posible cubrir el ciclo operativo completo de una aseguradora -- desde la mortalidad cruda hasta el reporte regulatorio -- en una sola libreria de Python con validacion rigurosa y precision decimal, sin depender de software propietario.
+La Suite Actuarial Mexicana demuestra cómo un proyecto open-source puede hacer más inspeccionables los conceptos, supuestos y cálculos actuariales mexicanos para estudiantes y analistas profesionales. Es una base para una validación institucional más profunda, no un sustituto de ese trabajo.
 
 **Repositorio**: [github.com/GonorAndres/suite-actuarial](https://github.com/GonorAndres/suite-actuarial)

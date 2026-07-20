@@ -6,7 +6,7 @@ loading the EMSSA-09 mortality table once and caching it at module level.
 """
 
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -76,6 +76,45 @@ class CompareResponse(BaseModel):
     dotal: PricingResponse
 
 
+class DotalLabRequest(PricingRequest):
+    """Assumptions for the guided limited-pay endowment laboratory."""
+
+    plazo_pago: int = Field(..., ge=1, le=99, description="Premium-paying term")
+    frecuencia_pago: Literal["anual", "semestral", "trimestral", "mensual"] = "anual"
+
+
+class ReservaDotalResponse(BaseModel):
+    """One point of the prospective reserve profile."""
+
+    anio: int
+    edad_alcanzada: int
+    reserva: float
+
+
+class VerificacionesDotalResponse(BaseModel):
+    """Actuarial checks evaluated by the domain model."""
+
+    descomposicion_beneficios: bool
+    principio_equivalencia: bool
+    reserva_inicial_cero: bool
+    reserva_final_igual_beneficio: bool
+    diferencia_equivalencia: float
+
+
+class DotalLabResponse(BaseModel):
+    """Inspectable result for the guided endowment experiment."""
+
+    prima: PricingResponse
+    plazo_pago: int
+    vp_beneficio_muerte: float
+    vp_beneficio_supervivencia: float
+    vp_beneficios_total: float
+    factor_anualidad_primas: float
+    prima_neta_anual_equivalente: float
+    reservas: list[ReservaDotalResponse]
+    verificaciones: VerificacionesDotalResponse
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -140,6 +179,45 @@ def _price_dotal(req: PricingRequest) -> PricingResponse:
     return _resultado_to_response("dotal", resultado)
 
 
+def _analyze_dotal(req: DotalLabRequest) -> DotalLabResponse:
+    tabla = _get_tabla()
+    config = _build_config(req, f"Dotal educativo {req.plazo_years}/{req.plazo_pago}")
+    asegurado = _build_asegurado(req)
+    producto = VidaDotal(config, tabla, plazo_pago=req.plazo_pago)
+    analisis = producto.analizar_producto(
+        asegurado,
+        frecuencia_pago=req.frecuencia_pago,
+    )
+    return DotalLabResponse(
+        prima=_resultado_to_response("dotal", analisis.resultado_prima),
+        plazo_pago=analisis.plazo_pago,
+        vp_beneficio_muerte=float(analisis.vp_beneficio_muerte),
+        vp_beneficio_supervivencia=float(analisis.vp_beneficio_supervivencia),
+        vp_beneficios_total=float(analisis.vp_beneficios_total),
+        factor_anualidad_primas=float(analisis.factor_anualidad_primas),
+        prima_neta_anual_equivalente=float(analisis.prima_neta_anual_equivalente),
+        reservas=[
+            ReservaDotalResponse(
+                anio=punto.anio,
+                edad_alcanzada=punto.edad_alcanzada,
+                reserva=float(punto.reserva),
+            )
+            for punto in analisis.reservas
+        ],
+        verificaciones=VerificacionesDotalResponse(
+            descomposicion_beneficios=analisis.verificaciones.descomposicion_beneficios,
+            principio_equivalencia=analisis.verificaciones.principio_equivalencia,
+            reserva_inicial_cero=analisis.verificaciones.reserva_inicial_cero,
+            reserva_final_igual_beneficio=(
+                analisis.verificaciones.reserva_final_igual_beneficio
+            ),
+            diferencia_equivalencia=float(
+                analisis.verificaciones.diferencia_equivalencia
+            ),
+        ),
+    )
+
+
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 
@@ -178,6 +256,15 @@ def price_dotal(req: PricingRequest):
     """
     try:
         return _price_dotal(req)
+    except (ValueError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/dotal/lab", response_model=DotalLabResponse)
+def analyze_dotal_lab(req: DotalLabRequest):
+    """Build and inspect a limited-pay endowment product."""
+    try:
+        return _analyze_dotal(req)
     except (ValueError, FileNotFoundError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

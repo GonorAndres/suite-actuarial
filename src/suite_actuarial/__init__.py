@@ -1,5 +1,5 @@
 """
-suite_actuarial - Libreria actuarial fundamental para el mercado mexicano.
+suite_actuarial - Laboratorio abierto para construir y examinar modelos actuariales.
 
 Cuatro dominios: Vida, Danos, Salud, Pensiones.
 Modulos transversales: Reservas, Reaseguro, Regulatorio, Config.

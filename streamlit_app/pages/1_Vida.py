@@ -25,14 +25,19 @@ from utils.calculations import (
     generar_tabla_comparacion,
     proyeccion_reservas,
 )
-from suite_actuarial import TablaMortalidad
+from utils.theme import apply_studio_theme, render_workbench_intro
+from suite_actuarial import Asegurado, ConfiguracionProducto, TablaMortalidad
+from suite_actuarial.core.models.common import Sexo
+from suite_actuarial.vida import VidaDotal
 
 st.set_page_config(page_title="Vida -- suite_actuarial", layout="wide")
 
-st.title("Seguros de Vida")
-st.markdown(
-    "Calculadora de primas y reservas para los 3 productos de vida "
-    "implementados en `suite_actuarial.vida`: **Temporal**, **Ordinario** y **Dotal**."
+apply_studio_theme()
+render_workbench_intro(
+    "MODEL WORKBENCH · VIDA",
+    "¿Cómo se financia una promesa de seguro?",
+    "Construye beneficios de fallecimiento y supervivencia, selecciona mortalidad y "
+    "descuento, y examina primas, reservas y sensibilidad.",
 )
 
 
@@ -74,9 +79,70 @@ with st.sidebar:
 # -----------------------------------------------------------------------
 # Tabs
 # -----------------------------------------------------------------------
-tab_calc, tab_comp, tab_reservas = st.tabs(
-    ["Calculadora", "Comparación", "Reservas"]
+tab_lab, tab_calc, tab_comp, tab_reservas = st.tabs(
+    ["Laboratorio dotal", "Productos", "Comparación", "Reservas"]
 )
+
+# ===== TAB 0: Laboratorio dotal limitado =====
+with tab_lab:
+    st.subheader("Dotal educativo con pago limitado")
+    st.markdown(
+        "Define un beneficio pagadero por fallecimiento durante el plazo o por "
+        "supervivencia al vencimiento. Las primas se concentran en un periodo menor."
+    )
+    plazo_pago = st.slider("Años de pago de prima", 1, plazo, min(10, plazo))
+    sexo_modelo = Sexo.HOMBRE if sexo == "Hombre" else Sexo.MUJER
+    try:
+        config_lab = ConfiguracionProducto(
+            nombre_producto=f"Dotal educativo {plazo}/{plazo_pago}",
+            plazo_years=plazo,
+            tasa_interes_tecnico=Decimal(str(tasa_decimal)),
+        )
+        asegurado_lab = Asegurado(
+            edad=edad,
+            sexo=sexo_modelo,
+            suma_asegurada=Decimal(str(suma_asegurada)),
+        )
+        producto_lab = VidaDotal(config_lab, tabla, plazo_pago=plazo_pago)
+        analisis_lab = producto_lab.analizar_producto(asegurado_lab)
+
+        metrica_1, metrica_2, metrica_3 = st.columns(3)
+        metrica_1.metric(
+            "Prima neta anual",
+            f"${analisis_lab.prima_neta_anual_equivalente:,.2f}",
+        )
+        metrica_2.metric(
+            "VP beneficio por muerte",
+            f"${analisis_lab.vp_beneficio_muerte:,.2f}",
+        )
+        metrica_3.metric(
+            "VP beneficio por supervivencia",
+            f"${analisis_lab.vp_beneficio_supervivencia:,.2f}",
+        )
+
+        reservas_lab = pd.DataFrame(
+            [punto.model_dump(mode="json") for punto in analisis_lab.reservas]
+        )
+        st.line_chart(reservas_lab, x="anio", y="reserva", color="#176B74")
+
+        checks_lab = analisis_lab.verificaciones
+        st.markdown("#### Verificaciones")
+        st.write(
+            {
+                "Muerte + supervivencia = beneficio total": checks_lab.descomposicion_beneficios,
+                "Principio de equivalencia": checks_lab.principio_equivalencia,
+                "Reserva inicial = 0": checks_lab.reserva_inicial_cero,
+                "Reserva final = suma asegurada": checks_lab.reserva_final_igual_beneficio,
+            }
+        )
+        with st.expander("Ver Python reproducible"):
+            st.code(
+                "producto = VidaDotal(config, tabla, plazo_pago=10)\n"
+                "analisis = producto.analizar_producto(asegurado)",
+                language="python",
+            )
+    except ValueError as exc:
+        st.warning(str(exc))
 
 # ===== TAB 1: Calculadora =====
 with tab_calc:

@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
+sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
 from decimal import Decimal
 
@@ -26,16 +27,19 @@ from suite_actuarial.core.validators import (
     ConfiguracionBootstrap,
     MetodoPromedio,
 )
+from utils.theme import apply_studio_theme, render_workbench_intro
 
 # ---------------------------------------------------------------------------
 # Configuracion de pagina
 # ---------------------------------------------------------------------------
 st.set_page_config(page_title="Reservas Técnicas", layout="wide")
 
-st.title("Reservas Técnicas IBNR")
-st.markdown(
-    "Estimación de reservas por siniestros incurridos pero no reportados (IBNR) "
-    "utilizando tres métodos actuariales estándar de la industria."
+apply_studio_theme()
+render_workbench_intro(
+    "MODEL WORKBENCH · RESERVAS",
+    "¿Qué costo de siniestros falta por desarrollarse?",
+    "Construye el triángulo, compara Chain Ladder y Bornhuetter-Ferguson, y "
+    "cuantifica incertidumbre con Bootstrap y diagnósticos de reserva.",
 )
 
 # ---------------------------------------------------------------------------

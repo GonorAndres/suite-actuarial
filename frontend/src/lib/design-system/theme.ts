@@ -14,17 +14,17 @@
 export const theme = {
   colors: {
     /** Ink -- primary text and headers */
-    navy: "#1A2740",
+    navy: "#18222D",
     /** Oxblood accent -- links, active states, primary emphasis */
-    terracotta: "#8A3B34",
+    terracotta: "#B4472D",
     /** Deep institutional green -- success states */
-    sage: "#38664A",
+    sage: "#176B74",
     /** Secondary paper surface */
-    cream: "#F2EEE4",
+    cream: "#EEF1EC",
     /** Primary paper surface */
-    offwhite: "#FBF9F5",
+    offwhite: "#F8F7F2",
     /** Aged gold -- rules, borders, restrained highlights */
-    amber: "#9C7A2F",
+    amber: "#B77A1E",
   },
 
   /**
@@ -43,8 +43,8 @@ export const theme = {
   },
 
   fonts: {
-    heading: "Playfair Display, Georgia, serif",
-    body: "Source Sans 3, system-ui, sans-serif",
+    heading: "IBM Plex Serif, Georgia, serif",
+    body: "IBM Plex Sans, system-ui, sans-serif",
   },
 
   spacing: {

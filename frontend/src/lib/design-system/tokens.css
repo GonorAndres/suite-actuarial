@@ -11,12 +11,12 @@
 
 :root {
   /* ---- Colors ---- */
-  --ds-color-navy: #1A2740;
-  --ds-color-terracotta: #8A3B34;
-  --ds-color-sage: #38664A;
-  --ds-color-cream: #F2EEE4;
-  --ds-color-offwhite: #FBF9F5;
-  --ds-color-amber: #9C7A2F;
+  --ds-color-navy: #18222D;
+  --ds-color-terracotta: #B4472D;
+  --ds-color-sage: #176B74;
+  --ds-color-cream: #EEF1EC;
+  --ds-color-offwhite: #F8F7F2;
+  --ds-color-amber: #B77A1E;
 
   /* ---- Chart series (validated categorical order) ---- */
   --ds-chart-1: #2A5FA8;

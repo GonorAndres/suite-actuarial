@@ -4,22 +4,15 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import type { TranslationKey } from "@/lib/i18n/translations";
 
-const NAV_ITEMS: { key: TranslationKey; href: string }[] = [
-  { key: "nav_inicio", href: "/" },
-  { key: "nav_vida", href: "/vida" },
-  { key: "nav_danos", href: "/danos" },
-  { key: "nav_salud", href: "/salud" },
-  { key: "nav_pensiones", href: "/pensiones" },
-  { key: "nav_reservas", href: "/reservas" },
-  { key: "nav_regulatorio", href: "/regulatorio" },
-  { key: "nav_reaseguro", href: "/reaseguro" },
-  { key: "nav_api", href: "/api-docs" },
+const NAV_ITEMS = [
+  { label: { es: "Ejemplo guiado", en: "Guided example" }, href: "/lab" },
+  { label: { es: "Biblioteca", en: "Library" }, href: "/#models" },
+  { label: { es: "Trazabilidad", en: "Traceability" }, href: "/#evidence" },
 ];
 
 export function Header() {
-  const { lang, setLang, t } = useLanguage();
+  const { lang, setLang } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
@@ -41,11 +34,11 @@ export function Header() {
             {NAV_ITEMS.map((item) => {
               const isActive =
                 item.href === "/"
-                  ? pathname === "/"
+                    ? pathname === "/"
                   : pathname.startsWith(item.href);
               return (
                 <Link
-                  key={item.key}
+                  key={item.href}
                   href={item.href}
                   className={[
                     "relative px-2.5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors",
@@ -54,7 +47,7 @@ export function Header() {
                       : "text-navy/65 hover:text-navy",
                   ].join(" ")}
                 >
-                  {t(item.key)}
+                  {item.label[lang]}
                   {/* Active underline indicator */}
                   <span
                     className={[
@@ -96,6 +89,14 @@ export function Header() {
                 EN
               </button>
             </div>
+            <a
+              href="https://github.com/GonorAndres/suite-actuarial"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:inline-flex px-3 py-2 text-xs font-semibold uppercase tracking-wider text-navy/65 hover:text-terracotta"
+            >
+              GitHub
+            </a>
 
             {/* Mobile hamburger */}
             <button
@@ -183,7 +184,7 @@ export function Header() {
                 : pathname.startsWith(item.href);
             return (
               <Link
-                key={item.key}
+                key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={[
@@ -193,10 +194,19 @@ export function Header() {
                     : "text-navy/70 hover:text-navy",
                 ].join(" ")}
               >
-                {t(item.key)}
+                {item.label[lang]}
               </Link>
             );
           })}
+          <a
+            href="https://github.com/GonorAndres/suite-actuarial"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMobileOpen(false)}
+            className="px-3 py-3 text-sm font-semibold uppercase tracking-wider border-b border-navy/10 text-navy/70 hover:text-navy"
+          >
+            GitHub
+          </a>
         </nav>
       </div>
     </>

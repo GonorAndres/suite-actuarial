@@ -23,6 +23,7 @@ class TestChainLadder:
         assert response.status_code == 200
         data = response.json()
         assert data["metodo"] == "chain_ladder"
+        assert data["unidad_monetaria"] == "millones_mxn"
         assert "reserva_total" in data
         assert "ultimate_total" in data
         assert "factores_desarrollo" in data
@@ -66,6 +67,7 @@ class TestBornhuetterFerguson:
         assert response.status_code == 200
         data = response.json()
         assert data["metodo"] == "bornhuetter_ferguson"
+        assert data["unidad_monetaria"] == "millones_mxn"
         assert "reserva_total" in data
         assert isinstance(data["reserva_total"], (int, float))
 
@@ -93,6 +95,7 @@ class TestBootstrap:
         assert response.status_code == 200
         data = response.json()
         assert data["metodo"] == "bootstrap"
+        assert data["unidad_monetaria"] == "millones_mxn"
         assert "reserva_total" in data
         assert "percentiles" in data
         assert isinstance(data["percentiles"], dict)

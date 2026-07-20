@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
+sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
 from datetime import date
 from decimal import Decimal
@@ -27,16 +28,19 @@ from suite_actuarial.core.validators import (
     Siniestro,
     TipoContrato,
 )
+from utils.theme import apply_studio_theme, render_workbench_intro
 
 # ---------------------------------------------------------------------------
 # Configuracion de pagina
 # ---------------------------------------------------------------------------
 st.set_page_config(page_title="Reaseguro", layout="wide")
 
-st.title("Contratos de Reaseguro")
-st.markdown(
-    "Simulador interactivo de los tres tipos de contrato de reaseguro: "
-    "proporcional (Quota Share) y no proporcional (Excess of Loss, Stop Loss)."
+apply_studio_theme()
+render_workbench_intro(
+    "MODEL WORKBENCH · REASEGURO",
+    "¿Cómo transferir exposición, capital y riesgo de cola?",
+    "Construye contratos proporcionales y no proporcionales, observa recuperaciones "
+    "por siniestro y compara la retención neta de la cedente.",
 )
 
 # ---------------------------------------------------------------------------

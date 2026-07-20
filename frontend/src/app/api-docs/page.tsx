@@ -613,8 +613,8 @@ const DOMAINS: DomainGroup[] = [
       {
         method: "POST",
         path: "/api/v1/regulatory/rcs",
-        desc_es: "Calcula el Requerimiento de Capital de Solvencia (RCS) completo. Agrega riesgos de suscripcion (vida y danos) e inversion usando una matriz de correlacion conforme a la CNSF. Se requiere al menos uno de config_vida, config_danos o config_inversion.",
-        desc_en: "Calculates the full Solvency Capital Requirement (RCS). Aggregates subscription risks (life and P&C) and investment risks using a correlation matrix per CNSF regulations. At least one of config_vida, config_danos, or config_inversion must be provided.",
+        desc_es: "Calcula un escenario de referencia del Requerimiento de Capital de Solvencia (RCS). Agrega riesgos de suscripcion (vida y danos) e inversion usando una matriz de correlacion simplificada. No sustituye el modelo regulatorio completo ni un calculo institucional aprobado.",
+        desc_en: "Calculates a reference Solvency Capital Requirement (RCS) scenario. Aggregates subscription risks (life and P&C) and investment risks using a simplified correlation matrix. It does not replace the complete regulatory model or an approved institutional calculation.",
         params: [
           { name: "config_vida", type: "object | null", required: false, default_val: "null", description_es: "Riesgos de suscripcion vida (suma_asegurada_total, reserva_matematica, edad_promedio_asegurados, duracion_promedio_polizas, numero_asegurados)", description_en: "Life subscription risks (suma_asegurada_total, reserva_matematica, edad_promedio_asegurados, duracion_promedio_polizas, numero_asegurados)" },
           { name: "config_danos", type: "object | null", required: false, default_val: "null", description_es: "Riesgos de suscripcion danos (primas_retenidas_12m, reserva_siniestros, coeficiente_variacion, numero_ramos)", description_en: "P&C subscription risks (primas_retenidas_12m, reserva_siniestros, coeficiente_variacion, numero_ramos)" },

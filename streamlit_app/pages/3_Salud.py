@@ -16,16 +16,19 @@ import streamlit as st
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
+sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
 from suite_actuarial.salud import GMM, NivelHospitalario, ZonaGeografica
+from utils.theme import apply_studio_theme, render_workbench_intro
 
 st.set_page_config(page_title="Salud -- suite_actuarial", layout="wide")
 
-st.title("Seguros de Salud")
-st.markdown(
-    "Producto de **Gastos Médicos Mayores** (GMM) implementado en "
-    "`suite_actuarial.salud`. Tarificación por bandas de edad quinquenales, "
-    "zona geográfica, nivel hospitalario, deducible y coaseguro."
+apply_studio_theme()
+render_workbench_intro(
+    "MODEL WORKBENCH · SALUD",
+    "¿Cómo se comparte un gasto médico incierto?",
+    "Examina el efecto de edad, zona, nivel hospitalario, deducible y coaseguro "
+    "sobre primas y pagos entre asegurado y aseguradora.",
 )
 
 # -----------------------------------------------------------------------

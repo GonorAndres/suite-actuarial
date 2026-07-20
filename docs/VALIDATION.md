@@ -1,4 +1,11 @@
-# Validacion y Benchmarks -- suite_actuarial
+# Validacion, evidencia y limitaciones -- suite_actuarial
+
+Este documento describe qué propiedades matemáticas y contratos de software se
+verifican en el repositorio. La validación de una fórmula o de una identidad
+actuarial no equivale a aprobación regulatoria, validación institucional ni
+certificación de datos. El proyecto sirve como toolkit educativo/de referencia
+y como workbench para analistas; los resultados deben revisarse contra las
+fuentes, supuestos y métodos aprobados por cada organización.
 
 ## 1. Tabla de mortalidad EMSSA-09
 
@@ -72,6 +79,21 @@ Desviacion maxima sobre todas las edades (18-100): 0.0000000000
 - Ley 73, 500 semanas: 33.07% del salario (Art. 167 LSS 1973)
 - Ley 73, 2060+ semanas: 100% cap
 - Factor edad 65: 1.00, Factor edad 60: 0.75
+
+## Qué demuestran los tests
+
+- Que las implementaciones satisfacen las identidades, invariantes y casos de
+  frontera que están expresamente cubiertos.
+- Que ciertos resultados son deterministas cuando se proporciona una semilla.
+- Que los modelos y adaptadores de API rechazan varios datos inválidos conocidos.
+
+## Qué no demuestran los tests
+
+- Que una tabla ilustrativa sea la tabla oficial vigente.
+- Que una simplificación represente el método completo exigido por CNSF, SAT,
+  CONSAR o IMSS.
+- Que un cálculo sea adecuado para una cartera, producto o reporte institucional
+  sin validación actuarial independiente.
 
 ## 6. Limitaciones conocidas
 

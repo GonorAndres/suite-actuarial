@@ -16,6 +16,8 @@ Características:
 
 from decimal import Decimal
 
+from pydantic import BaseModel, Field
+
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.actuarial.pricing.vida_pricing import calcular_anualidad
 from suite_actuarial.core.base_product import ProductoSeguro, TipoProducto
@@ -25,6 +27,38 @@ from suite_actuarial.core.validators import (
     ConfiguracionProducto,
     ResultadoCalculo,
 )
+
+
+class PuntoReservaDotal(BaseModel):
+    """Punto anual de la reserva prospectiva de un seguro dotal."""
+
+    anio: int = Field(..., ge=0)
+    edad_alcanzada: int = Field(..., ge=0)
+    reserva: Decimal
+
+
+class VerificacionesDotal(BaseModel):
+    """Identidades que hacen auditable un experimento de seguro dotal."""
+
+    descomposicion_beneficios: bool
+    principio_equivalencia: bool
+    reserva_inicial_cero: bool
+    reserva_final_igual_beneficio: bool
+    diferencia_equivalencia: Decimal = Field(..., ge=0)
+
+
+class ResultadoAnalisisDotal(BaseModel):
+    """Resultado reproducible para construir y examinar un seguro dotal."""
+
+    resultado_prima: ResultadoCalculo
+    plazo_pago: int = Field(..., ge=1)
+    vp_beneficio_muerte: Decimal = Field(..., ge=0)
+    vp_beneficio_supervivencia: Decimal = Field(..., ge=0)
+    vp_beneficios_total: Decimal = Field(..., ge=0)
+    factor_anualidad_primas: Decimal = Field(..., gt=0)
+    prima_neta_anual_equivalente: Decimal = Field(..., gt=0)
+    reservas: list[PuntoReservaDotal]
+    verificaciones: VerificacionesDotal
 
 
 class VidaDotal(ProductoSeguro):
@@ -86,7 +120,10 @@ class VidaDotal(ProductoSeguro):
         """
         super().__init__(config, TipoProducto.VIDA_DOTAL)
         self.tabla_mortalidad = tabla_mortalidad
-        self.plazo_pago = plazo_pago or config.plazo_years
+        self.plazo_pago = config.plazo_years if plazo_pago is None else plazo_pago
+
+        if self.plazo_pago < 1:
+            raise ValueError("El plazo de pago debe ser al menos 1 anio")
 
         if self.plazo_pago > config.plazo_years:
             raise ValueError(
@@ -209,6 +246,22 @@ class VidaDotal(ProductoSeguro):
         Returns:
             Valor presente actuarial del dotal
         """
+        vp_muerte, vp_supervivencia = self._calcular_componentes_beneficio(
+            edad=edad,
+            sexo=sexo,
+            plazo=plazo,
+            suma_asegurada=suma_asegurada,
+        )
+        return vp_muerte + vp_supervivencia
+
+    def _calcular_componentes_beneficio(
+        self,
+        edad: int,
+        sexo,
+        plazo: int,
+        suma_asegurada: Decimal,
+    ) -> tuple[Decimal, Decimal]:
+        """Calcula por separado los VP de muerte y supervivencia."""
         v = Decimal("1") / (Decimal("1") + self.config.tasa_interes_tecnico)
 
         # Componente 1: Muerte durante el plazo (igual que temporal)
@@ -232,10 +285,71 @@ class VidaDotal(ProductoSeguro):
         factor_descuento_final = v**plazo
         vp_supervivencia = factor_descuento_final * prob_supervivencia
 
-        # Total = Muerte + Supervivencia
-        vp_total = (vp_muerte + vp_supervivencia) * suma_asegurada
+        return vp_muerte * suma_asegurada, vp_supervivencia * suma_asegurada
 
-        return vp_total
+    def analizar_producto(
+        self,
+        asegurado: Asegurado,
+        frecuencia_pago: str = "anual",
+    ) -> ResultadoAnalisisDotal:
+        """Construye un análisis completo y verificable del producto.
+
+        Args:
+            asegurado: Perfil y suma asegurada del contrato.
+            frecuencia_pago: Frecuencia usada para presentar la prima.
+
+        Returns:
+            Descomposición de beneficios, prima, reservas e identidades.
+        """
+        resultado_prima = self.calcular_prima(
+            asegurado,
+            frecuencia_pago=frecuencia_pago,
+        )
+        vp_muerte, vp_supervivencia = self._calcular_componentes_beneficio(
+            edad=asegurado.edad,
+            sexo=asegurado.sexo,
+            plazo=self.config.plazo_years,
+            suma_asegurada=asegurado.suma_asegurada,
+        )
+        vp_total = vp_muerte + vp_supervivencia
+        factor_anualidad = calcular_anualidad(
+            tabla=self.tabla_mortalidad,
+            edad=asegurado.edad,
+            sexo=asegurado.sexo,
+            plazo=self.plazo_pago,
+            tasa_interes=self.config.tasa_interes_tecnico,
+            pago_anticipado=True,
+        )
+        prima_neta_anual = vp_total / factor_anualidad
+        diferencia_equivalencia = abs(prima_neta_anual * factor_anualidad - vp_total)
+        reservas = [
+            PuntoReservaDotal(
+                anio=anio,
+                edad_alcanzada=asegurado.edad + anio,
+                reserva=self.calcular_reserva(asegurado, anio),
+            )
+            for anio in range(self.config.plazo_years + 1)
+        ]
+
+        return ResultadoAnalisisDotal(
+            resultado_prima=resultado_prima,
+            plazo_pago=self.plazo_pago,
+            vp_beneficio_muerte=vp_muerte,
+            vp_beneficio_supervivencia=vp_supervivencia,
+            vp_beneficios_total=vp_total,
+            factor_anualidad_primas=factor_anualidad,
+            prima_neta_anual_equivalente=prima_neta_anual,
+            reservas=reservas,
+            verificaciones=VerificacionesDotal(
+                descomposicion_beneficios=(vp_total == vp_muerte + vp_supervivencia),
+                principio_equivalencia=diferencia_equivalencia <= Decimal("0.01"),
+                reserva_inicial_cero=reservas[0].reserva == Decimal("0"),
+                reserva_final_igual_beneficio=(
+                    reservas[-1].reserva == asegurado.suma_asegurada
+                ),
+                diferencia_equivalencia=diferencia_equivalencia,
+            ),
+        )
 
     def calcular_reserva(
         self,

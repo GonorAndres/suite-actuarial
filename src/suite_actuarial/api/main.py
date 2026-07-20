@@ -1,12 +1,11 @@
-"""
-Main FastAPI application for the Mexican Insurance Analytics Suite.
+"""Application server for the suite_actuarial open laboratory."""
 
-Provides REST endpoints for pricing, reinsurance, reserves, and regulatory
-calculations used in the Mexican insurance market.
-"""
+import os
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from suite_actuarial.api.routers import (
     config,
@@ -20,10 +19,10 @@ from suite_actuarial.api.routers import (
 )
 
 app = FastAPI(
-    title="Mexican Insurance Analytics Suite API",
+    title="suite_actuarial developer interface",
     version="2.1.0",
     description=(
-        "REST API for actuarial calculations in the Mexican insurance market. "
+        "Developer interface behind the open actuarial laboratory. "
         "Includes life product pricing (temporal, ordinario, dotal), "
         "reinsurance analysis (quota share, excess of loss, stop loss), "
         "reserve estimation (Chain Ladder, Bornhuetter-Ferguson, Bootstrap), "
@@ -50,11 +49,10 @@ app.include_router(regulatory.router, prefix="/api/v1")
 app.include_router(salud.router, prefix="/api/v1")
 
 
-@app.get("/", tags=["root"])
-def root():
-    """Return basic API information."""
+def api_information() -> dict[str, str | list[str]]:
+    """Return machine-readable project and developer-interface metadata."""
     return {
-        "name": "Mexican Insurance Analytics Suite API",
+        "name": "suite_actuarial open laboratory",
         "version": "2.1.0",
         "modules": [
             "config",
@@ -70,7 +68,24 @@ def root():
     }
 
 
+@app.get("/api/info", tags=["root"])
+def api_info() -> dict[str, str | list[str]]:
+    """Expose metadata without making the API the product's front door."""
+    return api_information()
+
+
 @app.get("/health", tags=["root"])
 def health_check():
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+frontend_directory = Path(os.environ.get("SUITE_ACTUARIAL_FRONTEND", "/app/frontend-static"))
+if frontend_directory.is_dir():
+    app.mount("/", StaticFiles(directory=frontend_directory, html=True), name="laboratory")
+else:
+
+    @app.get("/", tags=["root"])
+    def development_root() -> dict[str, str | list[str]]:
+        """Keep a useful root response when the static laboratory is not built."""
+        return api_information()

@@ -63,6 +63,7 @@ notebooks/*_executed.ipynb
 # Documentation
 docs/_build/
 site/
+docs/knowledge/
 
 # Environment variables
 .env
