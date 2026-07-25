@@ -122,6 +122,46 @@ notará nada.
   pruebas de integración: escala, frontera e insuficiencia para el ratio;
   recuperaciones calculadas a mano para 5M xs 5M, 5M xs 10M y 10M xs 20M.
 
+### Compuertas de verificación reparadas
+
+La compuerta de tipos llevaba tiempo sin comprobar nada: los stubs de numpy usan la
+sentencia `type` de PEP 695 y mypy, configurado en `python_version = "3.11"`, abortaba
+al parsearlos antes de leer un solo archivo del proyecto. En CI el paso además estaba
+marcado `continue-on-error`, así que el fallo no se veía. `ruff format --check` no
+corría en CI en absoluto, y `examples/` y `streamlit_app/` quedaban fuera de toda
+comprobación. Detalle en [`AGENTS.md`](AGENTS.md#verification).
+
+- **Corregido, defecto real que encontró la compuerta al volver a correr.**
+  `streamlit_app/pages/6_Regulatorio.py` construía `TablaMortalidad()` sin argumentos,
+  cuando `nombre` y `datos` son obligatorios: la pestaña de reserva matemática lanzaba
+  `TypeError`. Ahora usa `TablaMortalidad.cargar_emssa09()`, igual que el resto de la
+  app. El mismo error aparecía en el bloque de código de ejemplo que la página muestra
+  al lector.
+- **Nuevo `py.typed` (PEP 561).** El paquete publica sus anotaciones; antes cualquier
+  consumidor externo —incluidos `examples/` y `streamlit_app/`— lo veía sin tipos.
+- Las cuatro compuertas cubren ahora `src/`, `tests/`, `examples/` y `streamlit_app/`,
+  y corren en CI en **todas** las ramas, no solo en `main` y `develop`. `pytest` corre
+  en CI con `SUITE_REQUIRE_API=1`.
+- `openpyxl` pasa a `[dev]`. Sin él, las dos pruebas de exportación a Excel de
+  `test_reportes.py` se saltaban en silencio, en local y en CI.
+
+### Cambios menores de contrato
+
+Ninguno altera un resultado actuarial; se listan porque cambian una firma o un tipo.
+
+- `sum()` sobre agregados de `Decimal` lleva semilla `Decimal("0")` en reportes,
+  credibilidad, retenciones y suficiencia. Sobre una colección vacía devuelven
+  `Decimal("0")` y no el `int` `0`.
+- `CalculadoraRetencionesISR.calcular_retencion_masiva` indexa las claves obligatorias
+  (`tipo_seguro`, `monto_pago`, `monto_gravable`) en vez de usar `.get()`. Una clave
+  ausente ahora da `KeyError` en el sitio correcto, en lugar de propagar `None`.
+- `CurvaRendimiento` acepta `Sequence[float]` en `plazos`: los importadores desde CSV y
+  DataFrame ya construían plazos fraccionarios, que `tasa_spot` interpola.
+- `RCSInversion.obtener_shocks_aplicados` declara `dict[str, Decimal | str]`: siempre
+  devolvió la calificación como texto.
+- `VidaOrdinario.plazo_pago` sigue siendo `int | None`; la invariante "es `None` si y
+  solo si la prima es vitalicia" se hace explícita en `_plazo_pago_limitado`.
+
 ## 2.1.0 (2026-07-19)
 
 - Added effective-dated regulatory profiles with source references, hashes,

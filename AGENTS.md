@@ -164,15 +164,45 @@ Run these before considering a change complete, from the project virtualenv:
 
 ```bash
 .venv/bin/python -m pytest
-.venv/bin/python -m ruff check src/ tests/
-.venv/bin/python -m ruff format --check src/ tests/
-.venv/bin/python -m mypy src/ tests/
+.venv/bin/python -m ruff check src/ tests/ examples/ streamlit_app/
+.venv/bin/python -m ruff format --check src/ tests/ examples/ streamlit_app/
+.venv/bin/python -m mypy src/ tests/ examples/ streamlit_app/
 ```
+
+All four trees are covered, not just `src/` and `tests/`. `examples/` holds the labs and
+the worked cases that this file calls shared knowledge; leaving it outside the gate meant
+the code a reader is told to trust was the code nothing checked. The type gate found a
+real defect there the first time it ran: `streamlit_app/pages/6_Regulatorio.py` built
+`TablaMortalidad()` with no arguments, which raises `TypeError` on the way in.
 
 Use the interpreter explicitly. The optional API extras (`fastapi`, `httpx`) live only
 in the virtualenv; running a bare `pytest` against the system interpreter makes the
 71 integration tests skip silently instead of running. To turn a missing extra into a
-failure rather than a skip, set `SUITE_REQUIRE_API=1`.
+failure rather than a skip, set `SUITE_REQUIRE_API=1`. CI sets it.
+
+Refresh the virtualenv when the extras change; an existing `.venv` does not pick up a
+newly declared dependency on its own:
+
+```bash
+.venv/bin/python -m pip install -e ".[dev,api,viz]"
+```
+
+`viz` carries streamlit and plotly, without which `streamlit_app/` cannot be checked.
+A stale environment does not announce itself here — it makes a check disappear while
+the run still reports green. Both times this repo lost a check that way, the shape was
+the same: `openpyxl` missing made two Excel tests skip, and missing API extras made 71
+integration tests skip. If a gate suddenly has less to check, suspect the environment
+before believing the green.
+
+The four gates must be green. All four also run in CI, on every branch. Two notes on
+the type gate, both of which cost the project a real check in the past:
+
+- `mypy` reads its settings from `pyproject.toml`. Do not pass `--ignore-missing-imports`
+  on the command line: it silences errors the config would surface.
+- The config pins `python_version = "3.12"` even though the package supports 3.11.
+  Under `3.11` mypy refuses to parse numpy's PEP 695 stubs and aborts the whole run
+  before reading any project file, which reads as a broken gate rather than a clean one.
+  The 3.11 job in CI runs the real suite, so genuine 3.11 incompatibilities still fail.
 
 For frontend work, run from `frontend/`:
 
