@@ -10,7 +10,6 @@ import {
   Select,
   Tabs,
   LoadingSpinner,
-  Table,
   MetricCard,
   ProgressBar,
   Badge,
@@ -18,7 +17,7 @@ import {
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
 import { pricingApi } from "@/lib/api";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import type { PricingRequest, PricingResponse, CompareResponse } from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import {

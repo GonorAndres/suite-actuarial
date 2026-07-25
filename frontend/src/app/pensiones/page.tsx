@@ -557,24 +557,6 @@ function Ley97Results({
   result: Ley97Response;
   t: (key: TranslationKey) => string;
 }) {
-  const compareRows: [string, string, string][] = [
-    [
-      t("pension_mensual"),
-      formatCurrency(result.renta_vitalicia.pension_mensual),
-      formatCurrency(result.retiro_programado.pension_mensual),
-    ],
-    [
-      t("pension_anual"),
-      formatCurrency(result.renta_vitalicia.pension_anual),
-      formatCurrency(result.retiro_programado.pension_anual),
-    ],
-    [
-      t("pensiones_tipo"),
-      result.renta_vitalicia.tipo,
-      result.retiro_programado.tipo,
-    ],
-  ];
-
   const infoRows: [string, string][] = [
     [t("saldo_afore"), formatCurrency(result.saldo_afore)],
     [t("edad"), String(result.edad)],

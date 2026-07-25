@@ -10,9 +10,7 @@ import {
   Select,
   Tabs,
   LoadingSpinner,
-  Table,
   MetricCard,
-  ProgressBar,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
