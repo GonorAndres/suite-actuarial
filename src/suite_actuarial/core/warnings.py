@@ -3,4 +3,3 @@
 
 class ExperimentalModelWarning(UserWarning):
     """Emitted when a simplified or deprecated model is evaluated."""
-

@@ -72,7 +72,11 @@ class ValidadorPrimasDeducibles:
         faltantes: list[str] = []
         if metodo_pago is None:
             faltantes.append("metodo_pago")
-        if es_persona_fisica and tipo_seguro == TipoSeguroFiscal.PENSIONES and ingreso_anual is None:
+        if (
+            es_persona_fisica
+            and tipo_seguro == TipoSeguroFiscal.PENSIONES
+            and ingreso_anual is None
+        ):
             faltantes.append("ingreso_anual")
         if not es_persona_fisica and relacion_beneficiario is None:
             faltantes.append("relacion_beneficiario")
@@ -118,13 +122,9 @@ class ValidadorPrimasDeducibles:
         elif tipo_seguro == TipoSeguroFiscal.PENSIONES:
             # Aportaciones a planes de pensiones: deducible hasta 10% ingresos o 5 UMAs
             limite_uma = self.uma_anual * 5
-            limite_ingreso = (
-                ingreso_anual * Decimal("0.15") if ingreso_anual is not None else None
-            )
+            limite_ingreso = ingreso_anual * Decimal("0.15") if ingreso_anual is not None else None
             limite_aplicable = (
-                min(limite_uma, limite_ingreso)
-                if limite_ingreso is not None
-                else limite_uma
+                min(limite_uma, limite_ingreso) if limite_ingreso is not None else limite_uma
             )
             monto_deducible = min(monto_prima, limite_aplicable)
 
@@ -132,9 +132,7 @@ class ValidadorPrimasDeducibles:
                 es_deducible=True,
                 monto_prima=monto_prima,
                 monto_deducible=monto_deducible,
-                porcentaje_deducible=(monto_deducible / monto_prima * 100).quantize(
-                    Decimal("0.01")
-                )
+                porcentaje_deducible=(monto_deducible / monto_prima * 100).quantize(Decimal("0.01"))
                 if monto_prima > 0
                 else Decimal("0"),
                 limite_aplicado=(

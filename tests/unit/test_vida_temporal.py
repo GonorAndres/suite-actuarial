@@ -68,9 +68,7 @@ class TestVidaTemporal:
         assert producto.config.nombre_producto == "Vida Temporal 20 años"
         assert producto.plazo_pago == 20  # Por default igual al plazo
 
-    def test_calcular_prima_basica(
-        self, config_basica, tabla_simple, asegurado_basico
-    ):
+    def test_calcular_prima_basica(self, config_basica, tabla_simple, asegurado_basico):
         """Debe calcular prima correctamente"""
         producto = VidaTemporal(config_basica, tabla_simple)
         resultado = producto.calcular_prima(asegurado_basico)
@@ -93,30 +91,20 @@ class TestVidaTemporal:
         """La prima debe aumentar con la edad del asegurado"""
         producto = VidaTemporal(config_basica, tabla_simple)
 
-        asegurado_joven = Asegurado(
-            edad=25, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
-        asegurado_mayor = Asegurado(
-            edad=50, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
+        asegurado_joven = Asegurado(edad=25, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado_mayor = Asegurado(edad=50, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
 
         prima_joven = producto.calcular_prima(asegurado_joven).prima_total
         prima_mayor = producto.calcular_prima(asegurado_mayor).prima_total
 
         assert prima_mayor > prima_joven
 
-    def test_prima_aumenta_con_suma_asegurada(
-        self, config_basica, tabla_simple
-    ):
+    def test_prima_aumenta_con_suma_asegurada(self, config_basica, tabla_simple):
         """La prima debe ser proporcional a la suma asegurada"""
         producto = VidaTemporal(config_basica, tabla_simple)
 
-        asegurado_1m = Asegurado(
-            edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
-        asegurado_2m = Asegurado(
-            edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("2000000")
-        )
+        asegurado_1m = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado_2m = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("2000000"))
 
         prima_1m = producto.calcular_prima(asegurado_1m).prima_total
         prima_2m = producto.calcular_prima(asegurado_2m).prima_total
@@ -125,15 +113,11 @@ class TestVidaTemporal:
         ratio = prima_2m / prima_1m
         assert 1.95 < ratio < 2.05  # Aproximadamente 2x
 
-    def test_frecuencia_pago_mensual(
-        self, config_basica, tabla_simple, asegurado_basico
-    ):
+    def test_frecuencia_pago_mensual(self, config_basica, tabla_simple, asegurado_basico):
         """Debe calcular prima mensual correctamente"""
         producto = VidaTemporal(config_basica, tabla_simple)
 
-        prima_anual = producto.calcular_prima(
-            asegurado_basico, frecuencia_pago="anual"
-        ).prima_total
+        prima_anual = producto.calcular_prima(asegurado_basico, frecuencia_pago="anual").prima_total
 
         prima_mensual = producto.calcular_prima(
             asegurado_basico, frecuencia_pago="mensual"
@@ -143,67 +127,51 @@ class TestVidaTemporal:
         assert prima_mensual < prima_anual
         assert prima_mensual > (prima_anual / Decimal("13"))
 
-    def test_validar_asegurabilidad_edad_valida(
-        self, config_basica, tabla_simple
-    ):
+    def test_validar_asegurabilidad_edad_valida(self, config_basica, tabla_simple):
         """Asegurado con edad válida debe ser aceptado"""
         producto = VidaTemporal(config_basica, tabla_simple)
 
-        asegurado = Asegurado(
-            edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
+        asegurado = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado)
 
         assert es_asegurable is True
         assert razon is None
 
-    def test_validar_asegurabilidad_edad_muy_alta(
-        self, config_basica, tabla_simple
-    ):
+    def test_validar_asegurabilidad_edad_muy_alta(self, config_basica, tabla_simple):
         """Edad + plazo > 100 debe ser rechazado"""
         producto = VidaTemporal(config_basica, tabla_simple)
 
         # Edad 65 + plazo 20 = 85 años -- within base class age limit but exceeds temporal limit
         # Use edad within base class limit (<=70) but edad+plazo > 100
         # Actually edad 85 > 70 so base class rejects first
-        asegurado = Asegurado(
-            edad=85, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
+        asegurado = Asegurado(edad=85, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado)
 
         assert es_asegurable is False
         assert razon is not None
 
-    def test_validar_asegurabilidad_menor_de_edad(
-        self, config_basica, tabla_simple
-    ):
+    def test_validar_asegurabilidad_menor_de_edad(self, config_basica, tabla_simple):
         """Menores de 18 deben ser rechazados"""
         producto = VidaTemporal(config_basica, tabla_simple)
 
         # Edad menor válida según tabla pero menor de edad legal
-        asegurado = Asegurado(
-            edad=17, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
+        asegurado = Asegurado(edad=17, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado)
 
         assert es_asegurable is False
         assert "mayor de edad" in razon.lower()
 
-    def test_calcular_reserva_inicio_es_cero(
-        self, config_basica, tabla_simple, asegurado_basico
-    ):
+    def test_calcular_reserva_inicio_es_cero(self, config_basica, tabla_simple, asegurado_basico):
         """La reserva al inicio (año 0) debe ser cero"""
         producto = VidaTemporal(config_basica, tabla_simple)
         reserva = producto.calcular_reserva(asegurado_basico, anio=0)
 
         assert reserva == Decimal("0")
 
-    def test_calcular_reserva_final_es_cero(
-        self, config_basica, tabla_simple, asegurado_basico
-    ):
+    def test_calcular_reserva_final_es_cero(self, config_basica, tabla_simple, asegurado_basico):
         """La reserva al final del plazo debe ser cero"""
         producto = VidaTemporal(config_basica, tabla_simple)
         reserva = producto.calcular_reserva(asegurado_basico, anio=20)

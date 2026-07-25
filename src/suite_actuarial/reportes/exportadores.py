@@ -38,9 +38,7 @@ class ExportadorExcel:
 
     def __init__(self):
         if not OPENPYXL_AVAILABLE:
-            raise ImportError(
-                "openpyxl no está instalado. Instálalo con: pip install openpyxl"
-            )
+            raise ImportError("openpyxl no está instalado. Instálalo con: pip install openpyxl")
 
     def exportar_reporte_completo(
         self,
@@ -76,9 +74,7 @@ class ExportadorExcel:
 
             # Hojas de datos
             if df_suscripcion is not None and not df_suscripcion.empty:
-                df_suscripcion.to_excel(
-                    writer, sheet_name="Suscripción", index=False
-                )
+                df_suscripcion.to_excel(writer, sheet_name="Suscripción", index=False)
 
             if df_siniestros is not None and not df_siniestros.empty:
                 df_siniestros.to_excel(writer, sheet_name="Siniestros", index=False)
@@ -121,9 +117,7 @@ class ExportadorExcel:
         wb = load_workbook(ruta)
 
         # Estilos
-        header_fill = PatternFill(
-            start_color="1F4E78", end_color="1F4E78", fill_type="solid"
-        )
+        header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
         header_font = Font(bold=True, color="FFFFFF", size=11)
         border = Border(
             left=Side(style="thin"),
@@ -187,9 +181,7 @@ class ExportadorCSV:
         ... )
     """
 
-    def exportar_dataframe(
-        self, df: pd.DataFrame, ruta_salida: str, separador: str = ","
-    ) -> Path:
+    def exportar_dataframe(self, df: pd.DataFrame, ruta_salida: str, separador: str = ",") -> Path:
         """
         Exporta DataFrame a CSV.
 

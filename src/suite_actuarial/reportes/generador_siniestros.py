@@ -96,9 +96,7 @@ class GeneradorReporteSiniestros:
         total_pagados = reporte.total_siniestros_pagados
         total_reservas = reporte.total_reservas
         total_casos = sum(d.numero_siniestros for d in reporte.datos_por_ramo)
-        total_pendientes = sum(
-            d.numero_siniestros_pendientes for d in reporte.datos_por_ramo
-        )
+        total_pendientes = sum(d.numero_siniestros_pendientes for d in reporte.datos_por_ramo)
 
         # Porcentaje de casos pendientes
         pct_pendientes = (
@@ -132,14 +130,10 @@ class GeneradorReporteSiniestros:
             "numero_casos": total_casos,
             "numero_pendientes": total_pendientes,
             "pct_casos_pendientes": float(pct_pendientes.quantize(Decimal("0.01"))),
-            "costo_promedio_general": float(
-                total_pagados / total_casos if total_casos > 0 else 0
-            ),
+            "costo_promedio_general": float(total_pagados / total_casos if total_casos > 0 else 0),
             "ramo_mas_siniestros": self._formatear_nombre_ramo(ramo_top.ramo),
             "ramo_mayor_costo_promedio": (
-                self._formatear_nombre_ramo(ramo_mayor_costo.ramo)
-                if ramo_mayor_costo
-                else "N/A"
+                self._formatear_nombre_ramo(ramo_mayor_costo.ramo) if ramo_mayor_costo else "N/A"
             ),
             "mayor_costo_promedio": float(mayor_costo_promedio),
         }

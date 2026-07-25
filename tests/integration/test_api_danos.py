@@ -1,7 +1,6 @@
 """Integration tests for the danos (P&C) API endpoints."""
 
 
-
 class TestAutoCalcuar:
     def test_success(self, api_client):
         payload = {

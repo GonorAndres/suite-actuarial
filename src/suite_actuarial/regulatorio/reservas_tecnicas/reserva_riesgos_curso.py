@@ -83,9 +83,7 @@ class CalculadoraRRC:
             dias_transcurridos = self.config.dias_promedio_transcurridos
             dias_por_transcurrir = max(dias_vigencia - dias_transcurridos, 0)
 
-            fraccion_no_devengada = Decimal(dias_por_transcurrir) / Decimal(
-                dias_vigencia
-            )
+            fraccion_no_devengada = Decimal(dias_por_transcurrir) / Decimal(dias_vigencia)
             reserva = prima_emitida * fraccion_no_devengada
 
             prima_no_devengada = reserva
@@ -96,16 +94,12 @@ class CalculadoraRRC:
             prima_devengada = self.config.prima_devengada
             prima_no_devengada = prima_emitida - prima_devengada
 
-            porcentaje = (
-                prima_no_devengada / prima_emitida if prima_emitida > 0 else Decimal("0")
-            )
+            porcentaje = prima_no_devengada / prima_emitida if prima_emitida > 0 else Decimal("0")
             reserva = prima_no_devengada
 
             # Estimar días transcurridos
             dias_transcurridos = int(
-                dias_vigencia * float(prima_devengada / prima_emitida)
-                if prima_emitida > 0
-                else 0
+                dias_vigencia * float(prima_devengada / prima_emitida) if prima_emitida > 0 else 0
             )
             dias_por_transcurrir = dias_vigencia - dias_transcurridos
 
@@ -129,9 +123,7 @@ class CalculadoraRRC:
         prima_devengada = self.config.prima_devengada
         prima_no_devengada = prima_emitida - prima_devengada
 
-        porcentaje = (
-            prima_no_devengada / prima_emitida if prima_emitida > 0 else Decimal("0")
-        )
+        porcentaje = prima_no_devengada / prima_emitida if prima_emitida > 0 else Decimal("0")
 
         return ResultadoRRC(
             reserva_calculada=prima_no_devengada.quantize(Decimal("0.01")),

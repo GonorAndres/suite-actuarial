@@ -190,9 +190,7 @@ class TestCalculoPrima:
     def test_prima_oficinas(self, rc_oficinas):
         """Oficinas: (5,000,000/1000) * 1.20 * 1.00 = 6,000.00."""
         esperada = (
-            (Decimal("5000000") / Decimal("1000"))
-            * Decimal("1.20")
-            * Decimal("1.00")
+            (Decimal("5000000") / Decimal("1000")) * Decimal("1.20") * Decimal("1.00")
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         assert rc_oficinas.calcular_prima() == esperada
         assert rc_oficinas.calcular_prima() == Decimal("6000.00")
@@ -200,9 +198,7 @@ class TestCalculoPrima:
     def test_prima_construccion(self, rc_construccion):
         """Construccion: (10,000,000/1000) * 5.00 * 0.80 = 40,000.00."""
         esperada = (
-            (Decimal("10000000") / Decimal("1000"))
-            * Decimal("5.00")
-            * Decimal("0.80")
+            (Decimal("10000000") / Decimal("1000")) * Decimal("5.00") * Decimal("0.80")
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         assert rc_construccion.calcular_prima() == esperada
         assert rc_construccion.calcular_prima() == Decimal("40000.00")
@@ -210,9 +206,7 @@ class TestCalculoPrima:
     def test_prima_restaurante(self, rc_restaurante):
         """Restaurante: (2,000,000/1000) * 2.50 * 0.90 = 4,500.00."""
         esperada = (
-            (Decimal("2000000") / Decimal("1000"))
-            * Decimal("2.50")
-            * Decimal("0.90")
+            (Decimal("2000000") / Decimal("1000")) * Decimal("2.50") * Decimal("0.90")
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         assert rc_restaurante.calcular_prima() == esperada
         assert rc_restaurante.calcular_prima() == Decimal("4500.00")

@@ -36,9 +36,9 @@ class NivelHospitalario(StrEnum):
 
 
 class ZonaGeografica(StrEnum):
-    METRO = "metro"       # CDMX, Monterrey, Guadalajara
-    URBANO = "urbano"     # Other large cities
-    FORANEO = "foraneo"   # Small cities and rural
+    METRO = "metro"  # CDMX, Monterrey, Guadalajara
+    URBANO = "urbano"  # Other large cities
+    FORANEO = "foraneo"  # Small cities and rural
 
 
 class GMM:
@@ -91,7 +91,7 @@ class GMM:
     FACTORES_DEDUCIBLE = {
         Decimal("10000"): Decimal("1.40"),
         Decimal("25000"): Decimal("1.15"),
-        Decimal("50000"): Decimal("1.00"),   # Base
+        Decimal("50000"): Decimal("1.00"),  # Base
         Decimal("100000"): Decimal("0.80"),
         Decimal("250000"): Decimal("0.60"),
         Decimal("500000"): Decimal("0.45"),
@@ -132,26 +132,20 @@ class GMM:
         if sexo not in ("M", "F"):
             raise ValueError("El sexo debe ser 'M' o 'F'.")
         if suma_asegurada < Decimal("1000000"):
-            raise ValueError(
-                "La suma asegurada minima para GMM es 1,000,000 MXN."
-            )
+            raise ValueError("La suma asegurada minima para GMM es 1,000,000 MXN.")
         if deducible < 0:
             raise ValueError("El deducible no puede ser negativo.")
         if not (Decimal("0") < coaseguro_pct <= Decimal("1")):
-            raise ValueError(
-                "El porcentaje de coaseguro debe estar entre 0 (exclusivo) y 1."
-            )
+            raise ValueError("El porcentaje de coaseguro debe estar entre 0 (exclusivo) y 1.")
         if tope_coaseguro is not None and tope_coaseguro < 0:
             raise ValueError("El tope de coaseguro no puede ser negativo.")
         if not isinstance(zona, ZonaGeografica):
             raise ValueError(
-                f"Zona no valida: {zona}. "
-                f"Opciones: {[z.value for z in ZonaGeografica]}"
+                f"Zona no valida: {zona}. Opciones: {[z.value for z in ZonaGeografica]}"
             )
         if not isinstance(nivel, NivelHospitalario):
             raise ValueError(
-                f"Nivel no valido: {nivel}. "
-                f"Opciones: {[n.value for n in NivelHospitalario]}"
+                f"Nivel no valido: {nivel}. Opciones: {[n.value for n in NivelHospitalario]}"
             )
 
         self.edad = edad
@@ -159,9 +153,7 @@ class GMM:
         self.suma_asegurada = Decimal(str(suma_asegurada))
         self.deducible = Decimal(str(deducible))
         self.coaseguro_pct = Decimal(str(coaseguro_pct))
-        self.tope_coaseguro = (
-            Decimal(str(tope_coaseguro)) if tope_coaseguro is not None else None
-        )
+        self.tope_coaseguro = Decimal(str(tope_coaseguro)) if tope_coaseguro is not None else None
         self.zona = zona
         self.nivel = nivel
         self.margen_operativo = Decimal(str(margen_operativo))
@@ -361,9 +353,9 @@ class GMM:
         )
 
         # Total que paga el asegurado
-        pago_asegurado = (
-            self.deducible + coaseguro_asegurado + exceso_no_cubierto
-        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        pago_asegurado = (self.deducible + coaseguro_asegurado + exceso_no_cubierto).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
 
         return {
             "monto_reclamacion": monto,

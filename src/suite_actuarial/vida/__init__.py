@@ -1,4 +1,5 @@
 """Productos de seguros de vida."""
+
 from suite_actuarial.vida.dotal import (
     PuntoReservaDotal,
     ResultadoAnalisisDotal,

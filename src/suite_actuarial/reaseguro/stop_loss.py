@@ -75,9 +75,7 @@ class StopLoss(ContratoReaseguro):
         if primas_totales == 0:
             raise ValueError("Las primas totales no pueden ser cero")
 
-        siniestralidad = (siniestros_totales / primas_totales) * Decimal(
-            "100"
-        )
+        siniestralidad = (siniestros_totales / primas_totales) * Decimal("100")
         return siniestralidad
 
     def calcular_recuperacion(
@@ -104,9 +102,7 @@ class StopLoss(ContratoReaseguro):
             Monto a recuperar del reasegurador
         """
         # Calcular siniestralidad
-        siniestralidad = self.calcular_siniestralidad(
-            siniestros_totales, primas_totales
-        )
+        siniestralidad = self.calcular_siniestralidad(siniestros_totales, primas_totales)
 
         # Si no excede el attachment point, no hay recuperación
         if siniestralidad <= self.config.attachment_point:
@@ -119,9 +115,7 @@ class StopLoss(ContratoReaseguro):
         exceso_monto = primas_totales * (exceso_pct / Decimal("100"))
 
         # Calcular límite en monto
-        limite_monto = primas_totales * (
-            self.config.limite_cobertura / Decimal("100")
-        )
+        limite_monto = primas_totales * (self.config.limite_cobertura / Decimal("100"))
 
         # Recuperación es el menor entre exceso y límite
         recuperacion = min(exceso_monto, limite_monto)
@@ -153,9 +147,7 @@ class StopLoss(ContratoReaseguro):
         if primas_totales == 0:
             return Decimal("0")
 
-        siniestralidad_neta = (siniestros_netos / primas_totales) * Decimal(
-            "100"
-        )
+        siniestralidad_neta = (siniestros_netos / primas_totales) * Decimal("100")
         return siniestralidad_neta
 
     def calcular_prima_reaseguro(self) -> Decimal:
@@ -197,19 +189,13 @@ class StopLoss(ContratoReaseguro):
             ResultadoReaseguro con el análisis completo
         """
         # Calcular siniestros totales
-        siniestros_totales = sum(
-            s.monto_bruto for s in siniestros if self.validar_siniestro(s)
-        )
+        siniestros_totales = sum(s.monto_bruto for s in siniestros if self.validar_siniestro(s))
 
         # Calcular siniestralidad bruta
-        siniestralidad_bruta = self.calcular_siniestralidad(
-            siniestros_totales, primas_totales
-        )
+        siniestralidad_bruta = self.calcular_siniestralidad(siniestros_totales, primas_totales)
 
         # Calcular recuperación
-        recuperacion = self.calcular_recuperacion(
-            siniestros_totales, primas_totales
-        )
+        recuperacion = self.calcular_recuperacion(siniestros_totales, primas_totales)
 
         # Calcular siniestralidad neta
         siniestralidad_neta = self.calcular_siniestralidad_neta(
@@ -243,9 +229,7 @@ class StopLoss(ContratoReaseguro):
 
         # Ratio de cesión basado en la recuperación sobre siniestros totales
         ratio_cesion = (
-            (recuperacion / siniestros_totales * 100)
-            if siniestros_totales > 0
-            else Decimal("0")
+            (recuperacion / siniestros_totales * 100) if siniestros_totales > 0 else Decimal("0")
         )
 
         return ResultadoReaseguro(

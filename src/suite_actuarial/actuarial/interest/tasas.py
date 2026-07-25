@@ -56,9 +56,7 @@ class CurvaRendimiento:
                 are empty, or contain invalid values.
         """
         if len(plazos) != len(tasas):
-            raise ValueError(
-                "plazos y tasas deben tener la misma longitud."
-            )
+            raise ValueError("plazos y tasas deben tener la misma longitud.")
         if len(plazos) == 0:
             raise ValueError("Se requiere al menos un plazo y tasa.")
         if any(p <= 0 for p in plazos):
@@ -171,9 +169,7 @@ class CurvaRendimiento:
         ratio_float = float(ratio)
         dt_float = float(dt)
         forward_float = ratio_float ** (1.0 / dt_float) - 1.0
-        forward = Decimal(str(forward_float)).quantize(
-            Decimal("0.000001"), rounding=ROUND_HALF_UP
-        )
+        forward = Decimal(str(forward_float)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
         return forward
 
@@ -197,9 +193,7 @@ class CurvaRendimiento:
         factor = Decimal("1") / ((Decimal("1") + r) ** plazo_d)
         return factor.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
-    def valor_presente(
-        self, flujos: list[Decimal], plazos: list[float]
-    ) -> Decimal:
+    def valor_presente(self, flujos: list[Decimal], plazos: list[float]) -> Decimal:
         """
         Present value of a series of cashflows.
 
@@ -216,9 +210,7 @@ class CurvaRendimiento:
             ValueError: If flujos and plazos have different lengths.
         """
         if len(flujos) != len(plazos):
-            raise ValueError(
-                "flujos y plazos deben tener la misma longitud."
-            )
+            raise ValueError("flujos y plazos deben tener la misma longitud.")
 
         pv = Decimal("0")
         for flujo, plazo in zip(flujos, plazos, strict=True):

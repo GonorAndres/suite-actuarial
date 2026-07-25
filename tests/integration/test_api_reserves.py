@@ -1,6 +1,5 @@
 """Integration tests for the reserves API endpoints."""
 
-
 VALID_TRIANGLE = [
     [3000, 5000, 5600, 5800, 5900],
     [3200, 5200, 5800, 6000, None],

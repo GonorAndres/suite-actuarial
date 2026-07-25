@@ -82,9 +82,7 @@ class TablaMortalidad:
 
         if not columnas_requeridas.issubset(columnas_presentes):
             faltantes = columnas_requeridas - columnas_presentes
-            raise ValueError(
-                f"Faltan columnas requeridas en la tabla: {faltantes}"
-            )
+            raise ValueError(f"Faltan columnas requeridas en la tabla: {faltantes}")
 
         # Validar tipos de datos
         if not pd.api.types.is_numeric_dtype(self.datos["edad"]):
@@ -141,9 +139,7 @@ class TablaMortalidad:
             sexo = Sexo(sexo)
 
         # Buscar en la tabla
-        mascara = (self.datos["edad"] == edad) & (
-            self.datos["sexo"] == sexo.value
-        )
+        mascara = (self.datos["edad"] == edad) & (self.datos["sexo"] == sexo.value)
         resultados = self.datos[mascara]
 
         if len(resultados) == 0:
@@ -158,8 +154,7 @@ class TablaMortalidad:
                 return self._interpolar_qx(edad, sexo)
             else:
                 raise ValueError(
-                    f"No existe qx para edad={edad}, sexo={sexo.value} "
-                    f"en la tabla {self.nombre}"
+                    f"No existe qx para edad={edad}, sexo={sexo.value} en la tabla {self.nombre}"
                 )
 
         # Retornar como Decimal para precisión
@@ -184,9 +179,7 @@ class TablaMortalidad:
         datos_sexo = self.datos[self.datos["sexo"] == sexo.value].copy()
 
         if len(datos_sexo) < 2:
-            raise ValueError(
-                f"No hay suficientes datos para interpolar en sexo={sexo.value}"
-            )
+            raise ValueError(f"No hay suficientes datos para interpolar en sexo={sexo.value}")
 
         # Ordenar por edad
         datos_sexo = datos_sexo.sort_values("edad")
@@ -378,8 +371,7 @@ class TablaMortalidad:
                 return cls.desde_csv(ruta, nombre="EMSSA-09")
 
         raise FileNotFoundError(
-            "No se encontro la tabla EMSSA-09. "
-            "Instala el paquete con: pip install suite-actuarial"
+            "No se encontro la tabla EMSSA-09. Instala el paquete con: pip install suite-actuarial"
         )
 
     def guardar_csv(self, path: str | Path) -> None:
@@ -396,6 +388,5 @@ class TablaMortalidad:
         num_registros = len(self.datos)
         edades = f"{self.datos['edad'].min()}-{self.datos['edad'].max()}"
         return (
-            f"TablaMortalidad(nombre='{self.nombre}', "
-            f"registros={num_registros}, edades={edades})"
+            f"TablaMortalidad(nombre='{self.nombre}', registros={num_registros}, edades={edades})"
         )

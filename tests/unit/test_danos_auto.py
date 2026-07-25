@@ -25,6 +25,7 @@ from suite_actuarial.danos.tablas_amis import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def auto_compacto():
     """Sedan compacto nuevo en CDMX, conductor joven."""
@@ -68,6 +69,7 @@ def moto():
 # Tests de construccion
 # ---------------------------------------------------------------------------
 
+
 class TestConstruccion:
     def test_crear_auto_compacto(self, auto_compacto):
         assert auto_compacto.grupo == 1
@@ -98,7 +100,11 @@ class TestConstruccion:
     def test_deducible_invalido(self):
         with pytest.raises(ValueError, match="Deducible"):
             SeguroAuto(
-                Decimal("100000"), "sedan_compacto", 0, "cdmx_norte", 25,
+                Decimal("100000"),
+                "sedan_compacto",
+                0,
+                "cdmx_norte",
+                25,
                 deducible_pct=Decimal("0.50"),
             )
 
@@ -106,6 +112,7 @@ class TestConstruccion:
 # ---------------------------------------------------------------------------
 # Tests de tarificacion
 # ---------------------------------------------------------------------------
+
 
 class TestTarificacion:
     def test_tarifa_todas_coberturas(self, auto_compacto):
@@ -124,32 +131,20 @@ class TestTarificacion:
 
     def test_zona_alto_riesgo_mayor(self):
         """CDMX norte (1.40) vs Merida (0.85): misma config, zona diferente."""
-        auto_cdmx = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "cdmx_norte", 30
-        )
-        auto_merida = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "merida", 30
-        )
+        auto_cdmx = SeguroAuto(Decimal("300000"), "sedan_compacto", 0, "cdmx_norte", 30)
+        auto_merida = SeguroAuto(Decimal("300000"), "sedan_compacto", 0, "merida", 30)
         assert auto_cdmx.calcular_prima_total() > auto_merida.calcular_prima_total()
 
     def test_edad_joven_mayor_prima(self):
         """Conductor joven (18-25) paga mas que adulto (36-50)."""
-        auto_joven = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "queretaro", 20
-        )
-        auto_adulto = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "queretaro", 40
-        )
+        auto_joven = SeguroAuto(Decimal("300000"), "sedan_compacto", 0, "queretaro", 20)
+        auto_adulto = SeguroAuto(Decimal("300000"), "sedan_compacto", 0, "queretaro", 40)
         assert auto_joven.calcular_prima_total() > auto_adulto.calcular_prima_total()
 
     def test_depreciacion_reduce_prima(self):
         """Vehiculo viejo tiene prima menor (menor valor asegurado)."""
-        auto_nuevo = SeguroAuto(
-            Decimal("400000"), "sedan_mediano", 0, "guadalajara", 35
-        )
-        auto_5anos = SeguroAuto(
-            Decimal("400000"), "sedan_mediano", 5, "guadalajara", 35
-        )
+        auto_nuevo = SeguroAuto(Decimal("400000"), "sedan_mediano", 0, "guadalajara", 35)
+        auto_5anos = SeguroAuto(Decimal("400000"), "sedan_mediano", 5, "guadalajara", 35)
         assert auto_nuevo.calcular_prima_total() > auto_5anos.calcular_prima_total()
 
 
@@ -157,15 +152,24 @@ class TestTarificacion:
 # Tests de deducible
 # ---------------------------------------------------------------------------
 
+
 class TestDeducible:
     def test_deducible_bajo_mas_caro(self):
         """Deducible 3% = mas caro que 5%."""
         auto_3 = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "queretaro", 30,
+            Decimal("300000"),
+            "sedan_compacto",
+            0,
+            "queretaro",
+            30,
             deducible_pct=Decimal("0.03"),
         )
         auto_5 = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "queretaro", 30,
+            Decimal("300000"),
+            "sedan_compacto",
+            0,
+            "queretaro",
+            30,
             deducible_pct=Decimal("0.05"),
         )
         assert auto_3.calcular_prima_total() > auto_5.calcular_prima_total()
@@ -173,11 +177,19 @@ class TestDeducible:
     def test_deducible_alto_descuento(self):
         """Deducible 20% = descuento significativo."""
         auto_5 = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "queretaro", 30,
+            Decimal("300000"),
+            "sedan_compacto",
+            0,
+            "queretaro",
+            30,
             deducible_pct=Decimal("0.05"),
         )
         auto_20 = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "queretaro", 30,
+            Decimal("300000"),
+            "sedan_compacto",
+            0,
+            "queretaro",
+            30,
             deducible_pct=Decimal("0.20"),
         )
         assert auto_20.calcular_prima_total() < auto_5.calcular_prima_total()
@@ -185,11 +197,19 @@ class TestDeducible:
     def test_deducible_solo_afecta_propias(self):
         """Deducible solo afecta danos materiales y robo, no RC."""
         auto_3 = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "queretaro", 30,
+            Decimal("300000"),
+            "sedan_compacto",
+            0,
+            "queretaro",
+            30,
             deducible_pct=Decimal("0.03"),
         )
         auto_20 = SeguroAuto(
-            Decimal("300000"), "sedan_compacto", 0, "queretaro", 30,
+            Decimal("300000"),
+            "sedan_compacto",
+            0,
+            "queretaro",
+            30,
             deducible_pct=Decimal("0.20"),
         )
         t3 = auto_3.calcular_tarifa()
@@ -203,6 +223,7 @@ class TestDeducible:
 # ---------------------------------------------------------------------------
 # Tests de Bonus-Malus
 # ---------------------------------------------------------------------------
+
 
 class TestBonusMalus:
     def test_sin_siniestros_descuento(self, auto_compacto):
@@ -228,6 +249,7 @@ class TestBonusMalus:
 # Tests de seleccion de coberturas
 # ---------------------------------------------------------------------------
 
+
 class TestSeleccionCoberturas:
     def test_solo_rc(self, auto_compacto):
         """Solo coberturas basicas (RC)."""
@@ -250,6 +272,7 @@ class TestSeleccionCoberturas:
 # ---------------------------------------------------------------------------
 # Tests de cotizacion completa
 # ---------------------------------------------------------------------------
+
 
 class TestCotizacion:
     def test_cotizacion_estructura(self, auto_compacto):
@@ -291,6 +314,7 @@ class TestCotizacion:
 # ---------------------------------------------------------------------------
 # Tests de tablas AMIS auxiliares
 # ---------------------------------------------------------------------------
+
 
 class TestTablasAMIS:
     def test_obtener_grupo_valido(self):

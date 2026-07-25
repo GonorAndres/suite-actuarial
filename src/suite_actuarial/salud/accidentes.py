@@ -46,7 +46,7 @@ class AccidentesEnfermedades:
 
     # Indemnification percentages (% of sum insured)
     TABLA_PERDIDAS_ORGANICAS = {
-        "muerte_accidental": Decimal("1.00"),       # 100% SA
+        "muerte_accidental": Decimal("1.00"),  # 100% SA
         "perdida_ambas_manos": Decimal("1.00"),
         "perdida_ambos_pies": Decimal("1.00"),
         "perdida_vista_ambos_ojos": Decimal("1.00"),
@@ -84,17 +84,14 @@ class AccidentesEnfermedades:
                 Si None, se calcula como 0.1% de la SA.
         """
         if not (18 <= edad <= 70):
-            raise ValueError(
-                "La edad debe estar entre 18 y 70 anos para A&E."
-            )
+            raise ValueError("La edad debe estar entre 18 y 70 anos para A&E.")
         if sexo not in ("M", "F"):
             raise ValueError("El sexo debe ser 'M' o 'F'.")
         if suma_asegurada <= 0:
             raise ValueError("La suma asegurada debe ser positiva.")
         if ocupacion not in self.FACTORES_OCUPACION:
             raise ValueError(
-                f"Ocupacion no valida: {ocupacion}. "
-                f"Opciones: {list(self.FACTORES_OCUPACION)}"
+                f"Ocupacion no valida: {ocupacion}. Opciones: {list(self.FACTORES_OCUPACION)}"
             )
 
         self.edad = edad
@@ -152,9 +149,9 @@ class AccidentesEnfermedades:
                 "monto": monto,
             }
 
-        gastos_funerarios = (
-            self.suma_asegurada * self.FACTOR_GASTOS_FUNERARIOS
-        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        gastos_funerarios = (self.suma_asegurada * self.FACTOR_GASTOS_FUNERARIOS).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
 
         return {
             "suma_asegurada": self.suma_asegurada,

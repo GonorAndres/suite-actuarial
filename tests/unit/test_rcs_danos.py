@@ -53,7 +53,6 @@ def config_many_ramos():
 
 
 class TestRCSPrima:
-
     def test_rcs_prima_positive(self, rcs_danos):
         """RCS prima must be strictly positive for nonzero primas."""
         result = rcs_danos.calcular_rcs_prima()
@@ -88,7 +87,6 @@ class TestRCSPrima:
 
 
 class TestRCSReserva:
-
     def test_rcs_reserva_positive(self, rcs_danos):
         """RCS reserva must be strictly positive for nonzero reserva."""
         result = rcs_danos.calcular_rcs_reserva()
@@ -123,7 +121,6 @@ class TestRCSReserva:
 
 
 class TestRCSTotalDanos:
-
     def test_total_structure(self, rcs_danos):
         """calcular_rcs_total_danos returns (Decimal, dict)."""
         rcs_total, desglose = rcs_danos.calcular_rcs_total_danos()
@@ -139,7 +136,7 @@ class TestRCSTotalDanos:
         rcs_reserva = rcs_danos.calcular_rcs_reserva()
 
         rho = Decimal("0.5")
-        suma = rcs_prima ** 2 + rcs_reserva ** 2 + 2 * rho * rcs_prima * rcs_reserva
+        suma = rcs_prima**2 + rcs_reserva**2 + 2 * rho * rcs_prima * rcs_reserva
         expected = Decimal(str(math.sqrt(float(suma)))).quantize(Decimal("0.01"))
 
         rcs_total, _ = rcs_danos.calcular_rcs_total_danos()
@@ -164,7 +161,6 @@ class TestRCSTotalDanos:
 
 
 class TestCVSensitivity:
-
     def test_higher_cv_increases_rcs_prima(self):
         """Increasing CV must increase RCS prima (alpha*primas*sigma*factor)."""
         base = ConfiguracionRCSDanos(
@@ -204,7 +200,6 @@ class TestCVSensitivity:
 
 
 class TestDiversificacion:
-
     def test_more_ramos_lower_rcs_prima(self, config_single_ramo, config_many_ramos):
         """More ramos must produce a smaller RCS prima (diversification)."""
         rcs_1 = RCSDanos(config_single_ramo).calcular_rcs_prima()
@@ -238,7 +233,6 @@ class TestDiversificacion:
 
 
 class TestZeroReserva:
-
     def test_zero_reserva_gives_zero_rcs_reserva(self):
         """When reserva_siniestros=0, RCS reserva must be 0."""
         cfg = ConfiguracionRCSDanos(
@@ -267,7 +261,6 @@ class TestZeroReserva:
 
 
 class TestNumericStability:
-
     def test_large_primas_no_overflow(self):
         """Very large primas should not cause overflow or errors."""
         cfg = ConfiguracionRCSDanos(
@@ -302,7 +295,6 @@ class TestNumericStability:
 
 
 class TestParametrosCalculo:
-
     def test_parametros_keys(self, rcs_danos):
         """obtener_parametros_calculo must return all expected keys."""
         params = rcs_danos.obtener_parametros_calculo()
@@ -335,7 +327,6 @@ class TestParametrosCalculo:
 
 
 class TestRepr:
-
     def test_repr_contains_class_name(self, rcs_danos):
         """__repr__ must include class name."""
         assert "RCSDanos" in repr(rcs_danos)

@@ -157,9 +157,7 @@ def ejecutar_demo() -> None:
 
     except FileNotFoundError:
         print("\nError: No se encontro la tabla de mortalidad EMSSA-09")
-        print(
-            "   Asegúrate de que el archivo data/mortality_tables/emssa_09.csv existe."
-        )
+        print("   Asegúrate de que el archivo data/mortality_tables/emssa_09.csv existe.")
     except Exception as e:
         print(f"\nError durante la demostracion: {e}")
 

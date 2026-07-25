@@ -67,9 +67,7 @@ class GeneradorReporteSuscripcion:
         rows = []
         for datos in reporte.datos_por_ramo:
             primas_netas = datos.primas_emitidas - datos.primas_canceladas
-            prima_promedio = (
-                primas_netas / datos.numero_polizas if datos.numero_polizas > 0 else 0
-            )
+            prima_promedio = primas_netas / datos.numero_polizas if datos.numero_polizas > 0 else 0
 
             rows.append(
                 {
@@ -121,9 +119,7 @@ class GeneradorReporteSuscripcion:
 
         total_primas_emitidas = reporte.total_primas_emitidas
         total_primas_devengadas = reporte.total_primas_devengadas
-        total_primas_canceladas = sum(
-            d.primas_canceladas for d in reporte.datos_por_ramo
-        )
+        total_primas_canceladas = sum(d.primas_canceladas for d in reporte.datos_por_ramo)
         total_polizas = sum(d.numero_polizas for d in reporte.datos_por_ramo)
 
         # Tasa de cancelación
@@ -152,9 +148,7 @@ class GeneradorReporteSuscripcion:
             "total_polizas": total_polizas,
             "total_suma_asegurada": float(reporte.total_suma_asegurada),
             "ramo_principal": self._formatear_nombre_ramo(ramo_top.ramo),
-            "concentracion_ramo_principal_pct": float(
-                concentracion_top.quantize(Decimal("0.01"))
-            ),
+            "concentracion_ramo_principal_pct": float(concentracion_top.quantize(Decimal("0.01"))),
             "numero_ramos_activos": len(reporte.datos_por_ramo),
         }
 

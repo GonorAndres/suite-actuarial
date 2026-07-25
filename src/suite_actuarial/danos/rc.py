@@ -94,9 +94,7 @@ class SeguroRC:
             Prima anual en pesos MXN.
         """
         prima = (
-            (self.limite_responsabilidad / Decimal("1000"))
-            * self.tasa_base
-            * self.factor_deducible
+            (self.limite_responsabilidad / Decimal("1000")) * self.tasa_base * self.factor_deducible
         )
         return prima.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 

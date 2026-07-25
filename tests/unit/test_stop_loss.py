@@ -166,9 +166,7 @@ class TestStopLossCalculoSiniestralidad:
 class TestStopLossRecuperacion:
     """Tests para cálculo de recuperaciones"""
 
-    def test_siniestralidad_bajo_attachment(
-        self, config_sl_80_xs_20, siniestros_bajos
-    ):
+    def test_siniestralidad_bajo_attachment(self, config_sl_80_xs_20, siniestros_bajos):
         """70% < 80% → No activa → recuperación $0"""
         sl = StopLoss(config_sl_80_xs_20)
 
@@ -279,9 +277,7 @@ class TestStopLossPrima:
 class TestStopLossResultadoNeto:
     """Tests para resultado neto del contrato"""
 
-    def test_resultado_sin_activacion(
-        self, config_sl_80_xs_20, siniestros_bajos
-    ):
+    def test_resultado_sin_activacion(self, config_sl_80_xs_20, siniestros_bajos):
         """Siniestralidad 70% → no activa → solo se paga prima"""
         sl = StopLoss(config_sl_80_xs_20)
 
@@ -298,9 +294,7 @@ class TestStopLossResultadoNeto:
         assert resultado.resultado_neto_cedente == Decimal("-300000")
         assert resultado.detalles["contrato_activado"] is False
 
-    def test_resultado_con_activacion(
-        self, config_sl_80_xs_20, siniestros_altos
-    ):
+    def test_resultado_con_activacion(self, config_sl_80_xs_20, siniestros_altos):
         """Siniestralidad 90% → activa → recuperación $1M"""
         sl = StopLoss(config_sl_80_xs_20)
 
@@ -317,9 +311,7 @@ class TestStopLossResultadoNeto:
         assert resultado.resultado_neto_cedente == Decimal("700000")
         assert resultado.detalles["contrato_activado"] is True
 
-    def test_resultado_con_activacion_maxima(
-        self, config_sl_80_xs_20, siniestros_extremos
-    ):
+    def test_resultado_con_activacion_maxima(self, config_sl_80_xs_20, siniestros_extremos):
         """Siniestralidad 110% → recuperación limitada a $2M"""
         sl = StopLoss(config_sl_80_xs_20)
 
@@ -335,9 +327,7 @@ class TestStopLossResultadoNeto:
         # Resultado neto: $2M - $300K = $1.7M
         assert resultado.resultado_neto_cedente == Decimal("1700000")
 
-    def test_detalles_en_resultado(
-        self, config_sl_80_xs_20, siniestros_altos
-    ):
+    def test_detalles_en_resultado(self, config_sl_80_xs_20, siniestros_altos):
         """Debe incluir detalles completos en el resultado"""
         sl = StopLoss(config_sl_80_xs_20)
 

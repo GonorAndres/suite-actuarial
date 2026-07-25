@@ -70,15 +70,9 @@ class SeguroIncendio:
                 f"Opciones: {list(TASAS_CONSTRUCCION)}"
             )
         if zona not in ZONAS_INCENDIO:
-            raise ValueError(
-                f"Zona desconocida: {zona}. "
-                f"Opciones: {list(ZONAS_INCENDIO)}"
-            )
+            raise ValueError(f"Zona desconocida: {zona}. Opciones: {list(ZONAS_INCENDIO)}")
         if uso not in FACTOR_USO:
-            raise ValueError(
-                f"Uso desconocido: {uso}. "
-                f"Opciones: {list(FACTOR_USO)}"
-            )
+            raise ValueError(f"Uso desconocido: {uso}. Opciones: {list(FACTOR_USO)}")
 
         self.valor_inmueble = valor_inmueble
         self.tipo_construccion = tipo_construccion

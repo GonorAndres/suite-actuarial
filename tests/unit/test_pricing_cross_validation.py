@@ -33,111 +33,79 @@ def _rel_close(a: Decimal, b: Decimal, tol: Decimal = REL_TOL) -> bool:
 # Insurance A[x:n] cross-validation
 # ------------------------------------------------------------------
 
-class TestInsuranceCrossValidation:
 
+class TestInsuranceCrossValidation:
     @pytest.mark.parametrize("edad", [25, 35, 50, 65])
     @pytest.mark.parametrize("plazo", [1, 10, 20])
-    def test_Axn_loop_vs_commutation(
-        self, tabla_emssa09, tabla_conmutacion_hombre, edad, plazo
-    ):
+    def test_Axn_loop_vs_commutation(self, tabla_emssa09, tabla_conmutacion_hombre, edad, plazo):
         if edad + plazo > tabla_conmutacion_hombre.edad_max:
             pytest.skip("edad + plazo exceeds omega")
 
-        loop_val = calcular_seguro_vida(
-            tabla_emssa09, edad, SEXO, plazo, TASA, Decimal("1")
-        )
+        loop_val = calcular_seguro_vida(tabla_emssa09, edad, SEXO, plazo, TASA, Decimal("1"))
         comm_val = tabla_conmutacion_hombre.Ax(edad, plazo)
 
-        assert _rel_close(loop_val, comm_val), (
-            f"A[{edad}:{plazo}] loop={loop_val} comm={comm_val}"
-        )
+        assert _rel_close(loop_val, comm_val), f"A[{edad}:{plazo}] loop={loop_val} comm={comm_val}"
 
     @pytest.mark.parametrize("edad", [25, 40, 60])
-    def test_max_plazo_Ax_loop_vs_commutation(
-        self, tabla_emssa09, tabla_conmutacion_hombre, edad
-    ):
+    def test_max_plazo_Ax_loop_vs_commutation(self, tabla_emssa09, tabla_conmutacion_hombre, edad):
         """Loop with plazo = omega - edad covers ages [x, omega-1].
         Compare against temporal commutation Ax(x, plazo), not whole-life."""
         omega = tabla_conmutacion_hombre.edad_max
         plazo = omega - edad
 
-        loop_val = calcular_seguro_vida(
-            tabla_emssa09, edad, SEXO, plazo, TASA, Decimal("1")
-        )
+        loop_val = calcular_seguro_vida(tabla_emssa09, edad, SEXO, plazo, TASA, Decimal("1"))
         comm_val = tabla_conmutacion_hombre.Ax(edad, plazo)
 
-        assert _rel_close(loop_val, comm_val), (
-            f"A[{edad}:{plazo}] loop={loop_val} comm={comm_val}"
-        )
+        assert _rel_close(loop_val, comm_val), f"A[{edad}:{plazo}] loop={loop_val} comm={comm_val}"
 
     def test_Ax_single_year(self, tabla_emssa09, tabla_conmutacion_hombre):
         for edad in [30, 50, 80]:
-            loop_val = calcular_seguro_vida(
-                tabla_emssa09, edad, SEXO, 1, TASA, Decimal("1")
-            )
+            loop_val = calcular_seguro_vida(tabla_emssa09, edad, SEXO, 1, TASA, Decimal("1"))
             comm_val = tabla_conmutacion_hombre.Ax(edad, 1)
-            assert _rel_close(loop_val, comm_val), (
-                f"A[{edad}:1] loop={loop_val} comm={comm_val}"
-            )
+            assert _rel_close(loop_val, comm_val), f"A[{edad}:1] loop={loop_val} comm={comm_val}"
 
 
 # ------------------------------------------------------------------
 # Annuity a[x:n] cross-validation
 # ------------------------------------------------------------------
 
-class TestAnnuityCrossValidation:
 
+class TestAnnuityCrossValidation:
     @pytest.mark.parametrize("edad", [25, 35, 50, 65])
     @pytest.mark.parametrize("plazo", [1, 10, 20])
-    def test_axn_loop_vs_commutation(
-        self, tabla_emssa09, tabla_conmutacion_hombre, edad, plazo
-    ):
+    def test_axn_loop_vs_commutation(self, tabla_emssa09, tabla_conmutacion_hombre, edad, plazo):
         if edad + plazo > tabla_conmutacion_hombre.edad_max:
             pytest.skip("edad + plazo exceeds omega")
 
-        loop_val = calcular_anualidad(
-            tabla_emssa09, edad, SEXO, plazo, TASA, pago_anticipado=True
-        )
+        loop_val = calcular_anualidad(tabla_emssa09, edad, SEXO, plazo, TASA, pago_anticipado=True)
         comm_val = tabla_conmutacion_hombre.ax(edad, plazo)
 
-        assert _rel_close(loop_val, comm_val), (
-            f"a[{edad}:{plazo}] loop={loop_val} comm={comm_val}"
-        )
+        assert _rel_close(loop_val, comm_val), f"a[{edad}:{plazo}] loop={loop_val} comm={comm_val}"
 
     @pytest.mark.parametrize("edad", [25, 40, 60])
-    def test_max_plazo_ax_loop_vs_commutation(
-        self, tabla_emssa09, tabla_conmutacion_hombre, edad
-    ):
+    def test_max_plazo_ax_loop_vs_commutation(self, tabla_emssa09, tabla_conmutacion_hombre, edad):
         """Loop with plazo = omega - edad. Compare against temporal commutation."""
         omega = tabla_conmutacion_hombre.edad_max
         plazo = omega - edad
 
-        loop_val = calcular_anualidad(
-            tabla_emssa09, edad, SEXO, plazo, TASA, pago_anticipado=True
-        )
+        loop_val = calcular_anualidad(tabla_emssa09, edad, SEXO, plazo, TASA, pago_anticipado=True)
         comm_val = tabla_conmutacion_hombre.ax(edad, plazo)
 
-        assert _rel_close(loop_val, comm_val), (
-            f"a[{edad}:{plazo}] loop={loop_val} comm={comm_val}"
-        )
+        assert _rel_close(loop_val, comm_val), f"a[{edad}:{plazo}] loop={loop_val} comm={comm_val}"
 
     def test_annuity_single_year(self, tabla_emssa09, tabla_conmutacion_hombre):
         for edad in [30, 50, 80]:
-            loop_val = calcular_anualidad(
-                tabla_emssa09, edad, SEXO, 1, TASA, pago_anticipado=True
-            )
+            loop_val = calcular_anualidad(tabla_emssa09, edad, SEXO, 1, TASA, pago_anticipado=True)
             comm_val = tabla_conmutacion_hombre.ax(edad, 1)
-            assert _rel_close(loop_val, comm_val), (
-                f"a[{edad}:1] loop={loop_val} comm={comm_val}"
-            )
+            assert _rel_close(loop_val, comm_val), f"a[{edad}:1] loop={loop_val} comm={comm_val}"
 
 
 # ------------------------------------------------------------------
 # Insurance-annuity identity: Ax:n + d * ax:n + nEx = 1
 # ------------------------------------------------------------------
 
-class TestInsuranceAnnuityIdentity:
 
+class TestInsuranceAnnuityIdentity:
     @pytest.mark.parametrize("edad", [25, 35, 50, 65])
     def test_identity_commutation_whole_life(self, tabla_conmutacion_hombre, edad):
         """Whole-life identity via commutation: Ax + d * ax = 1."""
@@ -148,15 +116,11 @@ class TestInsuranceAnnuityIdentity:
         ax = tabla_conmutacion_hombre.ax(edad, None)
 
         lhs = Ax + d * ax
-        assert _rel_close(lhs, Decimal("1")), (
-            f"Identity at {edad}: Ax + d*ax = {lhs} (expected 1)"
-        )
+        assert _rel_close(lhs, Decimal("1")), f"Identity at {edad}: Ax + d*ax = {lhs} (expected 1)"
 
     @pytest.mark.parametrize("edad", [25, 35, 50, 65])
     @pytest.mark.parametrize("plazo", [10, 20])
-    def test_temporal_identity_loop(
-        self, tabla_emssa09, tabla_conmutacion_hombre, edad, plazo
-    ):
+    def test_temporal_identity_loop(self, tabla_emssa09, tabla_conmutacion_hombre, edad, plazo):
         """Temporal identity via loop: Ax:n + d * ax:n + nEx = 1."""
         if edad + plazo > tabla_conmutacion_hombre.edad_max:
             pytest.skip("edad + plazo exceeds omega")
@@ -164,25 +128,18 @@ class TestInsuranceAnnuityIdentity:
         i = TASA
         d = i / (Decimal("1") + i)
 
-        Ax_loop = calcular_seguro_vida(
-            tabla_emssa09, edad, SEXO, plazo, TASA, Decimal("1")
-        )
-        ax_loop = calcular_anualidad(
-            tabla_emssa09, edad, SEXO, plazo, TASA, pago_anticipado=True
-        )
+        Ax_loop = calcular_seguro_vida(tabla_emssa09, edad, SEXO, plazo, TASA, Decimal("1"))
+        ax_loop = calcular_anualidad(tabla_emssa09, edad, SEXO, plazo, TASA, pago_anticipado=True)
         nEx = tabla_conmutacion_hombre.nEx(edad, plazo)
 
         lhs = Ax_loop + d * ax_loop + nEx
         assert _rel_close(lhs, Decimal("1"), Decimal("1e-5")), (
-            f"Temporal identity at {edad}:{plazo}: "
-            f"Ax + d*ax + nEx = {lhs} (expected 1)"
+            f"Temporal identity at {edad}:{plazo}: Ax + d*ax + nEx = {lhs} (expected 1)"
         )
 
     @pytest.mark.parametrize("edad", [30, 45])
     @pytest.mark.parametrize("plazo", [10, 20])
-    def test_temporal_identity_commutation(
-        self, tabla_conmutacion_hombre, edad, plazo
-    ):
+    def test_temporal_identity_commutation(self, tabla_conmutacion_hombre, edad, plazo):
         """Temporal identity via commutation: Ax:n + d * ax:n + nEx = 1."""
         if edad + plazo > tabla_conmutacion_hombre.edad_max:
             pytest.skip("edad + plazo exceeds omega")
@@ -196,8 +153,7 @@ class TestInsuranceAnnuityIdentity:
 
         lhs = Ax + d * ax + nEx
         assert _rel_close(lhs, Decimal("1"), Decimal("1e-5")), (
-            f"Temporal identity at {edad}:{plazo}: "
-            f"Ax + d*ax + nEx = {lhs} (expected 1)"
+            f"Temporal identity at {edad}:{plazo}: Ax + d*ax + nEx = {lhs} (expected 1)"
         )
 
 
@@ -205,20 +161,22 @@ class TestInsuranceAnnuityIdentity:
 # Net premium cross-validation
 # ------------------------------------------------------------------
 
-class TestNetPremiumCrossValidation:
 
+class TestNetPremiumCrossValidation:
     @pytest.mark.parametrize("edad", [30, 45])
     @pytest.mark.parametrize("plazo", [10, 20])
-    def test_prima_loop_vs_commutation(
-        self, tabla_emssa09, tabla_conmutacion_hombre, edad, plazo
-    ):
+    def test_prima_loop_vs_commutation(self, tabla_emssa09, tabla_conmutacion_hombre, edad, plazo):
         if edad + plazo > tabla_conmutacion_hombre.edad_max:
             pytest.skip("edad + plazo exceeds omega")
 
         loop_prima = calcular_prima_neta_temporal(
-            tabla_emssa09, edad, SEXO,
-            plazo_seguro=plazo, plazo_pago=plazo,
-            tasa_interes=TASA, suma_asegurada=Decimal("1"),
+            tabla_emssa09,
+            edad,
+            SEXO,
+            plazo_seguro=plazo,
+            plazo_pago=plazo,
+            tasa_interes=TASA,
+            suma_asegurada=Decimal("1"),
         )
         comm_prima = tabla_conmutacion_hombre.Px(edad, plazo)
 
@@ -231,54 +189,34 @@ class TestNetPremiumCrossValidation:
 # Boundary cases
 # ------------------------------------------------------------------
 
-class TestBoundaryCases:
 
+class TestBoundaryCases:
     def test_age_18_long_plazo(self, tabla_emssa09, tabla_conmutacion_hombre):
         edad = 18
         omega = tabla_conmutacion_hombre.edad_max
         plazo = omega - edad
 
-        loop_A = calcular_seguro_vida(
-            tabla_emssa09, edad, SEXO, plazo, TASA, Decimal("1")
-        )
+        loop_A = calcular_seguro_vida(tabla_emssa09, edad, SEXO, plazo, TASA, Decimal("1"))
         comm_A = tabla_conmutacion_hombre.Ax(edad, plazo)
-        assert _rel_close(loop_A, comm_A), (
-            f"A[18:{plazo}] loop={loop_A} comm={comm_A}"
-        )
+        assert _rel_close(loop_A, comm_A), f"A[18:{plazo}] loop={loop_A} comm={comm_A}"
 
-        loop_a = calcular_anualidad(
-            tabla_emssa09, edad, SEXO, plazo, TASA, pago_anticipado=True
-        )
+        loop_a = calcular_anualidad(tabla_emssa09, edad, SEXO, plazo, TASA, pago_anticipado=True)
         comm_a = tabla_conmutacion_hombre.ax(edad, plazo)
-        assert _rel_close(loop_a, comm_a), (
-            f"a[18:{plazo}] loop={loop_a} comm={comm_a}"
-        )
+        assert _rel_close(loop_a, comm_a), f"a[18:{plazo}] loop={loop_a} comm={comm_a}"
 
     def test_age_90_plazo_1(self, tabla_emssa09, tabla_conmutacion_hombre):
-        loop_A = calcular_seguro_vida(
-            tabla_emssa09, 90, SEXO, 1, TASA, Decimal("1")
-        )
+        loop_A = calcular_seguro_vida(tabla_emssa09, 90, SEXO, 1, TASA, Decimal("1"))
         comm_A = tabla_conmutacion_hombre.Ax(90, 1)
-        assert _rel_close(loop_A, comm_A), (
-            f"A[90:1] loop={loop_A} comm={comm_A}"
-        )
+        assert _rel_close(loop_A, comm_A), f"A[90:1] loop={loop_A} comm={comm_A}"
 
     def test_age_90_plazo_10(self, tabla_emssa09, tabla_conmutacion_hombre):
-        loop_A = calcular_seguro_vida(
-            tabla_emssa09, 90, SEXO, 10, TASA, Decimal("1")
-        )
+        loop_A = calcular_seguro_vida(tabla_emssa09, 90, SEXO, 10, TASA, Decimal("1"))
         comm_A = tabla_conmutacion_hombre.Ax(90, 10)
-        assert _rel_close(loop_A, comm_A), (
-            f"A[90:10] loop={loop_A} comm={comm_A}"
-        )
+        assert _rel_close(loop_A, comm_A), f"A[90:10] loop={loop_A} comm={comm_A}"
 
-        loop_a = calcular_anualidad(
-            tabla_emssa09, 90, SEXO, 10, TASA, pago_anticipado=True
-        )
+        loop_a = calcular_anualidad(tabla_emssa09, 90, SEXO, 10, TASA, pago_anticipado=True)
         comm_a = tabla_conmutacion_hombre.ax(90, 10)
-        assert _rel_close(loop_a, comm_a), (
-            f"a[90:10] loop={loop_a} comm={comm_a}"
-        )
+        assert _rel_close(loop_a, comm_a), f"a[90:10] loop={loop_a} comm={comm_a}"
 
     def test_insurance_positive(self, tabla_conmutacion_hombre):
         for edad in [18, 50, 90]:

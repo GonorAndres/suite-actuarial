@@ -171,9 +171,7 @@ class TestEjecutarDemo:
         # Then either success or the FileNotFoundError path
         success = "Prima Neta" in out or "completada" in out.lower()
         handled_error = "Error" in out
-        assert success or handled_error, (
-            "Expected either pricing output or a handled error message"
-        )
+        assert success or handled_error, "Expected either pricing output or a handled error message"
 
 
 # ---------------------------------------------------------------------------

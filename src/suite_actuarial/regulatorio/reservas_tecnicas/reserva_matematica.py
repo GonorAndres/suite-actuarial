@@ -98,7 +98,7 @@ class CalculadoraRM:
         v = Decimal(str(1 / (1 + float(tasa))))
 
         # Factor de descuento acumulado para beneficios
-        vn = v ** anos_remanentes_cobertura
+        vn = v**anos_remanentes_cobertura
         prob_muerte = Decimal("1") - prob_supervivencia
 
         # VP de beneficios = SA * factor_descuento * prob_muerte
@@ -111,7 +111,7 @@ class CalculadoraRM:
 
         if anos_primas_restantes > 0:
             # Anualidad: a = (1 - v^n) / (1 - v)
-            vn_primas = v ** anos_primas_restantes
+            vn_primas = v**anos_primas_restantes
             anualidad = (Decimal("1") - vn_primas) / (Decimal("1") - v)
 
             vp_primas = prima_anual * anualidad * prob_supervivencia
@@ -140,9 +140,7 @@ class CalculadoraRM:
         RM = Renta_mensual * 12 * Factor_anualidad_vitalicia
         """
         if not self.config.monto_renta_mensual:
-            raise ValueError(
-                "Se requiere monto_renta_mensual para rentas vitalicias"
-            )
+            raise ValueError("Se requiere monto_renta_mensual para rentas vitalicias")
 
         renta_mensual = self.config.monto_renta_mensual
         renta_anual = renta_mensual * 12
@@ -157,7 +155,7 @@ class CalculadoraRM:
 
         # Factor de anualidad vitalicia (simplificado)
         v = Decimal(str(1 / (1 + float(tasa))))
-        vn = v ** anos_esperados
+        vn = v**anos_esperados
         anualidad_vitalicia = (Decimal("1") - vn) / (Decimal("1") - v)
 
         # RM = Renta anual * anualidad * prob supervivencia
@@ -204,7 +202,7 @@ class CalculadoraRM:
         # Funcion de supervivencia simplificada: s(x) = exp(-k * x^2)
         # Ajustada para mortalidad mexicana
         k = 0.00008
-        prob = math.exp(-k * (edad ** 2))
+        prob = math.exp(-k * (edad**2))
 
         return Decimal(str(prob))
 

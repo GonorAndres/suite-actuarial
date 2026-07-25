@@ -22,6 +22,7 @@ from suite_actuarial.actuarial.interest.tasas import CurvaRendimiento
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def curva_plana():
     """Curva plana al 8%."""
@@ -55,6 +56,7 @@ def curva_cetes():
 # Tests de curva plana
 # ---------------------------------------------------------------------------
 
+
 class TestCurvaPlana:
     def test_plana_tasa_constante(self, curva_plana):
         """Todas las tasas spot deben ser iguales en una curva plana."""
@@ -81,6 +83,7 @@ class TestCurvaPlana:
 # ---------------------------------------------------------------------------
 # Tests de interpolacion spot
 # ---------------------------------------------------------------------------
+
 
 class TestInterpolacionSpot:
     def test_punto_exacto(self, curva_normal):
@@ -116,6 +119,7 @@ class TestInterpolacionSpot:
 # Tests de tasas forward
 # ---------------------------------------------------------------------------
 
+
 class TestTasasForward:
     def test_forward_basico(self, curva_normal):
         """Forward entre 1 y 2 anos.
@@ -148,6 +152,7 @@ class TestTasasForward:
 # Tests de factor de descuento
 # ---------------------------------------------------------------------------
 
+
 class TestFactorDescuento:
     def test_factor_descuento_menor_que_1(self, curva_normal):
         """Discount factor must be < 1 for positive rates."""
@@ -176,6 +181,7 @@ class TestFactorDescuento:
 # ---------------------------------------------------------------------------
 # Tests de valor presente
 # ---------------------------------------------------------------------------
+
 
 class TestValorPresente:
     def test_pv_flujo_unico(self, curva_plana):
@@ -212,6 +218,7 @@ class TestValorPresente:
 # Tests de curva CETES referencia
 # ---------------------------------------------------------------------------
 
+
 class TestCETES:
     def test_cetes_tiene_7_puntos(self, curva_cetes):
         assert len(curva_cetes.plazos) == 7
@@ -233,6 +240,7 @@ class TestCETES:
 # ---------------------------------------------------------------------------
 # Tests de casos extremos
 # ---------------------------------------------------------------------------
+
 
 class TestCasosExtremos:
     def test_tasa_cero(self):

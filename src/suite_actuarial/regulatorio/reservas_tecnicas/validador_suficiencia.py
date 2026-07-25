@@ -65,9 +65,7 @@ class ValidadorSuficiencia:
 
         # Porcentaje de cobertura
         porcentaje_cobertura = (
-            (reserva_constituida / reserva_minima * 100)
-            if reserva_minima > 0
-            else Decimal("100")
+            (reserva_constituida / reserva_minima * 100) if reserva_minima > 0 else Decimal("100")
         )
 
         return ResultadoValidacionSuficiencia(
@@ -125,31 +123,21 @@ class ValidadorSuficiencia:
         Returns:
             Diccionario con métricas agregadas
         """
-        total_constituido = sum(
-            v.reserva_constituida for v in validaciones.values()
-        )
-        total_requerido = sum(
-            v.reserva_minima_requerida for v in validaciones.values()
-        )
+        total_constituido = sum(v.reserva_constituida for v in validaciones.values())
+        total_requerido = sum(v.reserva_minima_requerida for v in validaciones.values())
         total_deficit_superavit = total_constituido - total_requerido
 
         # Identificar ramos con déficit
-        ramos_deficit = [
-            ramo for ramo, val in validaciones.items() if not val.es_suficiente
-        ]
+        ramos_deficit = [ramo for ramo, val in validaciones.items() if not val.es_suficiente]
 
         # Déficit total (solo ramos con déficit)
         deficit_total = sum(
-            abs(val.deficit_superavit)
-            for val in validaciones.values()
-            if val.deficit_superavit < 0
+            abs(val.deficit_superavit) for val in validaciones.values() if val.deficit_superavit < 0
         )
 
         # Porcentaje de cobertura global
         pct_cobertura_global = (
-            (total_constituido / total_requerido * 100)
-            if total_requerido > 0
-            else Decimal("100")
+            (total_constituido / total_requerido * 100) if total_requerido > 0 else Decimal("100")
         )
 
         return {
@@ -160,8 +148,6 @@ class ValidadorSuficiencia:
             "numero_ramos_con_deficit": len(ramos_deficit),
             "ramos_con_deficit": ramos_deficit,
             "deficit_total": float(deficit_total),
-            "porcentaje_cobertura_global": float(
-                pct_cobertura_global.quantize(Decimal("0.01"))
-            ),
+            "porcentaje_cobertura_global": float(pct_cobertura_global.quantize(Decimal("0.01"))),
             "numero_ramos_total": len(validaciones),
         }

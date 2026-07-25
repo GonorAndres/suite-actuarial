@@ -85,18 +85,14 @@ class TestBornhuetterFergusonCreacion:
     def test_loss_ratio_razonable_valido(self):
         """Debe aceptar loss ratios razonables"""
         # 60% es razonable
-        config = ConfiguracionBornhuetterFerguson(
-            loss_ratio_apriori=Decimal("0.60")
-        )
+        config = ConfiguracionBornhuetterFerguson(loss_ratio_apriori=Decimal("0.60"))
         assert config.loss_ratio_apriori == Decimal("0.60")
 
 
 class TestBornhuetterFergusonPorcentajesReportados:
     """Tests para cálculo de porcentajes reportados"""
 
-    def test_calcular_porcentajes_reportados(
-        self, triangulo_simple, config_lr_65
-    ):
+    def test_calcular_porcentajes_reportados(self, triangulo_simple, config_lr_65):
         """Debe calcular % reportado para cada año"""
         bf = BornhuetterFerguson(config_lr_65)
 
@@ -108,21 +104,15 @@ class TestBornhuetterFergusonPorcentajesReportados:
         cl = ChainLadder(config_cl)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
 
-        porcentajes = bf.calcular_porcentajes_reportados(
-            triangulo_simple, factores
-        )
+        porcentajes = bf.calcular_porcentajes_reportados(triangulo_simple, factores)
 
         # Debe haber % para cada año
         assert len(porcentajes) == len(triangulo_simple)
 
         # Todos deben estar entre 0 y 1
-        assert all(
-            Decimal("0") <= p <= Decimal("1") for p in porcentajes.values()
-        )
+        assert all(Decimal("0") <= p <= Decimal("1") for p in porcentajes.values())
 
-    def test_anios_mas_desarrollados_mayor_porcentaje(
-        self, triangulo_simple, config_lr_65
-    ):
+    def test_anios_mas_desarrollados_mayor_porcentaje(self, triangulo_simple, config_lr_65):
         """Años con más desarrollo deben tener mayor % reportado"""
         bf = BornhuetterFerguson(config_lr_65)
 
@@ -133,9 +123,7 @@ class TestBornhuetterFergusonPorcentajesReportados:
         cl = ChainLadder(config_cl)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
 
-        porcentajes = bf.calcular_porcentajes_reportados(
-            triangulo_simple, factores
-        )
+        porcentajes = bf.calcular_porcentajes_reportados(triangulo_simple, factores)
 
         # Año 2020 (totalmente desarrollado) debe tener mayor %
         # que año 2024 (poco desarrollado)
@@ -145,18 +133,14 @@ class TestBornhuetterFergusonPorcentajesReportados:
 class TestBornhuetterFergusonUltimates:
     """Tests para cálculo de ultimates"""
 
-    def test_calcular_ultimates_todos_anios(
-        self, triangulo_simple, primas_por_anio, config_lr_65
-    ):
+    def test_calcular_ultimates_todos_anios(self, triangulo_simple, primas_por_anio, config_lr_65):
         """Debe calcular ultimate para todos los años"""
         bf = BornhuetterFerguson(config_lr_65)
         resultado = bf.calcular(triangulo_simple, primas_por_anio)
 
         assert len(resultado.ultimates_por_anio) == len(triangulo_simple)
 
-    def test_ultimate_mayor_que_pagado(
-        self, triangulo_simple, primas_por_anio, config_lr_65
-    ):
+    def test_ultimate_mayor_que_pagado(self, triangulo_simple, primas_por_anio, config_lr_65):
         """Ultimate debe ser >= pagado"""
         bf = BornhuetterFerguson(config_lr_65)
         resultado = bf.calcular(triangulo_simple, primas_por_anio)
@@ -191,9 +175,7 @@ class TestBornhuetterFergusonUltimates:
 class TestBornhuetterFergusonCalculoCompleto:
     """Tests para cálculo completo end-to-end"""
 
-    def test_calcular_completo_exitoso(
-        self, triangulo_simple, primas_por_anio, config_lr_65
-    ):
+    def test_calcular_completo_exitoso(self, triangulo_simple, primas_por_anio, config_lr_65):
         """Debe ejecutar cálculo completo sin errores"""
         bf = BornhuetterFerguson(config_lr_65)
         resultado = bf.calcular(triangulo_simple, primas_por_anio)
@@ -202,9 +184,7 @@ class TestBornhuetterFergusonCalculoCompleto:
         assert resultado.reserva_total >= Decimal("0")
         assert resultado.ultimate_total >= Decimal("0")
 
-    def test_resultado_tiene_factores(
-        self, triangulo_simple, primas_por_anio, config_lr_65
-    ):
+    def test_resultado_tiene_factores(self, triangulo_simple, primas_por_anio, config_lr_65):
         """Resultado debe incluir factores de desarrollo"""
         bf = BornhuetterFerguson(config_lr_65)
         resultado = bf.calcular(triangulo_simple, primas_por_anio)
@@ -212,9 +192,7 @@ class TestBornhuetterFergusonCalculoCompleto:
         assert resultado.factores_desarrollo is not None
         assert len(resultado.factores_desarrollo) > 0
 
-    def test_detalles_incluyen_loss_ratios(
-        self, triangulo_simple, primas_por_anio, config_lr_65
-    ):
+    def test_detalles_incluyen_loss_ratios(self, triangulo_simple, primas_por_anio, config_lr_65):
         """Detalles deben incluir loss ratios a priori e implícito"""
         bf = BornhuetterFerguson(config_lr_65)
         resultado = bf.calcular(triangulo_simple, primas_por_anio)
@@ -237,16 +215,10 @@ class TestBornhuetterFergusonCalculoCompleto:
 class TestBornhuetterFergusonComparacionLR:
     """Tests comparando diferentes loss ratios"""
 
-    def test_lr_mayor_produce_reservas_mayores(
-        self, triangulo_simple, primas_por_anio
-    ):
+    def test_lr_mayor_produce_reservas_mayores(self, triangulo_simple, primas_por_anio):
         """Loss ratio mayor debe producir reservas mayores"""
-        config_65 = ConfiguracionBornhuetterFerguson(
-            loss_ratio_apriori=Decimal("0.65")
-        )
-        config_75 = ConfiguracionBornhuetterFerguson(
-            loss_ratio_apriori=Decimal("0.75")
-        )
+        config_65 = ConfiguracionBornhuetterFerguson(loss_ratio_apriori=Decimal("0.65"))
+        config_75 = ConfiguracionBornhuetterFerguson(loss_ratio_apriori=Decimal("0.75"))
 
         bf_65 = BornhuetterFerguson(config_65)
         bf_75 = BornhuetterFerguson(config_75)
@@ -257,16 +229,10 @@ class TestBornhuetterFergusonComparacionLR:
         # LR 75% debe producir reservas mayores que LR 65%
         assert resultado_75.reserva_total > resultado_65.reserva_total
 
-    def test_impacto_lr_mayor_en_anios_recientes(
-        self, triangulo_simple, primas_por_anio
-    ):
+    def test_impacto_lr_mayor_en_anios_recientes(self, triangulo_simple, primas_por_anio):
         """El impacto del LR debe ser mayor en años recientes (poco desarrollados)"""
-        config_65 = ConfiguracionBornhuetterFerguson(
-            loss_ratio_apriori=Decimal("0.65")
-        )
-        config_75 = ConfiguracionBornhuetterFerguson(
-            loss_ratio_apriori=Decimal("0.75")
-        )
+        config_65 = ConfiguracionBornhuetterFerguson(loss_ratio_apriori=Decimal("0.65"))
+        config_75 = ConfiguracionBornhuetterFerguson(loss_ratio_apriori=Decimal("0.75"))
 
         bf_65 = BornhuetterFerguson(config_65)
         bf_75 = BornhuetterFerguson(config_75)
@@ -275,16 +241,10 @@ class TestBornhuetterFergusonComparacionLR:
         resultado_75 = bf_75.calcular(triangulo_simple, primas_por_anio)
 
         # Diferencia en año reciente (2024)
-        diff_2024 = abs(
-            resultado_75.reservas_por_anio[2024]
-            - resultado_65.reservas_por_anio[2024]
-        )
+        diff_2024 = abs(resultado_75.reservas_por_anio[2024] - resultado_65.reservas_por_anio[2024])
 
         # Diferencia en año antiguo (2020)
-        diff_2020 = abs(
-            resultado_75.reservas_por_anio[2020]
-            - resultado_65.reservas_por_anio[2020]
-        )
+        diff_2020 = abs(resultado_75.reservas_por_anio[2020] - resultado_65.reservas_por_anio[2020])
 
         # La diferencia debe ser mayor en el año reciente
         assert diff_2024 > diff_2020
@@ -293,15 +253,11 @@ class TestBornhuetterFergusonComparacionLR:
 class TestBornhuetterFergusonComparacionChainLadder:
     """Tests comparando B-F con Chain Ladder"""
 
-    def test_comparar_con_chain_ladder(
-        self, triangulo_simple, primas_por_anio, config_lr_65
-    ):
+    def test_comparar_con_chain_ladder(self, triangulo_simple, primas_por_anio, config_lr_65):
         """Debe poder comparar B-F con Chain Ladder"""
         bf = BornhuetterFerguson(config_lr_65)
 
-        comparacion = bf.comparar_con_chain_ladder(
-            triangulo_simple, primas_por_anio
-        )
+        comparacion = bf.comparar_con_chain_ladder(triangulo_simple, primas_por_anio)
 
         # Debe retornar DataFrame
         assert isinstance(comparacion, pd.DataFrame)
@@ -316,19 +272,13 @@ class TestBornhuetterFergusonComparacionChainLadder:
         # Debe tener una fila por año
         assert len(comparacion) == len(triangulo_simple)
 
-    def test_bf_mas_estable_en_anios_recientes(
-        self, triangulo_simple, primas_por_anio
-    ):
+    def test_bf_mas_estable_en_anios_recientes(self, triangulo_simple, primas_por_anio):
         """B-F debe ser más estable que CL en años recientes"""
         # Configurar B-F con LR conservador
-        config = ConfiguracionBornhuetterFerguson(
-            loss_ratio_apriori=Decimal("0.65")
-        )
+        config = ConfiguracionBornhuetterFerguson(loss_ratio_apriori=Decimal("0.65"))
         bf = BornhuetterFerguson(config)
 
-        comparacion = bf.comparar_con_chain_ladder(
-            triangulo_simple, primas_por_anio
-        )
+        comparacion = bf.comparar_con_chain_ladder(triangulo_simple, primas_por_anio)
 
         # La diferencia porcentual debe ser mayor en años recientes
         # (B-F ajusta más para años con poco desarrollo)
@@ -338,9 +288,7 @@ class TestBornhuetterFergusonComparacionChainLadder:
 class TestBornhuetterFergusonObtenerPorcentajes:
     """Tests para obtener porcentajes reportados"""
 
-    def test_obtener_porcentajes_reportados(
-        self, triangulo_simple, primas_por_anio, config_lr_65
-    ):
+    def test_obtener_porcentajes_reportados(self, triangulo_simple, primas_por_anio, config_lr_65):
         """Debe poder obtener porcentajes reportados después de calcular"""
         bf = BornhuetterFerguson(config_lr_65)
         bf.calcular(triangulo_simple, primas_por_anio)
@@ -366,14 +314,9 @@ class TestBornhuetterFergusonValidacionConsistencia:
         bf = BornhuetterFerguson(config_lr_65)
         resultado = bf.calcular(triangulo_simple, primas_por_anio)
 
-        assert (
-            abs(
-                resultado.ultimate_total
-                - resultado.pagado_total
-                - resultado.reserva_total
-            )
-            < Decimal("0.01")
-        )
+        assert abs(
+            resultado.ultimate_total - resultado.pagado_total - resultado.reserva_total
+        ) < Decimal("0.01")
 
 
 class TestBornhuetterFergusonRepr:
@@ -391,9 +334,7 @@ class TestBornhuetterFergusonRepr:
 class TestBornhuetterFergusonMetodosPromedio:
     """Tests con diferentes métodos de promedio"""
 
-    def test_diferentes_metodos_promedio(
-        self, triangulo_simple, primas_por_anio
-    ):
+    def test_diferentes_metodos_promedio(self, triangulo_simple, primas_por_anio):
         """Debe funcionar con todos los métodos de promedio"""
         metodos = [
             MetodoPromedio.SIMPLE,

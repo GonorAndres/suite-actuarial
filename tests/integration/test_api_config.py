@@ -1,7 +1,6 @@
 """Integration tests for the config API endpoints."""
 
 
-
 class TestConfigFull:
     def test_success(self, api_client):
         response = api_client.get("/api/v1/config/2026")

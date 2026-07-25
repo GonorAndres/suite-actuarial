@@ -80,8 +80,7 @@ class SeguroAuto:
             raise ValueError("El conductor debe tener al menos 18 anos.")
         if deducible_pct not in FACTOR_DEDUCIBLE:
             raise ValueError(
-                f"Deducible no valido: {deducible_pct}. "
-                f"Opciones: {list(FACTOR_DEDUCIBLE)}"
+                f"Deducible no valido: {deducible_pct}. Opciones: {list(FACTOR_DEDUCIBLE)}"
             )
 
         self.valor_vehiculo = valor_vehiculo
@@ -113,9 +112,7 @@ class SeguroAuto:
 
         tasa = TASAS_BASE[cob_key].get(self.grupo)
         if tasa is None:
-            raise ValueError(
-                f"Grupo {self.grupo} no tiene tasa para {cob_key}"
-            )
+            raise ValueError(f"Grupo {self.grupo} no tiene tasa para {cob_key}")
 
         # Prima = (valor_asegurado / 1000) * tasa * factores
         prima = (self.valor_asegurado / Decimal("1000")) * tasa
@@ -159,9 +156,7 @@ class SeguroAuto:
         )
         return ajustada
 
-    def calcular_prima_total(
-        self, coberturas: list[Cobertura] | None = None
-    ) -> Decimal:
+    def calcular_prima_total(self, coberturas: list[Cobertura] | None = None) -> Decimal:
         """
         Prima total para las coberturas seleccionadas.
 
@@ -199,9 +194,7 @@ class SeguroAuto:
         tarifas = self.calcular_tarifa()
         desglose = {c.value: tarifas[c] for c in coberturas}
         subtotal = sum(tarifas[c] for c in coberturas)
-        subtotal = Decimal(str(subtotal)).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        subtotal = Decimal(str(subtotal)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         # Bonus-Malus
         factor_bms = Decimal("1.00")
@@ -213,9 +206,7 @@ class SeguroAuto:
             factor_bms = bms.factor_actual()
             nivel_bms = bms.nivel_actual
 
-        prima_ajustada = (subtotal * factor_bms).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
+        prima_ajustada = (subtotal * factor_bms).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         # Deducible en pesos
         deducible_pesos = (self.valor_asegurado * self.deducible_pct).quantize(

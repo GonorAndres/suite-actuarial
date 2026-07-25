@@ -39,10 +39,16 @@ class GMMRequest(BaseModel):
 
     edad: int = Field(..., ge=0, le=110, description="Edad del asegurado (0-110)")
     sexo: str = Field(..., pattern="^[MF]$", description="Sexo: M (masculino) o F (femenino)")
-    suma_asegurada: float = Field(..., ge=1_000_000, description="Suma asegurada en MXN (minimo 1,000,000)")
+    suma_asegurada: float = Field(
+        ..., ge=1_000_000, description="Suma asegurada en MXN (minimo 1,000,000)"
+    )
     deducible: float = Field(..., ge=0, description="Monto del deducible en MXN")
-    coaseguro_pct: float = Field(..., gt=0, le=1, description="Porcentaje de coaseguro (ej: 0.10 = 10%)")
-    tope_coaseguro: float | None = Field(default=None, ge=0, description="Tope maximo de coaseguro en MXN (None = sin tope)")
+    coaseguro_pct: float = Field(
+        ..., gt=0, le=1, description="Porcentaje de coaseguro (ej: 0.10 = 10%)"
+    )
+    tope_coaseguro: float | None = Field(
+        default=None, ge=0, description="Tope maximo de coaseguro en MXN (None = sin tope)"
+    )
     zona: str = Field(default="urbano", description="Zona geografica: metro, urbano, foraneo")
     nivel: str = Field(default="medio", description="Nivel hospitalario: estandar, medio, alto")
 
@@ -104,7 +110,9 @@ def calcular_gmm(req: GMMRequest):
             suma_asegurada=Decimal(str(req.suma_asegurada)),
             deducible=Decimal(str(req.deducible)),
             coaseguro_pct=Decimal(str(req.coaseguro_pct)),
-            tope_coaseguro=Decimal(str(req.tope_coaseguro)) if req.tope_coaseguro is not None else None,
+            tope_coaseguro=Decimal(str(req.tope_coaseguro))
+            if req.tope_coaseguro is not None
+            else None,
             zona=ZonaGeografica(req.zona),
             nivel=NivelHospitalario(req.nivel),
         )

@@ -94,9 +94,7 @@ class ConfiguracionRM(BaseModel):
         """Edad actual no puede ser menor a edad de contratación"""
         if "edad_contratacion" in info.data:
             if v < info.data["edad_contratacion"]:
-                raise ValueError(
-                    "Edad actual no puede ser menor a edad de contratación"
-                )
+                raise ValueError("Edad actual no puede ser menor a edad de contratación")
         return v
 
 

@@ -434,9 +434,7 @@ class TestGeneradorReporteRCS:
 class TestExportadorCSV:
     """Tests para ExportadorCSV"""
 
-    def test_exportar_dataframe(
-        self, metadata_basico, datos_suscripcion_autos
-    ):
+    def test_exportar_dataframe(self, metadata_basico, datos_suscripcion_autos):
         """Debe exportar DataFrame a CSV"""
         reporte = ReporteSuscripcion(
             metadata=metadata_basico, datos_por_ramo=[datos_suscripcion_autos]
@@ -459,10 +457,7 @@ class TestExportadorCSV:
 class TestExportadorExcel:
     """Tests para ExportadorExcel"""
 
-    @pytest.mark.skipif(
-        not hasattr(ExportadorExcel, "__init__"),
-        reason="openpyxl no disponible"
-    )
+    @pytest.mark.skipif(not hasattr(ExportadorExcel, "__init__"), reason="openpyxl no disponible")
     def test_exportar_reporte_completo(
         self,
         metadata_basico,
@@ -522,9 +517,7 @@ class TestExportadorExcel:
 class TestGeneradorSiniestrosDetallado:
     """Tests adicionales para GeneradorReporteSiniestros: resumen, vacío, multi-ramo."""
 
-    def test_generar_reporte_estructura_completa(
-        self, metadata_basico, datos_siniestros_autos
-    ):
+    def test_generar_reporte_estructura_completa(self, metadata_basico, datos_siniestros_autos):
         """generar_dataframe() debe tener las columnas esperadas y fila TOTAL."""
         reporte = ReporteSiniestros(
             metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
@@ -544,9 +537,7 @@ class TestGeneradorSiniestrosDetallado:
         assert columnas_esperadas.issubset(set(df.columns))
         assert df.iloc[-1]["Ramo"] == "TOTAL"
 
-    def test_generar_resumen_ejecutivo(
-        self, metadata_basico, datos_siniestros_autos
-    ):
+    def test_generar_resumen_ejecutivo(self, metadata_basico, datos_siniestros_autos):
         """generar_resumen() debe devolver métricas clave."""
         reporte = ReporteSiniestros(
             metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
@@ -562,9 +553,7 @@ class TestGeneradorSiniestrosDetallado:
 
     def test_generar_dataframe_vacio(self, metadata_basico):
         """generar_dataframe() con lista de ramos vacía debe devolver DataFrame vacío."""
-        reporte = ReporteSiniestros(
-            metadata=metadata_basico, datos_por_ramo=[]
-        )
+        reporte = ReporteSiniestros(metadata=metadata_basico, datos_por_ramo=[])
         generador = GeneradorReporteSiniestros()
         df = generador.generar_dataframe(reporte)
 
@@ -572,9 +561,7 @@ class TestGeneradorSiniestrosDetallado:
 
     def test_generar_resumen_vacio(self, metadata_basico):
         """generar_resumen() con lista vacía debe devolver dict vacío."""
-        reporte = ReporteSiniestros(
-            metadata=metadata_basico, datos_por_ramo=[]
-        )
+        reporte = ReporteSiniestros(metadata=metadata_basico, datos_por_ramo=[])
         generador = GeneradorReporteSiniestros()
         resumen = generador.generar_resumen(reporte)
 
@@ -650,9 +637,7 @@ class TestGeneradorInversionesDetallado:
 
     def test_generar_dataframe_vacio(self, metadata_basico):
         """generar_dataframe() con lista vacía debe devolver DataFrame vacío."""
-        reporte = ReporteInversiones(
-            metadata=metadata_basico, datos_por_activo=[]
-        )
+        reporte = ReporteInversiones(metadata=metadata_basico, datos_por_activo=[])
         generador = GeneradorReporteInversiones()
         df = generador.generar_dataframe(reporte)
 
@@ -666,9 +651,7 @@ class TestGeneradorInversionesDetallado:
             valor_libros=Decimal("480000000"),
             rendimiento_trimestre=Decimal("0.02"),
         )
-        reporte = ReporteInversiones(
-            metadata=metadata_basico, datos_por_activo=[dato]
-        )
+        reporte = ReporteInversiones(metadata=metadata_basico, datos_por_activo=[dato])
         generador = GeneradorReporteInversiones()
         df = generador.generar_dataframe(reporte)
 
@@ -700,9 +683,7 @@ class TestGeneradorRCSDetallado:
             capital_pagado=Decimal("80000000"),
             superavit=Decimal("30000000"),
         )
-        reporte = ReporteRCS(
-            metadata=metadata_basico, datos_rcs=datos_insuficientes
-        )
+        reporte = ReporteRCS(metadata=metadata_basico, datos_rcs=datos_insuficientes)
         generador = GeneradorReporteRCS()
         resumen = generador.generar_resumen(reporte)
 
@@ -731,9 +712,7 @@ class TestGeneradorRCSDetallado:
 class TestExportadoresIO:
     """Tests de I/O para ExportadorCSV y ExportadorExcel usando tmp_path."""
 
-    def test_csv_exporta_con_headers(
-        self, tmp_path, metadata_basico, datos_siniestros_autos
-    ):
+    def test_csv_exporta_con_headers(self, tmp_path, metadata_basico, datos_siniestros_autos):
         """ExportadorCSV debe crear archivo con encabezados correctos."""
         reporte = ReporteSiniestros(
             metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
@@ -758,9 +737,7 @@ class TestExportadoresIO:
     ):
         """exportar_multiples() debe crear un CSV por DataFrame."""
         df_sin = GeneradorReporteSiniestros().generar_dataframe(
-            ReporteSiniestros(
-                metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
-            )
+            ReporteSiniestros(metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos])
         )
         df_inv = GeneradorReporteInversiones().generar_dataframe(
             ReporteInversiones(
@@ -791,9 +768,7 @@ class TestExportadoresIO:
             pytest.skip("openpyxl no instalado")
 
         df_sin = GeneradorReporteSiniestros().generar_dataframe(
-            ReporteSiniestros(
-                metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos]
-            )
+            ReporteSiniestros(metadata=metadata_basico, datos_por_ramo=[datos_siniestros_autos])
         )
         df_rcs = GeneradorReporteRCS().generar_dataframe(
             ReporteRCS(metadata=metadata_basico, datos_rcs=datos_rcs)

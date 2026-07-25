@@ -524,9 +524,7 @@ class TestIntegracionValidaciones:
 
         assert retencion_resultado.requiere_retencion is False
 
-    def test_flujo_completo_renta_vitalicia(
-        self, validador_siniestros, calculadora_retenciones
-    ):
+    def test_flujo_completo_renta_vitalicia(self, validador_siniestros, calculadora_retenciones):
         """Flujo completo: renta parcialmente gravable + retención 10%"""
         # 1. Validar gravabilidad (50% gravable)
         siniestro_resultado = validador_siniestros.validar_gravabilidad(

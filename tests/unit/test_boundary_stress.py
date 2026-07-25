@@ -57,9 +57,7 @@ class TestVidaBoundary:
             recargo_gastos_adq=Decimal("0.10"),
             recargo_utilidad=Decimal("0.03"),
         )
-        asegurado = Asegurado(
-            edad=25, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
+        asegurado = Asegurado(edad=25, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
         producto = VidaTemporal(config, tabla_emssa09)
         resultado = producto.calcular_prima(asegurado)
         assert resultado.prima_neta > 0
@@ -98,9 +96,7 @@ class TestVidaBoundary:
             recargo_gastos_adq=Decimal("0.10"),
             recargo_utilidad=Decimal("0.03"),
         )
-        asegurado = Asegurado(
-            edad=95, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
+        asegurado = Asegurado(edad=95, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
         producto = VidaTemporal(config, tabla_emssa09)
         with pytest.raises(ValueError, match="no es asegurable"):
             producto.calcular_prima(asegurado)
@@ -134,9 +130,7 @@ class TestVidaBoundary:
 
     def test_minimum_suma_asegurada(self, tabla_emssa09, config_vida_20):
         """suma_asegurada = 0.01 -- minimum possible value."""
-        asegurado = Asegurado(
-            edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("0.01")
-        )
+        asegurado = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("0.01"))
         producto = VidaTemporal(config_vida_20, tabla_emssa09)
         resultado = producto.calcular_prima(asegurado)
         assert resultado.prima_neta > 0
@@ -156,9 +150,7 @@ class TestVidaBoundary:
             recargo_gastos_adq=Decimal("0.10"),
             recargo_utilidad=Decimal("0.03"),
         )
-        asegurado = Asegurado(
-            edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("50000000")
-        )
+        asegurado = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("50000000"))
         producto = VidaTemporal(config, tabla_emssa09)
         resultado = producto.calcular_prima(asegurado)
         assert resultado.prima_neta > 0
@@ -396,9 +388,7 @@ class TestReservasBoundary:
     def test_triangle_from_conftest(self, triangulo_acumulado, origin_years_5):
         """Conftest triangle should compute correctly."""
         n = len(triangulo_acumulado[0])
-        df = pd.DataFrame(
-            triangulo_acumulado, index=origin_years_5, columns=range(n)
-        )
+        df = pd.DataFrame(triangulo_acumulado, index=origin_years_5, columns=range(n))
         df = df.where(df.notna())
         config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
         cl = ChainLadder(config)
@@ -440,9 +430,7 @@ class TestReaseguroBoundary:
         )
 
     @staticmethod
-    def _make_siniestro(
-        monto: Decimal, id_str: str = "SIN-001"
-    ) -> Siniestro:
+    def _make_siniestro(monto: Decimal, id_str: str = "SIN-001") -> Siniestro:
         """Helper to build a siniestro within the 2024 contract period."""
         return Siniestro(
             id_siniestro=id_str,

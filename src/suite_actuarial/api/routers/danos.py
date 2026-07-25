@@ -40,13 +40,17 @@ def _decimal_to_float(obj: Any) -> Any:
 class AutoRequest(BaseModel):
     """Request body for auto insurance quotation."""
 
-    valor_vehiculo: float = Field(..., gt=0, description="Valor comercial del vehiculo en pesos MXN")
+    valor_vehiculo: float = Field(
+        ..., gt=0, description="Valor comercial del vehiculo en pesos MXN"
+    )
     tipo_vehiculo: str = Field(..., description="Clave del tipo de vehiculo (ver GRUPOS_VEHICULO)")
     antiguedad_anos: int = Field(..., ge=0, description="Anos de antiguedad del vehiculo")
     zona: str = Field(..., description="Clave de la zona de riesgo")
     edad_conductor: int = Field(..., ge=18, description="Edad del conductor principal en anos")
     deducible_pct: float = Field(default=0.05, description="Porcentaje de deducible (default 5%)")
-    coberturas: list[str] | None = Field(default=None, description="Lista de coberturas a cotizar (None = todas)")
+    coberturas: list[str] | None = Field(
+        default=None, description="Lista de coberturas a cotizar (None = todas)"
+    )
     historial_siniestros: list[int] | None = Field(
         default=None, description="Historial de siniestros anuales para Bonus-Malus"
     )
@@ -83,6 +87,7 @@ def calcular_auto(req: AutoRequest):
             deducible_pct=Decimal(str(req.deducible_pct)),
         )
         from suite_actuarial.danos.auto import Cobertura
+
         coberturas_enum = [Cobertura(c) for c in req.coberturas] if req.coberturas else None
         cotizacion = seguro.generar_cotizacion(
             coberturas=coberturas_enum,
@@ -99,10 +104,20 @@ def calcular_auto(req: AutoRequest):
 class IncendioRequest(BaseModel):
     """Request body for fire insurance quotation."""
 
-    valor_inmueble: float = Field(..., gt=0, description="Valor de reposicion del inmueble en pesos MXN")
-    tipo_construccion: str = Field(..., description="Tipo de construccion (concreto, acero, ladrillo, mixta, madera, lamina)")
-    zona: str = Field(..., description="Zona de riesgo (urbana_baja, urbana_media, urbana_alta, industrial, rural, forestal)")
-    uso: str = Field(..., description="Uso del inmueble (habitacional, comercial, oficinas, industrial, bodega, restaurante)")
+    valor_inmueble: float = Field(
+        ..., gt=0, description="Valor de reposicion del inmueble en pesos MXN"
+    )
+    tipo_construccion: str = Field(
+        ..., description="Tipo de construccion (concreto, acero, ladrillo, mixta, madera, lamina)"
+    )
+    zona: str = Field(
+        ...,
+        description="Zona de riesgo (urbana_baja, urbana_media, urbana_alta, industrial, rural, forestal)",
+    )
+    uso: str = Field(
+        ...,
+        description="Uso del inmueble (habitacional, comercial, oficinas, industrial, bodega, restaurante)",
+    )
 
 
 class IncendioResponse(BaseModel):
@@ -144,7 +159,9 @@ def calcular_incendio(req: IncendioRequest):
 class RCRequest(BaseModel):
     """Request body for liability insurance quotation."""
 
-    limite_responsabilidad: float = Field(..., gt=0, description="Limite maximo de cobertura en pesos MXN")
+    limite_responsabilidad: float = Field(
+        ..., gt=0, description="Limite maximo de cobertura en pesos MXN"
+    )
     deducible: float = Field(..., ge=0, description="Monto del deducible en pesos MXN")
     clase_actividad: str = Field(
         ...,
@@ -251,7 +268,9 @@ class FrecuenciaSeveridadRequest(BaseModel):
         "lognormal: {mu, sigma}, pareto: {alpha, scale}, gamma: {alpha, beta}, "
         "weibull: {c, scale}, exponencial: {lambda_}",
     )
-    n_simulaciones: int = Field(default=100_000, ge=1_000, le=1_000_000, description="Numero de simulaciones Monte Carlo")
+    n_simulaciones: int = Field(
+        default=100_000, ge=1_000, le=1_000_000, description="Numero de simulaciones Monte Carlo"
+    )
     seed: int | None = Field(default=None, description="Semilla para reproducibilidad")
 
 

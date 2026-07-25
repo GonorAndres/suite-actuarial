@@ -45,9 +45,7 @@ class Ley73Request(BaseModel):
     salario_promedio_diario: float = Field(
         ..., gt=0, description="Average daily salary over last 250 weeks (5 years)"
     )
-    edad_retiro: int = Field(
-        ..., ge=60, le=65, description="Retirement age (60-65)"
-    )
+    edad_retiro: int = Field(..., ge=60, le=65, description="Retirement age (60-65)")
 
 
 class Ley73Response(BaseModel):
@@ -67,20 +65,14 @@ class Ley73Response(BaseModel):
 class Ley97Request(BaseModel):
     """Request body for Ley 97 pension calculation."""
 
-    saldo_afore: float = Field(
-        ..., gt=0, description="Current AFORE account balance in MXN"
-    )
-    edad: int = Field(
-        ..., ge=60, le=70, description="Current age of the worker"
-    )
-    sexo: str = Field(
-        ..., pattern="^[HM]$", description="Sex: H (male) or M (female)"
-    )
-    semanas_cotizadas: int = Field(
-        ..., ge=0, description="Total weeks contributed to IMSS"
-    )
+    saldo_afore: float = Field(..., gt=0, description="Current AFORE account balance in MXN")
+    edad: int = Field(..., ge=60, le=70, description="Current age of the worker")
+    sexo: str = Field(..., pattern="^[HM]$", description="Sex: H (male) or M (female)")
+    semanas_cotizadas: int = Field(..., ge=0, description="Total weeks contributed to IMSS")
     tasa_interes: float = Field(
-        default=0.035, ge=0, le=0.15,
+        default=0.035,
+        ge=0,
+        le=0.15,
         description="Technical interest rate (default: 3.5%)",
     )
 
@@ -110,18 +102,10 @@ class Ley97Response(BaseModel):
 class RentaVitaliciaRequest(BaseModel):
     """Request body for life annuity calculation."""
 
-    edad: int = Field(
-        ..., ge=0, le=110, description="Age of the annuitant"
-    )
-    sexo: str = Field(
-        ..., pattern="^[HM]$", description="Sex: H (male) or M (female)"
-    )
-    monto_mensual: float = Field(
-        ..., gt=0, description="Monthly annuity payment in MXN"
-    )
-    tasa_interes: float = Field(
-        ..., ge=0, le=0.15, description="Technical interest rate"
-    )
+    edad: int = Field(..., ge=0, le=110, description="Age of the annuitant")
+    sexo: str = Field(..., pattern="^[HM]$", description="Sex: H (male) or M (female)")
+    monto_mensual: float = Field(..., gt=0, description="Monthly annuity payment in MXN")
+    tasa_interes: float = Field(..., ge=0, le=0.15, description="Technical interest rate")
     periodo_diferimiento: int = Field(
         default=0, ge=0, description="Deferral period in years (0 = immediate)"
     )

@@ -40,18 +40,14 @@ class GeneradorReporteRCS:
                 "Componente": "RCS Suscripción Vida",
                 "Monto": float(datos.rcs_suscripcion_vida),
                 "% del RCS Total": float(
-                    (datos.rcs_suscripcion_vida / rcs_total * 100).quantize(
-                        Decimal("0.01")
-                    )
+                    (datos.rcs_suscripcion_vida / rcs_total * 100).quantize(Decimal("0.01"))
                 ),
             },
             {
                 "Componente": "RCS Suscripción Daños",
                 "Monto": float(datos.rcs_suscripcion_danos),
                 "% del RCS Total": float(
-                    (datos.rcs_suscripcion_danos / rcs_total * 100).quantize(
-                        Decimal("0.01")
-                    )
+                    (datos.rcs_suscripcion_danos / rcs_total * 100).quantize(Decimal("0.01"))
                 ),
             },
             {
@@ -70,9 +66,7 @@ class GeneradorReporteRCS:
                     "Componente": "RCS Operacional",
                     "Monto": float(datos.rcs_operacional),
                     "% del RCS Total": float(
-                        (datos.rcs_operacional / rcs_total * 100).quantize(
-                            Decimal("0.01")
-                        )
+                        (datos.rcs_operacional / rcs_total * 100).quantize(Decimal("0.01"))
                     ),
                 }
             )
@@ -87,9 +81,7 @@ class GeneradorReporteRCS:
         )
 
         # Separador
-        rows.append(
-            {"Componente": "", "Monto": None, "% del RCS Total": None}
-        )
+        rows.append({"Componente": "", "Monto": None, "% del RCS Total": None})
 
         # Capital disponible
         rows.extend(
@@ -98,9 +90,7 @@ class GeneradorReporteRCS:
                     "Componente": "Capital Pagado",
                     "Monto": float(datos.capital_pagado),
                     "% del RCS Total": float(
-                        (datos.capital_pagado / rcs_total * 100).quantize(
-                            Decimal("0.01")
-                        )
+                        (datos.capital_pagado / rcs_total * 100).quantize(Decimal("0.01"))
                     ),
                 },
                 {
@@ -114,18 +104,14 @@ class GeneradorReporteRCS:
                     "Componente": "Capital Disponible TOTAL",
                     "Monto": float(datos.capital_disponible),
                     "% del RCS Total": float(
-                        (datos.capital_disponible / rcs_total * 100).quantize(
-                            Decimal("0.01")
-                        )
+                        (datos.capital_disponible / rcs_total * 100).quantize(Decimal("0.01"))
                     ),
                 },
             ]
         )
 
         # Separador
-        rows.append(
-            {"Componente": "", "Monto": None, "% del RCS Total": None}
-        )
+        rows.append({"Componente": "", "Monto": None, "% del RCS Total": None})
 
         # Excedente/Déficit
         rows.append(
@@ -133,9 +119,7 @@ class GeneradorReporteRCS:
                 "Componente": "Excedente / Déficit",
                 "Monto": float(datos.excedente_deficit),
                 "% del RCS Total": float(
-                    (datos.excedente_deficit / rcs_total * 100).quantize(
-                        Decimal("0.01")
-                    )
+                    (datos.excedente_deficit / rcs_total * 100).quantize(Decimal("0.01"))
                 ),
             }
         )
@@ -207,18 +191,16 @@ class GeneradorReporteRCS:
 
         componente_principal = max(componentes, key=componentes.get)
         valor_componente_principal = componentes[componente_principal]
-        pct_componente_principal = (
-            valor_componente_principal / datos.rcs_total * 100
-        ).quantize(Decimal("0.01"))
+        pct_componente_principal = (valor_componente_principal / datos.rcs_total * 100).quantize(
+            Decimal("0.01")
+        )
 
         return {
             "trimestre": f"{reporte.metadata.trimestre.value} {reporte.metadata.anio}",
             "rcs_total": float(datos.rcs_total),
             "capital_disponible": float(datos.capital_disponible),
             "ratio_solvencia": float(datos.ratio_solvencia.quantize(Decimal("0.0001"))),
-            "ratio_solvencia_pct": float(
-                (datos.ratio_solvencia * 100).quantize(Decimal("0.01"))
-            ),
+            "ratio_solvencia_pct": float((datos.ratio_solvencia * 100).quantize(Decimal("0.01"))),
             "cumple_regulacion": datos.cumple_regulacion,
             "excedente_deficit": float(datos.excedente_deficit),
             "componente_principal": componente_principal,

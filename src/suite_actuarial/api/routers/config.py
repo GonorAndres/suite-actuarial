@@ -40,9 +40,7 @@ class TasasSATResponse(BaseModel):
     tasa_retencion_retiros_ahorro: float = Field(
         ..., description="Retencion ISR sobre retiros de ahorro"
     )
-    tasa_isr_personas_morales: float = Field(
-        ..., description="Tasa ISR personas morales"
-    )
+    tasa_isr_personas_morales: float = Field(..., description="Tasa ISR personas morales")
     tasa_iva: float = Field(..., description="Tasa IVA general")
     limite_deducciones_pf_umas: int = Field(
         ..., description="Limite de deducciones personales en UMAs (Art. 151 LISR)"
@@ -53,22 +51,12 @@ class FactoresCNSFResponse(BaseModel):
     """CNSF regulatory factors for RCS calculation."""
 
     shock_acciones: float = Field(..., description="Shock a acciones")
-    shock_bonos_gubernamentales: float = Field(
-        ..., description="Shock a bonos gubernamentales"
-    )
-    shock_bonos_corporativos: float = Field(
-        ..., description="Shock a bonos corporativos"
-    )
+    shock_bonos_gubernamentales: float = Field(..., description="Shock a bonos gubernamentales")
+    shock_bonos_corporativos: float = Field(..., description="Shock a bonos corporativos")
     shock_inmuebles: float = Field(..., description="Shock a inmuebles")
-    shocks_credito: dict[str, float] = Field(
-        ..., description="Shock de credito por calificacion"
-    )
-    correlacion_vida_danos: float = Field(
-        ..., description="Correlacion RCS vida vs danos"
-    )
-    correlacion_vida_inversion: float = Field(
-        ..., description="Correlacion RCS vida vs inversion"
-    )
+    shocks_credito: dict[str, float] = Field(..., description="Shock de credito por calificacion")
+    correlacion_vida_danos: float = Field(..., description="Correlacion RCS vida vs danos")
+    correlacion_vida_inversion: float = Field(..., description="Correlacion RCS vida vs inversion")
     correlacion_danos_inversion: float = Field(
         ..., description="Correlacion RCS danos vs inversion"
     )
@@ -132,49 +120,28 @@ def _config_to_response(config) -> ConfigAnualResponse:
             tasa_retencion_rentas_vitalicias=float(
                 config.tasas_sat.tasa_retencion_rentas_vitalicias
             ),
-            tasa_retencion_retiros_ahorro=float(
-                config.tasas_sat.tasa_retencion_retiros_ahorro
-            ),
-            tasa_isr_personas_morales=float(
-                config.tasas_sat.tasa_isr_personas_morales
-            ),
+            tasa_retencion_retiros_ahorro=float(config.tasas_sat.tasa_retencion_retiros_ahorro),
+            tasa_isr_personas_morales=float(config.tasas_sat.tasa_isr_personas_morales),
             tasa_iva=float(config.tasas_sat.tasa_iva),
             limite_deducciones_pf_umas=config.tasas_sat.limite_deducciones_pf_umas,
         ),
         factores_cnsf=FactoresCNSFResponse(
             shock_acciones=float(config.factores_cnsf.shock_acciones),
-            shock_bonos_gubernamentales=float(
-                config.factores_cnsf.shock_bonos_gubernamentales
-            ),
-            shock_bonos_corporativos=float(
-                config.factores_cnsf.shock_bonos_corporativos
-            ),
+            shock_bonos_gubernamentales=float(config.factores_cnsf.shock_bonos_gubernamentales),
+            shock_bonos_corporativos=float(config.factores_cnsf.shock_bonos_corporativos),
             shock_inmuebles=float(config.factores_cnsf.shock_inmuebles),
-            shocks_credito={
-                k: float(v)
-                for k, v in config.factores_cnsf.shocks_credito.items()
-            },
-            correlacion_vida_danos=float(
-                config.factores_cnsf.correlacion_vida_danos
-            ),
-            correlacion_vida_inversion=float(
-                config.factores_cnsf.correlacion_vida_inversion
-            ),
-            correlacion_danos_inversion=float(
-                config.factores_cnsf.correlacion_danos_inversion
-            ),
+            shocks_credito={k: float(v) for k, v in config.factores_cnsf.shocks_credito.items()},
+            correlacion_vida_danos=float(config.factores_cnsf.correlacion_vida_danos),
+            correlacion_vida_inversion=float(config.factores_cnsf.correlacion_vida_inversion),
+            correlacion_danos_inversion=float(config.factores_cnsf.correlacion_danos_inversion),
         ),
         factores_tecnicos=FactoresTecnicosResponse(
-            tasa_interes_tecnico_vida=float(
-                config.factores_tecnicos.tasa_interes_tecnico_vida
-            ),
+            tasa_interes_tecnico_vida=float(config.factores_tecnicos.tasa_interes_tecnico_vida),
             tasa_interes_tecnico_pensiones=float(
                 config.factores_tecnicos.tasa_interes_tecnico_pensiones
             ),
             edad_omega=config.factores_tecnicos.edad_omega,
-            margen_seguridad_s114=float(
-                config.factores_tecnicos.margen_seguridad_s114
-            ),
+            margen_seguridad_s114=float(config.factores_tecnicos.margen_seguridad_s114),
         ),
         effective_from=config.effective_from,
         effective_to=config.effective_to,
@@ -239,15 +206,9 @@ def get_tasas_sat(anio: int):
     """
     config = _load_config_or_404(anio)
     return TasasSATResponse(
-        tasa_retencion_rentas_vitalicias=float(
-            config.tasas_sat.tasa_retencion_rentas_vitalicias
-        ),
-        tasa_retencion_retiros_ahorro=float(
-            config.tasas_sat.tasa_retencion_retiros_ahorro
-        ),
-        tasa_isr_personas_morales=float(
-            config.tasas_sat.tasa_isr_personas_morales
-        ),
+        tasa_retencion_rentas_vitalicias=float(config.tasas_sat.tasa_retencion_rentas_vitalicias),
+        tasa_retencion_retiros_ahorro=float(config.tasas_sat.tasa_retencion_retiros_ahorro),
+        tasa_isr_personas_morales=float(config.tasas_sat.tasa_isr_personas_morales),
         tasa_iva=float(config.tasas_sat.tasa_iva),
         limite_deducciones_pf_umas=config.tasas_sat.limite_deducciones_pf_umas,
     )
@@ -264,24 +225,11 @@ def get_factores_cnsf(anio: int):
     config = _load_config_or_404(anio)
     return FactoresCNSFResponse(
         shock_acciones=float(config.factores_cnsf.shock_acciones),
-        shock_bonos_gubernamentales=float(
-            config.factores_cnsf.shock_bonos_gubernamentales
-        ),
-        shock_bonos_corporativos=float(
-            config.factores_cnsf.shock_bonos_corporativos
-        ),
+        shock_bonos_gubernamentales=float(config.factores_cnsf.shock_bonos_gubernamentales),
+        shock_bonos_corporativos=float(config.factores_cnsf.shock_bonos_corporativos),
         shock_inmuebles=float(config.factores_cnsf.shock_inmuebles),
-        shocks_credito={
-            k: float(v)
-            for k, v in config.factores_cnsf.shocks_credito.items()
-        },
-        correlacion_vida_danos=float(
-            config.factores_cnsf.correlacion_vida_danos
-        ),
-        correlacion_vida_inversion=float(
-            config.factores_cnsf.correlacion_vida_inversion
-        ),
-        correlacion_danos_inversion=float(
-            config.factores_cnsf.correlacion_danos_inversion
-        ),
+        shocks_credito={k: float(v) for k, v in config.factores_cnsf.shocks_credito.items()},
+        correlacion_vida_danos=float(config.factores_cnsf.correlacion_vida_danos),
+        correlacion_vida_inversion=float(config.factores_cnsf.correlacion_vida_inversion),
+        correlacion_danos_inversion=float(config.factores_cnsf.correlacion_danos_inversion),
     )

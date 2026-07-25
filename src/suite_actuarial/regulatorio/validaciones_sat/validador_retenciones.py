@@ -121,9 +121,7 @@ class CalculadoraRetencionesISR:
 
         # Calcular retención si aplica
         if requiere_retencion:
-            monto_retencion = (monto_gravable * tasa_retencion).quantize(
-                Decimal("0.01")
-            )
+            monto_retencion = (monto_gravable * tasa_retencion).quantize(Decimal("0.01"))
             monto_neto = monto_pago - monto_retencion
         else:
             monto_retencion = Decimal("0")
@@ -160,9 +158,7 @@ class CalculadoraRetencionesISR:
                 monto_gravable=pago.get("monto_gravable"),
                 es_renta_vitalicia=pago.get("es_renta_vitalicia", False),
                 es_retiro_ahorro=pago.get("es_retiro_ahorro", False),
-                requiere_retencion_forzosa=pago.get(
-                    "requiere_retencion_forzosa", False
-                ),
+                requiere_retencion_forzosa=pago.get("requiere_retencion_forzosa", False),
             )
             resultados.append(resultado)
 

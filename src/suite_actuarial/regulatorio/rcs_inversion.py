@@ -76,9 +76,7 @@ class RCSInversion:
         Returns:
             RCS de mercado acciones
         """
-        return (
-            self.config.valor_acciones * self.SHOCK_ACCIONES
-        ).quantize(Decimal("0.01"))
+        return (self.config.valor_acciones * self.SHOCK_ACCIONES).quantize(Decimal("0.01"))
 
     def calcular_rcs_mercado_bonos_gubernamentales(self) -> Decimal:
         """
@@ -102,9 +100,7 @@ class RCSInversion:
         # Duración 5 años: factor 1.0
         # Duración 10 años: factor 1.5
         # Duración 20 años: factor 2.0
-        ajuste_duracion = Decimal("1.0") + (
-            duracion - Decimal("5.0")
-        ) * Decimal("0.1")
+        ajuste_duracion = Decimal("1.0") + (duracion - Decimal("5.0")) * Decimal("0.1")
         ajuste_duracion = max(ajuste_duracion, Decimal("0.5"))
         ajuste_duracion = min(ajuste_duracion, Decimal("2.5"))
 
@@ -132,9 +128,7 @@ class RCSInversion:
         calificacion = self.config.calificacion_promedio_bonos
 
         # Ajuste por duración (igual que gubernamentales)
-        ajuste_duracion = Decimal("1.0") + (
-            duracion - Decimal("5.0")
-        ) * Decimal("0.1")
+        ajuste_duracion = Decimal("1.0") + (duracion - Decimal("5.0")) * Decimal("0.1")
         ajuste_duracion = max(ajuste_duracion, Decimal("0.5"))
         ajuste_duracion = min(ajuste_duracion, Decimal("2.5"))
 
@@ -148,9 +142,7 @@ class RCSInversion:
         else:
             ajuste_calif = Decimal("2.0")
 
-        shock_ajustado = (
-            self.SHOCK_BONOS_CORPORATIVOS * ajuste_duracion * ajuste_calif
-        )
+        shock_ajustado = self.SHOCK_BONOS_CORPORATIVOS * ajuste_duracion * ajuste_calif
 
         return (valor * shock_ajustado).quantize(Decimal("0.01"))
 
@@ -169,9 +161,7 @@ class RCSInversion:
         Returns:
             RCS de mercado inmuebles
         """
-        return (
-            self.config.valor_inmuebles * self.SHOCK_INMUEBLES
-        ).quantize(Decimal("0.01"))
+        return (self.config.valor_inmuebles * self.SHOCK_INMUEBLES).quantize(Decimal("0.01"))
 
     def calcular_rcs_credito(self) -> Decimal:
         """
@@ -193,7 +183,8 @@ class RCSInversion:
 
         # Obtener shock de crédito según calificación
         shock_credito = self.SHOCKS_CREDITO.get(
-            calificacion, Decimal("0.100")  # Default 10%
+            calificacion,
+            Decimal("0.100"),  # Default 10%
         )
 
         return (valor * shock_credito).quantize(Decimal("0.01"))
@@ -224,9 +215,7 @@ class RCSInversion:
         # Factor de concentración simple: 1% del total
         factor_concentracion = Decimal("0.01")
 
-        return (total_inversiones * factor_concentracion).quantize(
-            Decimal("0.01")
-        )
+        return (total_inversiones * factor_concentracion).quantize(Decimal("0.01"))
 
     # Default correlation between market sub-risks (Solvency II calibration)
     CORRELACION_MERCADO = Decimal("0.75")
@@ -311,9 +300,7 @@ class RCSInversion:
         duracion = self.config.duracion_promedio_bonos
         calificacion = self.config.calificacion_promedio_bonos
 
-        ajuste_duracion = Decimal("1.0") + (
-            duracion - Decimal("5.0")
-        ) * Decimal("0.1")
+        ajuste_duracion = Decimal("1.0") + (duracion - Decimal("5.0")) * Decimal("0.1")
         ajuste_duracion = max(ajuste_duracion, Decimal("0.5"))
         ajuste_duracion = min(ajuste_duracion, Decimal("2.5"))
 
@@ -328,24 +315,16 @@ class RCSInversion:
         else:
             ajuste_calif = Decimal("2.0")
 
-        shock_bonos_corp = (
-            self.SHOCK_BONOS_CORPORATIVOS * ajuste_duracion * ajuste_calif
-        )
+        shock_bonos_corp = self.SHOCK_BONOS_CORPORATIVOS * ajuste_duracion * ajuste_calif
 
         return {
             "shock_acciones": self.SHOCK_ACCIONES.quantize(Decimal("0.01")),
-            "shock_bonos_gubernamentales": shock_bonos_gub.quantize(
+            "shock_bonos_gubernamentales": shock_bonos_gub.quantize(Decimal("0.01")),
+            "shock_bonos_corporativos": shock_bonos_corp.quantize(Decimal("0.01")),
+            "shock_inmuebles": self.SHOCK_INMUEBLES.quantize(Decimal("0.01")),
+            "shock_credito": self.SHOCKS_CREDITO.get(calificacion, Decimal("0.100")).quantize(
                 Decimal("0.01")
             ),
-            "shock_bonos_corporativos": shock_bonos_corp.quantize(
-                Decimal("0.01")
-            ),
-            "shock_inmuebles": self.SHOCK_INMUEBLES.quantize(
-                Decimal("0.01")
-            ),
-            "shock_credito": self.SHOCKS_CREDITO.get(
-                calificacion, Decimal("0.100")
-            ).quantize(Decimal("0.01")),
             "duracion_bonos": duracion.quantize(Decimal("0.01")),
             "ajuste_duracion": ajuste_duracion.quantize(Decimal("0.01")),
             "calificacion": calificacion,

@@ -50,9 +50,7 @@ class ContratoReaseguro(ABC):
         """
         # Validar que las fechas sean coherentes
         if self.config.vigencia_fin <= self.config.vigencia_inicio:
-            raise ValueError(
-                "La fecha de fin debe ser posterior a la de inicio"
-            )
+            raise ValueError("La fecha de fin debe ser posterior a la de inicio")
 
     def validar_siniestro(self, siniestro: Siniestro) -> bool:
         """
@@ -64,11 +62,7 @@ class ContratoReaseguro(ABC):
         Returns:
             True si el siniestro está dentro de vigencia, False si no
         """
-        return (
-            self.config.vigencia_inicio
-            <= siniestro.fecha_ocurrencia
-            <= self.config.vigencia_fin
-        )
+        return self.config.vigencia_inicio <= siniestro.fecha_ocurrencia <= self.config.vigencia_fin
 
     def validar_vigencia(self, fecha: date) -> bool:
         """
@@ -142,9 +136,7 @@ class ContratoReaseguro(ABC):
         # Resultado neto = monto retenido + comisión - prima pagada + recuperación
         # Para primas: retenido + comisión - prima_reaseguro
         # Para siniestros: -retenido + recuperacion
-        resultado_neto = (
-            monto_retenido + comision - prima_pagada + recuperacion
-        )
+        resultado_neto = monto_retenido + comision - prima_pagada + recuperacion
 
         return ResultadoReaseguro(
             tipo_contrato=self.config.tipo_contrato,

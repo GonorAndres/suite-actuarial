@@ -46,7 +46,10 @@ class AssumptionSet:
                 "currency": self.currency,
                 "mortality": self.mortality_table.nombre,
                 "mortality_metadata": self.mortality_table.metadata,
-                "curve": {"plazos": self.discount_curve.plazos, "tasas": [str(x) for x in self.discount_curve.tasas]},
+                "curve": {
+                    "plazos": self.discount_curve.plazos,
+                    "tasas": [str(x) for x in self.discount_curve.tasas],
+                },
                 "lapse": str(self.lapse_assumptions),
                 "expenses": str(self.expenses),
                 "inflation": str(self.inflation),
@@ -122,8 +125,12 @@ class LifeCashFlowValuator:
         monthly_premium = Decimal(str(monthly_premium))
         if sum_assured < 0 or monthly_premium < 0:
             raise ValueError("sum_assured y monthly_premium no pueden ser negativos")
-        expense_rate = self.assumptions.expenses if expense_rate is None else Decimal(str(expense_rate))
-        margin_rate = self.risk_margin_rate if risk_margin_rate is None else Decimal(str(risk_margin_rate))
+        expense_rate = (
+            self.assumptions.expenses if expense_rate is None else Decimal(str(expense_rate))
+        )
+        margin_rate = (
+            self.risk_margin_rate if risk_margin_rate is None else Decimal(str(risk_margin_rate))
+        )
 
         survival = Decimal("1")
         pv_death = Decimal("0")
@@ -140,9 +147,13 @@ class LifeCashFlowValuator:
             survival *= Decimal("1") - q_month
             survival *= Decimal("1") - self.assumptions.lapse_assumptions
 
-        best_estimate = (pv_death + pv_expenses - pv_premiums).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        best_estimate = (pv_death + pv_expenses - pv_premiums).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
         best_estimate = max(best_estimate, Decimal("0"))
-        risk_margin = (best_estimate * margin_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        risk_margin = (best_estimate * margin_rate).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
         total = best_estimate + risk_margin
         warnings: list[str] = []
         if self.assumptions.validation_status != "supported":
@@ -150,18 +161,31 @@ class LifeCashFlowValuator:
         metadata = CalculationMetadata(
             valuation_date=self.assumptions.valuation_date,
             assumption_id=self.assumptions.assumption_id,
-            validation_tier="supported" if self.assumptions.validation_status == "supported" else "experimental",
+            validation_tier="supported"
+            if self.assumptions.validation_status == "supported"
+            else "experimental",
             sources=[str(value) for value in self.assumptions.provenance.values()],
             warnings=warnings,
             reproducibility_id=self.assumptions.assumption_id,
-            assumptions_snapshot={"mortality_table": self.assumptions.mortality_table.nombre, "term_months": term_months},
+            assumptions_snapshot={
+                "mortality_table": self.assumptions.mortality_table.nombre,
+                "term_months": term_months,
+            },
         )
         return LifeValuationResult(
             best_estimate=best_estimate,
             risk_margin=risk_margin,
             total_liability=total,
-            present_value_components={"death_benefits": pv_death.quantize(Decimal("0.01")), "premiums": pv_premiums.quantize(Decimal("0.01")), "expenses": pv_expenses.quantize(Decimal("0.01"))},
-            assumptions_snapshot={"assumption_id": self.assumptions.assumption_id, "valuation_date": self.assumptions.valuation_date.isoformat(), "currency": self.assumptions.currency},
+            present_value_components={
+                "death_benefits": pv_death.quantize(Decimal("0.01")),
+                "premiums": pv_premiums.quantize(Decimal("0.01")),
+                "expenses": pv_expenses.quantize(Decimal("0.01")),
+            },
+            assumptions_snapshot={
+                "assumption_id": self.assumptions.assumption_id,
+                "valuation_date": self.assumptions.valuation_date.isoformat(),
+                "currency": self.assumptions.currency,
+            },
             sensitivities={"risk_margin_rate": margin_rate},
             warnings=warnings,
             reconciliation_total=total,
@@ -176,7 +200,9 @@ class LifeCashFlowValuator:
         metadata = CalculationMetadata(
             valuation_date=self.assumptions.valuation_date,
             assumption_id=self.assumptions.assumption_id,
-            validation_tier="supported" if self.assumptions.validation_status == "supported" else "experimental",
+            validation_tier="supported"
+            if self.assumptions.validation_status == "supported"
+            else "experimental",
             reproducibility_id=self.assumptions.assumption_id,
             assumptions_snapshot={"policies": len(results)},
         )

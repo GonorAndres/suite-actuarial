@@ -154,8 +154,12 @@ class VidaTemporal(ProductoSeguro):
                 "sexo": asegurado.sexo.value,
             },
             calculation_metadata=CalculationMetadata(
-                validation_tier="experimental" if self.tabla_mortalidad.metadata.get("data_status") == "illustrative" else "supported",
-                sources=[self.tabla_mortalidad.metadata.get("source", self.tabla_mortalidad.nombre)],
+                validation_tier="experimental"
+                if self.tabla_mortalidad.metadata.get("data_status") == "illustrative"
+                else "supported",
+                sources=[
+                    self.tabla_mortalidad.metadata.get("source", self.tabla_mortalidad.nombre)
+                ],
                 assumptions_snapshot={"tabla_mortalidad": self.tabla_mortalidad.nombre},
             ),
         )
@@ -193,9 +197,7 @@ class VidaTemporal(ProductoSeguro):
             >>> print(f"Reserva al año 5: ${reserva_5:,.2f}")
         """
         if anio < 0 or anio > self.config.plazo_years:
-            raise ValueError(
-                f"Año {anio} fuera de rango [0, {self.config.plazo_years}]"
-            )
+            raise ValueError(f"Año {anio} fuera de rango [0, {self.config.plazo_years}]")
 
         # Al inicio y al final, la reserva es 0
         if anio == 0 or anio == self.config.plazo_years:

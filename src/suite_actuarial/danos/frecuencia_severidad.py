@@ -119,9 +119,7 @@ class ModeloColectivo:
     # Simulacion Monte Carlo
     # ------------------------------------------------------------------
 
-    def simular_perdidas(
-        self, n_simulaciones: int = 10_000, seed: int | None = None
-    ) -> np.ndarray:
+    def simular_perdidas(self, n_simulaciones: int = 10_000, seed: int | None = None) -> np.ndarray:
         """
         Simulacion Monte Carlo de perdidas agregadas.
 
@@ -172,13 +170,17 @@ class ModeloColectivo:
     # Medidas de riesgo
     # ------------------------------------------------------------------
 
-    def var(self, nivel: float = 0.95, n_simulaciones: int = 100_000, seed: int | None = None) -> Decimal:
+    def var(
+        self, nivel: float = 0.95, n_simulaciones: int = 100_000, seed: int | None = None
+    ) -> Decimal:
         """Value at Risk al nivel de confianza dado."""
         perdidas = self.simular_perdidas(n_simulaciones=n_simulaciones, seed=seed)
         valor = float(np.quantile(perdidas, nivel))
         return Decimal(str(round(valor, 2)))
 
-    def tvar(self, nivel: float = 0.95, n_simulaciones: int = 100_000, seed: int | None = None) -> Decimal:
+    def tvar(
+        self, nivel: float = 0.95, n_simulaciones: int = 100_000, seed: int | None = None
+    ) -> Decimal:
         """Tail Value at Risk (CVaR / Expected Shortfall)."""
         perdidas = self.simular_perdidas(n_simulaciones=n_simulaciones, seed=seed)
         umbral = float(np.quantile(perdidas, nivel))
@@ -210,9 +212,7 @@ class ModeloColectivo:
     # Resumen
     # ------------------------------------------------------------------
 
-    def estadisticas(
-        self, n_simulaciones: int = 100_000, seed: int | None = None
-    ) -> dict:
+    def estadisticas(self, n_simulaciones: int = 100_000, seed: int | None = None) -> dict:
         """
         Resumen estadistico completo del modelo.
 
