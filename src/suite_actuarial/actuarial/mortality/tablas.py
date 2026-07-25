@@ -19,6 +19,7 @@ import warnings
 from decimal import Decimal
 from importlib import resources
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -289,9 +290,9 @@ class TablaMortalidad:
         cls,
         path: str | Path,
         nombre: str | None = None,
-        metadata: dict | None = None,
+        metadata: dict[str, Any] | None = None,
         strict: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> "TablaMortalidad":
         """
         Carga una tabla de mortalidad desde un archivo CSV.

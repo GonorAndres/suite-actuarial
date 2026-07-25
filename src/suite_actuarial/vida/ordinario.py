@@ -14,6 +14,7 @@ Características:
 """
 
 from decimal import Decimal
+from typing import Any
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.actuarial.pricing.vida_pricing import (
@@ -100,16 +101,32 @@ class VidaOrdinario(ProductoSeguro):
         self.plazo_pago_vitalicio = plazo_pago_vitalicio
 
         # Si es pago vitalicio, no hay plazo limitado
+        self.plazo_pago: int | None
         if plazo_pago_vitalicio:
             self.plazo_pago = None  # Paga hasta el final
         else:
             self.plazo_pago = config.plazo_years
 
+    @property
+    def _plazo_pago_limitado(self) -> int:
+        """
+        Plazo de pago cuando la prima no es vitalicia.
+
+        `__init__` fija la invariante `plazo_pago is None` si y solo si el pago es
+        vitalicio; esta propiedad la hace explicita en los puntos de uso en vez de
+        asumirla en silencio.
+        """
+        if self.plazo_pago is None:
+            raise ValueError(
+                "No hay plazo de pago limitado: el producto se configuro con prima vitalicia."
+            )
+        return self.plazo_pago
+
     def calcular_prima(
         self,
         asegurado: Asegurado,
         frecuencia_pago: str = "anual",
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un seguro de vida ordinario.
@@ -167,7 +184,7 @@ class VidaOrdinario(ProductoSeguro):
             plazo_anualidad = plazo_cobertura
         else:
             # Anualidad de pago limitado
-            plazo_anualidad = min(self.plazo_pago, plazo_cobertura)
+            plazo_anualidad = min(self._plazo_pago_limitado, plazo_cobertura)
 
         axm = calcular_anualidad(
             tabla=self.tabla_mortalidad,
@@ -224,7 +241,7 @@ class VidaOrdinario(ProductoSeguro):
         self,
         asegurado: Asegurado,
         anio: int,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> Decimal:
         """
         Calcula la reserva matemática en un año dado.
@@ -290,7 +307,7 @@ class VidaOrdinario(ProductoSeguro):
             plazo_pago_restante = plazo_restante
         else:
             # Pago limitado
-            plazo_pago_restante = max(0, self.plazo_pago - anio)
+            plazo_pago_restante = max(0, self._plazo_pago_limitado - anio)
 
         # Si ya no hay pagos, reserva = beneficio futuro
         if plazo_pago_restante == 0:

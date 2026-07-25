@@ -212,7 +212,9 @@ class ModeloColectivo:
     # Resumen
     # ------------------------------------------------------------------
 
-    def estadisticas(self, n_simulaciones: int = 100_000, seed: int | None = None) -> dict:
+    def estadisticas(
+        self, n_simulaciones: int = 100_000, seed: int | None = None
+    ) -> dict[str, Any]:
         """
         Resumen estadistico completo del modelo.
 

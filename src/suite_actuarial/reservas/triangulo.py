@@ -61,7 +61,7 @@ def factores_volumen_ponderado(valores: np.ndarray) -> tuple[list[float], list[f
     return factores, volumenes
 
 
-def validar_triangulo(df: pd.DataFrame, tipo: TipoTriangulo = None) -> bool:
+def validar_triangulo(df: pd.DataFrame, tipo: TipoTriangulo | None = None) -> bool:
     """
     Valida que un DataFrame sea un triángulo de desarrollo válido.
 
@@ -270,7 +270,7 @@ def promedio_geometrico(valores: list[float]) -> float:
     for v in valores_limpios:
         producto *= v
 
-    return producto ** (1.0 / len(valores_limpios))
+    return float(producto ** (1.0 / len(valores_limpios)))
 
 
 def obtener_ultima_diagonal(df: pd.DataFrame) -> pd.Series:

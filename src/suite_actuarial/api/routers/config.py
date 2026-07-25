@@ -7,6 +7,7 @@ Exposes GET endpoints for retrieving year-specific regulatory parameters
 
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -16,6 +17,7 @@ from suite_actuarial.config.loader import (
     cargar_config_fecha,
     validar_configuraciones,
 )
+from suite_actuarial.config.schema import ConfigAnual
 
 router = APIRouter(prefix="/config", tags=["config"])
 
@@ -94,12 +96,12 @@ class ConfigAnualResponse(BaseModel):
 # -- Helpers ------------------------------------------------------------------
 
 
-def _decimal_to_float(val):
+def _decimal_to_float(val: Any) -> Any:
     """Convert a value to float if it is a Decimal."""
     return float(val) if isinstance(val, Decimal) else val
 
 
-def _load_config_or_404(anio: int):
+def _load_config_or_404(anio: int) -> ConfigAnual:
     """Load config for the given year or raise HTTP 404."""
     try:
         return cargar_config(anio)
@@ -107,7 +109,7 @@ def _load_config_or_404(anio: int):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-def _config_to_response(config) -> ConfigAnualResponse:
+def _config_to_response(config: ConfigAnual) -> ConfigAnualResponse:
     """Convert a ConfigAnual (with Decimals) to a JSON-safe response."""
     return ConfigAnualResponse(
         anio=config.anio,
@@ -154,7 +156,7 @@ def _config_to_response(config) -> ConfigAnualResponse:
 
 
 @router.get("/fecha/{fecha}", response_model=ConfigAnualResponse)
-def get_config_fecha(fecha: date):
+def get_config_fecha(fecha: date) -> ConfigAnualResponse:
     """Return the reviewed profile effective on an ISO date."""
     try:
         return _config_to_response(cargar_config_fecha(fecha))
@@ -163,7 +165,7 @@ def get_config_fecha(fecha: date):
 
 
 @router.get("/validate", response_model=list[str])
-def validate_config():
+def validate_config() -> list[str]:
     """Validate bundled periods, units and source completeness."""
     try:
         return validar_configuraciones()
@@ -172,7 +174,7 @@ def validate_config():
 
 
 @router.get("/{anio}", response_model=ConfigAnualResponse)
-def get_config(anio: int):
+def get_config(anio: int) -> ConfigAnualResponse:
     """Return the full regulatory configuration for a fiscal year.
 
     Loads all parameters (UMA, SAT rates, CNSF factors, technical factors)
@@ -183,7 +185,7 @@ def get_config(anio: int):
 
 
 @router.get("/{anio}/uma", response_model=UMAResponse)
-def get_uma(anio: int):
+def get_uma(anio: int) -> UMAResponse:
     """Return UMA values for a fiscal year.
 
     Returns the daily, monthly, and annual UMA (Unidad de Medida y
@@ -198,7 +200,7 @@ def get_uma(anio: int):
 
 
 @router.get("/{anio}/tasas-sat", response_model=TasasSATResponse)
-def get_tasas_sat(anio: int):
+def get_tasas_sat(anio: int) -> TasasSATResponse:
     """Return SAT tax rates for a fiscal year.
 
     Returns ISR withholding rates, corporate tax rate, IVA rate, and
@@ -215,7 +217,7 @@ def get_tasas_sat(anio: int):
 
 
 @router.get("/{anio}/factores-cnsf", response_model=FactoresCNSFResponse)
-def get_factores_cnsf(anio: int):
+def get_factores_cnsf(anio: int) -> FactoresCNSFResponse:
     """Return CNSF regulatory factors for a fiscal year.
 
     Returns market shocks by asset type, credit shocks by rating, and

@@ -12,9 +12,11 @@ Referencia: Banco de Mexico, vectores de precios de MBonos y CETES.
 """
 
 import warnings
+from collections.abc import Sequence
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -36,8 +38,8 @@ class CurvaRendimiento:
 
     def __init__(
         self,
-        plazos: list[int],
-        tasas: list[Decimal],
+        plazos: Sequence[float],
+        tasas: Sequence[Decimal],
         *,
         valuation_date: date | None = None,
         currency: str = "MXN",
@@ -49,6 +51,7 @@ class CurvaRendimiento:
         """
         Args:
             plazos: List of tenors in years [1, 2, 3, 5, 10, 20, 30].
+                Fractional tenors are allowed; `tasa_spot` interpolates over them.
             tasas: Corresponding annual spot rates [0.08, 0.085, ...].
 
         Raises:
@@ -261,7 +264,7 @@ class CurvaRendimiento:
         )
 
     @classmethod
-    def desde_dataframe(cls, frame: pd.DataFrame, **kwargs) -> "CurvaRendimiento":
+    def desde_dataframe(cls, frame: pd.DataFrame, **kwargs: Any) -> "CurvaRendimiento":
         """Importa una curva desde un DataFrame con columnas ``plazo`` y ``tasa``."""
         if not {"plazo", "tasa"}.issubset(frame.columns):
             raise ValueError("El DataFrame debe incluir columnas 'plazo' y 'tasa'")

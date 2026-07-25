@@ -24,7 +24,11 @@ router = APIRouter(prefix="/danos", tags=["danos"])
 
 
 def _decimal_to_float(obj: Any) -> Any:
-    """Recursively convert Decimal values to float for JSON serialisation."""
+    """Recursively convert Decimal values to float for JSON serialisation.
+
+    Devuelve `Any` porque acepta cualquier estructura anidada; los endpoints que
+    la usan fijan el tipo concreto en una variable local antes de devolverlo.
+    """
     if isinstance(obj, Decimal):
         return float(obj)
     if isinstance(obj, dict):
@@ -70,7 +74,7 @@ class AutoResponse(BaseModel):
 
 
 @router.post("/auto/calcular", response_model=AutoResponse)
-def calcular_auto(req: AutoRequest):
+def calcular_auto(req: AutoRequest) -> dict[str, Any]:
     """Generate a complete auto insurance quotation.
 
     Calculates premiums per coverage using AMIS reference tables, zone
@@ -93,7 +97,8 @@ def calcular_auto(req: AutoRequest):
             coberturas=coberturas_enum,
             historial_siniestros=req.historial_siniestros,
         )
-        return _decimal_to_float(cotizacion)
+        respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -134,7 +139,7 @@ class IncendioResponse(BaseModel):
 
 
 @router.post("/incendio/calcular", response_model=IncendioResponse)
-def calcular_incendio(req: IncendioRequest):
+def calcular_incendio(req: IncendioRequest) -> dict[str, Any]:
     """Generate a fire insurance quotation.
 
     Calculates the annual premium based on property value, construction
@@ -148,7 +153,8 @@ def calcular_incendio(req: IncendioRequest):
             uso=req.uso,
         )
         cotizacion = seguro.generar_cotizacion()
-        return _decimal_to_float(cotizacion)
+        respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -183,7 +189,7 @@ class RCResponse(BaseModel):
 
 
 @router.post("/rc/calcular", response_model=RCResponse)
-def calcular_rc(req: RCRequest):
+def calcular_rc(req: RCRequest) -> dict[str, Any]:
     """Generate a general liability insurance quotation.
 
     Calculates the annual premium based on liability limit, deductible,
@@ -196,7 +202,8 @@ def calcular_rc(req: RCRequest):
             clase_actividad=req.clase_actividad,
         )
         cotizacion = seguro.generar_cotizacion()
-        return _decimal_to_float(cotizacion)
+        respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -223,7 +230,7 @@ class BonusMalusResponse(BaseModel):
 
 
 @router.post("/bonus-malus", response_model=BonusMalusResponse)
-def calcular_bonus_malus(req: BonusMalusRequest):
+def calcular_bonus_malus(req: BonusMalusRequest) -> BonusMalusResponse:
     """Calculate the Bonus-Malus level transition.
 
     Applies the standard Mexican BMS scale: no claims = -1 level (discount),
@@ -291,7 +298,7 @@ class FrecuenciaSeveridadResponse(BaseModel):
 
 
 @router.post("/frecuencia-severidad", response_model=FrecuenciaSeveridadResponse)
-def calcular_frecuencia_severidad(req: FrecuenciaSeveridadRequest):
+def calcular_frecuencia_severidad(req: FrecuenciaSeveridadRequest) -> dict[str, Any]:
     """Run a collective risk model simulation (S = X1 + ... + XN).
 
     Fits frequency and severity distributions, runs Monte Carlo simulation,
@@ -308,6 +315,7 @@ def calcular_frecuencia_severidad(req: FrecuenciaSeveridadRequest):
             n_simulaciones=req.n_simulaciones,
             seed=req.seed,
         )
-        return _decimal_to_float(stats)
+        respuesta: dict[str, Any] = _decimal_to_float(stats)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

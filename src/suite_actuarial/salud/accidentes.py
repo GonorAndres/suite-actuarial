@@ -11,6 +11,7 @@ Referencia: CUSF Titulo 5, Capitulo de Accidentes y Enfermedades
 """
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 
 class AccidentesEnfermedades:
@@ -132,7 +133,7 @@ class AccidentesEnfermedades:
         prima = (self.suma_asegurada / Decimal("1000")) * tasa * factor_ocup
         return prima.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-    def tabla_indemnizaciones(self) -> dict:
+    def tabla_indemnizaciones(self) -> dict[str, Any]:
         """
         Table of benefits: death, organic losses, daily, funeral.
 

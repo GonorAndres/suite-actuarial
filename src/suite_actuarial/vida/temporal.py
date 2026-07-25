@@ -9,6 +9,7 @@ Este es uno de los productos más básicos y populares:
 """
 
 from decimal import Decimal
+from typing import Any
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.actuarial.pricing.vida_pricing import (
@@ -97,7 +98,7 @@ class VidaTemporal(ProductoSeguro):
         self,
         asegurado: Asegurado,
         frecuencia_pago: str = "anual",
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un asegurado dado.
@@ -168,7 +169,7 @@ class VidaTemporal(ProductoSeguro):
         self,
         asegurado: Asegurado,
         anio: int,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> Decimal:
         """
         Calcula la reserva matemática en un año dado.

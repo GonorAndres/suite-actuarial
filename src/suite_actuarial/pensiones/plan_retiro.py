@@ -15,9 +15,11 @@ Referencia: Ley del Seguro Social, CONSAR, Circular CONSAR 17-2
 import warnings
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.config import cargar_config
+from suite_actuarial.config.schema import ConfigAnual
 from suite_actuarial.core.models.common import Sexo
 from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
@@ -49,7 +51,7 @@ class PensionLey73:
         semanas_cotizadas: int,
         salario_promedio_5_anos: Decimal | float,
         edad_retiro: int,
-        config=None,
+        config: ConfigAnual | None = None,
     ):
         """
         Args:
@@ -125,7 +127,7 @@ class PensionLey73:
         aguinaldo = self.calcular_aguinaldo()
         return (pension_mensual * Decimal("12") + aguinaldo).quantize(Decimal("0.01"))
 
-    def resumen(self) -> dict:
+    def resumen(self) -> dict[str, Any]:
         """Genera resumen completo del calculo."""
         pension_mensual = self.calcular_pension_mensual()
         return {
@@ -169,7 +171,7 @@ class PensionLey97:
         semanas_cotizadas: int,
         tabla_mortalidad: TablaMortalidad | None = None,
         tasa_interes: Decimal | float | None = None,
-        config=None,
+        config: ConfigAnual | None = None,
     ):
         """
         Args:
@@ -203,7 +205,7 @@ class PensionLey97:
         )
 
         self._tabla_mortalidad = tabla_mortalidad
-        self._tabla_conm = None
+        self._tabla_conm: TablaConmutacion | None = None
 
     def _get_tabla_conmutacion(self) -> TablaConmutacion:
         """Lazy-load commutation table."""
@@ -361,7 +363,7 @@ class PensionLey97:
 
         return pension_mensual.quantize(Decimal("0.01"))
 
-    def comparar_modalidades(self) -> dict:
+    def comparar_modalidades(self) -> dict[str, Any]:
         """
         Compara renta vitalicia vs retiro programado.
 
@@ -458,8 +460,8 @@ class CalculadoraIMSS:
         saldo_afore: Decimal | float | None = None,
         sexo: Sexo | str = "H",
         tabla_mortalidad: TablaMortalidad | None = None,
-        config=None,
-    ) -> dict:
+        config: ConfigAnual | None = None,
+    ) -> dict[str, Any]:
         """
         Calcula la pension optima para los parametros dados.
 

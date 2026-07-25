@@ -21,7 +21,7 @@ from suite_actuarial.reservas.cola import (
 
 def curva(a: float, b: float, k: int) -> float:
     """Factor age-to-age teórico del periodo k."""
-    return 1.0 + a * k**-b
+    return 1.0 + a * float(k**-b)
 
 
 class TestOraculoCurvaConocida:

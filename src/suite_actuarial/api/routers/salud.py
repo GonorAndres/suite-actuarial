@@ -21,7 +21,11 @@ router = APIRouter(prefix="/salud", tags=["salud"])
 
 
 def _decimal_to_float(obj: Any) -> Any:
-    """Recursively convert Decimal values to float for JSON serialization."""
+    """Recursively convert Decimal values to float for JSON serialization.
+
+    Devuelve `Any` porque acepta cualquier estructura anidada; los endpoints que
+    la usan fijan el tipo concreto en una variable local antes de devolverlo.
+    """
     if isinstance(obj, Decimal):
         return float(obj)
     if isinstance(obj, dict):
@@ -96,7 +100,7 @@ class AccidentesResponse(BaseModel):
 
 
 @router.post("/gmm/calcular", response_model=GMMResponse)
-def calcular_gmm(req: GMMRequest):
+def calcular_gmm(req: GMMRequest) -> dict[str, Any]:
     """Calculate GMM (Gastos Medicos Mayores) premium.
 
     Returns a detailed premium breakdown including base rate, adjustment
@@ -117,13 +121,14 @@ def calcular_gmm(req: GMMRequest):
             nivel=NivelHospitalario(req.nivel),
         )
         desglose = producto.desglose_prima()
-        return _decimal_to_float(desglose)
+        respuesta: dict[str, Any] = _decimal_to_float(desglose)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/accidentes/calcular", response_model=AccidentesResponse)
-def calcular_accidentes(req: AccidentesRequest):
+def calcular_accidentes(req: AccidentesRequest) -> dict[str, Any]:
     """Calculate Accidentes y Enfermedades (A&E) premium.
 
     Returns the annual premium, organic-loss indemnification table,
@@ -142,6 +147,7 @@ def calcular_accidentes(req: AccidentesRequest):
             ),
         )
         tabla = producto.tabla_indemnizaciones()
-        return _decimal_to_float(tabla)
+        respuesta: dict[str, Any] = _decimal_to_float(tabla)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

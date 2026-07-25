@@ -8,6 +8,7 @@ matrices de correlación según la normativa de la CNSF.
 
 import math
 from decimal import Decimal
+from typing import Any
 
 from suite_actuarial.core.validators import (
     ConfiguracionRCSDanos,
@@ -88,17 +89,17 @@ class AgregadorRCS:
         """
         # Calcular RCS individuales
         rcs_vida_total = Decimal("0")
-        desglose_vida = {}
+        desglose_vida: dict[str, Decimal] = {}
         if self.rcs_vida:
             rcs_vida_total, desglose_vida = self.rcs_vida.calcular_rcs_total_vida()
 
         rcs_danos_total = Decimal("0")
-        desglose_danos = {}
+        desglose_danos: dict[str, Decimal] = {}
         if self.rcs_danos:
             rcs_danos_total, desglose_danos = self.rcs_danos.calcular_rcs_total_danos()
 
         rcs_inversion_total = Decimal("0")
-        desglose_inversion = {}
+        desglose_inversion: dict[str, Decimal] = {}
         if self.rcs_inversion:
             rcs_inversion_total, desglose_inversion = (
                 self.rcs_inversion.calcular_rcs_total_inversion()
@@ -204,7 +205,7 @@ class AgregadorRCS:
 
         return rcs_total.quantize(Decimal("0.01"))
 
-    def obtener_matriz_correlacion(self) -> dict:
+    def obtener_matriz_correlacion(self) -> dict[str, Any]:
         """
         Obtiene la matriz de correlación aplicada.
 
@@ -217,7 +218,7 @@ class AgregadorRCS:
             "danos_inversion": float(self.CORRELACION_DANOS_INVERSION),
         }
 
-    def obtener_composicion_rcs(self, resultado: ResultadoRCS) -> dict:
+    def obtener_composicion_rcs(self, resultado: ResultadoRCS) -> dict[str, Any]:
         """
         Obtiene la composición porcentual del RCS total.
 
@@ -252,7 +253,7 @@ class AgregadorRCS:
 
     def validar_capital_suficiente(
         self, resultado: ResultadoRCS, margen_seguridad: Decimal = Decimal("0.10")
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Valida si el capital es suficiente con margen de seguridad.
 

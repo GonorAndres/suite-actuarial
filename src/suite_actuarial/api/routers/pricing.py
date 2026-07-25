@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.core.models.common import CalculationMetadata
+from suite_actuarial.core.models.producto import ResultadoCalculo
 from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
@@ -151,7 +152,7 @@ def _build_asegurado(req: PricingRequest) -> Asegurado:
     )
 
 
-def _resultado_to_response(producto_nombre: str, resultado) -> PricingResponse:
+def _resultado_to_response(producto_nombre: str, resultado: ResultadoCalculo) -> PricingResponse:
     return PricingResponse(
         producto=producto_nombre,
         prima_neta=float(resultado.prima_neta),
@@ -234,7 +235,7 @@ def _analyze_dotal(req: DotalLabRequest) -> DotalLabResponse:
 
 
 @router.post("/temporal", response_model=PricingResponse)
-def price_temporal(req: PricingRequest):
+def price_temporal(req: PricingRequest) -> PricingResponse:
     """Price a term life (vida temporal) policy.
 
     Calculates the net and gross premium for a term life insurance product
@@ -247,7 +248,7 @@ def price_temporal(req: PricingRequest):
 
 
 @router.post("/ordinario", response_model=PricingResponse)
-def price_ordinario(req: PricingRequest):
+def price_ordinario(req: PricingRequest) -> PricingResponse:
     """Price a whole life (vida ordinario) policy.
 
     Calculates the net and gross premium for a whole-life insurance product.
@@ -260,7 +261,7 @@ def price_ordinario(req: PricingRequest):
 
 
 @router.post("/dotal", response_model=PricingResponse)
-def price_dotal(req: PricingRequest):
+def price_dotal(req: PricingRequest) -> PricingResponse:
     """Price an endowment (dotal) policy.
 
     Calculates the net and gross premium for an endowment product that
@@ -273,7 +274,7 @@ def price_dotal(req: PricingRequest):
 
 
 @router.post("/dotal/lab", response_model=DotalLabResponse)
-def analyze_dotal_lab(req: DotalLabRequest):
+def analyze_dotal_lab(req: DotalLabRequest) -> DotalLabResponse:
     """Build and inspect a limited-pay endowment product."""
     try:
         return _analyze_dotal(req)
@@ -282,7 +283,7 @@ def analyze_dotal_lab(req: DotalLabRequest):
 
 
 @router.post("/compare", response_model=CompareResponse)
-def compare_products(req: PricingRequest):
+def compare_products(req: PricingRequest) -> CompareResponse:
     """Compare all three life products for the same insured.
 
     Returns pricing results for temporal, ordinario, and dotal products

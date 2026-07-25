@@ -6,6 +6,7 @@ para exportar a Excel o CSV.
 """
 
 from decimal import Decimal
+from typing import Any
 
 import pandas as pd
 
@@ -104,7 +105,7 @@ class GeneradorReporteSuscripcion:
 
         return df
 
-    def generar_resumen(self, reporte: ReporteSuscripcion) -> dict[str, any]:
+    def generar_resumen(self, reporte: ReporteSuscripcion) -> dict[str, Any]:
         """
         Genera resumen ejecutivo del reporte de suscripción.
 

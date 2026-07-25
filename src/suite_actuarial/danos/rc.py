@@ -6,6 +6,7 @@ causados por la actividad del asegurado.
 """
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 # Tasas base por millar segun clase de actividad
 TASAS_ACTIVIDAD: dict[str, Decimal] = {
@@ -98,7 +99,7 @@ class SeguroRC:
         )
         return prima.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-    def generar_cotizacion(self) -> dict:
+    def generar_cotizacion(self) -> dict[str, Any]:
         """Cotizacion completa con desglose de factores."""
         return {
             "limite_responsabilidad": self.limite_responsabilidad,

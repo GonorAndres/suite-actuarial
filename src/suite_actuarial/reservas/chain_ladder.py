@@ -25,6 +25,7 @@ from suite_actuarial.reservas.cola import (
 )
 from suite_actuarial.reservas.diagnosticos import (
     BandaDispersion,
+    ReserveValidationReport,
     banda_dispersion_link_ratios,
     validar_reserva,
 )
@@ -402,7 +403,7 @@ class ChainLadder:
             )
         return calcular_mack(triangulo)
 
-    def reporte_validacion(self, triangulo: pd.DataFrame):
+    def reporte_validacion(self, triangulo: pd.DataFrame) -> ReserveValidationReport:
         """Devuelve diagnosticos de calidad y supuestos materiales."""
         resultado = self.calcular(triangulo)
         tail = self.factores_desarrollo[-1] if self.factores_desarrollo else None

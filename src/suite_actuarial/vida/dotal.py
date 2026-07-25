@@ -15,6 +15,7 @@ Características:
 """
 
 from decimal import Decimal
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -26,6 +27,7 @@ from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
     ResultadoCalculo,
+    Sexo,
 )
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 
@@ -195,7 +197,7 @@ class VidaDotal(ProductoSeguro):
         self,
         asegurado: Asegurado,
         frecuencia_pago: str = "anual",
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un seguro dotal.
@@ -289,7 +291,7 @@ class VidaDotal(ProductoSeguro):
     def _calcular_seguro_dotal(
         self,
         edad: int,
-        sexo,
+        sexo: Sexo,
         plazo: int,
         suma_asegurada: Decimal,
     ) -> Decimal:
@@ -321,7 +323,7 @@ class VidaDotal(ProductoSeguro):
     def _calcular_componentes_beneficio(
         self,
         edad: int,
-        sexo,
+        sexo: Sexo,
         plazo: int,
         suma_asegurada: Decimal,
     ) -> tuple[Decimal, Decimal]:
@@ -513,7 +515,7 @@ class VidaDotal(ProductoSeguro):
         self,
         asegurado: Asegurado,
         anio: int,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> Decimal:
         """
         Calcula la reserva matemática en un año dado.

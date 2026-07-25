@@ -90,7 +90,10 @@ Repository = "https://github.com/GonorAndres/suite-actuarial"
 where = ["src"]
 
 [tool.setuptools.package-data]
-suite_actuarial = ["data/mortality_tables/*.csv", "data/mortality_tables/*.json"]
+# `py.typed` (PEP 561) publica las anotaciones del paquete. Sin el, mypy trata
+# `suite_actuarial` como sin tipos cuando lo importa codigo de fuera del arbol
+# comprobado -- que es lo que pasaba con `examples/` y `streamlit_app/`.
+suite_actuarial = ["py.typed", "data/mortality_tables/*.csv", "data/mortality_tables/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -126,7 +129,13 @@ ignore = [
 "__init__.py" = ["F401"]  # imports no usados están ok en __init__
 
 [tool.mypy]
-python_version = "3.11"
+# El paquete soporta 3.11 en adelante (`requires-python`), pero mypy analiza aqui
+# 3.12 a proposito: los stubs de numpy >= 2.3 usan la sentencia `type` de PEP 695 y
+# mypy se niega a parsearlos bajo `python_version = "3.11"`, abortando la revision
+# completa antes de mirar una sola linea del proyecto. Control compensatorio: el
+# job de CI con Python 3.11 ejecuta la suite real, asi que cualquier sintaxis
+# incompatible con 3.11 falla al importar.
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -134,12 +143,18 @@ plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
 module = [
-    "chainladder.*",
-    "lifelines.*",
-    "plotly.*",
-    "streamlit.*",
+    "openpyxl.*",
+    "pandas.*",
+    "scipy.*",
 ]
 ignore_missing_imports = true
+
+# Las pruebas no llevan anotaciones de retorno: una funcion `test_*` siempre
+# devuelve `None` y anotarlo no aporta informacion. El resto de comprobaciones
+# (tipos de argumento, atributos, retornos incompatibles) si corre sobre `tests/`.
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
 
 [tool.coverage.run]
 source = ["src"]

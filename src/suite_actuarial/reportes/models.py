@@ -9,7 +9,7 @@ from datetime import date
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from suite_actuarial.core.models.regulatorio import calcular_ratio_solvencia
 
@@ -66,7 +66,7 @@ class MetadatosReporte(BaseModel):
 
     @field_validator("fecha_presentacion")
     @classmethod
-    def validar_fecha_coherente(cls, v: date, info) -> date:
+    def validar_fecha_coherente(cls, v: date, info: ValidationInfo) -> date:
         """La fecha de presentación debe ser posterior al trimestre reportado"""
         if "anio" in info.data and "trimestre" in info.data:
             anio = info.data["anio"]
@@ -114,7 +114,7 @@ class DatosSuscripcionRamo(BaseModel):
 
     @field_validator("primas_devengadas")
     @classmethod
-    def validar_devengadas(cls, v: Decimal, info) -> Decimal:
+    def validar_devengadas(cls, v: Decimal, info: ValidationInfo) -> Decimal:
         """Primas devengadas no pueden exceder emitidas netas"""
         if "primas_emitidas" in info.data and "primas_canceladas" in info.data:
             emitidas_netas = info.data["primas_emitidas"] - info.data.get(
@@ -153,7 +153,7 @@ class DatosSiniestrosRamo(BaseModel):
 
     @field_validator("numero_siniestros_pendientes")
     @classmethod
-    def validar_pendientes(cls, v: int, info) -> int:
+    def validar_pendientes(cls, v: int, info: ValidationInfo) -> int:
         """Siniestros pendientes no pueden exceder total de siniestros"""
         if "numero_siniestros" in info.data:
             if v > info.data["numero_siniestros"]:
@@ -265,17 +265,17 @@ class ReporteSuscripcion(BaseModel):
     @property
     def total_primas_emitidas(self) -> Decimal:
         """Total de primas emitidas en todos los ramos"""
-        return sum(d.primas_emitidas for d in self.datos_por_ramo)
+        return sum((d.primas_emitidas for d in self.datos_por_ramo), Decimal("0"))
 
     @property
     def total_primas_devengadas(self) -> Decimal:
         """Total de primas devengadas en todos los ramos"""
-        return sum(d.primas_devengadas for d in self.datos_por_ramo)
+        return sum((d.primas_devengadas for d in self.datos_por_ramo), Decimal("0"))
 
     @property
     def total_suma_asegurada(self) -> Decimal:
         """Total de suma asegurada en todos los ramos"""
-        return sum(d.suma_asegurada_total for d in self.datos_por_ramo)
+        return sum((d.suma_asegurada_total for d in self.datos_por_ramo), Decimal("0"))
 
 
 class ReporteSiniestros(BaseModel):
@@ -291,17 +291,17 @@ class ReporteSiniestros(BaseModel):
     @property
     def total_siniestros_ocurridos(self) -> Decimal:
         """Total de siniestros ocurridos en todos los ramos"""
-        return sum(d.siniestros_ocurridos for d in self.datos_por_ramo)
+        return sum((d.siniestros_ocurridos for d in self.datos_por_ramo), Decimal("0"))
 
     @property
     def total_siniestros_pagados(self) -> Decimal:
         """Total de siniestros pagados en todos los ramos"""
-        return sum(d.siniestros_pagados for d in self.datos_por_ramo)
+        return sum((d.siniestros_pagados for d in self.datos_por_ramo), Decimal("0"))
 
     @property
     def total_reservas(self) -> Decimal:
         """Total de reservas de siniestros en todos los ramos"""
-        return sum(d.reserva_siniestros for d in self.datos_por_ramo)
+        return sum((d.reserva_siniestros for d in self.datos_por_ramo), Decimal("0"))
 
 
 class ReporteInversiones(BaseModel):
@@ -317,17 +317,17 @@ class ReporteInversiones(BaseModel):
     @property
     def total_valor_mercado(self) -> Decimal:
         """Valor total de mercado de la cartera de inversiones"""
-        return sum(d.valor_mercado for d in self.datos_por_activo)
+        return sum((d.valor_mercado for d in self.datos_por_activo), Decimal("0"))
 
     @property
     def total_valor_libros(self) -> Decimal:
         """Valor total en libros de la cartera de inversiones"""
-        return sum(d.valor_libros for d in self.datos_por_activo)
+        return sum((d.valor_libros for d in self.datos_por_activo), Decimal("0"))
 
     @property
     def total_ganancia_no_realizada(self) -> Decimal:
         """Total de ganancias (o pérdidas) no realizadas"""
-        return sum(d.ganancia_no_realizada for d in self.datos_por_activo)
+        return sum((d.ganancia_no_realizada for d in self.datos_por_activo), Decimal("0"))
 
     def obtener_composicion_pct(self) -> dict[str, Decimal]:
         """Devuelve composición porcentual por tipo de activo"""

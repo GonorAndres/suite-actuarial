@@ -6,6 +6,7 @@ para exportar a Excel o CSV.
 """
 
 from decimal import Decimal
+from typing import Any
 
 import pandas as pd
 
@@ -168,7 +169,7 @@ class GeneradorReporteRCS:
 
         return pd.DataFrame(rows)
 
-    def generar_resumen(self, reporte: ReporteRCS) -> dict[str, any]:
+    def generar_resumen(self, reporte: ReporteRCS) -> dict[str, Any]:
         """
         Genera resumen ejecutivo del reporte de RCS.
 
@@ -189,7 +190,7 @@ class GeneradorReporteRCS:
         if datos.rcs_operacional > 0:
             componentes["Operacional"] = datos.rcs_operacional
 
-        componente_principal = max(componentes, key=componentes.get)
+        componente_principal = max(componentes, key=lambda nombre: componentes[nombre])
         valor_componente_principal = componentes[componente_principal]
         pct_componente_principal = (valor_componente_principal / datos.rcs_total * 100).quantize(
             Decimal("0.01")

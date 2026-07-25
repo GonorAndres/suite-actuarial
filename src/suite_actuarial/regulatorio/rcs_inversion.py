@@ -288,7 +288,7 @@ class RCSInversion:
 
         return rcs_total.quantize(Decimal("0.01")), desglose
 
-    def obtener_shocks_aplicados(self) -> dict[str, Decimal]:
+    def obtener_shocks_aplicados(self) -> dict[str, Decimal | str]:
         """
         Obtiene los shocks aplicados a cada tipo de activo.
 

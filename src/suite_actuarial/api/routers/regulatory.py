@@ -9,6 +9,7 @@ from decimal import Decimal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from suite_actuarial.core.models.regulatorio import ResultadoRCS
 from suite_actuarial.regulatorio.agregador_rcs import AgregadorRCS
 from suite_actuarial.regulatorio.validaciones_sat.models import TipoSeguroFiscal
 from suite_actuarial.regulatorio.validaciones_sat.validador_primas import (
@@ -147,7 +148,7 @@ class WithholdingResponse(BaseModel):
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
-def _rcs_resultado_to_response(resultado) -> RCSResponse:
+def _rcs_resultado_to_response(resultado: ResultadoRCS) -> RCSResponse:
     return RCSResponse(
         rcs_mortalidad=float(resultado.rcs_mortalidad),
         rcs_longevidad=float(resultado.rcs_longevidad),
@@ -174,7 +175,7 @@ def _rcs_resultado_to_response(resultado) -> RCSResponse:
 
 
 @router.post("/rcs", response_model=RCSResponse)
-def calculate_rcs(req: RCSRequest):
+def calculate_rcs(req: RCSRequest) -> RCSResponse:
     """Calculate the full Requerimiento de Capital de Solvencia (RCS).
 
     Aggregates subscription risks (life and P&C) and investment risks
@@ -236,7 +237,7 @@ def calculate_rcs(req: RCSRequest):
 
 
 @router.post("/sat/deductibility", response_model=DeductibilityResponse)
-def check_deductibility(req: DeductibilityRequest):
+def check_deductibility(req: DeductibilityRequest) -> DeductibilityResponse:
     """Check premium deductibility for ISR purposes per SAT rules.
 
     Determines whether an insurance premium is tax-deductible and up to
@@ -263,7 +264,7 @@ def check_deductibility(req: DeductibilityRequest):
 
 
 @router.post("/sat/withholding", response_model=WithholdingResponse)
-def calculate_withholding(req: WithholdingRequest):
+def calculate_withholding(req: WithholdingRequest) -> WithholdingResponse:
     """Calculate ISR withholding on an insurance payment.
 
     Determines whether withholding applies and computes the retention

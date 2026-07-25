@@ -47,7 +47,7 @@ class ValidadorSiniestrosGravables:
         es_indemnizacion_muerte: bool = False,
         es_renta_vitalicia: bool = False,
         es_retiro_ahorro: bool = False,
-        monto_primas_pagadas: Decimal = None,
+        monto_primas_pagadas: Decimal | None = None,
         metodo_pago: str | None = None,
         relacion_beneficiario: str | None = None,
     ) -> ResultadoGravabilidadSiniestro:
@@ -100,7 +100,7 @@ class ValidadorSiniestrosGravables:
         es_indemnizacion_muerte: bool = False,
         es_renta_vitalicia: bool = False,
         es_retiro_ahorro: bool = False,
-        monto_primas_pagadas: Decimal = None,
+        monto_primas_pagadas: Decimal | None = None,
     ) -> ResultadoGravabilidadSiniestro:
         """
         Valida gravabilidad para personas físicas.

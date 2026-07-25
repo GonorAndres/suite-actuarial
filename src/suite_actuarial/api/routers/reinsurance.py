@@ -11,6 +11,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from suite_actuarial.core.models.reaseguro import ResultadoReaseguro
 from suite_actuarial.core.validators import (
     ExcessOfLossConfig,
     ModalidadXL,
@@ -111,8 +112,8 @@ def _to_siniestro(s: SiniestroIn) -> Siniestro:
     )
 
 
-def _resultado_to_response(resultado) -> ReinsuranceResponse:
-    def _convert(val):
+def _resultado_to_response(resultado: ResultadoReaseguro) -> ReinsuranceResponse:
+    def _convert(val: Any) -> Any:
         if isinstance(val, Decimal):
             return float(val)
         if isinstance(val, dict):
@@ -138,7 +139,7 @@ def _resultado_to_response(resultado) -> ReinsuranceResponse:
 
 
 @router.post("/quota-share", response_model=ReinsuranceResponse)
-def calculate_quota_share(req: QuotaShareRequest):
+def calculate_quota_share(req: QuotaShareRequest) -> ReinsuranceResponse:
     """Calculate quota share reinsurance results.
 
     Applies a proportional cession percentage to premiums and claims,
@@ -166,7 +167,7 @@ def calculate_quota_share(req: QuotaShareRequest):
 
 
 @router.post("/excess-of-loss", response_model=ReinsuranceResponse)
-def calculate_excess_of_loss(req: ExcessOfLossRequest):
+def calculate_excess_of_loss(req: ExcessOfLossRequest) -> ReinsuranceResponse:
     """Calculate excess of loss (XL) reinsurance results.
 
     The reinsurer pays when a claim exceeds the retention, capped per
@@ -202,7 +203,7 @@ def calculate_excess_of_loss(req: ExcessOfLossRequest):
 
 
 @router.post("/stop-loss", response_model=ReinsuranceResponse)
-def calculate_stop_loss(req: StopLossRequest):
+def calculate_stop_loss(req: StopLossRequest) -> ReinsuranceResponse:
     """Calculate stop loss reinsurance results.
 
     Protects when aggregate loss ratio exceeds the attachment point.

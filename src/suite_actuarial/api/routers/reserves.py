@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from suite_actuarial.core.models.common import CalculationMetadata
+from suite_actuarial.core.models.reservas import ResultadoReserva
 from suite_actuarial.core.validators import (
     ConfiguracionBootstrap,
     ConfiguracionBornhuetterFerguson,
@@ -114,7 +115,7 @@ def _build_triangle(rows: list[list[float | None]], years: list[int]) -> pd.Data
     return df
 
 
-def _resultado_to_response(resultado) -> ReserveResponse:
+def _resultado_to_response(resultado: ResultadoReserva) -> ReserveResponse:
     return ReserveResponse(
         metodo=resultado.metodo.value,
         reserva_total=float(resultado.reserva_total),
@@ -143,7 +144,7 @@ def _resultado_to_response(resultado) -> ReserveResponse:
 
 
 @router.post("/chain-ladder", response_model=ReserveResponse)
-def calculate_chain_ladder(req: ChainLadderRequest):
+def calculate_chain_ladder(req: ChainLadderRequest) -> ReserveResponse:
     """Calculate reserves using the Chain Ladder method.
 
     Accepts a cumulative development triangle and returns projected
@@ -164,7 +165,7 @@ def calculate_chain_ladder(req: ChainLadderRequest):
 
 
 @router.post("/bornhuetter-ferguson", response_model=ReserveResponse)
-def calculate_bornhuetter_ferguson(req: BornhuetterFergusonRequest):
+def calculate_bornhuetter_ferguson(req: BornhuetterFergusonRequest) -> ReserveResponse:
     """Calculate reserves using the Bornhuetter-Ferguson method.
 
     Combines observed development (Chain Ladder factors) with an a-priori
@@ -185,7 +186,7 @@ def calculate_bornhuetter_ferguson(req: BornhuetterFergusonRequest):
 
 
 @router.post("/bootstrap", response_model=ReserveResponse)
-def calculate_bootstrap(req: BootstrapRequest):
+def calculate_bootstrap(req: BootstrapRequest) -> ReserveResponse:
     """England-Verrall ODP bootstrap: predictive distribution of the reserve.
 
     Pearson residuals are computed on *incremental* claims against values fitted

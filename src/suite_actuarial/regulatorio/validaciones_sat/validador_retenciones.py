@@ -6,6 +6,7 @@ sujetos a retención conforme a la Ley del ISR.
 """
 
 from decimal import Decimal
+from typing import Any
 
 from suite_actuarial.regulatorio.validaciones_sat.models import (
     ResultadoRetencion,
@@ -153,9 +154,9 @@ class CalculadoraRetencionesISR:
 
         for pago in pagos:
             resultado = self.calcular_retencion(
-                tipo_seguro=pago.get("tipo_seguro"),
-                monto_pago=pago.get("monto_pago"),
-                monto_gravable=pago.get("monto_gravable"),
+                tipo_seguro=pago["tipo_seguro"],
+                monto_pago=pago["monto_pago"],
+                monto_gravable=pago["monto_gravable"],
                 es_renta_vitalicia=pago.get("es_renta_vitalicia", False),
                 es_retiro_ahorro=pago.get("es_retiro_ahorro", False),
                 requiere_retencion_forzosa=pago.get("requiere_retencion_forzosa", False),
@@ -167,7 +168,7 @@ class CalculadoraRetencionesISR:
     def generar_resumen_retenciones(
         self,
         retenciones: list[ResultadoRetencion],
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Genera resumen agregado de retenciones.
 
@@ -177,10 +178,10 @@ class CalculadoraRetencionesISR:
         Returns:
             Diccionario con totales y estadísticas
         """
-        total_pagos = sum(r.monto_pago for r in retenciones)
-        total_gravable = sum(r.base_retencion for r in retenciones)
-        total_retenido = sum(r.monto_retencion for r in retenciones)
-        total_neto = sum(r.monto_neto_pagar for r in retenciones)
+        total_pagos = sum((r.monto_pago for r in retenciones), Decimal("0"))
+        total_gravable = sum((r.base_retencion for r in retenciones), Decimal("0"))
+        total_retenido = sum((r.monto_retencion for r in retenciones), Decimal("0"))
+        total_neto = sum((r.monto_neto_pagar for r in retenciones), Decimal("0"))
 
         pagos_con_retencion = sum(1 for r in retenciones if r.requiere_retencion)
 

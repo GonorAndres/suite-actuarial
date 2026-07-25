@@ -7,6 +7,7 @@ y el motor de factores para generar cotizaciones completas.
 
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
+from typing import Any
 
 from suite_actuarial.danos.tablas_amis import (
     FACTOR_DEDUCIBLE,
@@ -177,7 +178,7 @@ class SeguroAuto:
         self,
         coberturas: list[Cobertura] | None = None,
         historial_siniestros: list[int] | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Cotizacion completa con desglose por cobertura.
 

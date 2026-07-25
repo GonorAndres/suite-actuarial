@@ -174,7 +174,7 @@ class StopLoss(ContratoReaseguro):
         self,
         primas_totales: Decimal,
         siniestros: list[Siniestro],
-        prima_reaseguro_cobrada: Decimal = None,
+        prima_reaseguro_cobrada: Decimal | None = None,
     ) -> ResultadoReaseguro:
         """
         Calcula el resultado neto del contrato Stop Loss para un periodo.
@@ -189,7 +189,9 @@ class StopLoss(ContratoReaseguro):
             ResultadoReaseguro con el análisis completo
         """
         # Calcular siniestros totales
-        siniestros_totales = sum(s.monto_bruto for s in siniestros if self.validar_siniestro(s))
+        siniestros_totales = sum(
+            (s.monto_bruto for s in siniestros if self.validar_siniestro(s)), Decimal("0")
+        )
 
         # Calcular siniestralidad bruta
         siniestralidad_bruta = self.calcular_siniestralidad(siniestros_totales, primas_totales)

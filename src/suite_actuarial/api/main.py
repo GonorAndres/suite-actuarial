@@ -76,7 +76,7 @@ def api_info() -> dict[str, str | list[str]]:
 
 
 @app.get("/health", tags=["root"])
-def health_check():
+def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok"}
 

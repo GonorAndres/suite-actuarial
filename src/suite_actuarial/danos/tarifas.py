@@ -8,6 +8,7 @@ Incluye:
 """
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 
 class FactorCredibilidad:
@@ -19,7 +20,7 @@ class FactorCredibilidad:
     """
 
     @staticmethod
-    def buhlmann(experiencia_propia: list[Decimal], prima_manual: Decimal) -> dict:
+    def buhlmann(experiencia_propia: list[Decimal], prima_manual: Decimal) -> dict[str, Any]:
         """
         Credibilidad de Buhlmann clasica.
 
@@ -44,7 +45,7 @@ class FactorCredibilidad:
             }
 
         # Media de experiencia propia
-        media = sum(experiencia_propia) / n
+        media = sum(experiencia_propia, Decimal("0")) / n
 
         if n < 2:
             # Con un solo periodo no se puede estimar varianza;
@@ -64,7 +65,7 @@ class FactorCredibilidad:
 
         # Varianza total observada entre periodos. Cada observacion carga las
         # dos fuentes: Var(X_i) = EPV + VHM.
-        varianza_total = sum((x - media) ** 2 for x in experiencia_propia) / (n - 1)
+        varianza_total = sum(((x - media) ** 2 for x in experiencia_propia), Decimal("0")) / (n - 1)
 
         # VHM = varianza total - EPV. Se resta la varianza de proceso COMPLETA,
         # no dividida entre n: la varianza muestral estima la dispersion de una
@@ -103,7 +104,7 @@ class FactorCredibilidad:
         }
 
     @staticmethod
-    def buhlmann_straub(experiencias: list[dict], prima_manual: Decimal) -> dict:
+    def buhlmann_straub(experiencias: list[dict], prima_manual: Decimal) -> dict[str, Any]:
         """
         Buhlmann-Straub (ponderado por exposicion).
 
@@ -324,7 +325,7 @@ class TablaTarifas:
     a una prima base.
     """
 
-    def __init__(self, factores: dict) -> None:
+    def __init__(self, factores: dict[str, dict[str, Decimal]]) -> None:
         """
         Args:
             factores: dict anidado de factores de tarificacion.

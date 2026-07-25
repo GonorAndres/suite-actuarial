@@ -8,6 +8,7 @@ Usa el patrón Template Method para compartir lógica común.
 from abc import ABC, abstractmethod
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from suite_actuarial.core.validators import (
     ConfiguracionReaseguro,
@@ -77,7 +78,7 @@ class ContratoReaseguro(ABC):
         return self.config.vigencia_inicio <= fecha <= self.config.vigencia_fin
 
     @abstractmethod
-    def calcular_recuperacion(self, *args, **kwargs) -> Decimal:
+    def calcular_recuperacion(self, *args: Any, **kwargs: Any) -> Decimal:
         """
         Calcula la recuperación del reasegurador para un siniestro o cartera.
 
@@ -107,7 +108,7 @@ class ContratoReaseguro(ABC):
         recuperacion: Decimal,
         comision: Decimal = Decimal("0"),
         prima_pagada: Decimal = Decimal("0"),
-        detalles: dict = None,
+        detalles: dict | None = None,
     ) -> ResultadoReaseguro:
         """
         Genera un objeto ResultadoReaseguro con la información del cálculo.

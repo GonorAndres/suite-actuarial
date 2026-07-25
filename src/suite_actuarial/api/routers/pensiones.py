@@ -153,7 +153,7 @@ class ConmutacionResponse(BaseModel):
 
 def _decimal_dict_to_float(d: dict) -> dict[str, Any]:
     """Recursively convert Decimal values in a dict to float."""
-    result = {}
+    result: dict[str, Any] = {}
     for k, v in d.items():
         if isinstance(v, Decimal):
             result[k] = float(v)
@@ -168,7 +168,7 @@ def _decimal_dict_to_float(d: dict) -> dict[str, Any]:
 
 
 @router.post("/ley73/calcular", response_model=Ley73Response)
-def calcular_ley73(req: Ley73Request):
+def calcular_ley73(req: Ley73Request) -> Ley73Response:
     """Calculate an IMSS Ley 73 pension (defined-benefit regime).
 
     Computes the monthly pension, annual bonus (aguinaldo), and total
@@ -199,7 +199,7 @@ def calcular_ley73(req: Ley73Request):
 
 
 @router.post("/ley97/calcular", response_model=Ley97Response)
-def calcular_ley97(req: Ley97Request):
+def calcular_ley97(req: Ley97Request) -> Ley97Response:
     """Calculate an IMSS Ley 97 pension (defined-contribution regime).
 
     Compares renta vitalicia (life annuity) vs retiro programado
@@ -242,7 +242,7 @@ def calcular_ley97(req: Ley97Request):
 
 
 @router.post("/renta-vitalicia/calcular", response_model=RentaVitaliciaResponse)
-def calcular_renta_vitalicia(req: RentaVitaliciaRequest):
+def calcular_renta_vitalicia(req: RentaVitaliciaRequest) -> RentaVitaliciaResponse:
     """Calculate a life annuity (renta vitalicia) single premium and factor.
 
     Computes the annuity factor and the single premium needed to fund a
@@ -284,7 +284,7 @@ def tabla_conmutacion(
     tasa_interes: float = Query(..., ge=0, le=0.15, description="Technical interest rate"),
     edad_min: int = Query(default=0, ge=0, description="Minimum age to include"),
     edad_max: int = Query(default=110, ge=0, description="Maximum age to include"),
-):
+) -> ConmutacionResponse:
     """Look up commutation table values for a range of ages.
 
     Loads the EMSSA-09 mortality table, builds a TablaConmutacion for

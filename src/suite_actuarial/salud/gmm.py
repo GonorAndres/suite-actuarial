@@ -20,6 +20,7 @@ Referencia: Circular Unica de Seguros y Fianzas (CUSF), CNSF
 
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
+from typing import Any
 
 DISCLAIMER = (
     "AVISO: Las tasas base por banda de edad en este modulo son ILUSTRATIVAS "
@@ -255,7 +256,7 @@ class GMM:
         siniestralidad = prima / (Decimal("1") + self.margen_operativo)
         return siniestralidad.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-    def desglose_prima(self) -> dict:
+    def desglose_prima(self) -> dict[str, Any]:
         """
         Detailed breakdown: base, each factor, adjustments, final.
 
@@ -298,7 +299,7 @@ class GMM:
             "siniestralidad_esperada": siniestralidad,
         }
 
-    def simular_gasto_medico(self, monto_reclamacion: Decimal) -> dict:
+    def simular_gasto_medico(self, monto_reclamacion: Decimal) -> dict[str, Any]:
         """
         Given a claim amount, show how deductible/coinsurance/tope apply.
 

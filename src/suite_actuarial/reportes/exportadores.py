@@ -36,7 +36,7 @@ class ExportadorExcel:
         ... )
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not OPENPYXL_AVAILABLE:
             raise ImportError("openpyxl no está instalado. Instálalo con: pip install openpyxl")
 
