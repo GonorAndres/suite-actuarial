@@ -139,10 +139,13 @@ class VidaOrdinario(ProductoSeguro):
         if not es_asegurable:
             raise ValueError(f"Asegurado no es asegurable: {razon}")
 
-        # Calcular plazo de cobertura (hasta edad omega)
-        plazo_cobertura = self.edad_omega - asegurado.edad
+        # Plazo de cobertura: edades x .. omega INCLUSIVE. El ultimo ano
+        # aplica q_omega = 1, asi que el beneficio garantizado se fondea para
+        # toda la cohorte. Antes el plazo llegaba solo a omega-1 y quienes
+        # seguian vivos en omega nunca cobraban (hallazgo A7 de docs/AUDIT.md).
+        plazo_cobertura = self.edad_omega - asegurado.edad + 1
 
-        if plazo_cobertura <= 0:
+        if plazo_cobertura <= 1:
             raise ValueError(
                 f"Edad del asegurado ({asegurado.edad}) >= edad omega ({self.edad_omega})"
             )
@@ -155,6 +158,7 @@ class VidaOrdinario(ProductoSeguro):
             plazo=plazo_cobertura,
             tasa_interes=self.config.tasa_interes_tecnico,
             suma_asegurada=asegurado.suma_asegurada,
+            edad_terminal=self.edad_omega,
         )
 
         # Valor presente de los pagos de prima
@@ -172,6 +176,7 @@ class VidaOrdinario(ProductoSeguro):
             plazo=plazo_anualidad,
             tasa_interes=self.config.tasa_interes_tecnico,
             pago_anticipado=True,
+            edad_terminal=self.edad_omega,
         )
 
         # Prima neta = Beneficio / Pagos
@@ -205,8 +210,12 @@ class VidaOrdinario(ProductoSeguro):
                 "edad_omega": self.edad_omega,
             },
             calculation_metadata=CalculationMetadata(
-                validation_tier="experimental" if self.tabla_mortalidad.metadata.get("data_status") == "illustrative" else "supported",
-                sources=[self.tabla_mortalidad.metadata.get("source", self.tabla_mortalidad.nombre)],
+                validation_tier="experimental"
+                if self.tabla_mortalidad.metadata.get("data_status") == "illustrative"
+                else "supported",
+                sources=[
+                    self.tabla_mortalidad.metadata.get("source", self.tabla_mortalidad.nombre)
+                ],
                 assumptions_snapshot={"tabla_mortalidad": self.tabla_mortalidad.nombre},
             ),
         )
@@ -242,24 +251,27 @@ class VidaOrdinario(ProductoSeguro):
             >>> reserva_10 = producto.calcular_reserva(asegurado, anio=10)
             >>> print(f"Reserva año 10: ${reserva_10:,.2f}")
         """
-        plazo_total = self.edad_omega - asegurado.edad
+        plazo_total = self.edad_omega - asegurado.edad + 1
 
         if anio < 0 or anio > plazo_total:
-            raise ValueError(
-                f"Año {anio} fuera de rango [0, {plazo_total}]"
-            )
+            raise ValueError(f"Año {anio} fuera de rango [0, {plazo_total}]")
 
-        # Al inicio, reserva = 0
+        # Al inicio, reserva = 0. Es la fórmula prospectiva, no un atajo: en
+        # t=0 el valor del beneficio iguala el de las primas por el principio
+        # de equivalencia, así que la reserva sale cero por sí sola.
         if anio == 0:
             return Decimal("0")
 
-        # Al final (edad omega), reserva = suma asegurada
-        if anio == plazo_total:
-            return asegurado.suma_asegurada
-
-        # Edad actual
+        # Edad actual. La reserva del último año (edad omega) sale también de
+        # la fórmula prospectiva: con q_omega = 1 el beneficio se paga con
+        # certeza y su valor presente es la suma asegurada descontada un año.
+        # Antes se fijaba a mano en la suma asegurada, lo que producía un salto
+        # que la propia recursión no sostenía (hallazgo A7 de docs/AUDIT.md).
         edad_actual = asegurado.edad + anio
-        plazo_restante = self.edad_omega - edad_actual
+        plazo_restante = self.edad_omega - edad_actual + 1
+
+        if plazo_restante <= 0:
+            return Decimal("0")
 
         # Valor presente del beneficio futuro
         axn_futuro = calcular_seguro_vida(
@@ -269,6 +281,7 @@ class VidaOrdinario(ProductoSeguro):
             plazo=plazo_restante,
             tasa_interes=self.config.tasa_interes_tecnico,
             suma_asegurada=asegurado.suma_asegurada,
+            edad_terminal=self.edad_omega,
         )
 
         # Determinar si todavía hay pagos de prima
@@ -291,6 +304,7 @@ class VidaOrdinario(ProductoSeguro):
             plazo=plazo_pago_restante,
             tasa_interes=self.config.tasa_interes_tecnico,
             pago_anticipado=True,
+            edad_terminal=self.edad_omega,
         )
 
         # Prima neta original
@@ -343,6 +357,7 @@ class VidaOrdinario(ProductoSeguro):
         this product's technical interest rate.
         """
         from suite_actuarial.actuarial.pricing.vida_pricing import _obtener_factor_frecuencia
+
         return _obtener_factor_frecuencia(frecuencia, self.config.tasa_interes_tecnico)
 
     def __repr__(self) -> str:

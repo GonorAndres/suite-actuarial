@@ -35,14 +35,17 @@ class ChainLadderRequest(BaseModel):
     triangle: list[list[float | None]] = Field(
         ..., description="Cumulative triangle as list of rows (None for missing cells)"
     )
-    origin_years: list[int] = Field(
-        ..., description="Origin year labels (one per row)"
-    )
+    origin_years: list[int] = Field(..., description="Origin year labels (one per row)")
     metodo_promedio: str = Field(
         default="simple", description="Averaging method: simple, weighted, geometric"
     )
     calcular_tail_factor: bool = Field(
-        default=False, description="Whether to estimate a tail factor"
+        default=False,
+        description=(
+            "Estimate the tail factor by fitting Sherman's (1984) inverse power "
+            "curve to the observed development factors. This is extrapolation: "
+            "check tail_ajuste_r2 and tail_horizonte in the response details"
+        ),
     )
     tail_factor: float | None = Field(
         default=None, ge=1.0, le=2.0, description="Manual tail factor (if not auto-calculated)"
@@ -58,9 +61,7 @@ class BornhuetterFergusonRequest(BaseModel):
 
     triangle: list[list[float | None]] = Field(...)
     origin_years: list[int] = Field(...)
-    primas_por_anio: dict[int, float] = Field(
-        ..., description="Earned premiums by origin year"
-    )
+    primas_por_anio: dict[int, float] = Field(..., description="Earned premiums by origin year")
     loss_ratio_apriori: float = Field(
         ..., gt=0, le=2.0, description="A-priori expected loss ratio (e.g. 0.65)"
     )
@@ -69,7 +70,10 @@ class BornhuetterFergusonRequest(BaseModel):
 
 
 class BootstrapRequest(BaseModel):
-    """Request body for Bootstrap reserve calculation."""
+    """Request body for the residual re-sampling band (illustrative).
+
+    Not an ODP bootstrap — see `calculate_bootstrap` and `docs/AUDIT.md` (A2).
+    """
 
     triangle: list[list[float | None]] = Field(...)
     origin_years: list[int] = Field(...)
@@ -129,8 +133,7 @@ def _resultado_to_response(resultado) -> ReserveResponse:
             else None
         ),
         detalles={
-            k: (float(v) if isinstance(v, Decimal) else v)
-            for k, v in resultado.detalles.items()
+            k: (float(v) if isinstance(v, Decimal) else v) for k, v in resultado.detalles.items()
         },
         calculation_metadata=resultado.calculation_metadata,
     )
@@ -183,10 +186,25 @@ def calculate_bornhuetter_ferguson(req: BornhuetterFergusonRequest):
 
 @router.post("/bootstrap", response_model=ReserveResponse)
 def calculate_bootstrap(req: BootstrapRequest):
-    """Calculate reserves using the Bootstrap simulation method.
+    """England-Verrall ODP bootstrap: predictive distribution of the reserve.
 
-    Runs Monte Carlo simulations on re-sampled triangles to produce
-    a full distribution of reserve estimates including percentiles.
+    Pearson residuals are computed on *incremental* claims against values fitted
+    backwards from the ultimate, so the fitted diagonal reproduces the observed
+    one and the fitted incrementals reproduce the observed row and column sums.
+    The dispersion parameter `phi` is estimated with `n - p` degrees of freedom
+    (`p = I + J - 1`), residuals carry England's (2002) degrees-of-freedom
+    adjustment, and each future cell is simulated from a Gamma with variance
+    `phi * mean` — so the spread covers both estimation and process error.
+
+    `reserva_total` is the mean of the replicates and `detalles.error_prediccion`
+    its standard deviation. `detalles.conciliacion_cl_relativa` reports the gap
+    against the Chain Ladder reserve, which stays near 1%: the reserve is convex
+    in the development factors, so re-sampling them lifts the mean (Jensen).
+
+    The distribution is conditional on the model — stable development pattern and
+    variance proportional to the mean. It does not cover model risk, mix change,
+    unobserved inflation or tail-factor uncertainty, and it is not a regulatory
+    capital measure.
     """
     try:
         triangulo = _build_triangle(req.triangle, req.origin_years)

@@ -55,7 +55,7 @@ from suite_actuarial.reservas.bootstrap import Bootstrap
 from suite_actuarial.reservas.bornhuetter_ferguson import BornhuetterFerguson
 from suite_actuarial.reservas.chain_ladder import ChainLadder
 from suite_actuarial.salud.gmm import GMM
-from suite_actuarial.vida.dotal import VidaDotal
+from suite_actuarial.vida.dotal import VidaDotal, _diferencia_relativa
 from suite_actuarial.vida.ordinario import VidaOrdinario
 from suite_actuarial.vida.temporal import VidaTemporal
 
@@ -63,20 +63,33 @@ from suite_actuarial.vida.temporal import VidaTemporal
 # Fixtures
 # ======================================================================
 
+
 @pytest.fixture
 def tabla_simple():
     """Small synthetic mortality table with known qx for deterministic tests.
 
     Ages 0-5 for both sexes. qx at omega (age 5) = 1.0.
     """
-    datos = pd.DataFrame({
-        "edad": list(range(0, 6)) + list(range(0, 6)),
-        "sexo": ["H"] * 6 + ["M"] * 6,
-        "qx": [
-            0.01, 0.02, 0.03, 0.05, 0.10, 1.00,
-            0.005, 0.01, 0.02, 0.03, 0.05, 1.00,
-        ],
-    })
+    datos = pd.DataFrame(
+        {
+            "edad": list(range(0, 6)) + list(range(0, 6)),
+            "sexo": ["H"] * 6 + ["M"] * 6,
+            "qx": [
+                0.01,
+                0.02,
+                0.03,
+                0.05,
+                0.10,
+                1.00,
+                0.005,
+                0.01,
+                0.02,
+                0.03,
+                0.05,
+                1.00,
+            ],
+        }
+    )
     return TablaMortalidad(nombre="Simple", datos=datos)
 
 
@@ -146,6 +159,7 @@ def asegurado_35_h():
 # 1. COMMUTATION IDENTITIES AND CONSTRAINTS
 # ======================================================================
 
+
 class TestCommutationIdentities:
     """Verify fundamental commutation function identities."""
 
@@ -157,10 +171,7 @@ class TestCommutationIdentities:
         """
         for x in range(tc_simple.edad_min, tc_simple.edad_max + 1):
             nx_val = tc_simple.Nx(x)
-            sum_dx = sum(
-                tc_simple.Dx(k)
-                for k in range(x, tc_simple.edad_max + 1)
-            )
+            sum_dx = sum(tc_simple.Dx(k) for k in range(x, tc_simple.edad_max + 1))
             # Both are Decimal; allow tiny rounding tolerance
             assert abs(float(nx_val) - float(sum_dx)) < 1e-6, (
                 f"Nx({x}) = {nx_val} != sum(Dx) = {sum_dx}"
@@ -170,10 +181,7 @@ class TestCommutationIdentities:
         """Mx must equal the sum of Cx from age x to omega."""
         for x in range(tc_simple.edad_min, tc_simple.edad_max + 1):
             mx_val = tc_simple.Mx(x)
-            sum_cx = sum(
-                tc_simple.Cx(k)
-                for k in range(x, tc_simple.edad_max + 1)
-            )
+            sum_cx = sum(tc_simple.Cx(k) for k in range(x, tc_simple.edad_max + 1))
             assert abs(float(mx_val) - float(sum_cx)) < 1e-6, (
                 f"Mx({x}) = {mx_val} != sum(Cx) = {sum_cx}"
             )
@@ -182,20 +190,14 @@ class TestCommutationIdentities:
         """Sx must equal the sum of Nx from age x to omega."""
         for x in range(tc_simple.edad_min, tc_simple.edad_max + 1):
             sx_val = tc_simple.Sx(x)
-            sum_nx = sum(
-                tc_simple.Nx(k)
-                for k in range(x, tc_simple.edad_max + 1)
-            )
+            sum_nx = sum(tc_simple.Nx(k) for k in range(x, tc_simple.edad_max + 1))
             assert abs(float(sx_val) - float(sum_nx)) < 1e-6
 
     def test_Rx_equals_sum_of_Mx(self, tc_simple):
         """Rx must equal the sum of Mx from age x to omega."""
         for x in range(tc_simple.edad_min, tc_simple.edad_max + 1):
             rx_val = tc_simple.Rx(x)
-            sum_mx = sum(
-                tc_simple.Mx(k)
-                for k in range(x, tc_simple.edad_max + 1)
-            )
+            sum_mx = sum(tc_simple.Mx(k) for k in range(x, tc_simple.edad_max + 1))
             assert abs(float(rx_val) - float(sum_mx)) < 1e-6
 
     def test_insurance_annuity_identity(self, tc_simple):
@@ -212,8 +214,8 @@ class TestCommutationIdentities:
         d = i / (1.0 + i)  # discount rate
 
         for x in range(tc_simple.edad_min, tc_simple.edad_max):
-            ax_val = float(tc_simple.ax(x))       # whole-life annuity-due
-            Ax_val = float(tc_simple.Ax(x))        # whole-life insurance
+            ax_val = float(tc_simple.ax(x))  # whole-life annuity-due
+            Ax_val = float(tc_simple.Ax(x))  # whole-life insurance
 
             identity = Ax_val + d * ax_val
             # Should equal 1.0 within floating-point tolerance
@@ -228,7 +230,7 @@ class TestCommutationIdentities:
             nex = tc_simple.nEx(x, n)
             expected = tc_simple.Dx(x + n) / tc_simple.Dx(x)
             assert abs(float(nex) - float(expected)) < 1e-10, (
-                f"nEx({x},{n}) = {nex} != Dx({x+n})/Dx({x}) = {expected}"
+                f"nEx({x},{n}) = {nex} != Dx({x + n})/Dx({x}) = {expected}"
             )
 
     def test_nEx_beyond_omega_is_zero(self, tc_simple):
@@ -245,7 +247,7 @@ class TestCommutationIdentities:
             curr = float(tc_simple.Dx(x))
             assert curr >= 0
             assert curr <= prev + 1e-10, (
-                f"Dx is increasing at age {x}: Dx({x})={curr} > Dx({x-1})={prev}"
+                f"Dx is increasing at age {x}: Dx({x})={curr} > Dx({x - 1})={prev}"
             )
             prev = curr
 
@@ -279,9 +281,7 @@ class TestCommutationEMSSA:
             ax_val = float(tc_emssa_h.ax(x))
             Ax_val = float(tc_emssa_h.Ax(x))
             identity = Ax_val + d * ax_val
-            assert abs(identity - 1.0) < 1e-5, (
-                f"EMSSA male age {x}: Ax + d*ax = {identity:.8f}"
-            )
+            assert abs(identity - 1.0) < 1e-5, f"EMSSA male age {x}: Ax + d*ax = {identity:.8f}"
 
     def test_annuity_bounded_by_life_expectancy(self, tc_emssa_h):
         """ax must be positive and less than remaining life expectancy.
@@ -296,9 +296,7 @@ class TestCommutationEMSSA:
             ax_val = float(tc_emssa_h.ax(x))
             max_payments = tc_emssa_h.edad_max - x + 1
             assert ax_val > 0, f"ax({x}) should be positive"
-            assert ax_val < max_payments, (
-                f"ax({x}) = {ax_val} >= max possible {max_payments}"
-            )
+            assert ax_val < max_payments, f"ax({x}) = {ax_val} >= max possible {max_payments}"
 
     def test_old_age_no_nan(self, tc_emssa_h):
         """Values at very old ages (90+) must not produce NaN or infinity."""
@@ -314,6 +312,7 @@ class TestCommutationEMSSA:
 # ======================================================================
 # 2. RESERVE BOUNDARY CONDITIONS
 # ======================================================================
+
 
 class TestReserveBoundaries:
     """Verify reserve boundary conditions for level-premium products."""
@@ -339,9 +338,7 @@ class TestReserveBoundaries:
         for t in range(1, n):
             reserve = float(tc_simple.tVx(x, n, t))
             # Reserve should be non-negative for temporal
-            assert reserve >= -1e-6, (
-                f"Reserve at t={t} is negative: {reserve}"
-            )
+            assert reserve >= -1e-6, f"Reserve at t={t} is negative: {reserve}"
 
     def test_temporal_reserve_raises_out_of_range(self, tc_simple):
         """tVx should raise ValueError for t outside [0, n]."""
@@ -354,6 +351,7 @@ class TestReserveBoundaries:
 # ======================================================================
 # 3. VIDA PRODUCT ORDERING
 # ======================================================================
+
 
 class TestVidaProductOrdering:
     """Verify that Dotal > Ordinario > Temporal in premium for same inputs.
@@ -382,12 +380,8 @@ class TestVidaProductOrdering:
         assert prima_o > 0, "Ordinario premium should be positive"
         assert prima_d > 0, "Dotal premium should be positive"
 
-        assert prima_d > prima_o, (
-            f"Dotal ({prima_d}) should exceed Ordinario ({prima_o})"
-        )
-        assert prima_o > prima_t, (
-            f"Ordinario ({prima_o}) should exceed Temporal ({prima_t})"
-        )
+        assert prima_d > prima_o, f"Dotal ({prima_d}) should exceed Ordinario ({prima_o})"
+        assert prima_o > prima_t, f"Ordinario ({prima_o}) should exceed Temporal ({prima_t})"
 
     def test_dotal_reserve_at_maturity_equals_sa(self, tabla_emssa09):
         """For a dotal, reserve at maturity = sum insured (guaranteed payout)."""
@@ -428,6 +422,7 @@ class TestVidaProductOrdering:
 # 4. COLLECTIVE RISK MODEL (DANOS)
 # ======================================================================
 
+
 class TestCollectiveRiskModel:
     """Verify properties of the collective risk model S = X1 + ... + XN."""
 
@@ -445,9 +440,7 @@ class TestCollectiveRiskModel:
         )
         pp = modelo.prima_pura()
         # E[N] = 10, E[X] = 1000, so E[S] = 10000
-        assert abs(float(pp) - 10000.0) < 1.0, (
-            f"Pure premium = {pp}, expected ~10000"
-        )
+        assert abs(float(pp) - 10000.0) < 1.0, f"Pure premium = {pp}, expected ~10000"
 
     def test_variance_formula(self):
         """Var[S] = E[N]*Var[X] + Var[N]*E[X]^2 for Poisson-Exponential.
@@ -464,9 +457,7 @@ class TestCollectiveRiskModel:
         )
         var_s = float(modelo.varianza_agregada())
         # E[N]*Var[X] + Var[N]*E[X]^2 = 10*1e6 + 10*1e6 = 20,000,000
-        assert abs(var_s - 2e7) < 1e4, (
-            f"Var[S] = {var_s}, expected ~20,000,000"
-        )
+        assert abs(var_s - 2e7) < 1e4, f"Var[S] = {var_s}, expected ~20,000,000"
 
     def test_tvar_geq_var(self):
         """TVaR >= VaR must hold for any confidence level.
@@ -524,13 +515,13 @@ class TestCollectiveRiskModel:
 # 5. CREDIBILITY AND BONUS-MALUS (TARIFAS)
 # ======================================================================
 
+
 class TestCredibilidad:
     """Verify Buhlmann credibility constraints."""
 
     def test_buhlmann_z_between_0_and_1(self):
         """Credibility factor Z must be in [0, 1]."""
-        experiencia = [Decimal("100"), Decimal("120"), Decimal("90"),
-                       Decimal("150"), Decimal("80")]
+        experiencia = [Decimal("100"), Decimal("120"), Decimal("90"), Decimal("150"), Decimal("80")]
         resultado = FactorCredibilidad.buhlmann(experiencia, Decimal("110"))
         z = resultado["Z"]
         assert Decimal("0") <= z <= Decimal("1"), f"Z = {z} outside [0,1]"
@@ -543,9 +534,7 @@ class TestCredibilidad:
 
     def test_buhlmann_single_period_z_zero(self):
         """With one observation, cannot estimate variance => Z=0."""
-        resultado = FactorCredibilidad.buhlmann(
-            [Decimal("200")], Decimal("150")
-        )
+        resultado = FactorCredibilidad.buhlmann([Decimal("200")], Decimal("150"))
         assert resultado["Z"] == Decimal("0")
         assert resultado["prima_credibilidad"] == Decimal("150")
 
@@ -604,6 +593,7 @@ class TestBonusMalus:
 # 6. PENSION LEY 73 REGULATORY CONSTRAINTS
 # ======================================================================
 
+
 class TestPensionLey73:
     """Verify IMSS Ley 73 pension calculations against regulatory tables."""
 
@@ -622,9 +612,7 @@ class TestPensionLey73:
         prev = obtener_porcentaje_ley73(500)
         for semanas in range(520, 2100, 52):
             curr = obtener_porcentaje_ley73(semanas)
-            assert curr >= prev, (
-                f"Percentage decreased at {semanas} weeks: {curr} < {prev}"
-            )
+            assert curr >= prev, f"Percentage decreased at {semanas} weeks: {curr} < {prev}"
             prev = curr
 
     def test_age_factor_at_65_is_100_percent(self):
@@ -636,9 +624,7 @@ class TestPensionLey73:
         prev = obtener_factor_edad(60)
         for edad in range(61, 66):
             curr = obtener_factor_edad(edad)
-            assert curr >= prev, (
-                f"Age factor decreased at {edad}: {curr} < {prev}"
-            )
+            assert curr >= prev, f"Age factor decreased at {edad}: {curr} < {prev}"
             prev = curr
 
     def test_age_factor_above_65_is_1(self):
@@ -700,6 +686,7 @@ class TestPensionLey73:
 # 7. IMSS REGIME DETERMINATION
 # ======================================================================
 
+
 class TestCalculadoraIMSS:
     """Verify regime determination based on IMSS enrollment date."""
 
@@ -722,6 +709,7 @@ class TestCalculadoraIMSS:
 # ======================================================================
 # 8. RCS AGGREGATION WITH CORRELATIONS
 # ======================================================================
+
 
 class TestRCSAggregation:
     """Verify RCS aggregation satisfies diversification properties."""
@@ -767,15 +755,14 @@ class TestRCSAggregation:
     def test_all_zero_rcs(self):
         """All-zero components -> RCS = 0."""
         agregador = AgregadorRCS()
-        result = agregador._agregar_con_correlaciones(
-            Decimal("0"), Decimal("0"), Decimal("0")
-        )
+        result = agregador._agregar_con_correlaciones(Decimal("0"), Decimal("0"), Decimal("0"))
         assert result == Decimal("0.00")
 
 
 # ======================================================================
 # 9. CONFIG AND UMA CONSISTENCY
 # ======================================================================
+
 
 class TestConfigConsistency:
     """Verify regulatory config values are internally consistent."""
@@ -857,6 +844,7 @@ class TestConfigConsistency:
 # 10. GMM MONOTONICITY AND CLAIM SIMULATION
 # ======================================================================
 
+
 class TestGMMMonotonicity:
     """Verify GMM premium is non-decreasing with age."""
 
@@ -902,8 +890,13 @@ class TestGMMMonotonicity:
             coaseguro_pct=Decimal("0.10"),
             tope_coaseguro=Decimal("200000"),
         )
-        for monto in [Decimal("10000"), Decimal("100000"), Decimal("500000"),
-                       Decimal("2000000"), Decimal("15000000")]:
+        for monto in [
+            Decimal("10000"),
+            Decimal("100000"),
+            Decimal("500000"),
+            Decimal("2000000"),
+            Decimal("15000000"),
+        ]:
             resultado = gmm.simular_gasto_medico(monto)
             total = (
                 resultado["deducible_aplicado"]
@@ -932,6 +925,7 @@ class TestGMMMonotonicity:
 # 11. SAT TAX EXEMPTIONS
 # ======================================================================
 
+
 class TestSATValidaciones:
     """Verify SAT tax treatment of insurance payouts."""
 
@@ -949,9 +943,7 @@ class TestSATValidaciones:
                 es_persona_fisica=True,
                 es_indemnizacion_muerte=True,
             )
-            assert resultado.esta_gravado is False, (
-                f"Death benefit of {monto} should be exempt"
-            )
+            assert resultado.esta_gravado is False, f"Death benefit of {monto} should be exempt"
             assert resultado.monto_exento == monto
             assert resultado.monto_gravado == Decimal("0")
 
@@ -980,6 +972,7 @@ class TestSATValidaciones:
 # 12. CHAIN LADDER AND BF IDENTITIES
 # ======================================================================
 
+
 class TestChainLadder:
     """Verify Chain Ladder properties."""
 
@@ -992,9 +985,7 @@ class TestChainLadder:
         for anio in resultado.ultimates_por_anio:
             ult = resultado.ultimates_por_anio[anio]
             reserva = resultado.reservas_por_anio[anio]
-            assert reserva >= Decimal("0"), (
-                f"Year {anio}: reserve = {reserva} < 0"
-            )
+            assert reserva >= Decimal("0"), f"Year {anio}: reserve = {reserva} < 0"
             assert ult >= Decimal("0")
 
     def test_reserve_total_is_sum_of_parts(self, triangulo_acumulado):
@@ -1024,8 +1015,12 @@ class TestBornhuetterFerguson:
         This is the definition. IBNR = Ultimate - Paid, so this is
         trivially true if the code is self-consistent.
         """
-        primas = {2020: Decimal("300"), 2021: Decimal("350"),
-                  2022: Decimal("400"), 2023: Decimal("450")}
+        primas = {
+            2020: Decimal("300"),
+            2021: Decimal("350"),
+            2022: Decimal("400"),
+            2023: Decimal("450"),
+        }
         config = ConfiguracionBornhuetterFerguson(
             loss_ratio_apriori=Decimal("0.65"),
             metodo_promedio=MetodoPromedio.SIMPLE,
@@ -1038,14 +1033,16 @@ class TestBornhuetterFerguson:
             reserva = resultado.reservas_por_anio[anio]
             # Ultimate - reserve should give the paid amount
             paid = ult - reserva
-            assert paid >= Decimal("0"), (
-                f"Year {anio}: implied paid = {paid} < 0"
-            )
+            assert paid >= Decimal("0"), f"Year {anio}: implied paid = {paid} < 0"
 
     def test_bf_reserves_nonnegative(self, triangulo_acumulado):
         """BF reserves must be non-negative."""
-        primas = {2020: Decimal("300"), 2021: Decimal("350"),
-                  2022: Decimal("400"), 2023: Decimal("450")}
+        primas = {
+            2020: Decimal("300"),
+            2021: Decimal("350"),
+            2022: Decimal("400"),
+            2023: Decimal("450"),
+        }
         config = ConfiguracionBornhuetterFerguson(
             loss_ratio_apriori=Decimal("0.65"),
             metodo_promedio=MetodoPromedio.SIMPLE,
@@ -1054,14 +1051,13 @@ class TestBornhuetterFerguson:
         resultado = bf.calcular(triangulo_acumulado, primas)
 
         for anio, reserva in resultado.reservas_por_anio.items():
-            assert reserva >= Decimal("0"), (
-                f"BF reserve for year {anio} is negative: {reserva}"
-            )
+            assert reserva >= Decimal("0"), f"BF reserve for year {anio} is negative: {reserva}"
 
 
 # ======================================================================
 # 13. BOOTSTRAP DETERMINISM AND RISK MEASURES
 # ======================================================================
+
 
 class TestBootstrapDeterminism:
     """Verify Bootstrap produces deterministic results with same seed."""
@@ -1100,14 +1096,13 @@ class TestBootstrapDeterminism:
 
         var_95 = float(bs.calcular_var(0.95))
         tvar_95 = float(bs.calcular_tvar(0.95))
-        assert tvar_95 >= var_95 - 0.01, (
-            f"TVaR(95%) = {tvar_95} < VaR(95%) = {var_95}"
-        )
+        assert tvar_95 >= var_95 - 0.01, f"TVaR(95%) = {tvar_95} < VaR(95%) = {var_95}"
 
 
 # ======================================================================
 # 14. YIELD CURVE MATHEMATICAL PROPERTIES
 # ======================================================================
+
 
 class TestYieldCurve:
     """Verify yield curve mathematical identities."""
@@ -1136,8 +1131,13 @@ class TestYieldCurve:
         """
         curva = CurvaRendimiento(
             plazos=[1, 2, 3, 5, 10],
-            tasas=[Decimal("0.08"), Decimal("0.085"), Decimal("0.09"),
-                   Decimal("0.095"), Decimal("0.10")],
+            tasas=[
+                Decimal("0.08"),
+                Decimal("0.085"),
+                Decimal("0.09"),
+                Decimal("0.095"),
+                Decimal("0.10"),
+            ],
         )
         t1, t2 = 2, 5
         r1 = float(curva.tasa_spot(t1))
@@ -1161,13 +1161,14 @@ class TestYieldCurve:
         """PV of a single cashflow = CF * v(t)."""
         curva = CurvaRendimiento.plana(Decimal("0.10"))
         pv = float(curva.valor_presente([Decimal("1000")], [5.0]))
-        expected = 1000 / (1.10 ** 5)
+        expected = 1000 / (1.10**5)
         assert abs(pv - expected) < 1.0, f"PV = {pv}, expected {expected}"
 
 
 # ======================================================================
 # 15. MORTALITY TABLE CONSTRAINTS
 # ======================================================================
+
 
 class TestMortalityConstraints:
     """Verify mortality table constraints from actuarial theory."""
@@ -1178,9 +1179,7 @@ class TestMortalityConstraints:
             df = tabla_emssa09.obtener_tabla_completa(sexo_str)
             for _, row in df.iterrows():
                 qx = row["qx"]
-                assert 0 <= qx <= 1, (
-                    f"qx({row['edad']}, {sexo_str}) = {qx} outside [0,1]"
-                )
+                assert 0 <= qx <= 1, f"qx({row['edad']}, {sexo_str}) = {qx} outside [0,1]"
 
     def test_qx_at_omega_leq_1(self, tabla_emssa09):
         """qx at the maximum (omega) age should be in (0, 1].
@@ -1194,12 +1193,9 @@ class TestMortalityConstraints:
         for sexo_str in ["H", "M"]:
             df = tabla_emssa09.obtener_tabla_completa(sexo_str)
             max_age = df["edad"].max()
-            qx_omega = float(
-                df[df["edad"] == max_age]["qx"].values[0]
-            )
+            qx_omega = float(df[df["edad"] == max_age]["qx"].values[0])
             assert 0 < qx_omega <= 1.0, (
-                f"qx at omega age {max_age} for {sexo_str} = {qx_omega}, "
-                f"expected in (0, 1]"
+                f"qx at omega age {max_age} for {sexo_str} = {qx_omega}, expected in (0, 1]"
             )
 
     def test_lx_non_increasing(self, tabla_emssa09):
@@ -1210,7 +1206,7 @@ class TestMortalityConstraints:
             df = df.sort_values("edad")
             lx_vals = df["lx"].values
             for i in range(1, len(lx_vals)):
-                assert lx_vals[i] <= lx_vals[i-1] + 1e-6, (
+                assert lx_vals[i] <= lx_vals[i - 1] + 1e-6, (
                     f"lx increasing at age {df.iloc[i]['edad']} for {sexo_str}"
                 )
 
@@ -1218,6 +1214,7 @@ class TestMortalityConstraints:
 # ======================================================================
 # 16. RENTA VITALICIA PROPERTIES
 # ======================================================================
+
 
 class TestRentaVitalicia:
     """Verify life annuity properties."""
@@ -1281,6 +1278,7 @@ class TestRentaVitalicia:
 # 17. NUMERICAL STABILITY
 # ======================================================================
 
+
 class TestNumericalStability:
     """Verify calculations are numerically stable under extreme inputs."""
 
@@ -1313,9 +1311,7 @@ class TestNumericalStability:
         )
         resultado_1m = temporal.calcular_prima(asegurado_1m)
         ratio = float(resultado.prima_neta) / float(resultado_1m.prima_neta)
-        assert abs(ratio - 40.0) < 0.01, (
-            f"Premium ratio = {ratio}, expected 40.0 (linear in SA)"
-        )
+        assert abs(ratio - 40.0) < 0.01, f"Premium ratio = {ratio}, expected 40.0 (linear in SA)"
 
     def test_collective_model_deterministic_with_seed(self):
         """Collective risk model with same seed produces same VaR."""
@@ -1341,6 +1337,7 @@ class TestNumericalStability:
 # 18. CROSS-DOMAIN: DOTAL COMPONENTS SUM IDENTITY
 # ======================================================================
 
+
 class TestDotalDecomposition:
     """The dotal insurance = temporal + pure endowment.
 
@@ -1361,7 +1358,7 @@ class TestDotalDecomposition:
         x = 0
         n = 3
         Ax_temp = tc_simple.Ax(x, n)  # temporal insurance
-        nEx = tc_simple.nEx(x, n)      # pure endowment
+        nEx = tc_simple.nEx(x, n)  # pure endowment
 
         # The dotal = temporal + endowment
         dotal_via_sum = Ax_temp + nEx
@@ -1379,8 +1376,167 @@ class TestDotalDecomposition:
 
 
 # ======================================================================
+# 18b. DOTAL SELF-VERIFICATION: INDEPENDENT ORACLES (audit A9)
+# ======================================================================
+
+
+class TestDotalVerificacionesSonIndependientes:
+    """The `verificaciones` block must exercise the engine, not restate itself.
+
+    Audit finding A9: all four checks used to be self-fulfilling. `vp_total`
+    was *defined* as its own decomposition; the equivalence principle compared
+    `vp_total / annuity * annuity` against `vp_total`; and the two reserve
+    boundaries read hardcoded constants inside `calcular_reserva`.
+
+    The oracles below are independent by construction: the commutation columns
+    reach the same values through Dx/Nx/Mx accumulation instead of the
+    loop-based pricing engine, and the Fackler recursion is retrospective while
+    the reserve is computed prospectively. Each test also shows the check
+    *failing* under a deliberate defect — a check that cannot fail is not a
+    check.
+    """
+
+    @pytest.fixture
+    def producto_dotal(self, tabla_emssa09):
+        config = ConfiguracionProducto(
+            nombre_producto="Dotal 20",
+            plazo_years=20,
+            tasa_interes_tecnico=Decimal("0.055"),
+        )
+        return VidaDotal(config, tabla_emssa09)
+
+    @pytest.fixture
+    def asegurado_dotal(self):
+        return Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+
+    def test_decomposicion_contra_conmutacion(self, producto_dotal, asegurado_dotal, tabla_emssa09):
+        """VP total = SA * (A^1_{x:n} + nEx), vía funciones de conmutación.
+
+        Oráculo: la tabla de conmutación acumula Mx y Dx desde una raíz de lx
+        y llega al valor del dotal como (M_x - M_{x+n} + D_{x+n}) / D_x. El
+        motor de pricing lo obtiene sumando v^(t+1)·ₜp_x·q_{x+t} año por año.
+        Son dos implementaciones distintas del mismo valor actuarial.
+        """
+        analisis = producto_dotal.analizar_producto(asegurado_dotal)
+
+        tc = TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal("0.055"))
+        esperado = asegurado_dotal.suma_asegurada * (
+            tc.Ax(asegurado_dotal.edad, 20) + tc.nEx(asegurado_dotal.edad, 20)
+        )
+
+        assert analisis.verificaciones.descomposicion_beneficios
+        assert float(analisis.vp_beneficios_total) == pytest.approx(float(esperado), rel=1e-4)
+
+    def test_decomposicion_detecta_una_pierna_faltante(self, producto_dotal, asegurado_dotal):
+        """Si se omite el dotal puro, la verificación debe fallar.
+
+        Un dotal sin la pierna de supervivencia es un temporal. La versión
+        anterior de esta verificación seguía siendo cierta, porque comparaba
+        `vp_total` contra su propia definición.
+        """
+        original = producto_dotal._calcular_componentes_beneficio
+        producto_dotal._calcular_componentes_beneficio = lambda **kw: (
+            original(**kw)[0],
+            Decimal("0"),
+        )
+
+        analisis = producto_dotal.analizar_producto(asegurado_dotal)
+        assert not analisis.verificaciones.descomposicion_beneficios
+
+    def test_equivalencia_usa_la_prima_del_motor(self, producto_dotal, asegurado_dotal):
+        """Una prima desviada 1% debe romper el principio de equivalencia.
+
+        La verificación anterior calculaba `vp_total / ä` y luego lo
+        multiplicaba por `ä`, así que era exacta por álgebra y no tocaba
+        `calcular_prima`. Ahora contrasta la salida real del motor.
+        """
+        assert producto_dotal.analizar_producto(
+            asegurado_dotal
+        ).verificaciones.principio_equivalencia
+
+        original = producto_dotal.calcular_prima
+
+        def prima_desviada(asegurado, **kwargs):
+            resultado = original(asegurado, **kwargs)
+            resultado.prima_neta = resultado.prima_neta * Decimal("1.01")
+            return resultado
+
+        producto_dotal.calcular_prima = prima_desviada
+        analisis = producto_dotal.analizar_producto(asegurado_dotal)
+
+        assert not analisis.verificaciones.principio_equivalencia
+
+    def test_reservas_frontera_sin_atajos(self, producto_dotal, asegurado_dotal):
+        """t=0 da 0 y t=n da la suma asegurada por la fórmula, no por constante.
+
+        `calcular_reserva` ya no devuelve 0 ni SA como casos especiales. En
+        t=0 la reserva prospectiva vale cero por el principio de equivalencia;
+        en t=n el dotal a plazo cero vale la suma asegurada y no quedan primas.
+        """
+        analisis = producto_dotal.analizar_producto(asegurado_dotal)
+
+        assert analisis.verificaciones.reserva_inicial_cero
+        assert analisis.verificaciones.reserva_final_igual_beneficio
+        assert float(analisis.reservas[0].reserva) == pytest.approx(0.0, abs=1.0)
+        assert float(analisis.reservas[-1].reserva) == pytest.approx(
+            float(asegurado_dotal.suma_asegurada), rel=1e-6
+        )
+
+        # La reserva crece de forma monótona hasta el beneficio.
+        valores = [float(p.reserva) for p in analisis.reservas]
+        assert valores == sorted(valores)
+
+    def test_recursion_fackler(self, producto_dotal, asegurado_dotal, tabla_emssa09):
+        """(ₜV + P)(1+i) = q_{x+t}·SA + p_{x+t}·ₜ₊₁V para todo t.
+
+        Identidad de Bowers et al., *Actuarial Mathematics*, cap. 7. Es la
+        relación retrospectiva entre reservas consecutivas: la reserva más la
+        prima, capitalizadas un año, deben pagar a quienes mueren y constituir
+        la reserva del año siguiente para quienes sobreviven. Como la reserva
+        se calcula prospectivamente (`A - P·ä`), la recursión es una ruta
+        distinta y sí puede fallar.
+        """
+        analisis = producto_dotal.analizar_producto(asegurado_dotal)
+        assert analisis.verificaciones.recursion_fackler
+
+        # Recalculada aquí a mano, sin usar el helper del paquete.
+        i = Decimal("0.055")
+        prima = analisis.resultado_prima.prima_neta
+        sa = asegurado_dotal.suma_asegurada
+        reservas = [p.reserva for p in analisis.reservas]
+
+        for t in range(len(reservas) - 1):
+            qx = tabla_emssa09.obtener_qx(asegurado_dotal.edad + t, Sexo.HOMBRE)
+            pago = prima if t < analisis.plazo_pago else Decimal("0")
+            izquierda = (reservas[t] + pago) * (Decimal("1") + i)
+            derecha = qx * sa + (Decimal("1") - qx) * reservas[t + 1]
+            assert float(izquierda) == pytest.approx(float(derecha), rel=1e-4), (
+                f"Fackler falla en t={t}: {izquierda} != {derecha}"
+            )
+
+    def test_fackler_detecta_una_reserva_desviada(self, producto_dotal, asegurado_dotal):
+        """Desviar una sola reserva intermedia debe romper la recursión.
+
+        Ni la descomposición ni la equivalencia detectan este defecto: solo la
+        recursión mira la trayectoria de reservas año contra año.
+        """
+        original = producto_dotal.calcular_reserva
+        producto_dotal.calcular_reserva = lambda aseg, anio, **kw: (
+            original(aseg, anio) * (Decimal("1.02") if anio == 10 else Decimal("1"))
+        )
+
+        analisis = producto_dotal.analizar_producto(asegurado_dotal)
+
+        assert not analisis.verificaciones.recursion_fackler
+        # Las otras verificaciones no ven el defecto: por eso hacen falta varias.
+        assert analisis.verificaciones.descomposicion_beneficios
+        assert analisis.verificaciones.principio_equivalencia
+
+
+# ======================================================================
 # 19. COMMUTATION ON EMSSA-09: INSURANCE-ANNUITY IDENTITY (FEMALE)
 # ======================================================================
+
 
 class TestCommutationEMSSAFemale:
     """Repeat key identity on the female EMSSA-09 table."""
@@ -1396,9 +1552,7 @@ class TestCommutationEMSSAFemale:
             ax_val = float(tc_emssa_m.ax(x))
             Ax_val = float(tc_emssa_m.Ax(x))
             identity = Ax_val + d * ax_val
-            assert abs(identity - 1.0) < 1e-5, (
-                f"EMSSA female age {x}: Ax + d*ax = {identity:.8f}"
-            )
+            assert abs(identity - 1.0) < 1e-5, f"EMSSA female age {x}: Ax + d*ax = {identity:.8f}"
 
     def test_female_annuity_higher_than_male(self, tc_emssa_h, tc_emssa_m):
         """Females have lower mortality => higher life annuity factor.
@@ -1409,14 +1563,13 @@ class TestCommutationEMSSAFemale:
         for x in [30, 50, 65]:
             ax_m = float(tc_emssa_m.ax(x))
             ax_h = float(tc_emssa_h.ax(x))
-            assert ax_m > ax_h, (
-                f"Age {x}: female ax ({ax_m}) should > male ax ({ax_h})"
-            )
+            assert ax_m > ax_h, f"Age {x}: female ax ({ax_m}) should > male ax ({ax_h})"
 
 
 # ======================================================================
 # 20. PENSION LEY 97 BASIC PROPERTIES
 # ======================================================================
+
 
 class TestPensionLey97:
     """Verify Ley 97 pension basic properties."""
@@ -1461,3 +1614,18 @@ class TestPensionLey97:
         assert pension >= PENSION_GARANTIZADA_2024, (
             f"Pension {pension} < guaranteed minimum {PENSION_GARANTIZADA_2024}"
         )
+
+    def test_diferencia_relativa_rechaza_denominador_cero(self):
+        """Una tolerancia relativa no puede compararse contra un absoluto.
+
+        `TOLERANCIA_RELATIVA` es relativa; si el denominador fuera cero y la
+        función devolviera la diferencia absoluta, la verificación estaría
+        comparando pesos contra 1e-4 y fallaría o pasaría por accidente. Se
+        exige una `escala` explícita.
+        """
+        assert _diferencia_relativa(
+            Decimal("0.5"), Decimal("0"), escala=Decimal("1000")
+        ) == Decimal("0.0005")
+
+        with pytest.raises(ValueError, match="escala"):
+            _diferencia_relativa(Decimal("0.5"), Decimal("0"))

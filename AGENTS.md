@@ -1,130 +1,194 @@
 # AGENTS.md
 
-Guidance for coding agents working in this repository. Read this file before making
-changes. A more specific `AGENTS.md` in a subdirectory supplements these instructions.
+Guidance for coding agents working on `suite_actuarial`. This file captures the
+project's purpose, the conventions that serve it, and the guardrails that keep it
+defensible. Read it before making changes.
 
-## Project overview
+For the vision, audience, and what a good contribution looks like, read
+[`docs/PROJECT_VISION.md`](docs/PROJECT_VISION.md) and
+[`CONTRIBUTING.md`](CONTRIBUTING.md). This file is the operational summary; those two
+are canonical.
 
-`suite-actuarial` is a Python 3.11+ actuarial toolkit for the Mexican insurance
-market. It can be used as:
+**Audit status:** [`docs/AUDIT.md`](docs/AUDIT.md) records an actuarial correctness
+audit (2026-07-22). All six remediation phases closed on 2026-07-25: the ten Class A
+defects are fixed, each with a test whose expected value comes from an external
+source, an actuarial identity, or a hand calculation — not from restating the formula
+under test. Read the [closure record](docs/AUDIT.md#registro-de-cierre) before
+touching reserves, pensions, life, reinsurance, or credibility: it states the residual
+limit that survived each fix.
 
-- a Python package (`src/suite_actuarial/`);
-- a FastAPI service (`src/suite_actuarial/api/`);
-- a Next.js dashboard (`frontend/`); or
-- a legacy/secondary Streamlit dashboard (`streamlit_app/`).
+The [Class B inventory](docs/AUDIT.md#inventario-clase-b-fase-5) is the standing
+constraint. Every entry names a datum or assumption, its source, its currency, the
+simplification, where it is disclosed, and what replacing it would take. Synthetic
+mortality and heuristic RCS factors sit under most life, pension, and capital figures,
+so a verified result is still not a professionally valid one. Keep those disclosures
+attached to the numbers, and extend the inventory when a change adds a new ceiling.
 
-The main actuarial domains are life, property and casualty, health, pensions,
-reserves, reinsurance, regulatory calculations, and annual regulatory configuration.
+## Central idea
 
-## Repository map
+`suite_actuarial` is an open laboratory for building, testing, and understanding
+actuarial models. Every model connects a product question to benefits, assumptions,
+method, results, tests, and reproducible code.
 
-- `src/suite_actuarial/`: package source and domain logic
-- `src/suite_actuarial/api/`: FastAPI application and routers under `/api/v1`
-- `src/suite_actuarial/core/`: shared models, validation, and product abstractions
-- `src/suite_actuarial/config/`: year-specific Mexican regulatory parameters
-- `src/suite_actuarial/data/`: package-bundled mortality data
-- `tests/unit/`: domain, boundary, and actuarial-rigor tests
-- `tests/integration/`: API contract tests
-- `frontend/`: Next.js 16, React 19, and TypeScript dashboard
-- `streamlit_app/`: Streamlit dashboard using the Python package directly
-- `data/`: source/reference mortality-table files
-- `docs/`: regulatory, validation, and project notes
-- `examples/` and `notebooks/`: executable usage examples
+The audience is students going from a formula to a full product, early-career actuaries
+experimenting with assumptions, teachers and researchers who need reproducible
+benchmarks, and developers who work with actuaries and need clear contracts. Much of the
+work here is helping a contributor develop a product, write an exercise, or share a
+method. The guardrails below are what let that shared work be trusted.
 
-## Set up and run
+The project is rooted in the Mexican insurance market, but its methods are meant
+to be generalizable. Its scope is educational and experimental: professional use
+requires validated data, internal governance, approved methods, and responsible
+actuarial judgment.
 
-Python development environment:
+## What every model must answer
+
+A shared model is useful only if it can answer six questions:
+
+1. What problem does it solve?
+2. What does it promise to pay and under which events?
+3. What was assumed and where does it come from?
+4. How does the method transform those assumptions?
+5. What does the result mean and how does it change?
+6. What identity, contrast, or limit makes it trustworthy?
+
+This shapes the codebase: assumptions, sources, and validation must stay visible;
+methods must stay in the package where they can be inspected; tests must document
+both the behavior and the level of validation reached.
+
+## Communication and form
+
+The form should match the content: plain, exact, honest. Write and edit to this style.
+
+- **Reason first, then mechanics.** Give the actuarial meaning — purpose, benefit,
+  assumption, method, result — before the code that computes it.
+
+- **Be exact about numbers and sources.** Name units, dates, and sources. Mark a figure
+  as illustrative when it is not sourced. Do not present a regulatory or market parameter
+  as current without verifiable evidence.
+
+- **State limitations in the open.** Put scope and caveats where the reader sees them,
+  not in a footnote.
+
+- **Direct, honest, good faith.** No overhype, no selling, no filler phrases. Say what a
+  model does and what it does not do. If something is uncertain or unfinished, say so.
+
+- **Language split.** Domain terms and narrative docs in Spanish; agent guidance (this
+  file, `frontend/AGENTS.md`) in English; UI copy in ES and EN through i18n. Identifiers
+  stay ASCII; Spanish prose keeps its accents.
+
+- **Plain structure.** Short sentences. Imperative for guardrails ("Do not alter...",
+  "Use..."). A list beats a dense paragraph. No emojis unless asked.
+
+## What this project is technically
+
+A Python 3.11+ actuarial toolkit for the Mexican insurance market. It ships as a
+Python package, a FastAPI service, a Next.js dashboard, and a secondary Streamlit
+app. Treat the actuarial formulas and regulatory parameters as controlled inputs; do
+not tweak them to make a test pass.
+
+## Structural conventions
+
+- **Spanish module names, English API router names.** Domain packages live under
+  `src/suite_actuarial/` with Spanish names (`vida/`, `danos/`, `salud/`, `pensiones/`,
+  `reservas/`, `reaseguro/`, `regulatorio/`, `config/`). The FastAPI routers that
+  expose them use English names (`pricing.py`, `danos.py`, `salud.py`, `pensiones.py`,
+  `reserves.py`, `reinsurance.py`, `regulatory.py`, `config.py`). Keep this mapping;
+  do not introduce mixed naming in new modules or routers.
+
+- **Domain logic lives in the package.** Routers validate requests and
+  translate them into domain objects. Actuarial calculations, rounding, and
+  regulatory formulas belong in `src/suite_actuarial/` where they remain inspectable.
+
+- **Shared validation stays in `core/`.** Do not duplicate domain rules in routers,
+  frontend code, or Streamlit pages. Reuse `core/validators.py`, `core/models/`, and
+  `core/base_product.py`.
+
+- **Use `Decimal` for money, rates, reserves, and regulatory amounts.** Construct from
+  strings (`Decimal("0.055")`). Convert to `float` only at explicit API/UI boundaries
+  where the existing contract already requires it.
+
+- **Annual regulatory configuration is versioned by year.** A new year belongs in
+  `config/config_<year>.py` and must satisfy `config/schema.py`. Update the loader
+  and add tests if the schema changes.
+
+- **Reports are separate from routers.** The `reportes/` module generates regulatory
+  outputs (RCS, underwriting, investments, claims). Do not move report logic into
+  API handlers.
+
+- **Shared knowledge has a home.** Reproducible walkthroughs — the way a contributor
+  develops and explains a product or exercise — live as runnable code in
+  `examples/labs/` with their narrative in `docs/labs/`; self-verifying worked cases
+  per domain live in `examples/casos/`. Prefer extending these over adding one-off
+  scripts, and keep the actuarial logic they exercise in the package, not in the
+  example.
+
+## Actuarial guardrails
+
+- Do not alter mortality tables, regulatory factors, rounding rules, units, or legal
+  thresholds without a documented source or rationale and a matching test.
+
+- Do not update test expectations merely to make a failure pass. First confirm the
+  formula, units, rounding, and source data.
+
+- When in doubt, prefer the conservative actuarial interpretation. The codebase is a
+  laboratory, but the numbers must still be defensible.
+
+## API and frontend contract
+
+- Preserve the `/api/v1` contract. When a request or response changes, update the
+  integration tests in `tests/integration/` and the frontend types in
+  `frontend/src/lib/types.ts` in the same change.
+
+- Convert `Decimal` values deliberately when serializing. Preserve useful validation
+  errors and avoid exposing internal tracebacks.
+
+- The frontend Next.js dashboard is covered by `frontend/AGENTS.md`. Follow it for UI
+  conventions, design tokens, i18n, and the typed API client.
+
+## CLI
+
+The package exposes a `seguros` CLI:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev,api]"
+seguros --help
+seguros demo
+seguros api
+seguros config
+seguros validate-config
 ```
 
-Common Python commands:
+## Verification
+
+Run these before considering a change complete, from the project virtualenv:
 
 ```bash
-pytest
-pytest tests/unit/test_vida_temporal.py
-pytest tests/integration/test_api_pricing.py
-ruff check src/ tests/
-ruff format --check src/ tests/
-mypy src/
-uvicorn suite_actuarial.api.main:app --reload
+.venv/bin/python -m pytest
+.venv/bin/python -m ruff check src/ tests/
+.venv/bin/python -m ruff format --check src/ tests/
+.venv/bin/python -m mypy src/ tests/
 ```
 
-Frontend commands (run from `frontend/`):
+Use the interpreter explicitly. The optional API extras (`fastapi`, `httpx`) live only
+in the virtualenv; running a bare `pytest` against the system interpreter makes the
+71 integration tests skip silently instead of running. To turn a missing extra into a
+failure rather than a skip, set `SUITE_REQUIRE_API=1`.
+
+For frontend work, run from `frontend/`:
 
 ```bash
-npm ci
-npm run dev
 npm run lint
 npm run build
 ```
 
-The frontend expects `NEXT_PUBLIC_API_URL`; locally it defaults to
-`http://localhost:8000/api/v1`. The complete development stack can also be started
-with `docker compose up` (API on port 8000, frontend on port 3000).
-
-The Streamlit app requires the `viz` extra plus `streamlit_app/requirements.txt` and
-starts with `streamlit run streamlit_app/Home.py`.
-
-## Change guidelines
-
-### Python and actuarial logic
-
-- Follow the settings in `pyproject.toml`: Python 3.11, Ruff, 100-character lines,
-  and strict type checking for function definitions.
-- Use ASCII for identifiers. User-facing text and docstrings may use correct Spanish
-  accents. Existing domain terminology is primarily Spanish; preserve it.
-- Do not add emojis to code, documentation, or user-facing copy unless the user asks
-  for them or an established filename/convention requires them.
-- Add type hints to public functions and Google-style docstrings to public APIs.
-- Use `Decimal`, constructed from strings, for currency, premiums, reserves, rates,
-  and regulatory amounts. Convert to `float` only at explicit library/API/UI
-  boundaries where the existing contract requires it.
-- Keep shared validation in `core/`; do not duplicate domain rules in routers or UIs.
-- Treat mortality tables and regulatory factors as controlled inputs. Do not alter
-  formulas, rounding, units, table data, or legal thresholds without tests and a
-  documented source or rationale.
-- A new annual configuration belongs in `config/config_<year>.py` and must match
-  `config/schema.py`; verify loader and API behavior with tests.
-
-### API
-
-- Routers should translate validated request models into domain objects. Actuarial
-  calculations belong in the package, not in FastAPI handlers.
-- Preserve the `/api/v1` contract. When a request or response changes, update the
-  matching integration tests and the frontend types/client in the same change.
-- Convert `Decimal` values deliberately when serializing. Preserve useful validation
-  errors and avoid exposing internal tracebacks.
-
-### Frontend
-
-- Also follow `frontend/AGENTS.md`.
-- Reuse `src/components/ui`, design tokens, `useCalculation`, and the typed client in
-  `src/lib/api.ts`; do not issue ad hoc API requests from page components.
-- Keep API interfaces in `src/lib/types.ts` aligned with Pydantic request/response
-  models.
-- User-visible copy must support both Spanish and English through the existing i18n
-  system. Keep pages responsive and preserve loading, error, empty, and result states.
-
-### Tests and verification
-
-- Add or update the narrowest relevant tests for every behavior change.
-- Use unit tests for formulas and domain behavior, integration tests for API contracts,
-  and boundary/rigor tests for actuarial identities and edge cases.
-- Prefer targeted tests while iterating. Before handing off a broad change, run the
-  relevant Ruff checks and test suites; run the frontend lint/build for frontend work.
-- Do not update test expectations merely to make a failure pass. Confirm the formula,
-  units, rounding, and source data first.
-
 ## Working practices
 
-- Make focused changes and preserve unrelated work already present in the workspace.
-- Do not edit generated artifacts such as `frontend/.next/`, coverage output, caches,
-  or installed dependencies.
-- Do not add dependencies unless the task requires them and the tradeoff is justified.
-- Update documentation and examples when public behavior changes.
+- Make focused changes. Do not edit generated artifacts (`frontend/.next/`, coverage
+  output, caches, installed dependencies).
+
+- Do not add dependencies unless the change justifies the tradeoff.
+
+- Do not add emojis to code, docs, or user-facing copy unless explicitly requested.
+
 - Never commit, push, create branches, or perform other git operations unless the user
   explicitly asks for that action.

@@ -18,7 +18,9 @@ import { formatCurrency, formatPercent } from "@/lib/utils";
 import type { DotalLabChecks, DotalLabRequest } from "@/lib/types";
 
 const STEP_KEYS = ["step1", "step2", "step3", "step4", "step5", "step6"] as const;
-type DotalBooleanCheck = Exclude<keyof DotalLabChecks, "diferencia_equivalencia">;
+type DotalBooleanCheck = {
+  [K in keyof DotalLabChecks]: DotalLabChecks[K] extends boolean ? K : never;
+}[keyof DotalLabChecks];
 
 const PYTHON_EXAMPLE = `from decimal import Decimal
 from suite_actuarial import Asegurado, ConfiguracionProducto, TablaMortalidad
@@ -118,6 +120,7 @@ export default function LaboratoryPage() {
     [copy.checkEquivalence, "principio_equivalencia"],
     [copy.checkInitial, "reserva_inicial_cero"],
     [copy.checkFinal, "reserva_final_igual_beneficio"],
+    [copy.checkFackler, "recursion_fackler"],
   ];
 
   const renderStep = () => {

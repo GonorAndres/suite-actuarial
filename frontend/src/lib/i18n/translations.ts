@@ -112,11 +112,20 @@ export const translations = {
     reservas_descripcion: "Desarrollo de siniestros, estimación de reservas e incertidumbre.",
     reservas_chain_ladder: "Chain Ladder",
     reservas_bornhuetter: "Bornhuetter-Ferguson",
-    reservas_bootstrap: "Bootstrap",
+    reservas_bootstrap: "Bootstrap ODP",
+    aviso_ilustrativo_titulo: "Resultado ilustrativo",
+    reservas_bootstrap_aviso:
+      "Bootstrap ODP de England-Verrall: remuestrea residuales de Pearson sobre los incrementales, contra valores ajustados hacia atrás desde el ultimate, y simula la varianza de proceso de cada celda futura. La dispersión es el error de predicción de la reserva. Es condicional al modelo — patrón de desarrollo estable y varianza proporcional a la media — así que no cubre riesgo de modelo, cambio de mezcla ni inflación no observada, y no es una medida de capital regulatorio.",
+    reservas_bootstrap_media: "Media (estimador central)",
+    reservas_bootstrap_mediana: "Mediana",
+    reservas_bootstrap_conciliacion: "Diferencia contra Chain Ladder",
+    reservas_bootstrap_error: "Error de predicción",
     triangulo: "Triángulo de desarrollo",
     anios_origen: "Años de origen",
     metodo_promedio: "Método de promedio",
     tail_factor: "Factor de cola",
+    tail_factor_aviso:
+      "El factor de cola representa el desarrollo posterior al último periodo observado. Decláralo con su justificación, o deja que el paquete lo estime ajustando la curva de potencia inversa de Sherman (1984) a los factores observados. En cualquier caso es extrapolación: ningún dato del triángulo respalda ese tramo.",
     primas_por_anio: "Primas por año",
     loss_ratio: "Loss ratio a priori",
     num_simulaciones: "Número de simulaciones",
@@ -130,7 +139,7 @@ export const translations = {
     regulatorio_deducibilidad: "Deducibilidad SAT",
     regulatorio_retenciones: "Retenciones ISR",
     capital_minimo: "Capital mínimo pagado",
-    ratio_solvencia: "Ratio de solvencia",
+    ratio_solvencia: "Ratio de solvencia (capital/RCS)",
     cumple_regulacion: "Cumple regulación",
 
     // -- Reaseguro --
@@ -511,7 +520,7 @@ export const translations = {
     hist5_sin_cola: "sin cola",
     hist5_reserva: "Reserva estimada",
     hist5_ultimate: "Costo último estimado",
-    hist5_leccion: "Un factor de cola de 3% modifica la reserva en varios millones de pesos. Las reservas son estimaciones sensibles a los supuestos; la regulación exige documentarlos y la práctica actuarial cuantifica su incertidumbre con métodos como el de Mack.",
+    hist5_leccion: "Un factor de cola de 3% modifica la reserva en varios millones de pesos. Las reservas son estimaciones sensibles a los supuestos; la regulación exige documentarlos y la práctica actuarial cuantifica su incertidumbre. El laboratorio implementa el modelo de Mack (1993), que estima una varianza por periodo de desarrollo y compone el error de predicción por año de origen; mide el error condicionado al Chain Ladder, no el riesgo de modelo.",
 
     hist6_title: "Capital y solvencia",
     hist6_narrativa: "El Requerimiento de Capital de Solvencia (RCS) es el capital que la CNSF exige a una aseguradora para absorber un ejercicio adverso. Este ejemplo estudia la agregación de módulos de vida, daños e inversión mediante un escenario simplificado, cuyo alcance está documentado como referencia didáctica.",
@@ -638,11 +647,20 @@ export const translations = {
     reservas_descripcion: "Claims development, reserve estimation, and uncertainty.",
     reservas_chain_ladder: "Chain Ladder",
     reservas_bornhuetter: "Bornhuetter-Ferguson",
-    reservas_bootstrap: "Bootstrap",
+    reservas_bootstrap: "ODP bootstrap",
+    aviso_ilustrativo_titulo: "Illustrative result",
+    reservas_bootstrap_aviso:
+      "England-Verrall ODP bootstrap: it re-samples Pearson residuals on incremental claims, against values fitted backwards from the ultimate, and simulates the process variance of each future cell. The spread is the reserve's prediction error. It is conditional on the model — stable development pattern and variance proportional to the mean — so it does not cover model risk, mix change or unobserved inflation, and it is not a regulatory capital measure.",
+    reservas_bootstrap_media: "Mean (central estimate)",
+    reservas_bootstrap_mediana: "Median",
+    reservas_bootstrap_conciliacion: "Difference vs Chain Ladder",
+    reservas_bootstrap_error: "Prediction error",
     triangulo: "Development triangle",
     anios_origen: "Origin years",
     metodo_promedio: "Averaging method",
     tail_factor: "Tail factor",
+    tail_factor_aviso:
+      "The tail factor stands for development beyond the last observed period. State it with its justification, or let the package estimate it by fitting Sherman's (1984) inverse power curve to the observed factors. Either way it is extrapolation: no data in the triangle backs that stretch.",
     primas_por_anio: "Premiums by year",
     loss_ratio: "A priori loss ratio",
     num_simulaciones: "Number of simulations",
@@ -656,7 +674,7 @@ export const translations = {
     regulatorio_deducibilidad: "SAT Deductibility",
     regulatorio_retenciones: "ISR Withholding",
     capital_minimo: "Minimum paid-in capital",
-    ratio_solvencia: "Solvency ratio",
+    ratio_solvencia: "Solvency ratio (capital/RCS)",
     cumple_regulacion: "Meets regulation",
 
     // -- Reaseguro --
@@ -1037,7 +1055,7 @@ export const translations = {
     hist5_sin_cola: "no tail",
     hist5_reserva: "Estimated reserve",
     hist5_ultimate: "Estimated ultimate cost",
-    hist5_leccion: "A 3% tail factor changes the reserve by several million pesos. Reserves are estimates that are sensitive to assumptions; regulation requires documenting them, and actuarial practice quantifies their uncertainty with methods such as Mack's.",
+    hist5_leccion: "A 3% tail factor changes the reserve by several million pesos. Reserves are estimates that are sensitive to assumptions; regulation requires documenting them, and actuarial practice quantifies their uncertainty. The lab implements Mack's (1993) model, which estimates a variance per development period and composes the prediction error by origin year; it measures error conditional on Chain Ladder, not model risk.",
 
     hist6_title: "Capital and solvency",
     hist6_narrativa: "The Solvency Capital Requirement (RCS) is the capital the CNSF requires an insurer to hold for an adverse year. This example examines aggregation across life, P&C, and investment modules through a simplified scenario whose scope is documented as an educational reference.",

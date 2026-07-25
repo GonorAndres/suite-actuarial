@@ -58,7 +58,7 @@ class ExcessOfLossRequest(BaseModel):
     """Request body for excess of loss calculation."""
 
     retencion: float = Field(..., gt=0)
-    limite: float = Field(..., gt=0)
+    limite: float = Field(..., gt=0, description="Width of the XL layer")
     modalidad: str = Field(default="por_riesgo", description="por_riesgo or por_evento")
     numero_reinstatements: int = Field(default=0, ge=0, le=3)
     tasa_prima: float = Field(..., gt=0, le=100)
@@ -169,8 +169,14 @@ def calculate_quota_share(req: QuotaShareRequest):
 def calculate_excess_of_loss(req: ExcessOfLossRequest):
     """Calculate excess of loss (XL) reinsurance results.
 
-    The reinsurer pays when a claim exceeds the retention, up to the
-    contract limit. Returns recoveries and net result for the ceding company.
+    The reinsurer pays when a claim exceeds the retention, capped per
+    occurrence at the layer width (`limite`). Reinstatements set how many times
+    that capacity is restored, so the period aggregate is
+    `limite * (1 + numero_reinstatements)`; recoveries erode it in order.
+
+    `detalles` reports `limite_agregado`, `limite_disponible`,
+    `reinstatements_usados` and `prima_reinstalacion` — the latter charged pro
+    rata to amount at 100%, with no pro-rata-to-time adjustment.
     """
     try:
         config = ExcessOfLossConfig(
@@ -217,9 +223,7 @@ def calculate_stop_loss(req: StopLossRequest):
 
         prima_kwarg = {}
         if req.prima_reaseguro_cobrada is not None:
-            prima_kwarg["prima_reaseguro_cobrada"] = Decimal(
-                str(req.prima_reaseguro_cobrada)
-            )
+            prima_kwarg["prima_reaseguro_cobrada"] = Decimal(str(req.prima_reaseguro_cobrada))
 
         resultado = contrato.calcular_resultado_neto(
             primas_totales=Decimal(str(req.primas_totales)),

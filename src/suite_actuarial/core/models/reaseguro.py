@@ -86,9 +86,7 @@ class Siniestro(BaseModel):
 
         hoy = dt_date.today()
         if v > hoy:
-            raise ValueError(
-                f"La fecha del siniestro ({v}) no puede ser futura"
-            )
+            raise ValueError(f"La fecha del siniestro ({v}) no puede ser futura")
         return v
 
     model_config = {
@@ -135,16 +133,12 @@ class ConfiguracionReaseguro(BaseModel):
     def validar_vigencia(self) -> "ConfiguracionReaseguro":
         """La fecha de fin debe ser posterior a la de inicio"""
         if self.vigencia_fin <= self.vigencia_inicio:
-            raise ValueError(
-                "La fecha de fin debe ser posterior a la de inicio"
-            )
+            raise ValueError("La fecha de fin debe ser posterior a la de inicio")
 
         # Validar que el periodo no sea mayor a 5 anos
         dias_vigencia = (self.vigencia_fin - self.vigencia_inicio).days
         if dias_vigencia > 365 * 5:
-            raise ValueError(
-                "El periodo de vigencia no puede exceder 5 anos"
-            )
+            raise ValueError("El periodo de vigencia no puede exceder 5 anos")
 
         return self
 
@@ -181,9 +175,7 @@ class QuotaShareConfig(ConfiguracionReaseguro):
     def validar_porcentaje(cls, v: Decimal) -> Decimal:
         """Porcentaje debe estar entre 0 y 100"""
         if not (0 < v <= 100):
-            raise ValueError(
-                f"Porcentaje de cesion debe estar entre 0 y 100, recibido: {v}"
-            )
+            raise ValueError(f"Porcentaje de cesion debe estar entre 0 y 100, recibido: {v}")
         return v
 
     model_config = {
@@ -219,7 +211,7 @@ class ExcessOfLossConfig(ConfiguracionReaseguro):
     limite: Decimal = Field(
         ...,
         gt=0,
-        description="Limite de cobertura del reasegurador",
+        description="Ancho de la capa de cobertura del reasegurador",
     )
     modalidad: ModalidadXL = Field(
         default=ModalidadXL.POR_RIESGO,
@@ -237,16 +229,6 @@ class ExcessOfLossConfig(ConfiguracionReaseguro):
         le=100,
         description="Tasa de prima (% sobre el limite)",
     )
-
-    @model_validator(mode="after")
-    def validar_limite_mayor_retencion(self) -> "ExcessOfLossConfig":
-        """El limite debe ser mayor que la retencion"""
-        if self.limite <= self.retencion:
-            raise ValueError(
-                f"El limite ({self.limite}) debe ser mayor que "
-                f"la retencion ({self.retencion})"
-            )
-        return self
 
     model_config = {
         "json_schema_extra": {
@@ -298,13 +280,9 @@ class StopLossConfig(ConfiguracionReaseguro):
     def validar_attachment(cls, v: Decimal) -> Decimal:
         """El attachment debe ser razonable (tipicamente 60-150%)"""
         if v < 50:
-            raise ValueError(
-                "Attachment point muy bajo (tipicamente >= 60%)"
-            )
+            raise ValueError("Attachment point muy bajo (tipicamente >= 60%)")
         if v > 200:
-            raise ValueError(
-                "Attachment point muy alto (tipicamente <= 150%)"
-            )
+            raise ValueError("Attachment point muy alto (tipicamente <= 150%)")
         return v
 
     model_config = {

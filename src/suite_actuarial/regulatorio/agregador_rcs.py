@@ -14,6 +14,7 @@ from suite_actuarial.core.validators import (
     ConfiguracionRCSInversion,
     ConfiguracionRCSVida,
     ResultadoRCS,
+    calcular_ratio_solvencia,
 )
 from suite_actuarial.regulatorio.rcs_danos import RCSDanos
 from suite_actuarial.regulatorio.rcs_inversion import RCSInversion
@@ -89,16 +90,12 @@ class AgregadorRCS:
         rcs_vida_total = Decimal("0")
         desglose_vida = {}
         if self.rcs_vida:
-            rcs_vida_total, desglose_vida = (
-                self.rcs_vida.calcular_rcs_total_vida()
-            )
+            rcs_vida_total, desglose_vida = self.rcs_vida.calcular_rcs_total_vida()
 
         rcs_danos_total = Decimal("0")
         desglose_danos = {}
         if self.rcs_danos:
-            rcs_danos_total, desglose_danos = (
-                self.rcs_danos.calcular_rcs_total_danos()
-            )
+            rcs_danos_total, desglose_danos = self.rcs_danos.calcular_rcs_total_danos()
 
         rcs_inversion_total = Decimal("0")
         desglose_inversion = {}
@@ -114,11 +111,7 @@ class AgregadorRCS:
 
         # Calcular indicadores de solvencia
         excedente = self.capital_minimo_pagado - rcs_total
-        ratio_solvencia = (
-            rcs_total / self.capital_minimo_pagado
-            if self.capital_minimo_pagado > 0
-            else Decimal("999.99")
-        )
+        ratio_solvencia = calcular_ratio_solvencia(self.capital_minimo_pagado, rcs_total)
         cumple = self.capital_minimo_pagado >= rcs_total
 
         # Construir desglose completo
@@ -143,9 +136,7 @@ class AgregadorRCS:
             # Inversión
             rcs_mercado=desglose_inversion.get("mercado", Decimal("0")),
             rcs_credito=desglose_inversion.get("credito", Decimal("0")),
-            rcs_concentracion=desglose_inversion.get(
-                "concentracion", Decimal("0")
-            ),
+            rcs_concentracion=desglose_inversion.get("concentracion", Decimal("0")),
             # Agregados
             rcs_suscripcion_vida=rcs_vida_total,
             rcs_suscripcion_danos=rcs_danos_total,
@@ -194,15 +185,9 @@ class AgregadorRCS:
         termino_inversion = rcs_inversion**2
 
         # Términos de correlación
-        corr_vida_danos = (
-            2 * self.CORRELACION_VIDA_DANOS * rcs_vida * rcs_danos
-        )
-        corr_vida_inv = (
-            2 * self.CORRELACION_VIDA_INVERSION * rcs_vida * rcs_inversion
-        )
-        corr_danos_inv = (
-            2 * self.CORRELACION_DANOS_INVERSION * rcs_danos * rcs_inversion
-        )
+        corr_vida_danos = 2 * self.CORRELACION_VIDA_DANOS * rcs_vida * rcs_danos
+        corr_vida_inv = 2 * self.CORRELACION_VIDA_INVERSION * rcs_vida * rcs_inversion
+        corr_danos_inv = 2 * self.CORRELACION_DANOS_INVERSION * rcs_danos * rcs_inversion
 
         # Suma total
         suma_total = (
@@ -255,21 +240,13 @@ class AgregadorRCS:
 
         # Desglose detallado
         if resultado.rcs_mortalidad > 0:
-            composicion["mortalidad_pct"] = (
-                float(resultado.rcs_mortalidad) / total * 100
-            )
+            composicion["mortalidad_pct"] = float(resultado.rcs_mortalidad) / total * 100
         if resultado.rcs_longevidad > 0:
-            composicion["longevidad_pct"] = (
-                float(resultado.rcs_longevidad) / total * 100
-            )
+            composicion["longevidad_pct"] = float(resultado.rcs_longevidad) / total * 100
         if resultado.rcs_prima > 0:
-            composicion["prima_pct"] = (
-                float(resultado.rcs_prima) / total * 100
-            )
+            composicion["prima_pct"] = float(resultado.rcs_prima) / total * 100
         if resultado.rcs_mercado > 0:
-            composicion["mercado_pct"] = (
-                float(resultado.rcs_mercado) / total * 100
-            )
+            composicion["mercado_pct"] = float(resultado.rcs_mercado) / total * 100
 
         return composicion
 
@@ -295,13 +272,9 @@ class AgregadorRCS:
             "rcs_recomendado": float(rcs_recomendado),
             "capital_disponible": float(self.capital_minimo_pagado),
             "cumple_con_margen": cumple_con_margen,
-            "excedente_vs_recomendado": float(
-                self.capital_minimo_pagado - rcs_recomendado
-            ),
+            "excedente_vs_recomendado": float(self.capital_minimo_pagado - rcs_recomendado),
             "ratio_vs_recomendado": float(
-                rcs_recomendado / self.capital_minimo_pagado
-                if self.capital_minimo_pagado > 0
-                else 999.99
+                calcular_ratio_solvencia(self.capital_minimo_pagado, rcs_recomendado)
             ),
             "margen_aplicado": float(margen_seguridad * 100),
         }
@@ -316,8 +289,4 @@ class AgregadorRCS:
         if self.rcs_inversion:
             componentes.append("inversion")
 
-        return (
-            f"AgregadorRCS("
-            f"componentes={componentes}, "
-            f"capital={self.capital_minimo_pagado:,.0f})"
-        )
+        return f"AgregadorRCS(componentes={componentes}, capital={self.capital_minimo_pagado:,.0f})"

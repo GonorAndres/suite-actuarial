@@ -320,9 +320,7 @@ class TestAgregadorRCS:
 
         agregador = AgregadorRCS(
             config_vida=config_vida,
-            capital_minimo_pagado=Decimal(
-                "100000000"
-            ),  # Capital alto suficiente
+            capital_minimo_pagado=Decimal("100000000"),  # Capital alto suficiente
         )
 
         resultado = agregador.calcular_rcs_completo()
@@ -330,7 +328,9 @@ class TestAgregadorRCS:
         # Debe cumplir con capital suficiente
         assert resultado.cumple_regulacion is True
         assert resultado.excedente_solvencia > Decimal("0")
-        assert resultado.ratio_solvencia < Decimal("1.0")
+        # Capital / RCS: a solvent insurer must report at least 100%.
+        assert resultado.ratio_solvencia == (resultado.capital_minimo_pagado / resultado.rcs_total)
+        assert resultado.ratio_solvencia > Decimal("1.0")
 
     def test_incumplimiento_regulacion(self):
         """Debe NO cumplir si capital < RCS"""
@@ -351,7 +351,9 @@ class TestAgregadorRCS:
         # NO debe cumplir
         assert resultado.cumple_regulacion is False
         assert resultado.excedente_solvencia < Decimal("0")
-        assert resultado.ratio_solvencia > Decimal("1.0")
+        # Capital / RCS: insufficient capital must report below 100%.
+        assert resultado.ratio_solvencia == (resultado.capital_minimo_pagado / resultado.rcs_total)
+        assert resultado.ratio_solvencia < Decimal("1.0")
 
     def test_matriz_correlacion(self, config_completo):
         """Debe obtener matriz de correlación"""
@@ -394,9 +396,7 @@ class TestAgregadorRCS:
         # Los porcentajes deben sumar aproximadamente 100%
         # (no exacto por correlaciones - puede ser mayor o menor)
         total_pct = (
-            composicion["vida_pct"]
-            + composicion["danos_pct"]
-            + composicion["inversion_pct"]
+            composicion["vida_pct"] + composicion["danos_pct"] + composicion["inversion_pct"]
         )
         assert 80 < total_pct < 130  # Rango razonable con correlaciones
 
@@ -413,7 +413,8 @@ class TestAgregadorRCS:
 
         resultado = agregador.calcular_rcs_completo()
         validacion = agregador.validar_capital_suficiente(
-            resultado, margen_seguridad=Decimal("0.10")  # 10% margen
+            resultado,
+            margen_seguridad=Decimal("0.10"),  # 10% margen
         )
 
         assert "cumple_minimo" in validacion

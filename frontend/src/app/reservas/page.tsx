@@ -13,6 +13,7 @@ import {
   Table,
   Badge,
   MetricCard,
+  AvisoIlustrativo,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -126,12 +127,44 @@ function ReserveResultCard({
     ),
   } as Record<string, unknown>;
 
+  // Bootstrap reports the mean as its central estimate. The prediction error and
+  // the gap against Chain Ladder sit next to it: the gap is ~1% because the
+  // reserve is convex in the development factors, not because the fit is off.
+  const mediana = result.detalles?.mediana as string | undefined;
+  const conciliacion = result.detalles?.conciliacion_cl as string | undefined;
+  const errorPrediccion = result.detalles?.error_prediccion as string | undefined;
+  // The bootstrap is the only method returning a distribution, so percentiles
+  // identify it. Its central estimate is a mean, not a point projection.
+  const esBootstrap = Boolean(
+    result.percentiles && Object.keys(result.percentiles).length > 0,
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
+      <AvisoIlustrativo
+        metadata={result.calculation_metadata}
+        titulo={t("aviso_ilustrativo_titulo")}
+      >
+        {t("reservas_bootstrap_aviso")}
+      </AvisoIlustrativo>
+
+      {/* Scope note: the ODP bootstrap is a supported method, but its
+          distribution is conditional on the model. The limit stays next to the
+          number rather than in a footnote. */}
+      {esBootstrap &&
+        result.calculation_metadata?.validation_tier !== "illustrative" && (
+          <div
+            role="note"
+            className="border-l-2 border-navy/20 bg-navy/5 px-4 py-3 text-sm text-navy/80"
+          >
+            <p className="leading-relaxed">{t("reservas_bootstrap_aviso")}</p>
+          </div>
+        )}
+
       {/* Main totals */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <MetricCard
-          label={t("reserva_total")}
+          label={esBootstrap ? t("reservas_bootstrap_media") : t("reserva_total")}
           value={formatMillions(result.reserva_total)}
           variant="accent"
           sublabel={t("reservas_unidad_millones")}
@@ -202,6 +235,34 @@ function ReserveResultCard({
       {/* Percentiles (Bootstrap) */}
       {result.percentiles && Object.keys(result.percentiles).length > 0 && (
         <Card title={t("reservas_percentiles")}>
+          {(mediana || conciliacion || errorPrediccion) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+              {errorPrediccion && (
+                <MetricCard
+                  label={t("reservas_bootstrap_error")}
+                  value={formatMillions(Number(errorPrediccion))}
+                  variant="accent"
+                  sublabel={t("reservas_unidad_millones")}
+                />
+              )}
+              {mediana && (
+                <MetricCard
+                  label={t("reservas_bootstrap_mediana")}
+                  value={formatMillions(Number(mediana))}
+                  variant="default"
+                  sublabel={t("reservas_unidad_millones")}
+                />
+              )}
+              {conciliacion && (
+                <MetricCard
+                  label={t("reservas_bootstrap_conciliacion")}
+                  value={formatMillions(Number(conciliacion))}
+                  variant="default"
+                  sublabel={t("reservas_unidad_millones")}
+                />
+              )}
+            </div>
+          )}
           <Table
             headers={[t("reservas_percentil"), t("reserva_total")]}
             rows={Object.entries(result.percentiles).map(([pct, val]) => [
@@ -411,17 +472,20 @@ export default function ReservasPage() {
                   }))
                 }
               />
-              <Input
-                label={t("tail_factor")}
-                name="tail_factor"
-                type="number"
-                step={0.001}
-                min={0}
-                value={clForm.tail_factor}
-                onChange={(e) =>
-                  setClForm((prev) => ({ ...prev, tail_factor: e.target.value }))
-                }
-              />
+              <div>
+                <Input
+                  label={t("tail_factor")}
+                  name="tail_factor"
+                  type="number"
+                  step={0.001}
+                  min={0}
+                  value={clForm.tail_factor}
+                  onChange={(e) =>
+                    setClForm((prev) => ({ ...prev, tail_factor: e.target.value }))
+                  }
+                />
+                <p className="text-xs text-navy/40 mt-1">{t("tail_factor_aviso")}</p>
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <Button

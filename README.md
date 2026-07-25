@@ -45,7 +45,7 @@ recorrido para que demostración, documentación y código cuenten una sola hist
 | ¿Cómo emerge una pérdida agregada? | Daños | Frecuencia-severidad, auto, incendio, RC, credibilidad |
 | ¿Cómo se comparte un gasto médico? | Salud | GMM, deducible, coaseguro, accidentes |
 | ¿Cómo convertir ahorro en ingreso vitalicio? | Pensiones | Ley 73/97, rentas vitalicias, conmutación |
-| ¿Qué costo falta por desarrollarse? | Reservas | Chain Ladder, Bornhuetter-Ferguson, Bootstrap, Mack |
+| ¿Qué costo falta por desarrollarse? | Reservas | Chain Ladder, Bornhuetter-Ferguson, bandas ilustrativas de dispersión |
 | ¿Cómo transferir cola y capital? | Reaseguro | Cuota parte, exceso de pérdida, stop loss |
 | ¿Cómo examinar solvencia y reglas? | Referencia regulatoria | RCS, reservas técnicas, SAT, configuración anual |
 

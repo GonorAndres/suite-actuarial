@@ -27,6 +27,48 @@ from suite_actuarial.core.validators import (
     ConfiguracionProducto,
     ResultadoCalculo,
 )
+from suite_actuarial.pensiones.conmutacion import TablaConmutacion
+
+#: Tolerancia relativa de las verificaciones. Absorbe la diferencia de
+#: redondeo entre el motor de bucles y las funciones de conmutación, que
+#: acumulan `lx` desde una raíz entera; no absorbe un error de método.
+TOLERANCIA_RELATIVA = Decimal("0.0001")
+
+
+def _diferencia_relativa(
+    valor: Decimal,
+    referencia: Decimal,
+    *,
+    escala: Decimal | None = None,
+) -> Decimal:
+    """Diferencia relativa entre dos importes, escalada para comparar.
+
+    El resultado se compara siempre contra `TOLERANCIA_RELATIVA`, que es una
+    tolerancia **relativa**. Por eso no se admite un denominador cero: devolver
+    la diferencia absoluta en ese caso la haría pasar por relativa y la
+    verificación quedaría comparando pesos contra 1e-4. Cuando la referencia es
+    cero (p. ej. la reserva en t=0), pase una `escala` explícita.
+
+    Args:
+        valor: Importe calculado
+        referencia: Importe del oráculo independiente
+        escala: Denominador alterno; obligatorio cuando la referencia es cero
+            (p. ej. la suma asegurada, para comparar contra la reserva en t=0)
+
+    Returns:
+        |valor - referencia| / denominador
+
+    Raises:
+        ValueError: si el denominador es cero, para no devolver en silencio una
+            diferencia absoluta donde se espera una relativa
+    """
+    denominador = escala if escala is not None else abs(referencia)
+    if denominador == 0:
+        raise ValueError(
+            "No se puede calcular una diferencia relativa contra cero: pase una "
+            "`escala` explicita (por ejemplo la suma asegurada)."
+        )
+    return abs(valor - referencia) / denominador
 
 
 class PuntoReservaDotal(BaseModel):
@@ -38,13 +80,31 @@ class PuntoReservaDotal(BaseModel):
 
 
 class VerificacionesDotal(BaseModel):
-    """Identidades que hacen auditable un experimento de seguro dotal."""
+    """Identidades que hacen auditable un experimento de seguro dotal.
+
+    Cada verificación contrasta el motor de valuación contra una ruta de
+    cálculo **independiente**: las funciones de conmutación (Dx/Nx/Mx), que
+    llegan al mismo valor por una construcción distinta, o la recursión de
+    Fackler, que es retrospectiva mientras la reserva se calcula de forma
+    prospectiva. Ninguna compara un valor consigo mismo.
+    """
 
     descomposicion_beneficios: bool
     principio_equivalencia: bool
     reserva_inicial_cero: bool
     reserva_final_igual_beneficio: bool
+    recursion_fackler: bool
     diferencia_equivalencia: Decimal = Field(..., ge=0)
+    diferencia_descomposicion: Decimal = Field(
+        ...,
+        ge=0,
+        description="Diferencia relativa contra SA*(A_{x:n} temporal + nEx) por conmutación",
+    )
+    diferencia_recursion: Decimal = Field(
+        ...,
+        ge=0,
+        description="Máxima diferencia relativa en la recursión de Fackler",
+    )
 
 
 class ResultadoAnalisisDotal(BaseModel):
@@ -216,8 +276,12 @@ class VidaDotal(ProductoSeguro):
                 "componentes": "muerte + supervivencia",
             },
             calculation_metadata=CalculationMetadata(
-                validation_tier="experimental" if self.tabla_mortalidad.metadata.get("data_status") == "illustrative" else "supported",
-                sources=[self.tabla_mortalidad.metadata.get("source", self.tabla_mortalidad.nombre)],
+                validation_tier="experimental"
+                if self.tabla_mortalidad.metadata.get("data_status") == "illustrative"
+                else "supported",
+                sources=[
+                    self.tabla_mortalidad.metadata.get("source", self.tabla_mortalidad.nombre)
+                ],
                 assumptions_snapshot={"tabla_mortalidad": self.tabla_mortalidad.nombre},
             ),
         )
@@ -321,7 +385,30 @@ class VidaDotal(ProductoSeguro):
             pago_anticipado=True,
         )
         prima_neta_anual = vp_total / factor_anualidad
-        diferencia_equivalencia = abs(prima_neta_anual * factor_anualidad - vp_total)
+
+        # Oráculo 1 — conmutación. Ruta de cálculo independiente del motor de
+        # bucles de `vida_pricing`: A_{x:n̄}^1 = (M_x - M_{x+n})/D_x para la
+        # parte de muerte y nEx = D_{x+n}/D_x para el dotal puro.
+        tc = TablaConmutacion(
+            tabla_mortalidad=self.tabla_mortalidad,
+            sexo=asegurado.sexo,
+            tasa_interes=self.config.tasa_interes_tecnico,
+        )
+        vp_total_conmutacion = asegurado.suma_asegurada * (
+            tc.Ax(asegurado.edad, self.config.plazo_years)
+            + tc.nEx(asegurado.edad, self.config.plazo_years)
+        )
+        diferencia_descomposicion = _diferencia_relativa(vp_total, vp_total_conmutacion)
+
+        # Oráculo 2 — principio de equivalencia sobre la salida real del motor
+        # de pricing. La prima que se contrasta es la que devuelve
+        # `calcular_prima`, no `vp_total / factor_anualidad`, que sería el mismo
+        # número dividido y vuelto a multiplicar.
+        prima_neta_motor = resultado_prima.prima_neta / self._obtener_factor_frecuencia(
+            frecuencia_pago
+        )
+        diferencia_equivalencia = abs(prima_neta_motor * factor_anualidad - vp_total)
+
         reservas = [
             PuntoReservaDotal(
                 anio=anio,
@@ -330,6 +417,17 @@ class VidaDotal(ProductoSeguro):
             )
             for anio in range(self.config.plazo_years + 1)
         ]
+
+        # Oráculo 3 — recursión de Fackler (Bowers et al., cap. 7). Relación
+        # retrospectiva entre reservas consecutivas:
+        #     tV + P = v * [q_{x+t} * SA + p_{x+t} * (t+1)V]
+        # Las reservas se calculan de forma prospectiva, así que la recursión es
+        # una ruta distinta y puede fallar.
+        diferencia_recursion = self._verificar_recursion_fackler(
+            asegurado=asegurado,
+            reservas=[punto.reserva for punto in reservas],
+            prima_neta_anual=prima_neta_motor,
+        )
 
         return ResultadoAnalisisDotal(
             resultado_prima=resultado_prima,
@@ -341,15 +439,75 @@ class VidaDotal(ProductoSeguro):
             prima_neta_anual_equivalente=prima_neta_anual,
             reservas=reservas,
             verificaciones=VerificacionesDotal(
-                descomposicion_beneficios=(vp_total == vp_muerte + vp_supervivencia),
+                descomposicion_beneficios=diferencia_descomposicion <= TOLERANCIA_RELATIVA,
                 principio_equivalencia=diferencia_equivalencia <= Decimal("0.01"),
-                reserva_inicial_cero=reservas[0].reserva == Decimal("0"),
-                reserva_final_igual_beneficio=(
-                    reservas[-1].reserva == asegurado.suma_asegurada
+                # La reserva prospectiva llega a estos valores por sí sola: los
+                # atajos que los devolvían como constantes fueron eliminados.
+                reserva_inicial_cero=(
+                    _diferencia_relativa(
+                        reservas[0].reserva, Decimal("0"), escala=asegurado.suma_asegurada
+                    )
+                    <= TOLERANCIA_RELATIVA
                 ),
+                reserva_final_igual_beneficio=(
+                    _diferencia_relativa(reservas[-1].reserva, asegurado.suma_asegurada)
+                    <= TOLERANCIA_RELATIVA
+                ),
+                recursion_fackler=diferencia_recursion <= TOLERANCIA_RELATIVA,
                 diferencia_equivalencia=diferencia_equivalencia,
+                diferencia_descomposicion=diferencia_descomposicion,
+                diferencia_recursion=diferencia_recursion,
             ),
         )
+
+    def _verificar_recursion_fackler(
+        self,
+        asegurado: Asegurado,
+        reservas: list[Decimal],
+        prima_neta_anual: Decimal,
+    ) -> Decimal:
+        """Máxima diferencia relativa en la recursión de Fackler.
+
+        Identidad (Bowers et al., *Actuarial Mathematics*, cap. 7):
+
+            (ₜV + P) * (1 + i) = q_{x+t} * SA + p_{x+t} * ₜ₊₁V
+
+        Es una relación **retrospectiva** entre reservas consecutivas: la
+        reserva del año t más la prima, capitalizada un año, debe alcanzar
+        exactamente para pagar a los que mueren y constituir la reserva del año
+        siguiente para los que sobreviven. Las reservas de este producto se
+        calculan de forma **prospectiva** (`A - P·ä`), así que la recursión es
+        una ruta de cálculo distinta y puede detectar un error.
+
+        La prima solo se suma mientras haya pagos pendientes (t < plazo_pago).
+
+        Args:
+            asegurado: Perfil y suma asegurada del contrato
+            reservas: Reservas anuales, de t=0 a t=n
+            prima_neta_anual: Prima neta anual del motor de pricing
+
+        Returns:
+            Máxima diferencia relativa observada sobre todos los años
+        """
+        i = self.config.tasa_interes_tecnico
+        suma_asegurada = asegurado.suma_asegurada
+        maxima = Decimal("0")
+
+        for t in range(len(reservas) - 1):
+            edad_t = asegurado.edad + t
+            qx = self.tabla_mortalidad.obtener_qx(edad_t, asegurado.sexo)
+            px = Decimal("1") - qx
+
+            prima = prima_neta_anual if t < self.plazo_pago else Decimal("0")
+            izquierda = (reservas[t] + prima) * (Decimal("1") + i)
+            derecha = qx * suma_asegurada + px * reservas[t + 1]
+
+            maxima = max(
+                maxima,
+                _diferencia_relativa(izquierda, derecha, escala=suma_asegurada),
+            )
+
+        return maxima
 
     def calcular_reserva(
         self,
@@ -383,19 +541,14 @@ class VidaDotal(ProductoSeguro):
             ...     print(f"Año {anio}: ${r:,.2f}")
         """
         if anio < 0 or anio > self.config.plazo_years:
-            raise ValueError(
-                f"Año {anio} fuera de rango [0, {self.config.plazo_years}]"
-            )
+            raise ValueError(f"Año {anio} fuera de rango [0, {self.config.plazo_years}]")
 
-        # Al inicio, reserva = 0
-        if anio == 0:
-            return Decimal("0")
-
-        # Al vencimiento, reserva = suma asegurada (pago garantizado)
-        if anio == self.config.plazo_years:
-            return asegurado.suma_asegurada
-
-        # Años intermedios
+        # No hay atajos en t=0 ni en t=n. Antes se devolvían 0 y la suma
+        # asegurada como constantes, lo que hacía que dos de las cuatro
+        # `verificaciones` fueran ciertas por construcción (hallazgo A9). La
+        # fórmula prospectiva produce ambos valores por sí sola: en t=0 por el
+        # principio de equivalencia, y en t=n porque el dotal a plazo 0 vale la
+        # suma asegurada y ya no quedan primas.
         edad_actual = asegurado.edad + anio
         plazo_restante = self.config.plazo_years - anio
 
@@ -476,6 +629,7 @@ class VidaDotal(ProductoSeguro):
         this product's technical interest rate.
         """
         from suite_actuarial.actuarial.pricing.vida_pricing import _obtener_factor_frecuencia
+
         return _obtener_factor_frecuencia(frecuencia, self.config.tasa_interes_tecnico)
 
     def __repr__(self) -> str:

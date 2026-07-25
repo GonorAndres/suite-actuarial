@@ -64,12 +64,37 @@ futuras que compensen la obligación.
 
 ## Verificaciones
 
-La implementación comprueba:
+Una verificación sólo sirve si puede fallar. Cada una de las siguientes contrasta el
+motor de valuación contra una **ruta de cálculo independiente**, no contra sí mismo:
 
-- descomposición del valor presente de beneficios;
-- principio de equivalencia dentro de tolerancia de redondeo;
-- reserva inicial igual a cero sobre la base neta;
-- reserva final igual al beneficio de supervivencia pagadero.
+- **Descomposición del valor presente de beneficios.** Se contrasta contra
+  `SA · (A¹_{x:n̄} + ₙE_x)` calculado con funciones de conmutación
+  (`(M_x − M_{x+n} + D_{x+n}) / D_x`). Las columnas de conmutación acumulan desde una
+  raíz de `lₓ`; el motor de pricing suma `v^{t+1} · ₜp_x · q_{x+t}` año por año. Son
+  dos implementaciones distintas del mismo valor actuarial. Si se omite la pierna de
+  supervivencia, la verificación falla.
+- **Principio de equivalencia.** Se contrasta la prima que devuelve `calcular_prima`
+  —la salida real del motor— contra el valor presente de los beneficios. Una prima
+  desviada 1% rompe la verificación.
+- **Reserva inicial igual a cero** y **reserva final igual al beneficio**. Ambas
+  provienen de la fórmula prospectiva, no de constantes: en `t=0` la reserva vale cero
+  por el principio de equivalencia, y en `t=n` el dotal a plazo cero vale la suma
+  asegurada sin primas pendientes.
+- **Recursión de Fackler** (Bowers et al., cap. 7):
+  `(ₜV + P)(1+i) = q_{x+t}·SA + p_{x+t}·ₜ₊₁V`. Es una relación *retrospectiva* entre
+  reservas consecutivas, mientras la reserva se calcula de forma *prospectiva*, así que
+  recorre la trayectoria completa. Es la única de las cuatro que detecta una reserva
+  intermedia desviada.
+
+Los campos `diferencia_descomposicion`, `diferencia_equivalencia` y
+`diferencia_recursion` reportan el margen contra cada identidad, para juzgar la
+holgura en vez de confiar en un booleano.
+
+> Nota histórica: hasta julio de 2026 estas cuatro comprobaciones eran autocumplidas
+> (hallazgo A9 de [`docs/AUDIT.md`](../AUDIT.md)). `vp_total` se *definía* como su
+> propia descomposición, el principio de equivalencia comparaba un valor consigo mismo,
+> y las dos reservas frontera leían constantes escritas dentro de `calcular_reserva`.
+> Ninguna podía fallar.
 
 Ejecuta el caso reproducible:
 

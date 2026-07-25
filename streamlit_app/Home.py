@@ -45,10 +45,7 @@ with st.sidebar:
         "pip install suite-actuarial",
         language="bash",
     )
-    st.caption(
-        "O bien clona el repositorio y usa:\n"
-        "`pip install -e ./src`"
-    )
+    st.caption("O bien clona el repositorio y usa:\n`pip install -e ./src`")
 
 # -----------------------------------------------------------------------
 # Titulo
@@ -136,7 +133,7 @@ with m1:
         """
 - Chain Ladder (triángulos de desarrollo)
 - Bornhuetter-Ferguson
-- Bootstrap con intervalos de confianza
+- Bootstrap ODP (England-Verrall) y error de predicción de Mack (1993)
 """
     )
 
@@ -168,7 +165,7 @@ st.markdown("---")
 st.header("Código reproducible")
 
 st.code(
-    '''from suite_actuarial import (
+    """from suite_actuarial import (
     VidaTemporal, SeguroAuto, GMM, RentaVitalicia,
     TablaConmutacion, TablaMortalidad,
     Asegurado, ConfiguracionProducto,
@@ -220,7 +217,7 @@ pension = PensionLey73(
     edad_retiro=65,
 )
 print(f"Pension mensual: ${pension.calcular_pension_mensual():,.2f}")
-''',
+""",
     language="python",
 )
 

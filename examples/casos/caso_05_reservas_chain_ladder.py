@@ -1,4 +1,4 @@
-"""Caso 5 - Reservas: Chain Ladder con incertidumbre de Mack (cartera de auto).
+"""Caso 5 - Reservas: Chain Ladder en una cartera de auto.
 
 El caso
 -------
@@ -7,7 +7,7 @@ reserva de siniestros ocurridos y no pagados. Su triangulo de siniestros
 PAGADOS acumulados (miles de MXN) cubre los anios de origen 2019-2024:
 los siniestros de 2019 ya casi terminaron de pagarse; los de 2024 apenas
 comienzan. El actuario aplica Chain Ladder para estimar el costo ultimo de
-cada anio y Mack para medir que tan incierta es esa estimacion.
+cada anio.
 
 Que demuestra este caso
 -----------------------
@@ -17,11 +17,21 @@ Que demuestra este caso
    renglon hasta su costo ultimo. Reserva = ultimate - pagado.
 3. Las identidades duras del metodo: el ultimate NUNCA puede ser menor a lo
    ya pagado, y los factores decrecen hacia 1 conforme madura el desarrollo.
-4. Mack: los anios recientes (menos desarrollados) cargan mas error de
-   estimacion; la reserva es una estimacion, no una certeza.
+4. Que la reserva es una estimacion, no una certeza: el error estandar de
+   Mack (1993) cuantifica cuanta incertidumbre aporta cada anio de origen.
 
-Fuentes: metodo Chain Ladder y modelo de Mack (Mack, 1993, ASTIN Bulletin);
-estructura de triangulos conforme a la practica de reservas P&C.
+Limite declarado
+----------------
+El error estandar de Mack mide el error de prediccion CONDICIONADO al metodo
+Chain Ladder: varianza de proceso mas varianza de estimacion de los factores.
+No cubre riesgo de modelo, cambio de mezcla de cartera, inflacion no observada
+ni la incertidumbre de un factor de cola. El rango que reporta es
+reserva +/- z*SE; Mack no supone normalidad, asi que es una escala de magnitud
+y no un intervalo con cobertura exacta.
+
+Fuentes: metodo Chain Ladder; estructura de triangulos conforme a la practica
+de reservas P&C. Error de prediccion segun Mack, 1993, ASTIN Bulletin 23(2),
+validado contra el triangulo de Taylor & Ashe (tests/unit/test_mack.py).
 """
 
 from decimal import Decimal
@@ -29,7 +39,7 @@ from decimal import Decimal
 import pandas as pd
 
 from suite_actuarial.core.validators import ConfiguracionChainLadder, MetodoPromedio
-from suite_actuarial.reservas import ChainLadder
+from suite_actuarial.reservas import ChainLadder, calcular_mack
 
 # ----------------------------------------------------------------------------
 # 1. Triangulo de siniestros pagados acumulados (miles de MXN)
@@ -75,16 +85,27 @@ for anio in triangulo.index:
 print(f"\n  Reserva total (IBNR + casos): {resultado.reserva_total:>12,.0f} miles MXN")
 
 # ----------------------------------------------------------------------------
-# 3. Incertidumbre de Mack
+# 3. Error de prediccion segun Mack (1993)
 # ----------------------------------------------------------------------------
 mack = cl.calcular_mack(triangulo)
 rango_inf, rango_sup = mack.reserve_range
-print("\nIncertidumbre de Mack (aproximacion) sobre la reserva total:")
-print(f"  Error estandar:            {mack.standard_error:>12,.0f} miles MXN")
+print("\nError de prediccion (Mack, 1993):")
+print(f"  Error estandar total:      {mack.standard_error:>12,.0f} miles MXN")
 print(f"  Coef. de variacion:        {mack.coefficient_of_variation:>12.1%}")
-print(f"  Rango razonable de reserva:[{rango_inf:,.0f} , {rango_sup:,.0f}]")
-print("  Lectura: la reserva es una ESTIMACION; los anios recientes (2023,")
-print("  2024) aportan la mayor parte de la reserva y de la incertidumbre.")
+print(f"  Rango reserva +/- 1.96 SE: [{rango_inf:,.0f} , {rango_sup:,.0f}]")
+print("\n  Aporte de incertidumbre por anio de origen:")
+print(f"  {'anio':>6} {'reserva':>12} {'error est.':>12} {'CV':>8}")
+for anio in triangulo.index:
+    print(
+        f"  {anio:>6} {mack.reservas_por_anio[anio]:>12,.0f} "
+        f"{mack.se_por_anio[anio]:>12,.0f} {mack.cv_por_anio[anio]:>8.1%}"
+    )
+print("\n  Lectura: los anios recientes concentran reserva Y error. El error")
+print("  total es MAYOR que la agregacion independiente de los anuales, porque")
+print("  todos los anios comparten los mismos factores estimados y sus errores")
+print("  estan correlacionados: ese termino cruzado es parte del modelo.")
+print("  LIMITE: mide el error CONDICIONADO al Chain Ladder. No cubre riesgo de")
+print("  modelo, cambio de mezcla, inflacion no observada ni cola estimada.")
 
 # ----------------------------------------------------------------------------
 # 4. Chequeos actuariales
@@ -105,10 +126,30 @@ assert resultado.reserva_total >= 0, "IBNR negativo: revisar datos"
 assert all(f >= 1 for f in factores), "un factor < 1 en pagados acumulados es anomalo"
 assert factores == sorted(factores, reverse=True), "los factores deben decrecer hacia 1"
 
-# d) Mack: hay incertidumbre positiva y el rango encierra a la mejor estimacion.
-assert mack.standard_error > 0, "el error estandar de Mack debe ser positivo"
-assert rango_inf <= resultado.reserva_total <= rango_sup, (
-    "el rango de Mack debe contener la mejor estimacion de la reserva"
+# d) El error de Mack es homogeneo de grado 1: multiplicar el triangulo por 100
+#    multiplica el error estandar por 100 y deja el CV invariante. Es una
+#    identidad del modelo (Var = sigma_k^2 * C), no una repeticion del calculo.
+#    (Las aserciones anteriores -- "el error estandar es positivo" y "el rango
+#    contiene a la estimacion" -- eran tautologicas: el rango se CONSTRUYE como
+#    reserva +/- 1.96*SE, asi que no podian fallar. Ver docs/AUDIT.md, A9.)
+mack_escalado = calcular_mack(triangulo * 100)
+assert abs(mack_escalado.standard_error - 100 * mack.standard_error) < Decimal("0.01"), (
+    "el error de Mack debe escalar linealmente con el volumen del triangulo"
+)
+assert abs(mack_escalado.coefficient_of_variation - mack.coefficient_of_variation) < Decimal(
+    "0.0001"
+), "el coeficiente de variacion no debe depender del nivel"
+
+# e) El error total EXCEDE la agregacion independiente de los errores anuales.
+#    Los factores f_k son comunes a todos los anios de origen, asi que sus
+#    errores estan correlacionados positivamente y el termino cruzado suma. Si
+#    esta desigualdad se invierte, el termino de correlacion se perdio.
+agregacion_independiente = (
+    sum(float(se) ** 2 for se in mack.se_por_anio.values()) ** 0.5  # noqa: S101
+)
+assert float(mack.standard_error) > agregacion_independiente, (
+    "el error total debe exceder la raiz de la suma de cuadrados: los anios "
+    "comparten los mismos factores estimados"
 )
 
 print("\nTodos los chequeos actuariales se cumplen.")

@@ -66,8 +66,7 @@ class PensionLey73:
             )
         if edad_retiro < EDAD_CESANTIA:
             raise ValueError(
-                f"Edad minima de retiro: {EDAD_CESANTIA}. "
-                f"Edad proporcionada: {edad_retiro}"
+                f"Edad minima de retiro: {EDAD_CESANTIA}. Edad proporcionada: {edad_retiro}"
             )
 
         self.semanas_cotizadas = semanas_cotizadas
@@ -258,20 +257,24 @@ class PensionLey97:
 
         for ano in range(anos_restantes + 1):
             edad_ano = self.edad + ano
-            aportacion_anual = salario * Decimal("12") * tasa_aportacion if ano > 0 else Decimal("0")
+            aportacion_anual = (
+                salario * Decimal("12") * tasa_aportacion if ano > 0 else Decimal("0")
+            )
 
             if ano > 0:
                 rendimiento_periodo = saldo * rendimiento
                 saldo = saldo + aportacion_anual + rendimiento_periodo
                 salario = salario * (Decimal("1") + inflacion_anual)
 
-            proyeccion.append({
-                "ano": ano,
-                "edad": edad_ano,
-                "salario_mensual": salario.quantize(Decimal("0.01")),
-                "aportacion_anual": aportacion_anual.quantize(Decimal("0.01")),
-                "saldo_afore": saldo.quantize(Decimal("0.01")),
-            })
+            proyeccion.append(
+                {
+                    "ano": ano,
+                    "edad": edad_ano,
+                    "salario_mensual": salario.quantize(Decimal("0.01")),
+                    "aportacion_anual": aportacion_anual.quantize(Decimal("0.01")),
+                    "saldo_afore": saldo.quantize(Decimal("0.01")),
+                }
+            )
 
         return proyeccion
 
@@ -280,7 +283,11 @@ class PensionLey97:
         Calcula la pension mensual via renta vitalicia.
 
         Se compra una anualidad vitalicia con el saldo AFORE.
-        pension_mensual = saldo_afore / (12 * ax)
+        pension_mensual = saldo_afore / (12 * ax^(12))
+
+        La pension se paga mensualmente, asi que el factor lleva la correccion
+        1/m (`ax^(12) ~= ax - 11/24`). Usar el factor anual subestimaba la
+        pension en ~3.9% (hallazgo A6 de `docs/AUDIT.md`).
 
         Returns:
             Pension mensual estimada via renta vitalicia
@@ -291,12 +298,12 @@ class PensionLey97:
         if self.edad > tc.edad_max or self.edad < tc.edad_min:
             return Decimal("0")
 
-        ax = tc.ax(self.edad)
+        ax = tc.ax_m(self.edad, m=12)
 
-        if ax == 0:
+        if ax <= 0:
             return Decimal("0")
 
-        # Annual pension = saldo / ax
+        # Annual pension = saldo / ax^(12)
         pension_anual = self.saldo_afore / ax
         pension_mensual = pension_anual / Decimal("12")
 
@@ -315,6 +322,20 @@ class PensionLey97:
         En retiro programado, se divide el saldo entre la esperanza de vida
         del titular y beneficiarios. Se recalcula cada ano.
 
+        La esperanza de vida es `e_x = sum t_p_x`, que cuenta anos por vivir.
+        La version anterior usaba `int(ax)`, el factor de anualidad, que
+        descuenta cada pago por interes: a 65 anos daba 11 en vez de ~17, asi
+        que repartia el saldo entre menos anos y sobreestimaba la pension.
+        Ademas dejaba `comparar_modalidades` vacia por construccion, porque
+        ambas modalidades dividian entre denominadores casi iguales
+        (hallazgo A5 de `docs/AUDIT.md`).
+
+        Simplificacion declarada: el reparto es `saldo / e_x` sin acreditar el
+        rendimiento que el saldo remanente sigue ganando, asi que la cifra es
+        conservadora (subestima el retiro). Un modelo completo dividiria entre
+        una anualidad cierta de `e_x` anos a la tasa de rendimiento del fondo,
+        y recalcularia cada ano con el saldo y la edad vigentes.
+
         Args:
             esperanza_vida_anos: Esperanza de vida en anos (si None, usa tabla)
 
@@ -326,8 +347,7 @@ class PensionLey97:
             tc = self._get_tabla_conmutacion()
             if self.edad > tc.edad_max or self.edad < tc.edad_min:
                 return Decimal("0")
-            ax = tc.ax(self.edad)
-            esperanza_vida_anos = max(1, int(float(ax)))
+            esperanza_vida_anos = max(1, int(float(tc.ex(self.edad))))
 
         if esperanza_vida_anos <= 0:
             return Decimal("0")

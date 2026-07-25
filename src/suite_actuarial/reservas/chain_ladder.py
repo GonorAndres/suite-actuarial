@@ -5,6 +5,7 @@ El método Chain Ladder es el estándar de la industria para proyectar
 el desarrollo futuro de siniestros basado en patrones históricos.
 """
 
+import warnings
 from decimal import Decimal
 
 import pandas as pd
@@ -16,11 +17,18 @@ from suite_actuarial.core.validators import (
     MetodoReserva,
     ResultadoReserva,
 )
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+from suite_actuarial.reservas.cola import (
+    DISCLAIMER_EXTRAPOLACION,
+    AjusteCola,
+    estimar_tail_sherman,
+)
 from suite_actuarial.reservas.diagnosticos import (
-    MackUncertainty,
-    calcular_mack_uncertainty,
+    BandaDispersion,
+    banda_dispersion_link_ratios,
     validar_reserva,
 )
+from suite_actuarial.reservas.mack import ResultadoMack, calcular_mack
 from suite_actuarial.reservas.triangulo import (
     acumular_triangulo,
     calcular_age_to_age,
@@ -30,6 +38,8 @@ from suite_actuarial.reservas.triangulo import (
     promedio_simple,
     validar_triangulo,
 )
+
+DISCLAIMER_TAIL_AUTOMATICO = DISCLAIMER_EXTRAPOLACION
 
 
 class ChainLadder:
@@ -65,10 +75,9 @@ class ChainLadder:
         self.triangulo_completo: pd.DataFrame | None = None
         self.factores_age_to_age: pd.DataFrame | None = None
         self.factores_desarrollo: list[Decimal] | None = None
+        self.ajuste_cola: AjusteCola | None = None
 
-    def calcular_factores_desarrollo(
-        self, triangulo: pd.DataFrame
-    ) -> list[Decimal]:
+    def calcular_factores_desarrollo(self, triangulo: pd.DataFrame) -> list[Decimal]:
         """
         Calcula los factores de desarrollo promedio para cada período.
 
@@ -120,17 +129,19 @@ class ChainLadder:
 
         # Agregar tail factor si está configurado
         if self.config.calcular_tail_factor:
-            # Método simple: usar el último factor
-            tail = factores[-1] if factores else Decimal("1.0")
-            factores.append(tail)
+            # La cola se ESTIMA ajustando la curva de potencia inversa de
+            # Sherman (1984) a los factores observados y extrapolando el
+            # producto. Antes se repetía el último factor, lo que fabricaba un
+            # periodo de desarrollo sin base (hallazgo A10 de docs/AUDIT.md).
+            self.ajuste_cola = estimar_tail_sherman(factores)
+            warnings.warn(DISCLAIMER_EXTRAPOLACION, ExperimentalModelWarning, stacklevel=2)
+            factores.append(self.ajuste_cola.tail)
         elif self.config.tail_factor is not None:
             factores.append(self.config.tail_factor)
 
         return factores
 
-    def completar_triangulo(
-        self, triangulo: pd.DataFrame, factores: list[Decimal]
-    ) -> pd.DataFrame:
+    def completar_triangulo(self, triangulo: pd.DataFrame, factores: list[Decimal]) -> pd.DataFrame:
         """
         Completa el triángulo proyectando valores futuros.
 
@@ -171,9 +182,7 @@ class ChainLadder:
 
         return triangulo_completo
 
-    def calcular_ultimates(
-        self, triangulo_completo: pd.DataFrame
-    ) -> dict[int, Decimal]:
+    def calcular_ultimates(self, triangulo_completo: pd.DataFrame) -> dict[int, Decimal]:
         """
         Calcula el valor ultimate (final proyectado) para cada año.
 
@@ -248,9 +257,7 @@ class ChainLadder:
             self.triangulo_original = acumular_triangulo(triangulo)
 
         # 1. Calcular factores de desarrollo
-        self.factores_desarrollo = self.calcular_factores_desarrollo(
-            self.triangulo_original
-        )
+        self.factores_desarrollo = self.calcular_factores_desarrollo(self.triangulo_original)
 
         # 2. Completar triángulo
         self.triangulo_completo = self.completar_triangulo(
@@ -266,6 +273,13 @@ class ChainLadder:
         if self.config.calcular_tail_factor or self.config.tail_factor is not None:
             tail = self.factores_desarrollo[-1]
             ultimates = {anio: ultimate * tail for anio, ultimate in ultimates.items()}
+
+        if self.config.calcular_tail_factor and self.ajuste_cola is not None:
+            tail_metodo = self.ajuste_cola.metodo
+        elif self.config.tail_factor is not None:
+            tail_metodo = "manual"
+        else:
+            tail_metodo = "ninguno"
 
         # 4. Calcular reservas
         reservas = self.calcular_reservas(self.triangulo_original, ultimates)
@@ -285,12 +299,29 @@ class ChainLadder:
             "numero_periodos": len(self.triangulo_original.columns),
             "tail_factor_usado": (
                 str(self.factores_desarrollo[-1])
-                if self.config.calcular_tail_factor
-                or self.config.tail_factor is not None
+                if self.config.calcular_tail_factor or self.config.tail_factor is not None
                 else "No"
             ),
+            # Cómo se obtuvo la cola: ajuste de Sherman, declaración manual,
+            # desarrollo ya terminado, o ninguna.
+            "tail_factor_metodo": tail_metodo,
             "factores_desarrollo_count": len(self.factores_desarrollo),
         }
+
+        # Diagnóstico del ajuste de cola. Sin r_cuadrado y horizonte, la cifra
+        # de cola no es auditable: el lector no puede saber si el patrón se
+        # parece a una potencia inversa ni hasta dónde se extrapoló.
+        if self.ajuste_cola is not None:
+            detalles.update(
+                {
+                    "tail_ajuste_r2": str(self.ajuste_cola.r_cuadrado),
+                    "tail_ajuste_a": str(self.ajuste_cola.a),
+                    "tail_ajuste_b": str(self.ajuste_cola.b),
+                    "tail_horizonte": self.ajuste_cola.horizonte,
+                    "tail_periodos_ajustados": self.ajuste_cola.periodos_ajustados,
+                    "tail_serie_converge": self.ajuste_cola.converge,
+                }
+            )
 
         # 7. Construir resultado
         resultado = ResultadoReserva(
@@ -304,8 +335,15 @@ class ChainLadder:
             percentiles=None,  # No aplica en Chain Ladder básico
             detalles=detalles,
             calculation_metadata=CalculationMetadata(
+                # Chain Ladder está verificado celda a celda y la cola se estima
+                # con un método publicado, pero sigue siendo extrapolación: el
+                # aviso viaja con el resultado.
                 validation_tier="supported",
-                warnings=["Revisar estabilidad de factores y factor de cola"],
+                warnings=(
+                    [DISCLAIMER_EXTRAPOLACION]
+                    if self.config.calcular_tail_factor
+                    else ["Revisar estabilidad de factores y factor de cola"]
+                ),
                 assumptions_snapshot=detalles,
             ),
         )
@@ -330,10 +368,39 @@ class ChainLadder:
         """
         return self.factores_age_to_age
 
-    def calcular_mack(self, triangulo: pd.DataFrame) -> MackUncertainty:
-        """Devuelve incertidumbre Mack y banda de reserva tras el calculo."""
+    def calcular_banda_dispersion(self, triangulo: pd.DataFrame) -> BandaDispersion:
+        """Devuelve la dispersion agrupada de los link ratios tras el calculo.
+
+        No es Mack (1993): ver `diagnosticos.banda_dispersion_link_ratios`.
+        """
         resultado = self.calcular(triangulo)
-        return calcular_mack_uncertainty(triangulo, resultado.reserva_total)
+        return banda_dispersion_link_ratios(triangulo, resultado.reserva_total)
+
+    def calcular_mack(self, triangulo: pd.DataFrame) -> ResultadoMack:
+        """Error de prediccion del Chain Ladder segun Mack (1993).
+
+        El modelo de Mack exige factores **ponderados por volumen**: son los
+        unicos insesgados bajo sus supuestos, y su formula de error estandar
+        corresponde a esa reserva. Si la configuracion usa otro promedio, el
+        resultado que devuelve este metodo no corresponde a la reserva que
+        devuelve `calcular()`, y se avisa.
+
+        Args:
+            triangulo: Triangulo acumulado
+
+        Returns:
+            ResultadoMack con reserva ponderada, error estandar y detalle por ano
+        """
+        if self.config.metodo_promedio != MetodoPromedio.PONDERADO:
+            warnings.warn(
+                f"Mack (1993) supone factores ponderados por volumen, pero la "
+                f"configuracion usa '{self.config.metodo_promedio.value}'. El "
+                f"resultado de Mack se calcula con factores ponderados, asi que su "
+                f"reserva puede diferir de la de calcular().",
+                ExperimentalModelWarning,
+                stacklevel=2,
+            )
+        return calcular_mack(triangulo)
 
     def reporte_validacion(self, triangulo: pd.DataFrame):
         """Devuelve diagnosticos de calidad y supuestos materiales."""

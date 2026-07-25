@@ -81,7 +81,10 @@ class RCSResponse(BaseModel):
     rcs_total: float
     capital_minimo_pagado: float
     excedente_solvencia: float
-    ratio_solvencia: float
+    ratio_solvencia: float = Field(
+        ...,
+        description="Available capital / RCS required; >= 1.0 meets the model threshold",
+    )
     cumple_regulacion: bool
     desglose_por_riesgo: dict[str, float]
 

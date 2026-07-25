@@ -39,7 +39,7 @@ render_workbench_intro(
     "MODEL WORKBENCH · RESERVAS",
     "¿Qué costo de siniestros falta por desarrollarse?",
     "Construye el triángulo, compara Chain Ladder y Bornhuetter-Ferguson, y "
-    "cuantifica incertidumbre con Bootstrap y diagnósticos de reserva.",
+    "cuantifica la incertidumbre con el bootstrap ODP de England-Verrall.",
 )
 
 # ---------------------------------------------------------------------------
@@ -76,9 +76,7 @@ def obtener_triangulo(editable: bool = True) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------
-tab_cl, tab_bf, tab_bs = st.tabs(
-    ["Chain Ladder", "Bornhuetter-Ferguson", "Bootstrap"]
-)
+tab_cl, tab_bf, tab_bs = st.tabs(["Chain Ladder", "Bornhuetter-Ferguson", "Bootstrap"])
 
 # ===== TAB 1: Chain Ladder ================================================
 with tab_cl:
@@ -96,7 +94,18 @@ with tab_cl:
             index=0,
             key="cl_metodo",
         )
-        usar_tail = st.checkbox("Calcular tail factor", value=False, key="cl_tail")
+        usar_tail = st.checkbox(
+            "Estimar tail factor (curva de Sherman)",
+            value=False,
+            key="cl_tail",
+            help=(
+                "Ajusta la curva de potencia inversa de Sherman (1984) a los "
+                "factores observados y extrapola el producto del desarrollo "
+                "restante. Es EXTRAPOLACION: ningun dato del triangulo respalda "
+                "ese tramo. Revise la bondad del ajuste (r2) y el horizonte que "
+                "se reportan con el resultado."
+            ),
+        )
 
     with col_tri:
         tri_cl = obtener_triangulo(editable=True)
@@ -125,28 +134,67 @@ with tab_cl:
             st.subheader("Factores de desarrollo")
             factores_df = pd.DataFrame(
                 {
-                    "Periodo": [f"{i}-{i+1}" for i in range(1, len(resultado.factores_desarrollo) + 1)],
+                    "Periodo": [
+                        f"{i}-{i + 1}" for i in range(1, len(resultado.factores_desarrollo) + 1)
+                    ],
                     "Factor": [float(f) for f in resultado.factores_desarrollo],
                 }
             )
             st.dataframe(factores_df, use_container_width=True, hide_index=True)
 
+            # -- Diagnóstico del ajuste de cola --
+            # Sin r2 y horizonte, la cifra de cola no es auditable: el lector no
+            # puede saber si el patrón se parece a una potencia inversa ni hasta
+            # dónde se extrapoló.
+            if cl.ajuste_cola is not None:
+                ajuste = cl.ajuste_cola
+                if ajuste.metodo == "sin_desarrollo_residual":
+                    st.info(
+                        "El último factor observado no aporta desarrollo: la cola "
+                        "es 1.0 y no se extrapoló nada."
+                    )
+                else:
+                    st.caption(
+                        f"Cola estimada por curva de Sherman: "
+                        f"f(k) = 1 + {float(ajuste.a):.4f}·k^−{float(ajuste.b):.4f} · "
+                        f"r² = {float(ajuste.r_cuadrado):.4f} · "
+                        f"horizonte = {ajuste.horizonte} periodos · "
+                        f"factor de cola = {float(ajuste.tail):.4f}"
+                    )
+                    if not ajuste.converge:
+                        st.warning(
+                            "La curva ajustada no converge (b ≤ 1): el factor de "
+                            "cola depende del horizonte de truncamiento. Léalo "
+                            "junto con ese horizonte, no como un límite."
+                        )
+                    st.caption(
+                        "La cola es extrapolación: ningún dato del triángulo "
+                        "respalda el desarrollo posterior al último periodo observado."
+                    )
+
             # -- Gráfico de reservas por año --
             st.subheader("Reservas y ultimates por año de origen")
             anios = sorted(resultado.reservas_por_anio.keys())
             fig = go.Figure()
-            fig.add_trace(go.Bar(
-                name="Pagado",
-                x=[str(a) for a in anios],
-                y=[float(resultado.ultimates_por_anio[a] - resultado.reservas_por_anio[a]) for a in anios],
-                marker_color="#1f77b4",
-            ))
-            fig.add_trace(go.Bar(
-                name="Reserva IBNR",
-                x=[str(a) for a in anios],
-                y=[float(resultado.reservas_por_anio[a]) for a in anios],
-                marker_color="#ff7f0e",
-            ))
+            fig.add_trace(
+                go.Bar(
+                    name="Pagado",
+                    x=[str(a) for a in anios],
+                    y=[
+                        float(resultado.ultimates_por_anio[a] - resultado.reservas_por_anio[a])
+                        for a in anios
+                    ],
+                    marker_color="#1f77b4",
+                )
+            )
+            fig.add_trace(
+                go.Bar(
+                    name="Reserva IBNR",
+                    x=[str(a) for a in anios],
+                    y=[float(resultado.reservas_por_anio[a]) for a in anios],
+                    marker_color="#ff7f0e",
+                )
+            )
             fig.update_layout(
                 barmode="stack",
                 xaxis_title="Año de origen",
@@ -226,7 +274,9 @@ with tab_bf:
         primas_df = pd.DataFrame(
             {"Anio": list(primas_default.keys()), "Prima": list(primas_default.values())}
         )
-        primas_edited = st.data_editor(primas_df, use_container_width=True, num_rows="fixed", key="bf_primas")
+        primas_edited = st.data_editor(
+            primas_df, use_container_width=True, num_rows="fixed", key="bf_primas"
+        )
 
     with col_tri2:
         tri_bf = obtener_triangulo(editable=False)
@@ -234,8 +284,7 @@ with tab_bf:
     if st.button("Calcular Bornhuetter-Ferguson", key="btn_bf"):
         try:
             primas_por_anio = {
-                int(row["Anio"]): Decimal(str(row["Prima"]))
-                for _, row in primas_edited.iterrows()
+                int(row["Anio"]): Decimal(str(row["Prima"])) for _, row in primas_edited.iterrows()
             }
 
             config_bf = ConfiguracionBornhuetterFerguson(
@@ -248,7 +297,9 @@ with tab_bf:
             m1, m2, m3 = st.columns(3)
             m1.metric("Reserva Total IBNR (B-F)", f"${float(resultado_bf.reserva_total):,.0f}")
             m2.metric("Ultimate Total", f"${float(resultado_bf.ultimate_total):,.0f}")
-            m3.metric("Loss Ratio implícito", resultado_bf.detalles.get("loss_ratio_implicito", "N/A"))
+            m3.metric(
+                "Loss Ratio implícito", resultado_bf.detalles.get("loss_ratio_implicito", "N/A")
+            )
 
             # Comparación con Chain Ladder
             st.subheader("Comparación B-F vs Chain Ladder")
@@ -256,27 +307,33 @@ with tab_bf:
             comparacion_fmt = comparacion.copy()
             for col in ["Ultimate_CL", "Ultimate_BF", "Reserva_CL", "Reserva_BF"]:
                 comparacion_fmt[col] = comparacion_fmt[col].apply(lambda x: f"${float(x):,.0f}")
-            comparacion_fmt["Diferencia_%"] = comparacion_fmt["Diferencia_%"].apply(lambda x: f"{float(x):.2f}%")
+            comparacion_fmt["Diferencia_%"] = comparacion_fmt["Diferencia_%"].apply(
+                lambda x: f"{float(x):.2f}%"
+            )
             st.dataframe(comparacion_fmt, use_container_width=True)
 
             # Grafico de comparacion
             anios = sorted(resultado_bf.reservas_por_anio.keys())
             fig2 = go.Figure()
-            fig2.add_trace(go.Bar(
-                name="Reserva B-F",
-                x=[str(a) for a in anios],
-                y=[float(resultado_bf.reservas_por_anio[a]) for a in anios],
-                marker_color="#2ca02c",
-            ))
+            fig2.add_trace(
+                go.Bar(
+                    name="Reserva B-F",
+                    x=[str(a) for a in anios],
+                    y=[float(resultado_bf.reservas_por_anio[a]) for a in anios],
+                    marker_color="#2ca02c",
+                )
+            )
             config_cl2 = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
             cl2 = ChainLadder(config_cl2)
             res_cl2 = cl2.calcular(tri_bf)
-            fig2.add_trace(go.Bar(
-                name="Reserva Chain Ladder",
-                x=[str(a) for a in anios],
-                y=[float(res_cl2.reservas_por_anio[a]) for a in anios],
-                marker_color="#1f77b4",
-            ))
+            fig2.add_trace(
+                go.Bar(
+                    name="Reserva Chain Ladder",
+                    x=[str(a) for a in anios],
+                    y=[float(res_cl2.reservas_por_anio[a]) for a in anios],
+                    marker_color="#1f77b4",
+                )
+            )
             fig2.update_layout(
                 barmode="group",
                 xaxis_title="Año de origen",
@@ -291,7 +348,10 @@ with tab_bf:
             if pcts:
                 st.subheader("Porcentaje reportado por año")
                 pcts_df = pd.DataFrame(
-                    {"Anio": list(pcts.keys()), "% Reportado": [f"{float(v)*100:.1f}%" for v in pcts.values()]}
+                    {
+                        "Anio": list(pcts.keys()),
+                        "% Reportado": [f"{float(v) * 100:.1f}%" for v in pcts.values()],
+                    }
                 )
                 st.dataframe(pcts_df, use_container_width=True, hide_index=True)
 
@@ -333,10 +393,19 @@ print(comparacion)
 
 # ===== TAB 3: Bootstrap ===================================================
 with tab_bs:
-    st.header("Método Bootstrap")
+    st.header("Bootstrap ODP — distribución predictiva de la reserva")
     st.markdown(
-        "Genera una distribución completa de reservas mediante simulación Monte Carlo, "
-        "permitiendo cuantificar la incertidumbre y calcular percentiles (VaR, TVaR)."
+        "Bootstrap del modelo Poisson sobredispersado (England y Verrall, 1999). "
+        "Remuestrea residuales de Pearson sobre los **incrementales**, contra "
+        "valores ajustados hacia atrás desde el ultimate, y simula la varianza de "
+        "proceso de cada celda futura. La dispersión resultante cubre error de "
+        "estimación y error de proceso."
+    )
+    st.info(
+        "La distribución es **condicional al modelo**: supone patrón de desarrollo "
+        "estable y varianza proporcional a la media. No cubre riesgo de modelo, "
+        "cambio de mezcla de cartera, inflación no observada ni la incertidumbre "
+        "de un factor de cola, y no es una medida de capital regulatorio."
     )
 
     col_cfg3, col_tri3 = st.columns([1, 3])
@@ -367,16 +436,24 @@ with tab_bs:
 
                 # Metricas principales
                 m1, m2, m3 = st.columns(3)
-                m1.metric("Reserva P50 (mediana)", f"${float(resultado_bs.reserva_total):,.0f}")
-                m2.metric("Reserva P95", f"${float(resultado_bs.percentiles[95]):,.0f}")
-                m3.metric("Reserva P99", f"${float(resultado_bs.percentiles[99]):,.0f}")
+                m1.metric(
+                    "Media (estimador central)",
+                    f"${float(resultado_bs.reserva_total):,.0f}",
+                    delta=f"{float(resultado_bs.detalles['conciliacion_cl']):+,.0f} vs Chain Ladder",
+                    delta_color="off",
+                )
+                m2.metric("Mediana", f"${float(resultado_bs.detalles['mediana']):,.0f}")
+                m3.metric("Banda P99", f"${float(resultado_bs.percentiles[99]):,.0f}")
 
                 # Tabla de percentiles
                 st.subheader("Percentiles de la distribución")
                 perc_df = pd.DataFrame(
                     {
                         "Percentil": [f"P{p}" for p in sorted(resultado_bs.percentiles.keys())],
-                        "Reserva": [f"${float(resultado_bs.percentiles[p]):,.0f}" for p in sorted(resultado_bs.percentiles.keys())],
+                        "Reserva": [
+                            f"${float(resultado_bs.percentiles[p]):,.0f}"
+                            for p in sorted(resultado_bs.percentiles.keys())
+                        ],
                     }
                 )
                 st.dataframe(perc_df, use_container_width=True, hide_index=True)
@@ -385,9 +462,27 @@ with tab_bs:
                 st.subheader("Estadísticas de la simulación")
                 stats_cols = st.columns(4)
                 stats_cols[0].metric("Media", f"${float(resultado_bs.detalles['media']):,.0f}")
-                stats_cols[1].metric("Desv. Estándar", f"${float(resultado_bs.detalles['desviacion_estandar']):,.0f}")
+                stats_cols[1].metric(
+                    "Error de predicción",
+                    f"${float(resultado_bs.detalles['error_prediccion']):,.0f}",
+                    help=(
+                        "Desviación estándar de la distribución predictiva: "
+                        "cubre error de estimación y de proceso."
+                    ),
+                )
                 stats_cols[2].metric("Mínimo", f"${float(resultado_bs.detalles['minimo']):,.0f}")
                 stats_cols[3].metric("Máximo", f"${float(resultado_bs.detalles['maximo']):,.0f}")
+
+                # Diagnostico del ajuste ODP: sin phi ni grados de libertad la
+                # dispersion no es auditable.
+                st.caption(
+                    f"Ajuste ODP: phi = {float(resultado_bs.detalles['phi_dispersion']):,.1f} · "
+                    f"{resultado_bs.detalles['celdas_utilizables']} celdas · "
+                    f"{resultado_bs.detalles['parametros_modelo']} parámetros "
+                    f"(I+J−1) · {resultado_bs.detalles['grados_libertad']} grados de "
+                    f"libertad · CV = "
+                    f"{float(resultado_bs.detalles['coeficiente_variacion']):.1%}"
+                )
 
                 # VaR y TVaR
                 var95 = bs.calcular_var(0.95)
@@ -402,13 +497,15 @@ with tab_bs:
                 if distribucion:
                     valores = [float(v) for v in distribucion]
                     fig3 = go.Figure()
-                    fig3.add_trace(go.Histogram(
-                        x=valores,
-                        nbinsx=50,
-                        marker_color="#1f77b4",
-                        opacity=0.75,
-                        name="Simulaciones",
-                    ))
+                    fig3.add_trace(
+                        go.Histogram(
+                            x=valores,
+                            nbinsx=50,
+                            marker_color="#1f77b4",
+                            opacity=0.75,
+                            name="Simulaciones",
+                        )
+                    )
                     # Lineas de percentiles
                     for p, color, dash in [
                         (50, "#2ca02c", "solid"),
@@ -477,6 +574,7 @@ históricos. Estándar de la industria.
 **Bornhuetter-Ferguson** -- Combina la experiencia con un loss ratio a priori.
 Más estable para años recientes.
 
-**Bootstrap** -- Simulación Monte Carlo que proporciona intervalos de confianza
-y medidas de riesgo (VaR, TVaR).
+**Bootstrap ODP** -- Bootstrap de England-Verrall sobre el modelo Poisson
+sobredispersado. Entrega la distribución predictiva de la reserva, con error de
+estimación y de proceso. Es condicional al modelo, no una medida de capital.
 """)

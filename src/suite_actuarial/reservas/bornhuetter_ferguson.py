@@ -232,9 +232,7 @@ class BornhuetterFerguson:
         )
 
         self.chain_ladder = ChainLadder(config_cl)
-        self.factores_desarrollo = (
-            self.chain_ladder.calcular_factores_desarrollo(triangulo)
-        )
+        self.factores_desarrollo = self.chain_ladder.calcular_factores_desarrollo(triangulo)
 
         # 2. Calcular porcentajes reportados
         self.porcentajes_reportados = self.calcular_porcentajes_reportados(
@@ -242,9 +240,7 @@ class BornhuetterFerguson:
         )
 
         # 3. Calcular ultimates usando B-F
-        ultimates = self.calcular_ultimates(
-            triangulo, primas_por_anio, self.porcentajes_reportados
-        )
+        ultimates = self.calcular_ultimates(triangulo, primas_por_anio, self.porcentajes_reportados)
 
         # 4. Calcular reservas
         reservas = self.calcular_reservas(triangulo, ultimates)
@@ -261,9 +257,7 @@ class BornhuetterFerguson:
         prima_total = sum(primas_por_anio.values())
 
         # 7. Calcular loss ratio implícito
-        loss_ratio_implicito = (
-            ultimate_total / prima_total if prima_total > 0 else Decimal("0")
-        )
+        loss_ratio_implicito = ultimate_total / prima_total if prima_total > 0 else Decimal("0")
 
         # 8. Construir detalles
         detalles = {
@@ -273,8 +267,7 @@ class BornhuetterFerguson:
             "metodo_promedio": self.config.metodo_promedio.value,
             "numero_anios": len(triangulo),
             "porcentajes_reportados": {
-                anio: f"{pct:.2%}"
-                for anio, pct in self.porcentajes_reportados.items()
+                anio: f"{pct:.2%}" for anio, pct in self.porcentajes_reportados.items()
             },
         }
 
@@ -321,9 +314,7 @@ class BornhuetterFerguson:
         # Calcular Chain Ladder
         from suite_actuarial.core.validators import ConfiguracionChainLadder
 
-        config_cl = ConfiguracionChainLadder(
-            metodo_promedio=self.config.metodo_promedio
-        )
+        config_cl = ConfiguracionChainLadder(metodo_promedio=self.config.metodo_promedio)
         cl = ChainLadder(config_cl)
         resultado_cl = cl.calcular(triangulo)
 

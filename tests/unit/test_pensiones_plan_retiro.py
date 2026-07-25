@@ -27,6 +27,7 @@ from suite_actuarial.pensiones.tablas_imss import (
 # Fixtures
 # ======================================================================
 
+
 @pytest.fixture
 def tabla_emssa09():
     """Load EMSSA-09 table."""
@@ -88,6 +89,7 @@ def calculadora():
 # ======================================================================
 # Tests: Ley 73 -- tablas_imss lookup functions
 # ======================================================================
+
 
 class TestTablasIMSS:
     """Test IMSS data table lookups."""
@@ -152,6 +154,7 @@ class TestTablasIMSS:
 # ======================================================================
 # Tests: Ley 73 -- pension calculation
 # ======================================================================
+
 
 class TestPensionLey73:
     """Test Ley 73 pension calculations."""
@@ -218,9 +221,15 @@ class TestPensionLey73:
         """Resumen dict should contain all required fields."""
         resumen = pension_500_semanas.resumen()
         required = {
-            "regimen", "semanas_cotizadas", "salario_promedio_diario",
-            "edad_retiro", "porcentaje_pension", "factor_edad",
-            "pension_mensual", "aguinaldo_anual", "pension_anual_total",
+            "regimen",
+            "semanas_cotizadas",
+            "salario_promedio_diario",
+            "edad_retiro",
+            "porcentaje_pension",
+            "factor_edad",
+            "pension_mensual",
+            "aguinaldo_anual",
+            "pension_anual_total",
         }
         assert required.issubset(resumen.keys())
         assert resumen["regimen"] == "Ley 73"
@@ -229,6 +238,7 @@ class TestPensionLey73:
 # ======================================================================
 # Tests: Ley 97 -- pension calculation
 # ======================================================================
+
 
 class TestPensionLey97:
     """Test Ley 97 pension calculations."""
@@ -252,13 +262,19 @@ class TestPensionLey97:
     def test_higher_saldo_higher_pension(self, tabla_emssa09):
         """More money in AFORE = higher pension."""
         rv1 = PensionLey97(
-            saldo_afore=Decimal("1_000_000"), edad=65, sexo="H",
-            semanas_cotizadas=1000, tabla_mortalidad=tabla_emssa09,
+            saldo_afore=Decimal("1_000_000"),
+            edad=65,
+            sexo="H",
+            semanas_cotizadas=1000,
+            tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
         )
         rv2 = PensionLey97(
-            saldo_afore=Decimal("2_000_000"), edad=65, sexo="H",
-            semanas_cotizadas=1000, tabla_mortalidad=tabla_emssa09,
+            saldo_afore=Decimal("2_000_000"),
+            edad=65,
+            sexo="H",
+            semanas_cotizadas=1000,
+            tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
         )
         assert rv2.calcular_renta_vitalicia() > rv1.calcular_renta_vitalicia()
@@ -266,8 +282,11 @@ class TestPensionLey97:
     def test_pension_garantizada_minimum(self, tabla_emssa09):
         """With very low AFORE balance, pension should be at least guaranteed minimum."""
         rv = PensionLey97(
-            saldo_afore=Decimal("10_000"), edad=65, sexo="H",
-            semanas_cotizadas=1000, tabla_mortalidad=tabla_emssa09,
+            saldo_afore=Decimal("10_000"),
+            edad=65,
+            sexo="H",
+            semanas_cotizadas=1000,
+            tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
         )
         pension = rv.calcular_renta_vitalicia()
@@ -287,6 +306,56 @@ class TestPensionLey97:
         comp = ley97_basica.comparar_modalidades()
         assert comp["renta_vitalicia"]["pension_mensual"] > 0
         assert comp["retiro_programado"]["pension_mensual"] > 0
+
+    def test_retiro_programado_usa_la_esperanza_de_vida(self, tabla_emssa09):
+        """El divisor es `e_x`, no el factor de anualidad `ax` (A5).
+
+        A los 65 años la tabla da e_65 ≈ 17.2 y ax ≈ 11.6. Dividir el saldo
+        entre uno u otro cambia la pensión en más de 45%, así que el valor
+        distingue la implementación correcta de la defectuosa: se contrasta
+        contra el retiro calculado con una esperanza explícita de 17 años,
+        que es la ruta independiente del cálculo automático.
+        """
+        rv = PensionLey97(
+            saldo_afore=Decimal("1_500_000"),
+            edad=65,
+            sexo="H",
+            semanas_cotizadas=1500,
+            tabla_mortalidad=tabla_emssa09,
+        )
+
+        automatico = rv.calcular_retiro_programado()
+        con_esperanza = rv.calcular_retiro_programado(esperanza_vida_anos=17)
+        con_anualidad = rv.calcular_retiro_programado(esperanza_vida_anos=11)
+
+        assert automatico == con_esperanza
+        assert automatico < con_anualidad
+        assert float(con_anualidad / automatico) > 1.45
+
+    def test_comparar_modalidades_no_es_tautologica(self, tabla_emssa09):
+        """Las dos modalidades usan denominadores distintos, y se nota (A5).
+
+        Antes ambas dividían entre cantidades casi iguales — `ax` y `int(ax)` —
+        así que la comparación no podía informar nada. Ahora la renta vitalicia
+        descuenta por interés y mancomuna mortalidad, mientras el retiro
+        programado reparte entre años de vida esperados, y la diferencia es
+        material.
+        """
+        rv = PensionLey97(
+            saldo_afore=Decimal("1_500_000"),
+            edad=65,
+            sexo="H",
+            semanas_cotizadas=1500,
+            tabla_mortalidad=tabla_emssa09,
+        )
+
+        comp = rv.comparar_modalidades()
+        vitalicia = comp["renta_vitalicia"]["pension_mensual"]
+        programado = comp["retiro_programado"]["pension_mensual"]
+
+        assert comp["diferencia_mensual"] == abs(vitalicia - programado)
+        assert float(comp["diferencia_mensual"] / min(vitalicia, programado)) > 0.10
+        assert comp["recomendacion"] != "Ambas modalidades son equivalentes"
 
     def test_proyeccion_afore_grows(self, ley97_basica):
         """AFORE balance should grow over time."""
@@ -323,8 +392,11 @@ class TestPensionLey97:
         """Explicit life expectancy should be used in retiro programado."""
         # Use a high enough balance so raw pension exceeds the guaranteed minimum
         rv = PensionLey97(
-            saldo_afore=Decimal("3_000_000"), edad=65, sexo="H",
-            semanas_cotizadas=1000, tabla_mortalidad=tabla_emssa09,
+            saldo_afore=Decimal("3_000_000"),
+            edad=65,
+            sexo="H",
+            semanas_cotizadas=1000,
+            tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
         )
         pension = rv.calcular_retiro_programado(esperanza_vida_anos=20)
@@ -336,6 +408,7 @@ class TestPensionLey97:
 # ======================================================================
 # Tests: CalculadoraIMSS -- regimen determination
 # ======================================================================
+
 
 class TestCalculadoraIMSS:
     """Test unified IMSS calculator."""
@@ -410,8 +483,8 @@ class TestCalculadoraIMSS:
 # Tests: repr
 # ======================================================================
 
-class TestRepr:
 
+class TestRepr:
     def test_ley73_repr(self, pension_500_semanas):
         r = repr(pension_500_semanas)
         assert "PensionLey73" in r

@@ -7,9 +7,58 @@ triángulos de datos de siniestros para cálculo de reservas.
 
 from decimal import Decimal
 
+import numpy as np
 import pandas as pd
 
 from suite_actuarial.core.validators import TipoTriangulo
+
+
+def factores_volumen_ponderado(valores: np.ndarray) -> tuple[list[float], list[float]]:
+    """Factores de desarrollo ponderados por volumen y el volumen que los pondera.
+
+    Para el periodo `k` (de la columna k a la k+1), sobre las filas donde ambas
+    celdas estan observadas:
+
+        f_k = sum_i C(i,k+1) / sum_i C(i,k)
+        S_k = sum_i C(i,k)
+
+    Es el estimador que suponen tanto Mack (1993) como el modelo Poisson
+    sobredispersado: es el unico insesgado bajo sus hipotesis de varianza, y es
+    tambien el que hace que los valores ajustados reproduzcan las sumas
+    observadas por fila y por columna.
+
+    Args:
+        valores: Triangulo acumulado como arreglo 2D con NaN en las celdas
+            futuras
+
+    Returns:
+        Tupla `(factores, volumenes)` con un elemento por periodo de desarrollo.
+        Un periodo sin observaciones utiles devuelve factor 1.0 y volumen 0.0.
+    """
+    n_cols = valores.shape[1]
+    factores: list[float] = []
+    volumenes: list[float] = []
+
+    for k in range(n_cols - 1):
+        actual = valores[:, k]
+        siguiente = valores[:, k + 1]
+        mask = ~np.isnan(actual) & ~np.isnan(siguiente) & (actual > 0)
+
+        if not mask.any():
+            factores.append(1.0)
+            volumenes.append(0.0)
+            continue
+
+        suma_actual = float(actual[mask].sum())
+        if suma_actual <= 0:
+            factores.append(1.0)
+            volumenes.append(0.0)
+            continue
+
+        factores.append(float(siguiente[mask].sum() / suma_actual))
+        volumenes.append(suma_actual)
+
+    return factores, volumenes
 
 
 def validar_triangulo(df: pd.DataFrame, tipo: TipoTriangulo = None) -> bool:
@@ -174,9 +223,7 @@ def promedio_simple(valores: list[float]) -> float:
     return sum(valores_limpios) / len(valores_limpios)
 
 
-def promedio_ponderado(
-    valores: list[float], volumenes: list[float]
-) -> float:
+def promedio_ponderado(valores: list[float], volumenes: list[float]) -> float:
     """
     Calcula promedio ponderado por volumen.
 
@@ -263,9 +310,7 @@ def convertir_a_decimal(df: pd.DataFrame) -> pd.DataFrame:
     df_decimal = df.copy()
 
     for col in df_decimal.columns:
-        df_decimal[col] = df_decimal[col].apply(
-            lambda x: Decimal(str(x)) if pd.notna(x) else x
-        )
+        df_decimal[col] = df_decimal[col].apply(lambda x: Decimal(str(x)) if pd.notna(x) else x)
 
     return df_decimal
 

@@ -25,6 +25,7 @@ from suite_actuarial.core.models.regulatorio import (
     ResultadoRCS,
     TipoRamo,
     TipoRiesgoRCS,
+    calcular_ratio_solvencia,
 )
 from suite_actuarial.core.models.reservas import (
     ConfiguracionBootstrap,
@@ -67,4 +68,5 @@ __all__ = [
     "ConfiguracionRCSDanos",
     "ConfiguracionRCSInversion",
     "ResultadoRCS",
+    "calcular_ratio_solvencia",
 ]

@@ -127,12 +127,19 @@ with tab_lab:
 
         checks_lab = analisis_lab.verificaciones
         st.markdown("#### Verificaciones")
+        st.caption(
+            "Cada verificación contrasta el motor de valuación contra una ruta de "
+            "cálculo independiente: las funciones de conmutación (Dx/Nx/Mx) para la "
+            "descomposición del beneficio, y la recursión de Fackler —retrospectiva— "
+            "para la trayectoria de la reserva, que se calcula de forma prospectiva."
+        )
         st.write(
             {
                 "Muerte + supervivencia = beneficio total": checks_lab.descomposicion_beneficios,
                 "Principio de equivalencia": checks_lab.principio_equivalencia,
                 "Reserva inicial = 0": checks_lab.reserva_inicial_cero,
                 "Reserva final = suma asegurada": checks_lab.reserva_final_igual_beneficio,
+                "Recursion de Fackler entre reservas": checks_lab.recursion_fackler,
             }
         )
         with st.expander("Ver Python reproducible"):
@@ -349,9 +356,7 @@ with tab_reservas:
 
     with st.expander("Tabla de reservas"):
         st.dataframe(
-            df_res.style.format(
-                {"Reserva Matemática": "${:,.2f}", "% Suma Asegurada": "{:.2f}%"}
-            ),
+            df_res.style.format({"Reserva Matemática": "${:,.2f}", "% Suma Asegurada": "{:.2f}%"}),
             use_container_width=True,
             hide_index=True,
         )

@@ -9,6 +9,13 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from suite_actuarial.core.models.common import CalculationMetadata
 
 
+def calcular_ratio_solvencia(capital_disponible: Decimal, rcs_total: Decimal) -> Decimal:
+    """Calcula capital disponible / RCS requerido (>= 1 indica suficiencia)."""
+    if rcs_total <= 0:
+        raise ValueError("El RCS total debe ser mayor que cero")
+    return capital_disponible / rcs_total
+
+
 class TipoRiesgoRCS(StrEnum):
     """Tipos de riesgo para calculo de RCS"""
 
@@ -134,13 +141,9 @@ class ConfiguracionRCSDanos(BaseModel):
     def validar_coeficiente(cls, v: Decimal) -> Decimal:
         """CV tipicamente entre 5% y 50%"""
         if v < Decimal("0.05"):
-            raise ValueError(
-                "Coeficiente de variacion muy bajo (tipicamente >= 5%)"
-            )
+            raise ValueError("Coeficiente de variacion muy bajo (tipicamente >= 5%)")
         if v > Decimal("0.50"):
-            raise ValueError(
-                "Coeficiente de variacion muy alto (tipicamente <= 50%)"
-            )
+            raise ValueError("Coeficiente de variacion muy alto (tipicamente <= 50%)")
         return v
 
     model_config = {
@@ -229,9 +232,7 @@ class ConfiguracionRCSInversion(BaseModel):
             + self.valor_inmuebles
         )
         if total == 0:
-            raise ValueError(
-                "Debe especificar al menos un tipo de inversion con valor > 0"
-            )
+            raise ValueError("Debe especificar al menos un tipo de inversion con valor > 0")
         return self
 
     model_config = {
@@ -268,14 +269,10 @@ class ResultadoRCS(BaseModel):
     rcs_invalidez: Decimal = Field(
         default=Decimal("0"), ge=0, description="RCS por riesgo de invalidez"
     )
-    rcs_gastos: Decimal = Field(
-        default=Decimal("0"), ge=0, description="RCS por riesgo de gastos"
-    )
+    rcs_gastos: Decimal = Field(default=Decimal("0"), ge=0, description="RCS por riesgo de gastos")
 
     # RCS por tipo de riesgo (danos)
-    rcs_prima: Decimal = Field(
-        default=Decimal("0"), ge=0, description="RCS por riesgo de prima"
-    )
+    rcs_prima: Decimal = Field(default=Decimal("0"), ge=0, description="RCS por riesgo de prima")
     rcs_reserva: Decimal = Field(
         default=Decimal("0"), ge=0, description="RCS por riesgo de reserva"
     )
@@ -294,20 +291,12 @@ class ResultadoRCS(BaseModel):
     )
 
     # Agregados por categoria
-    rcs_suscripcion_vida: Decimal = Field(
-        ..., ge=0, description="RCS total de suscripcion vida"
-    )
-    rcs_suscripcion_danos: Decimal = Field(
-        ..., ge=0, description="RCS total de suscripcion danos"
-    )
-    rcs_inversion: Decimal = Field(
-        ..., ge=0, description="RCS total de inversion"
-    )
+    rcs_suscripcion_vida: Decimal = Field(..., ge=0, description="RCS total de suscripcion vida")
+    rcs_suscripcion_danos: Decimal = Field(..., ge=0, description="RCS total de suscripcion danos")
+    rcs_inversion: Decimal = Field(..., ge=0, description="RCS total de inversion")
 
     # RCS total agregado
-    rcs_total: Decimal = Field(
-        ..., gt=0, description="RCS total (con correlaciones aplicadas)"
-    )
+    rcs_total: Decimal = Field(..., gt=0, description="RCS total (con correlaciones aplicadas)")
 
     # Capital y solvencia
     capital_minimo_pagado: Decimal = Field(
@@ -317,7 +306,9 @@ class ResultadoRCS(BaseModel):
         ..., description="Excedente o deficit de capital (puede ser negativo)"
     )
     ratio_solvencia: Decimal = Field(
-        ..., gt=0, description="Ratio RCS/Capital (debe ser <= 1.0 para cumplir)"
+        ...,
+        gt=0,
+        description="Capital disponible / RCS requerido (debe ser >= 1.0 para cumplir)",
     )
     cumple_regulacion: bool = Field(
         ..., description="Deprecated: use cumple_umbral_modelo; no implica cumplimiento CNSF"
@@ -341,22 +332,14 @@ class ResultadoRCS(BaseModel):
             self.cumple_umbral_modelo = self.cumple_regulacion
         # Validar que RCS total >= cada componente
         if self.rcs_total < self.rcs_suscripcion_vida:
-            raise ValueError(
-                "RCS total no puede ser menor que RCS suscripcion vida"
-            )
+            raise ValueError("RCS total no puede ser menor que RCS suscripcion vida")
         if self.rcs_total < self.rcs_suscripcion_danos:
-            raise ValueError(
-                "RCS total no puede ser menor que RCS suscripcion danos"
-            )
+            raise ValueError("RCS total no puede ser menor que RCS suscripcion danos")
         if self.rcs_total < self.rcs_inversion:
             raise ValueError("RCS total no puede ser menor que RCS inversion")
 
         # Validar ratio de solvencia
-        ratio_calculado = (
-            self.rcs_total / self.capital_minimo_pagado
-            if self.capital_minimo_pagado > 0
-            else Decimal("999")
-        )
+        ratio_calculado = calcular_ratio_solvencia(self.capital_minimo_pagado, self.rcs_total)
         if abs(ratio_calculado - self.ratio_solvencia) > Decimal("0.01"):
             raise ValueError(
                 f"Ratio de solvencia inconsistente: "
@@ -392,7 +375,7 @@ class ResultadoRCS(BaseModel):
                     "rcs_total": "75000000.00",
                     "capital_minimo_pagado": "100000000.00",
                     "excedente_solvencia": "25000000.00",
-                    "ratio_solvencia": "0.75",
+                    "ratio_solvencia": "1.3333333333",
                     "cumple_regulacion": True,
                     "desglose_por_riesgo": {
                         "mortalidad": "15000000.00",

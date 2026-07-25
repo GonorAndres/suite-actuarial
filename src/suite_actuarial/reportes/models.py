@@ -11,6 +11,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
 
+from suite_actuarial.core.models.regulatorio import calcular_ratio_solvencia
+
 
 class TipoRamo(StrEnum):
     """Tipos de ramos de seguro según clasificación CNSF"""
@@ -155,9 +157,7 @@ class DatosSiniestrosRamo(BaseModel):
         """Siniestros pendientes no pueden exceder total de siniestros"""
         if "numero_siniestros" in info.data:
             if v > info.data["numero_siniestros"]:
-                raise ValueError(
-                    "Número de siniestros pendientes excede total de siniestros"
-                )
+                raise ValueError("Número de siniestros pendientes excede total de siniestros")
         return v
 
 
@@ -233,7 +233,7 @@ class DatosReporteRCS(BaseModel):
     @property
     def ratio_solvencia(self) -> Decimal:
         """Ratio de capital disponible / RCS requerido"""
-        return self.capital_disponible / self.rcs_total
+        return calcular_ratio_solvencia(self.capital_disponible, self.rcs_total)
 
     @property
     def cumple_regulacion(self) -> bool:
@@ -336,9 +336,7 @@ class ReporteInversiones(BaseModel):
             return {}
 
         return {
-            d.tipo_activo.value: (d.valor_mercado / total * 100).quantize(
-                Decimal("0.01")
-            )
+            d.tipo_activo.value: (d.valor_mercado / total * 100).quantize(Decimal("0.01"))
             for d in self.datos_por_activo
         }
 

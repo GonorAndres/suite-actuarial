@@ -508,7 +508,7 @@ const DOMAINS: DomainGroup[] = [
           { name: "triangle", type: "list[list[float|null]]", required: true, default_val: "-", description_es: "Triangulo acumulado (null para celdas vacias)", description_en: "Cumulative triangle (null for missing cells)" },
           { name: "origin_years", type: "list[int]", required: true, default_val: "-", description_es: "Etiquetas de anos de origen (una por fila)", description_en: "Origin year labels (one per row)" },
           { name: "metodo_promedio", type: "string", required: false, default_val: "simple", description_es: "Metodo de promedio: simple, weighted, geometric", description_en: "Averaging method: simple, weighted, geometric" },
-          { name: "calcular_tail_factor", type: "bool", required: false, default_val: "false", description_es: "Estimar factor de cola automaticamente", description_en: "Auto-estimate tail factor" },
+          { name: "calcular_tail_factor", type: "bool", required: false, default_val: "false", description_es: "Estima la cola ajustando la curva de potencia inversa de Sherman (1984) y extrapolando el producto. Es extrapolacion: revise tail_ajuste_r2 y tail_horizonte en los detalles", description_en: "Estimates the tail by fitting Sherman's (1984) inverse power curve and extrapolating the product. This is extrapolation: check tail_ajuste_r2 and tail_horizonte in the details" },
           { name: "tail_factor", type: "float | null", required: false, default_val: "null", description_es: "Factor de cola manual (1.0-2.0)", description_en: "Manual tail factor (1.0-2.0)" },
         ],
         example_req: `{
@@ -573,8 +573,8 @@ const DOMAINS: DomainGroup[] = [
       {
         method: "POST",
         path: "/api/v1/reserves/bootstrap",
-        desc_es: "Calcula reservas con el metodo Bootstrap. Ejecuta simulaciones Monte Carlo sobre triangulos re-muestreados para producir una distribucion completa de estimados de reserva, incluyendo percentiles.",
-        desc_en: "Calculates reserves using Bootstrap simulation. Runs Monte Carlo on re-sampled triangles to produce a full distribution of reserve estimates including percentiles.",
+        desc_es: "Bootstrap ODP de England-Verrall: distribucion predictiva de la reserva, con percentiles. Residuales de Pearson sobre incrementales contra valores ajustados hacia atras desde el ultimate, parametro de dispersion phi con n-p grados de libertad, correccion de England (2002) y varianza de proceso Gamma, asi que la dispersion cubre error de estimacion Y de proceso. detalles.error_prediccion es la desviacion estandar; detalles.conciliacion_cl_relativa reporta la distancia contra Chain Ladder (~1%, por convexidad de la reserva en los factores). Es condicional al modelo: no cubre riesgo de modelo ni es capital regulatorio.",
+        desc_en: "England-Verrall ODP bootstrap: predictive distribution of the reserve, with percentiles. Pearson residuals on incrementals against values fitted backwards from the ultimate, dispersion parameter phi with n-p degrees of freedom, England's (2002) adjustment and Gamma process variance, so the spread covers both estimation AND process error. detalles.error_prediccion is the standard deviation; detalles.conciliacion_cl_relativa reports the gap against Chain Ladder (~1%, from the reserve's convexity in the factors). It is conditional on the model: it does not cover model risk and is not regulatory capital.",
         params: [
           { name: "triangle", type: "list[list[float|null]]", required: true, default_val: "-", description_es: "Triangulo acumulado", description_en: "Cumulative triangle" },
           { name: "origin_years", type: "list[int]", required: true, default_val: "-", description_es: "Anos de origen", description_en: "Origin years" },

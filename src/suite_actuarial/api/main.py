@@ -25,7 +25,8 @@ app = FastAPI(
         "Developer interface behind the open actuarial laboratory. "
         "Includes life product pricing (temporal, ordinario, dotal), "
         "reinsurance analysis (quota share, excess of loss, stop loss), "
-        "reserve estimation (Chain Ladder, Bornhuetter-Ferguson, Bootstrap), "
+        "reserve estimation (Chain Ladder, Bornhuetter-Ferguson, and an "
+        "illustrative residual re-sampling band), "
         "and regulatory reference calculations. Simplified regulatory, fiscal, "
         "pension and market models are explicitly experimental."
     ),

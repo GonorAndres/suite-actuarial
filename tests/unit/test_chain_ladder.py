@@ -5,6 +5,7 @@ Valida cálculo de factores de desarrollo, completado de triángulo,
 y cálculo de reservas IBNR.
 """
 
+import math
 from decimal import Decimal
 
 import pandas as pd
@@ -14,6 +15,7 @@ from suite_actuarial.core.validators import (
     ConfiguracionChainLadder,
     MetodoPromedio,
 )
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.reservas.chain_ladder import ChainLadder
 from suite_actuarial.reservas.triangulo import crear_triangulo_ejemplo
 
@@ -103,9 +105,7 @@ class TestChainLadderFactoresDesarrollo:
         # Todos deben ser >= 1 (triángulo acumulado)
         assert all(f >= Decimal("1.0") for f in factores)
 
-    def test_calcular_factores_ponderado(
-        self, triangulo_simple, config_ponderado
-    ):
+    def test_calcular_factores_ponderado(self, triangulo_simple, config_ponderado):
         """Debe calcular factores con promedio ponderado"""
         cl = ChainLadder(config_ponderado)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
@@ -113,9 +113,7 @@ class TestChainLadderFactoresDesarrollo:
         assert len(factores) == 4
         assert all(isinstance(f, Decimal) for f in factores)
 
-    def test_calcular_factores_geometrico(
-        self, triangulo_simple, config_geometrico
-    ):
+    def test_calcular_factores_geometrico(self, triangulo_simple, config_geometrico):
         """Debe calcular factores con promedio geométrico"""
         cl = ChainLadder(config_geometrico)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
@@ -135,42 +133,30 @@ class TestChainLadderFactoresDesarrollo:
 class TestChainLadderCompletarTriangulo:
     """Tests para completar triángulo"""
 
-    def test_completar_triangulo_mantiene_conocidos(
-        self, triangulo_simple, config_simple
-    ):
+    def test_completar_triangulo_mantiene_conocidos(self, triangulo_simple, config_simple):
         """Los valores conocidos no deben cambiar"""
         cl = ChainLadder(config_simple)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
-        triangulo_completo = cl.completar_triangulo(
-            triangulo_simple, factores
-        )
+        triangulo_completo = cl.completar_triangulo(triangulo_simple, factores)
 
         # Valores conocidos deben ser iguales
         assert triangulo_completo.iloc[0, 0] == triangulo_simple.iloc[0, 0]
         assert triangulo_completo.iloc[1, 1] == triangulo_simple.iloc[1, 1]
 
-    def test_completar_triangulo_llena_nans(
-        self, triangulo_simple, config_simple
-    ):
+    def test_completar_triangulo_llena_nans(self, triangulo_simple, config_simple):
         """Debe llenar todos los NaN con proyecciones"""
         cl = ChainLadder(config_simple)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
-        triangulo_completo = cl.completar_triangulo(
-            triangulo_simple, factores
-        )
+        triangulo_completo = cl.completar_triangulo(triangulo_simple, factores)
 
         # No debe haber NaN
         assert not triangulo_completo.isna().any().any()
 
-    def test_completar_triangulo_valores_crecientes(
-        self, triangulo_simple, config_simple
-    ):
+    def test_completar_triangulo_valores_crecientes(self, triangulo_simple, config_simple):
         """Los valores proyectados deben ser monótonos crecientes"""
         cl = ChainLadder(config_simple)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
-        triangulo_completo = cl.completar_triangulo(
-            triangulo_simple, factores
-        )
+        triangulo_completo = cl.completar_triangulo(triangulo_simple, factores)
 
         # Cada fila debe ser monótona creciente
         for i in range(len(triangulo_completo)):
@@ -181,30 +167,22 @@ class TestChainLadderCompletarTriangulo:
 class TestChainLadderUltimates:
     """Tests para cálculo de ultimates"""
 
-    def test_calcular_ultimates_todos_anios(
-        self, triangulo_simple, config_simple
-    ):
+    def test_calcular_ultimates_todos_anios(self, triangulo_simple, config_simple):
         """Debe calcular ultimate para todos los años"""
         cl = ChainLadder(config_simple)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
-        triangulo_completo = cl.completar_triangulo(
-            triangulo_simple, factores
-        )
+        triangulo_completo = cl.completar_triangulo(triangulo_simple, factores)
         ultimates = cl.calcular_ultimates(triangulo_completo)
 
         # Debe haber ultimate para cada año
         assert len(ultimates) == len(triangulo_simple)
         assert set(ultimates.keys()) == set(triangulo_simple.index)
 
-    def test_ultimates_son_mayores_que_observado(
-        self, triangulo_simple, config_simple
-    ):
+    def test_ultimates_son_mayores_que_observado(self, triangulo_simple, config_simple):
         """Ultimates deben ser >= valores observados"""
         cl = ChainLadder(config_simple)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
-        triangulo_completo = cl.completar_triangulo(
-            triangulo_simple, factores
-        )
+        triangulo_completo = cl.completar_triangulo(triangulo_simple, factores)
         ultimates = cl.calcular_ultimates(triangulo_completo)
 
         # Para cada año, ultimate >= último valor observado
@@ -217,15 +195,11 @@ class TestChainLadderUltimates:
 class TestChainLadderReservas:
     """Tests para cálculo de reservas"""
 
-    def test_calcular_reservas_todas_positivas(
-        self, triangulo_simple, config_simple
-    ):
+    def test_calcular_reservas_todas_positivas(self, triangulo_simple, config_simple):
         """Todas las reservas deben ser >= 0"""
         cl = ChainLadder(config_simple)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
-        triangulo_completo = cl.completar_triangulo(
-            triangulo_simple, factores
-        )
+        triangulo_completo = cl.completar_triangulo(triangulo_simple, factores)
         ultimates = cl.calcular_ultimates(triangulo_completo)
         reservas = cl.calcular_reservas(triangulo_simple, ultimates)
 
@@ -235,9 +209,7 @@ class TestChainLadderReservas:
         """Años más recientes deben tener mayor reserva (mayor IBNR)"""
         cl = ChainLadder(config_simple)
         factores = cl.calcular_factores_desarrollo(triangulo_simple)
-        triangulo_completo = cl.completar_triangulo(
-            triangulo_simple, factores
-        )
+        triangulo_completo = cl.completar_triangulo(triangulo_simple, factores)
         ultimates = cl.calcular_ultimates(triangulo_completo)
         reservas = cl.calcular_reservas(triangulo_simple, ultimates)
 
@@ -280,14 +252,9 @@ class TestChainLadderCalculoCompleto:
         resultado = cl.calcular(triangulo_simple)
 
         # Validar que el resultado es consistente
-        assert (
-            abs(
-                resultado.ultimate_total
-                - resultado.pagado_total
-                - resultado.reserva_total
-            )
-            < Decimal("0.01")
-        )
+        assert abs(
+            resultado.ultimate_total - resultado.pagado_total - resultado.reserva_total
+        ) < Decimal("0.01")
 
     def test_detalles_en_resultado(self, triangulo_simple, config_simple):
         """Resultado debe incluir detalles completos"""
@@ -320,7 +287,12 @@ class TestChainLadderTailFactor:
     def test_tail_factor_calculado_incrementa_reserva(
         self, triangulo_simple, config_simple, config_con_tail
     ):
-        """calcular_tail_factor=True debe producir reserva mayor que sin cola"""
+        """calcular_tail_factor=True debe producir reserva mayor que sin cola.
+
+        Nota: esto solo comprueba que la cola fabricada se aplique; no valida
+        que el valor de la cola sea correcto — no lo es (hallazgo A10). Debe
+        reemplazarse en la fase 2 por una prueba contra una cola estimada.
+        """
         base = ChainLadder(config_simple).calcular(triangulo_simple)
         con_tail = ChainLadder(config_con_tail).calcular(triangulo_simple)
 
@@ -345,9 +317,7 @@ class TestChainLadderTrianguloEjemplo:
 
         assert resultado.reserva_total > Decimal("0")
 
-    def test_obtener_triangulo_completo(
-        self, triangulo_simple, config_simple
-    ):
+    def test_obtener_triangulo_completo(self, triangulo_simple, config_simple):
         """Debe poder obtener triángulo completo después de calcular"""
         cl = ChainLadder(config_simple)
         cl.calcular(triangulo_simple)
@@ -356,9 +326,7 @@ class TestChainLadderTrianguloEjemplo:
         assert triangulo_completo is not None
         assert not triangulo_completo.isna().any().any()
 
-    def test_obtener_factores_age_to_age(
-        self, triangulo_simple, config_simple
-    ):
+    def test_obtener_factores_age_to_age(self, triangulo_simple, config_simple):
         """Debe poder obtener factores age-to-age"""
         cl = ChainLadder(config_simple)
         cl.calcular(triangulo_simple)
@@ -372,12 +340,8 @@ class TestChainLadderComparacionMetodos:
 
     def test_metodos_producen_resultados_diferentes(self, triangulo_simple):
         """Diferentes métodos deben producir resultados ligeramente diferentes"""
-        config_simple = ConfiguracionChainLadder(
-            metodo_promedio=MetodoPromedio.SIMPLE
-        )
-        config_ponderado = ConfiguracionChainLadder(
-            metodo_promedio=MetodoPromedio.PONDERADO
-        )
+        config_simple = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
+        config_ponderado = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.PONDERADO)
 
         cl_simple = ChainLadder(config_simple)
         cl_ponderado = ChainLadder(config_ponderado)
@@ -424,3 +388,94 @@ class TestChainLadderRepr:
 
         assert "ChainLadder" in repr_str
         assert "simple" in repr_str.lower()
+
+
+class TestColaEstimada:
+    """El factor de cola se estima con la curva de Sherman (1984).
+
+    Cierre del hallazgo A10 (docs/AUDIT.md): antes se repetía el último factor
+    age-to-age, lo que fabricaba un periodo de desarrollo sin base empírica.
+    """
+
+    @pytest.fixture
+    def triangulo_decreciente(self):
+        """Factores age-to-age estrictamente decrecientes hacia 1.
+
+        Construido para que las razones sean exactamente 1.5, 1.2 y 1.05 en
+        cada columna: el último factor observado es 1.05 y una cola estimada
+        por una curva decreciente tiene que quedar por debajo.
+        """
+        base = [1000.0, 1200.0, 1500.0, 1800.0]
+        acum = [1.0, 1.5, 1.8, 1.89]  # razones 1.5, 1.2, 1.05
+        data = {j: [base[i] * acum[j] if i + j <= 3 else None for i in range(4)] for j in range(4)}
+        return pd.DataFrame(data, index=[2021, 2022, 2023, 2024])
+
+    def test_la_cola_es_el_producto_extrapolado_de_la_curva_ajustada(self, triangulo_decreciente):
+        """La cola cubre todo el desarrollo restante, no un periodo más.
+
+        Con razones 1.5, 1.2 y 1.05 la curva ajustada es `1 + 0.5689*k^-2.0126`
+        (r² = 0.93). El valor esperado se reconstruye aquí multiplicando esos
+        factores desde el periodo 4, de forma independiente del código bajo
+        prueba.
+
+        Nota: `docs/AUDIT.md` (A10) pedía `tail < 1.05` para este triángulo. Esa
+        expectativa era incorrecta — trata la cola como si fuera el siguiente
+        factor, cuando es el producto de todos los restantes. El desarrollo
+        remanente real de este patrón es 1.163, así que repetir 1.05 lo
+        *subestimaba*.
+        """
+        config = ConfiguracionChainLadder(calcular_tail_factor=True)
+        with pytest.warns(ExperimentalModelWarning, match="EXTRAPOLACION"):
+            resultado = ChainLadder(config).calcular(triangulo_decreciente)
+
+        a, b = 0.5689, 2.0126
+        esperado = math.prod(1 + a * k**-b for k in range(4, 104))
+
+        tail = float(resultado.factores_desarrollo[-1])
+        assert tail == pytest.approx(esperado, rel=1e-3)
+        assert tail > 1.05, "repetir el ultimo factor subestimaba este patron"
+        assert resultado.detalles["tail_factor_metodo"] == "sherman_curva_potencia_inversa"
+
+    def test_reporta_el_diagnostico_del_ajuste(self, triangulo_decreciente):
+        """Sin r², horizonte y parámetros la cola no sería auditable."""
+        config = ConfiguracionChainLadder(calcular_tail_factor=True)
+        with pytest.warns(ExperimentalModelWarning):
+            resultado = ChainLadder(config).calcular(triangulo_decreciente)
+
+        detalles = resultado.detalles
+        assert Decimal(detalles["tail_ajuste_r2"]) > Decimal("0.9")
+        assert Decimal(detalles["tail_ajuste_b"]) > Decimal("0")
+        assert detalles["tail_horizonte"] == 100
+        assert detalles["tail_periodos_ajustados"] == 3
+        assert resultado.calculation_metadata.validation_tier == "supported"
+
+    def test_chain_ladder_sin_cola_automatica_no_emite_el_aviso(self, triangulo_decreciente):
+        """El aviso de extrapolación es exclusivo de la ruta estimada."""
+        for config, metodo in [
+            (ConfiguracionChainLadder(), "ninguno"),
+            (ConfiguracionChainLadder(tail_factor=Decimal("1.02")), "manual"),
+        ]:
+            resultado = ChainLadder(config).calcular(triangulo_decreciente)
+            assert resultado.calculation_metadata.validation_tier == "supported"
+            assert resultado.detalles["tail_factor_metodo"] == metodo
+            assert "tail_ajuste_r2" not in resultado.detalles
+
+    def test_triangulo_ya_desarrollado_no_fabrica_cola(self):
+        """Con desarrollo terminado la cola es 1, y por la razón correcta.
+
+        Con razones 1.5, 1.0 y 1.0 el último factor no aporta desarrollo. El
+        método lo reconoce y devuelve 1 sin ajustar curva alguna, en vez de
+        llegar a 1 por accidente repitiendo el último factor.
+        """
+        base = [1000.0, 1200.0, 1500.0, 1800.0]
+        acum = [1.0, 1.5, 1.5, 1.5]  # razones 1.5, 1.0, 1.0
+        data = {j: [base[i] * acum[j] if i + j <= 3 else None for i in range(4)] for j in range(4)}
+        triangulo = pd.DataFrame(data, index=[2021, 2022, 2023, 2024])
+
+        config = ConfiguracionChainLadder(calcular_tail_factor=True)
+        with pytest.warns(ExperimentalModelWarning):
+            resultado = ChainLadder(config).calcular(triangulo)
+
+        assert float(resultado.factores_desarrollo[-1]) == pytest.approx(1.0)
+        assert resultado.detalles["tail_factor_metodo"] == "sin_desarrollo_residual"
+        assert resultado.detalles["tail_periodos_ajustados"] == 0

@@ -82,9 +82,7 @@ class TestVidaOrdinario:
         assert producto.plazo_pago is None
         assert producto.plazo_pago_vitalicio
 
-    def test_calcular_prima_basica(
-        self, config_pago_limitado, tabla_simple, asegurado_basico
-    ):
+    def test_calcular_prima_basica(self, config_pago_limitado, tabla_simple, asegurado_basico):
         """Debe calcular prima correctamente"""
         producto = VidaOrdinario(config_pago_limitado, tabla_simple)
         resultado = producto.calcular_prima(asegurado_basico)
@@ -116,28 +114,87 @@ class TestVidaOrdinario:
         # Ordinario debe ser más caro (cobertura vitalicia vs 20 años)
         assert prima_ord > prima_temp
 
-    def test_reserva_inicio_es_cero(
-        self, config_pago_limitado, tabla_simple, asegurado_basico
-    ):
+    def test_reserva_inicio_es_cero(self, config_pago_limitado, tabla_simple, asegurado_basico):
         """La reserva al inicio debe ser cero"""
         producto = VidaOrdinario(config_pago_limitado, tabla_simple)
         reserva = producto.calcular_reserva(asegurado_basico, anio=0)
 
         assert reserva == Decimal("0")
 
-    def test_reserva_final_es_suma_asegurada(
+    def test_reserva_en_edad_omega_es_la_suma_asegurada_descontada(
         self, config_pago_limitado, tabla_simple, asegurado_basico
     ):
-        """La reserva en edad omega debe ser la suma asegurada"""
+        """En edad omega la reserva es SA descontada un año (A7).
+
+        Con la convención de edad terminal `q_omega = 1`, el beneficio se paga
+        con certeza al final de ese año, así que su valor presente al inicio
+        del año es `SA * v`. Ya no hay primas por cobrar (el pago era de 20
+        años), de modo que la reserva prospectiva es exactamente eso.
+
+        Antes se fijaba a mano en `SA`, un salto que la propia fórmula
+        prospectiva no sostenía: el año anterior daba ~0.38*SA.
+        """
         producto = VidaOrdinario(config_pago_limitado, tabla_simple, edad_omega=100)
 
-        # Años hasta omega
-        plazo_total = 100 - asegurado_basico.edad  # 65 años
+        # Edades cubiertas: x .. omega inclusive
+        anio_omega = 100 - asegurado_basico.edad
 
-        reserva_final = producto.calcular_reserva(asegurado_basico, anio=plazo_total)
+        reserva_omega = producto.calcular_reserva(asegurado_basico, anio=anio_omega)
 
-        # Debe ser exactamente la suma asegurada
-        assert reserva_final == asegurado_basico.suma_asegurada
+        v = Decimal("1") / (Decimal("1") + config_pago_limitado.tasa_interes_tecnico)
+        esperado = asegurado_basico.suma_asegurada * v
+
+        assert float(reserva_omega) == pytest.approx(float(esperado), rel=1e-12)
+
+    def test_la_reserva_no_salta_en_el_ultimo_ano(
+        self, config_pago_limitado, tabla_simple, asegurado_basico
+    ):
+        """La reserva llega a su valor final por la recursión, sin discontinuidad.
+
+        El defecto A7 producía un salto de ~0.38*SA a SA en un solo año. La
+        prueba exige que el último paso sea del mismo orden que los anteriores:
+        se compara el incremento final contra el promedio de los cinco previos.
+        """
+        producto = VidaOrdinario(config_pago_limitado, tabla_simple, edad_omega=100)
+        anio_omega = 100 - asegurado_basico.edad
+
+        reservas = [
+            float(producto.calcular_reserva(asegurado_basico, anio=t))
+            for t in range(anio_omega - 6, anio_omega + 1)
+        ]
+        incrementos = [b - a for a, b in zip(reservas[:-1], reservas[1:], strict=True)]
+
+        promedio_previo = sum(incrementos[:-1]) / len(incrementos[:-1])
+
+        assert incrementos[-1] == pytest.approx(promedio_previo, rel=0.5)
+        assert all(inc > 0 for inc in incrementos)
+
+    def test_el_beneficio_vitalicio_se_fondea_por_completo(
+        self, config_pago_limitado, tabla_simple, asegurado_basico
+    ):
+        """La probabilidad total de pago es 1: nadie queda sin cobrar (A7).
+
+        Un beneficio "garantizado" que no se paga a la cohorte viva en la edad
+        terminal no está fondeado. La prueba suma las probabilidades de muerte
+        que el motor usa y exige que cierren en 1. Sin `q_omega = 1` la suma
+        queda por debajo y el faltante nunca se cobra.
+        """
+        producto = VidaOrdinario(config_pago_limitado, tabla_simple, edad_omega=100)
+        edad = asegurado_basico.edad
+
+        supervivencia = Decimal("1")
+        probabilidad_de_pago = Decimal("0")
+        for x in range(edad, 101):
+            qx = (
+                Decimal("1")
+                if x >= producto.edad_omega
+                else tabla_simple.obtener_qx(x, asegurado_basico.sexo, interpolar=True)
+            )
+            probabilidad_de_pago += supervivencia * qx
+            supervivencia *= Decimal("1") - qx
+
+        assert float(probabilidad_de_pago) == pytest.approx(1.0, abs=1e-12)
+        assert float(supervivencia) == pytest.approx(0.0, abs=1e-12)
 
     def test_reserva_crece_monotonamente(
         self, config_pago_limitado, tabla_simple, asegurado_basico
@@ -152,17 +209,15 @@ class TestVidaOrdinario:
 
         # Verificar que crece
         for i in range(len(reservas) - 1):
-            assert reservas[i + 1] > reservas[i], f"Reserva debe crecer entre año {i*5} y {(i+1)*5}"
+            assert reservas[i + 1] > reservas[i], (
+                f"Reserva debe crecer entre año {i * 5} y {(i + 1) * 5}"
+            )
 
-    def test_validar_edad_maxima_emision(
-        self, config_pago_limitado, tabla_simple
-    ):
+    def test_validar_edad_maxima_emision(self, config_pago_limitado, tabla_simple):
         """No debe aceptar asegurados mayores de 70 años (base class limit)"""
         producto = VidaOrdinario(config_pago_limitado, tabla_simple)
 
-        asegurado_mayor = Asegurado(
-            edad=76, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
+        asegurado_mayor = Asegurado(edad=76, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado_mayor)
 
@@ -171,31 +226,21 @@ class TestVidaOrdinario:
 
     def test_validar_edad_cercana_omega(self, config_pago_limitado, tabla_simple):
         """No debe aceptar edades very close to omega (base rejects >70 first)"""
-        producto = VidaOrdinario(
-            config_pago_limitado, tabla_simple, edad_omega=100
-        )
+        producto = VidaOrdinario(config_pago_limitado, tabla_simple, edad_omega=100)
 
         # Edad 96 > 70 so base class rejects first
-        asegurado_cercano = Asegurado(
-            edad=96, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
+        asegurado_cercano = Asegurado(edad=96, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado_cercano)
 
         assert es_asegurable is False
         assert razon is not None
 
-    def test_error_edad_mayor_omega(
-        self, config_pago_limitado, tabla_simple
-    ):
+    def test_error_edad_mayor_omega(self, config_pago_limitado, tabla_simple):
         """Debe fallar si edad >= omega (base class rejects >70 first)"""
-        producto = VidaOrdinario(
-            config_pago_limitado, tabla_simple, edad_omega=100
-        )
+        producto = VidaOrdinario(config_pago_limitado, tabla_simple, edad_omega=100)
 
-        asegurado_omega = Asegurado(
-            edad=100, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000")
-        )
+        asegurado_omega = Asegurado(edad=100, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
 
         with pytest.raises(ValueError) as exc_info:
             producto.calcular_prima(asegurado_omega)

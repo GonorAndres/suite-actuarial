@@ -11,7 +11,12 @@ export interface CalculationMetadata {
   valuation_date?: string | null;
   assumption_id?: string | null;
   assumption_hash?: string | null;
-  validation_tier: "supported" | "experimental" | "deprecated" | string;
+  validation_tier:
+    | "supported"
+    | "experimental"
+    | "illustrative"
+    | "deprecated"
+    | string;
   sources: string[];
   warnings: string[];
   reproducibility_id?: string | null;
@@ -61,7 +66,10 @@ export interface DotalLabChecks {
   principio_equivalencia: boolean;
   reserva_inicial_cero: boolean;
   reserva_final_igual_beneficio: boolean;
+  recursion_fackler: boolean;
   diferencia_equivalencia: number;
+  diferencia_descomposicion: number;
+  diferencia_recursion: number;
 }
 
 export interface DotalLabResponse {

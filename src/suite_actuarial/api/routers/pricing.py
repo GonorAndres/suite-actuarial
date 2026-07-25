@@ -51,8 +51,12 @@ class PricingRequest(BaseModel):
         default="anual",
         description="Payment frequency: anual, semestral, trimestral, mensual",
     )
-    recargo_gastos_admin: float = Field(default=0.05, ge=0, le=1, description="Admin expense loading")
-    recargo_gastos_adq: float = Field(default=0.10, ge=0, le=1, description="Acquisition expense loading")
+    recargo_gastos_admin: float = Field(
+        default=0.05, ge=0, le=1, description="Admin expense loading"
+    )
+    recargo_gastos_adq: float = Field(
+        default=0.10, ge=0, le=1, description="Acquisition expense loading"
+    )
     recargo_utilidad: float = Field(default=0.03, ge=0, le=1, description="Profit loading")
 
 
@@ -92,13 +96,23 @@ class ReservaDotalResponse(BaseModel):
 
 
 class VerificacionesDotalResponse(BaseModel):
-    """Actuarial checks evaluated by the domain model."""
+    """Actuarial checks evaluated by the domain model.
+
+    Each check contrasts the pricing engine against an independent path:
+    commutation columns (Dx/Nx/Mx) for the benefit decomposition, and the
+    retrospective Fackler recursion for the reserve path. The `diferencia_*`
+    fields expose how far each identity sits from exact, so a caller can judge
+    the margin instead of trusting a bare boolean.
+    """
 
     descomposicion_beneficios: bool
     principio_equivalencia: bool
     reserva_inicial_cero: bool
     reserva_final_igual_beneficio: bool
+    recursion_fackler: bool
     diferencia_equivalencia: float
+    diferencia_descomposicion: float
+    diferencia_recursion: float
 
 
 class DotalLabResponse(BaseModel):
@@ -145,8 +159,7 @@ def _resultado_to_response(producto_nombre: str, resultado) -> PricingResponse:
         moneda=resultado.moneda.value,
         desglose_recargos={k: float(v) for k, v in resultado.desglose_recargos.items()},
         metadata={
-            k: (float(v) if isinstance(v, Decimal) else v)
-            for k, v in resultado.metadata.items()
+            k: (float(v) if isinstance(v, Decimal) else v) for k, v in resultado.metadata.items()
         },
         calculation_metadata=resultado.calculation_metadata,
     )
@@ -208,12 +221,11 @@ def _analyze_dotal(req: DotalLabRequest) -> DotalLabResponse:
             descomposicion_beneficios=analisis.verificaciones.descomposicion_beneficios,
             principio_equivalencia=analisis.verificaciones.principio_equivalencia,
             reserva_inicial_cero=analisis.verificaciones.reserva_inicial_cero,
-            reserva_final_igual_beneficio=(
-                analisis.verificaciones.reserva_final_igual_beneficio
-            ),
-            diferencia_equivalencia=float(
-                analisis.verificaciones.diferencia_equivalencia
-            ),
+            reserva_final_igual_beneficio=(analisis.verificaciones.reserva_final_igual_beneficio),
+            recursion_fackler=analisis.verificaciones.recursion_fackler,
+            diferencia_equivalencia=float(analisis.verificaciones.diferencia_equivalencia),
+            diferencia_descomposicion=float(analisis.verificaciones.diferencia_descomposicion),
+            diferencia_recursion=float(analisis.verificaciones.diferencia_recursion),
         ),
     )
 

@@ -37,6 +37,7 @@ from suite_actuarial.core.models.regulatorio import (  # noqa: F401
     ResultadoRCS,
     TipoRamo,
     TipoRiesgoRCS,
+    calcular_ratio_solvencia,
 )
 from suite_actuarial.core.models.reservas import (  # noqa: F401
     ConfiguracionBootstrap,
@@ -84,4 +85,5 @@ __all__ = [
     "ConfiguracionRCSDanos",
     "ConfiguracionRCSInversion",
     "ResultadoRCS",
+    "calcular_ratio_solvencia",
 ]

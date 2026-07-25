@@ -46,7 +46,11 @@ class ConfiguracionChainLadder(BaseModel):
     )
     calcular_tail_factor: bool = Field(
         default=False,
-        description="Si se debe calcular factor de cola (tail)",
+        description=(
+            "Estima el factor de cola ajustando la curva de potencia inversa de "
+            "Sherman (1984) a los factores observados. Es extrapolacion: revise "
+            "tail_ajuste_r2 y tail_horizonte en los detalles del resultado"
+        ),
     )
     tail_factor: Decimal | None = Field(
         default=None,
