@@ -327,7 +327,7 @@ with tab_reservas:
                 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
                 from suite_actuarial.core.validators import Asegurado, ConfiguracionProducto, Sexo
 
-                tabla = TablaMortalidad()
+                tabla = TablaMortalidad.cargar_emssa09()
                 config_prod = ConfiguracionProducto(
                     nombre_producto="Temporal demo",
                     plazo_years=rm_plazo,
@@ -401,7 +401,7 @@ from suite_actuarial.core.validators import (
 from suite_actuarial.config import cargar_config
 
 # Reserva matematica
-tabla = TablaMortalidad()
+tabla = TablaMortalidad.cargar_emssa09()
 config = ConfiguracionProducto(
     nombre_producto="Temporal 20",
     plazo_years=20,
