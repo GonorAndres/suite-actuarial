@@ -16,15 +16,16 @@ from decimal import Decimal
 
 import plotly.graph_objects as go
 import streamlit as st
+from utils.theme import apply_studio_theme, render_workbench_intro
 
-from suite_actuarial.regulatorio import AgregadorRCS
+from suite_actuarial.config import cargar_config
+from suite_actuarial.config.schema import ConfigAnual
 from suite_actuarial.core.validators import (
     ConfiguracionRCSDanos,
     ConfiguracionRCSInversion,
     ConfiguracionRCSVida,
 )
-from suite_actuarial.config import cargar_config
-from utils.theme import apply_studio_theme, render_workbench_intro
+from suite_actuarial.regulatorio import AgregadorRCS
 
 # ---------------------------------------------------------------------------
 # Configuracion de pagina
@@ -50,13 +51,14 @@ with st.sidebar:
         index=2,
         key="anio_reg",
     )
+    cfg: ConfigAnual | None = None
     try:
         cfg = cargar_config(anio_config)
         st.success(f"Configuración {anio_config} cargada")
         st.markdown(f"- UMA diaria: ${cfg.uma.uma_diaria}")
         st.markdown(f"- UMA anual: ${cfg.uma.uma_anual}")
-        st.markdown(f"- ISR PM: {float(cfg.tasas_sat.tasa_isr_personas_morales)*100:.0f}%")
-        st.markdown(f"- IVA: {float(cfg.tasas_sat.tasa_iva)*100:.0f}%")
+        st.markdown(f"- ISR PM: {float(cfg.tasas_sat.tasa_isr_personas_morales) * 100:.0f}%")
+        st.markdown(f"- IVA: {float(cfg.tasas_sat.tasa_iva) * 100:.0f}%")
     except Exception as e:
         st.error(f"Error cargando configuración: {e}")
         cfg = None
@@ -64,9 +66,7 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------
-tab_rcs, tab_reservas, tab_sat = st.tabs(
-    ["RCS", "Reservas Técnicas", "Validaciones SAT"]
-)
+tab_rcs, tab_reservas, tab_sat = st.tabs(["RCS", "Reservas Técnicas", "Validaciones SAT"])
 
 # ===== TAB 1: RCS ==========================================================
 with tab_rcs:
@@ -131,12 +131,24 @@ with tab_rcs:
 
     with col_inv:
         st.subheader("RCS Inversión")
-        v_acciones = st.number_input("Acciones (MDP)", min_value=0.0, value=50.0, step=10.0, key="rcs_acc")
-        v_gob = st.number_input("Bonos gubernamentales (MDP)", min_value=0.0, value=300.0, step=50.0, key="rcs_gob")
-        v_corp = st.number_input("Bonos corporativos (MDP)", min_value=0.0, value=150.0, step=25.0, key="rcs_corp")
-        v_inm = st.number_input("Inmuebles (MDP)", min_value=0.0, value=100.0, step=25.0, key="rcs_inm")
-        dur_bonos = st.slider("Duración promedio bonos (años)", 1.0, 25.0, 7.5, step=0.5, key="rcs_durbonos")
-        calif = st.selectbox("Calificación promedio", ["AAA", "AA", "A", "BBB", "BB", "B"], index=1, key="rcs_calif")
+        v_acciones = st.number_input(
+            "Acciones (MDP)", min_value=0.0, value=50.0, step=10.0, key="rcs_acc"
+        )
+        v_gob = st.number_input(
+            "Bonos gubernamentales (MDP)", min_value=0.0, value=300.0, step=50.0, key="rcs_gob"
+        )
+        v_corp = st.number_input(
+            "Bonos corporativos (MDP)", min_value=0.0, value=150.0, step=25.0, key="rcs_corp"
+        )
+        v_inm = st.number_input(
+            "Inmuebles (MDP)", min_value=0.0, value=100.0, step=25.0, key="rcs_inm"
+        )
+        dur_bonos = st.slider(
+            "Duración promedio bonos (años)", 1.0, 25.0, 7.5, step=0.5, key="rcs_durbonos"
+        )
+        calif = st.selectbox(
+            "Calificación promedio", ["AAA", "AA", "A", "BBB", "BB", "B"], index=1, key="rcs_calif"
+        )
 
     st.markdown("---")
     capital_min = st.number_input(
@@ -202,22 +214,32 @@ with tab_rcs:
                     "Inversión": float(resultado.rcs_inversion) / 1e6,
                 }
                 import pandas as pd
+
                 df_comp = pd.DataFrame(
-                    {"Componente": list(componentes.keys()), "RCS (MDP)": list(componentes.values())}
+                    {
+                        "Componente": list(componentes.keys()),
+                        "RCS (MDP)": list(componentes.values()),
+                    }
                 )
-                df_comp["% del Total"] = df_comp["RCS (MDP)"] / (float(resultado.rcs_total) / 1e6) * 100
+                df_comp["% del Total"] = (
+                    df_comp["RCS (MDP)"] / (float(resultado.rcs_total) / 1e6) * 100
+                )
                 df_comp["RCS (MDP)"] = df_comp["RCS (MDP)"].apply(lambda x: f"${x:,.1f}")
                 df_comp["% del Total"] = df_comp["% del Total"].apply(lambda x: f"{x:.1f}%")
                 st.dataframe(df_comp, use_container_width=True, hide_index=True)
 
             with col_pie:
-                fig_pie = go.Figure(data=[go.Pie(
-                    labels=list(componentes.keys()),
-                    values=list(componentes.values()),
-                    hole=0.4,
-                    textinfo="label+percent",
-                    marker_colors=["#1f77b4", "#ff7f0e", "#2ca02c"],
-                )])
+                fig_pie = go.Figure(
+                    data=[
+                        go.Pie(
+                            labels=list(componentes.keys()),
+                            values=list(componentes.values()),
+                            hole=0.4,
+                            textinfo="label+percent",
+                            marker_colors=["#1f77b4", "#ff7f0e", "#2ca02c"],
+                        )
+                    ]
+                )
                 fig_pie.update_layout(height=400, showlegend=False)
                 st.plotly_chart(fig_pie, use_container_width=True)
 
@@ -237,13 +259,17 @@ with tab_rcs:
             detalles_filtrados = {k: v for k, v in detalles.items() if v > 0}
 
             if detalles_filtrados:
-                fig_bar = go.Figure(data=[go.Bar(
-                    x=list(detalles_filtrados.keys()),
-                    y=list(detalles_filtrados.values()),
-                    marker_color="#1f77b4",
-                    text=[f"${v:,.1f}" for v in detalles_filtrados.values()],
-                    textposition="outside",
-                )])
+                fig_bar = go.Figure(
+                    data=[
+                        go.Bar(
+                            x=list(detalles_filtrados.keys()),
+                            y=list(detalles_filtrados.values()),
+                            marker_color="#1f77b4",
+                            text=[f"${v:,.1f}" for v in detalles_filtrados.values()],
+                            textposition="outside",
+                        )
+                    ]
+                )
                 fig_bar.update_layout(
                     xaxis_title="Tipo de riesgo",
                     yaxis_title="RCS (MDP)",
@@ -315,7 +341,9 @@ with tab_reservas:
             "futuras de seguros de vida de largo plazo."
         )
 
-        rm_sa = st.number_input("Suma asegurada ($)", min_value=10000, value=1000000, step=50000, key="rm_sa")
+        rm_sa = st.number_input(
+            "Suma asegurada ($)", min_value=10000, value=1000000, step=50000, key="rm_sa"
+        )
         rm_edad = st.slider("Edad del asegurado", 18, 80, 35, key="rm_edad")
         rm_plazo = st.slider("Plazo de la póliza (años)", 5, 30, 20, key="rm_plazo")
         rm_anios = st.slider("Años transcurridos", 0, rm_plazo, 5, key="rm_anios")
@@ -323,9 +351,9 @@ with tab_reservas:
 
         if st.button("Calcular Reserva Matemática", key="btn_rm"):
             try:
-                from suite_actuarial.vida import VidaTemporal
                 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
                 from suite_actuarial.core.validators import Asegurado, ConfiguracionProducto, Sexo
+                from suite_actuarial.vida import VidaTemporal
 
                 tabla = TablaMortalidad.cargar_emssa09()
                 config_prod = ConfiguracionProducto(
@@ -348,7 +376,7 @@ with tab_reservas:
                     margen = float(cfg.factores_tecnicos.margen_seguridad_s114)
                     rm_con_margen = float(reserva) * (1 + margen)
                     st.metric(
-                        f"RM con margen S-11.4 ({margen*100:.0f}%)",
+                        f"RM con margen S-11.4 ({margen * 100:.0f}%)",
                         f"${rm_con_margen:,.2f}",
                     )
 
@@ -362,7 +390,9 @@ with tab_reservas:
             "más un margen de seguridad conforme a la regulación."
         )
 
-        rrc_prima = st.number_input("Prima emitida ($)", min_value=1000, value=120000, step=5000, key="rrc_prima")
+        rrc_prima = st.number_input(
+            "Prima emitida ($)", min_value=1000, value=120000, step=5000, key="rrc_prima"
+        )
         rrc_inicio = st.date_input("Fecha inicio vigencia", key="rrc_inicio")
         rrc_fin = st.date_input("Fecha fin vigencia", key="rrc_fin")
         rrc_hoy = st.date_input("Fecha de cálculo", key="rrc_hoy")
@@ -384,7 +414,7 @@ with tab_reservas:
                     margen = float(cfg.factores_tecnicos.margen_seguridad_s114)
                     rrc_con_margen = rrc_base * (1 + margen)
                     st.metric(
-                        f"RRC con margen S-11.4 ({margen*100:.0f}%)",
+                        f"RRC con margen S-11.4 ({margen * 100:.0f}%)",
                         f"${rrc_con_margen:,.2f}",
                     )
             else:
@@ -457,7 +487,9 @@ with tab_sat:
                 no_deducible = ded_prima - deducible
 
                 st.markdown("---")
-                st.markdown(f"**Límite por UMAs:** {limite_umas} UMAs anuales = ${limite_deduccion:,.2f}")
+                st.markdown(
+                    f"**Límite por UMAs:** {limite_umas} UMAs anuales = ${limite_deduccion:,.2f}"
+                )
                 st.markdown(f"**Límite 15% ingresos:** ${limite_15_pct:,.2f}")
                 st.markdown(f"**Tope aplicable:** ${tope:,.2f}")
                 st.markdown("---")
@@ -467,14 +499,18 @@ with tab_sat:
                 m2.metric("Monto NO deducible", f"${no_deducible:,.2f}")
 
                 # Grafico
-                fig_ded = go.Figure(data=[go.Pie(
-                    labels=["Deducible", "No deducible"],
-                    values=[deducible, max(no_deducible, 0)],
-                    hole=0.4,
-                    marker_colors=["#2ca02c", "#d62728"],
-                    textinfo="label+value",
-                    texttemplate="%{label}: $%{value:,.0f}",
-                )])
+                fig_ded = go.Figure(
+                    data=[
+                        go.Pie(
+                            labels=["Deducible", "No deducible"],
+                            values=[deducible, max(no_deducible, 0)],
+                            hole=0.4,
+                            marker_colors=["#2ca02c", "#d62728"],
+                            textinfo="label+value",
+                            texttemplate="%{label}: $%{value:,.0f}",
+                        )
+                    ]
+                )
                 fig_ded.update_layout(height=350, showlegend=False)
                 st.plotly_chart(fig_ded, use_container_width=True)
             else:
@@ -507,7 +543,7 @@ with tab_sat:
                 neto = monto_pago - retencion
 
                 st.markdown("---")
-                st.markdown(f"**Tasa de retención:** {tasa*100:.0f}%")
+                st.markdown(f"**Tasa de retención:** {tasa * 100:.0f}%")
 
                 m1, m2, m3 = st.columns(3)
                 m1.metric("Monto bruto", f"${monto_pago:,.2f}")
@@ -515,13 +551,17 @@ with tab_sat:
                 m3.metric("Pago neto", f"${neto:,.2f}")
 
                 # Grafico
-                fig_isr = go.Figure(data=[go.Bar(
-                    x=["Bruto", "Retención ISR", "Neto"],
-                    y=[monto_pago, retencion, neto],
-                    marker_color=["#1f77b4", "#d62728", "#2ca02c"],
-                    text=[f"${monto_pago:,.0f}", f"${retencion:,.0f}", f"${neto:,.0f}"],
-                    textposition="outside",
-                )])
+                fig_isr = go.Figure(
+                    data=[
+                        go.Bar(
+                            x=["Bruto", "Retención ISR", "Neto"],
+                            y=[monto_pago, retencion, neto],
+                            marker_color=["#1f77b4", "#d62728", "#2ca02c"],
+                            text=[f"${monto_pago:,.0f}", f"${retencion:,.0f}", f"${neto:,.0f}"],
+                            textposition="outside",
+                        )
+                    ]
+                )
                 fig_isr.update_layout(
                     yaxis_title="Monto (MXN)",
                     height=400,

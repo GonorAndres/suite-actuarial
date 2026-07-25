@@ -14,20 +14,18 @@ sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
 from decimal import Decimal
 
-import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from plotly.subplots import make_subplots
+from utils.theme import apply_studio_theme, render_workbench_intro
 
-from suite_actuarial.reservas import ChainLadder, BornhuetterFerguson, Bootstrap
 from suite_actuarial.core.validators import (
-    ConfiguracionChainLadder,
-    ConfiguracionBornhuetterFerguson,
     ConfiguracionBootstrap,
+    ConfiguracionBornhuetterFerguson,
+    ConfiguracionChainLadder,
     MetodoPromedio,
 )
-from utils.theme import apply_studio_theme, render_workbench_intro
+from suite_actuarial.reservas import Bootstrap, BornhuetterFerguson, ChainLadder
 
 # ---------------------------------------------------------------------------
 # Configuracion de pagina
@@ -131,16 +129,17 @@ with tab_cl:
             m3.metric("Pagado Total", f"${float(resultado.pagado_total):,.0f}")
 
             # -- Factores de desarrollo --
-            st.subheader("Factores de desarrollo")
-            factores_df = pd.DataFrame(
-                {
-                    "Periodo": [
-                        f"{i}-{i + 1}" for i in range(1, len(resultado.factores_desarrollo) + 1)
-                    ],
-                    "Factor": [float(f) for f in resultado.factores_desarrollo],
-                }
-            )
-            st.dataframe(factores_df, use_container_width=True, hide_index=True)
+            if resultado.factores_desarrollo:
+                st.subheader("Factores de desarrollo")
+                factores_df = pd.DataFrame(
+                    {
+                        "Periodo": [
+                            f"{i}-{i + 1}" for i in range(1, len(resultado.factores_desarrollo) + 1)
+                        ],
+                        "Factor": [float(f) for f in resultado.factores_desarrollo],
+                    }
+                )
+                st.dataframe(factores_df, use_container_width=True, hide_index=True)
 
             # -- Diagnóstico del ajuste de cola --
             # Sin r2 y horizonte, la cifra de cola no es auditable: el lector no
@@ -200,7 +199,13 @@ with tab_cl:
                 xaxis_title="Año de origen",
                 yaxis_title="Monto (MXN)",
                 height=450,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                legend={
+                    "orientation": "h",
+                    "yanchor": "bottom",
+                    "y": 1.02,
+                    "xanchor": "right",
+                    "x": 1,
+                },
             )
             st.plotly_chart(fig, use_container_width=True)
 
@@ -339,7 +344,13 @@ with tab_bf:
                 xaxis_title="Año de origen",
                 yaxis_title="Reserva IBNR (MXN)",
                 height=450,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                legend={
+                    "orientation": "h",
+                    "yanchor": "bottom",
+                    "y": 1.02,
+                    "xanchor": "right",
+                    "x": 1,
+                },
             )
             st.plotly_chart(fig2, use_container_width=True)
 
@@ -434,6 +445,13 @@ with tab_bs:
                 bs = Bootstrap(config_bs)
                 resultado_bs = bs.calcular(tri_bs)
 
+                # El modelo declara `percentiles` opcional porque otros metodos
+                # no los producen; el bootstrap siempre los trae. Se fija aqui
+                # para que la ausencia falle a la vista y no al indexar.
+                percentiles = resultado_bs.percentiles
+                if not percentiles:
+                    raise ValueError("El bootstrap no devolvio percentiles.")
+
                 # Metricas principales
                 m1, m2, m3 = st.columns(3)
                 m1.metric(
@@ -443,16 +461,15 @@ with tab_bs:
                     delta_color="off",
                 )
                 m2.metric("Mediana", f"${float(resultado_bs.detalles['mediana']):,.0f}")
-                m3.metric("Banda P99", f"${float(resultado_bs.percentiles[99]):,.0f}")
+                m3.metric("Banda P99", f"${float(percentiles[99]):,.0f}")
 
                 # Tabla de percentiles
                 st.subheader("Percentiles de la distribución")
                 perc_df = pd.DataFrame(
                     {
-                        "Percentil": [f"P{p}" for p in sorted(resultado_bs.percentiles.keys())],
+                        "Percentil": [f"P{p}" for p in sorted(percentiles.keys())],
                         "Reserva": [
-                            f"${float(resultado_bs.percentiles[p]):,.0f}"
-                            for p in sorted(resultado_bs.percentiles.keys())
+                            f"${float(percentiles[p]):,.0f}" for p in sorted(percentiles.keys())
                         ],
                     }
                 )
@@ -512,7 +529,7 @@ with tab_bs:
                         (95, "#ff7f0e", "dash"),
                         (99, "#d62728", "dot"),
                     ]:
-                        val = float(resultado_bs.percentiles[p])
+                        val = float(percentiles[p])
                         fig3.add_vline(
                             x=val,
                             line_dash=dash,

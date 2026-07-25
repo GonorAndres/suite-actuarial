@@ -26,6 +26,7 @@ from utils.calculations import (
     proyeccion_reservas,
 )
 from utils.theme import apply_studio_theme, render_workbench_intro
+
 from suite_actuarial import Asegurado, ConfiguracionProducto, TablaMortalidad
 from suite_actuarial.core.models.common import Sexo
 from suite_actuarial.vida import VidaDotal
@@ -45,7 +46,7 @@ render_workbench_intro(
 # Carga de tabla de mortalidad (cacheada)
 # -----------------------------------------------------------------------
 @st.cache_data(show_spinner="Cargando tabla EMSSA-09...")
-def cargar_tabla():
+def cargar_tabla() -> TablaMortalidad:
     return TablaMortalidad.cargar_emssa09()
 
 
@@ -158,15 +159,15 @@ with tab_calc:
     col_t, col_o, col_d = st.columns(3)
 
     @st.cache_data(show_spinner=False)
-    def _prima_temporal(e, s, sa, p, t, _tabla_nombre):
+    def _prima_temporal(e: int, s: str, sa: float, p: int, t: float, _tabla_nombre: str) -> dict:
         return calcular_prima_temporal(e, s, sa, p, t, tabla)
 
     @st.cache_data(show_spinner=False)
-    def _prima_ordinario(e, s, sa, t, _tabla_nombre):
+    def _prima_ordinario(e: int, s: str, sa: float, t: float, _tabla_nombre: str) -> dict:
         return calcular_prima_ordinario(e, s, sa, None, t, tabla)
 
     @st.cache_data(show_spinner=False)
-    def _prima_dotal(e, s, sa, p, t, _tabla_nombre):
+    def _prima_dotal(e: int, s: str, sa: float, p: int, t: float, _tabla_nombre: str) -> dict:
         return calcular_prima_dotal(e, s, sa, p, t, tabla)
 
     res_temporal = _prima_temporal(edad, sexo, suma_asegurada, plazo, tasa_decimal, tabla.nombre)
@@ -247,7 +248,7 @@ with tab_comp:
     st.subheader("Comparación entre productos")
 
     @st.cache_data(show_spinner=False)
-    def _tabla_comparacion(e, s, sa, p, t, _tn):
+    def _tabla_comparacion(e: int, s: str, sa: float, p: int, t: float, _tn: str) -> pd.DataFrame:
         return generar_tabla_comparacion(e, s, sa, p, t, tabla)
 
     df_comp = _tabla_comparacion(edad, sexo, suma_asegurada, plazo, tasa_decimal, tabla.nombre)
@@ -329,7 +330,7 @@ with tab_reservas:
     )
 
     @st.cache_data(show_spinner="Calculando reservas...")
-    def _reservas(prod, e, s, sa, p, t, _tn):
+    def _reservas(prod: str, e: int, s: str, sa: float, p: int, t: float, _tn: str) -> pd.DataFrame:
         return proyeccion_reservas(prod, e, s, sa, p, t, tabla)
 
     df_res = _reservas(
@@ -343,7 +344,7 @@ with tab_reservas:
             y=df_res["Reserva Matemática"],
             mode="lines+markers",
             name="Reserva (MXN)",
-            line=dict(color="#1976D2", width=2),
+            line={"color": "#1976D2", "width": 2},
         )
     )
     fig_res.update_layout(

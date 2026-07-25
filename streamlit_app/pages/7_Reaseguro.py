@@ -18,17 +18,16 @@ from decimal import Decimal
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from plotly.subplots import make_subplots
+from utils.theme import apply_studio_theme, render_workbench_intro
 
-from suite_actuarial.reaseguro import QuotaShare, ExcessOfLoss, StopLoss
 from suite_actuarial.core.validators import (
-    QuotaShareConfig,
     ExcessOfLossConfig,
-    StopLossConfig,
+    QuotaShareConfig,
     Siniestro,
+    StopLossConfig,
     TipoContrato,
 )
-from utils.theme import apply_studio_theme, render_workbench_intro
+from suite_actuarial.reaseguro import ExcessOfLoss, QuotaShare, StopLoss
 
 # ---------------------------------------------------------------------------
 # Configuracion de pagina
@@ -47,12 +46,30 @@ render_workbench_intro(
 # Siniestros de ejemplo
 # ---------------------------------------------------------------------------
 SAMPLE_CLAIMS = [
-    Siniestro(id_siniestro=f"SIN-{i+1:03d}", fecha_ocurrencia=date(2025, 6, 15), monto_bruto=Decimal(str(m)))
-    for i, m in enumerate([
-        50000, 120000, 80000, 350000, 25000,
-        500000, 15000, 200000, 750000, 45000,
-        180000, 90000, 420000, 60000, 300000,
-    ])
+    Siniestro(
+        id_siniestro=f"SIN-{i + 1:03d}",
+        fecha_ocurrencia=date(2025, 6, 15),
+        monto_bruto=Decimal(str(m)),
+    )
+    for i, m in enumerate(
+        [
+            50000,
+            120000,
+            80000,
+            350000,
+            25000,
+            500000,
+            15000,
+            200000,
+            750000,
+            45000,
+            180000,
+            90000,
+            420000,
+            60000,
+            300000,
+        ]
+    )
 ]
 
 SAMPLE_PRIMA_BRUTA = Decimal("2500000")
@@ -60,11 +77,13 @@ SAMPLE_PRIMA_BRUTA = Decimal("2500000")
 
 def crear_tabla_siniestros(siniestros: list[Siniestro]) -> pd.DataFrame:
     """Crea DataFrame de siniestros para visualizacion."""
-    return pd.DataFrame({
-        "ID": [s.id_siniestro for s in siniestros],
-        "Monto": [f"${float(s.monto_bruto):,.0f}" for s in siniestros],
-        "Monto_num": [float(s.monto_bruto) for s in siniestros],
-    })
+    return pd.DataFrame(
+        {
+            "ID": [s.id_siniestro for s in siniestros],
+            "Monto": [f"${float(s.monto_bruto):,.0f}" for s in siniestros],
+            "Monto_num": [float(s.monto_bruto) for s in siniestros],
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -124,22 +143,35 @@ with tab_qs:
 
                 m3, m4 = st.columns(2)
                 m3.metric("Comisión recibida", f"${float(resultado.comision_recibida):,.0f}")
-                m4.metric("Recuperación siniestros", f"${float(resultado.recuperacion_reaseguro):,.0f}")
+                m4.metric(
+                    "Recuperación siniestros", f"${float(resultado.recuperacion_reaseguro):,.0f}"
+                )
 
-                st.metric("Resultado neto cedente", f"${float(resultado.resultado_neto_cedente):,.0f}")
+                st.metric(
+                    "Resultado neto cedente", f"${float(resultado.resultado_neto_cedente):,.0f}"
+                )
 
                 # Graficos
                 col_g1, col_g2 = st.columns(2)
 
                 with col_g1:
-                    fig_prima = go.Figure(data=[go.Pie(
-                        labels=["Retenida", "Cedida"],
-                        values=[float(resultado.monto_retenido), float(resultado.monto_cedido)],
-                        hole=0.4,
-                        marker_colors=["#1f77b4", "#ff7f0e"],
-                        textinfo="label+percent",
-                    )])
-                    fig_prima.update_layout(title="Distribución de primas", height=350, showlegend=False)
+                    fig_prima = go.Figure(
+                        data=[
+                            go.Pie(
+                                labels=["Retenida", "Cedida"],
+                                values=[
+                                    float(resultado.monto_retenido),
+                                    float(resultado.monto_cedido),
+                                ],
+                                hole=0.4,
+                                marker_colors=["#1f77b4", "#ff7f0e"],
+                                textinfo="label+percent",
+                            )
+                        ]
+                    )
+                    fig_prima.update_layout(
+                        title="Distribución de primas", height=350, showlegend=False
+                    )
                     st.plotly_chart(fig_prima, use_container_width=True)
 
                 with col_g2:
@@ -153,29 +185,39 @@ with tab_qs:
                         m = float(s.monto_bruto)
                         ced = m * qs_cesion / 100
                         ret = m - ced
-                        fig_sin.add_trace(go.Bar(
-                            name=s.id_siniestro,
-                            x=[s.id_siniestro],
-                            y=[ret],
-                            marker_color="#1f77b4",
-                            showlegend=False,
-                        ))
-                        fig_sin.add_trace(go.Bar(
-                            name=s.id_siniestro + " ced",
-                            x=[s.id_siniestro],
-                            y=[ced],
-                            marker_color="#ff7f0e",
-                            showlegend=False,
-                        ))
+                        fig_sin.add_trace(
+                            go.Bar(
+                                name=s.id_siniestro,
+                                x=[s.id_siniestro],
+                                y=[ret],
+                                marker_color="#1f77b4",
+                                showlegend=False,
+                            )
+                        )
+                        fig_sin.add_trace(
+                            go.Bar(
+                                name=s.id_siniestro + " ced",
+                                x=[s.id_siniestro],
+                                y=[ced],
+                                marker_color="#ff7f0e",
+                                showlegend=False,
+                            )
+                        )
                     # Simpler visualization
-                    fig_sin2 = go.Figure(data=[go.Pie(
-                        labels=["Siniestros retenidos", "Siniestros cedidos"],
-                        values=[sin_retenido, sin_cedido],
-                        hole=0.4,
-                        marker_colors=["#1f77b4", "#ff7f0e"],
-                        textinfo="label+percent",
-                    )])
-                    fig_sin2.update_layout(title="Distribución de siniestros", height=350, showlegend=False)
+                    fig_sin2 = go.Figure(
+                        data=[
+                            go.Pie(
+                                labels=["Siniestros retenidos", "Siniestros cedidos"],
+                                values=[sin_retenido, sin_cedido],
+                                hole=0.4,
+                                marker_colors=["#1f77b4", "#ff7f0e"],
+                                textinfo="label+percent",
+                            )
+                        ]
+                    )
+                    fig_sin2.update_layout(
+                        title="Distribución de siniestros", height=350, showlegend=False
+                    )
                     st.plotly_chart(fig_sin2, use_container_width=True)
 
             except Exception as e:
@@ -242,7 +284,9 @@ with tab_xl:
 
         st.markdown("##### Siniestros de ejemplo")
         df_sin2 = crear_tabla_siniestros(SAMPLE_CLAIMS)
-        st.dataframe(df_sin2[["ID", "Monto"]], use_container_width=True, hide_index=True, height=200)
+        st.dataframe(
+            df_sin2[["ID", "Monto"]], use_container_width=True, hide_index=True, height=200
+        )
 
     with col_res2:
         if st.button("Aplicar Excess of Loss", key="btn_xl"):
@@ -269,8 +313,12 @@ with tab_xl:
                     # Metricas
                     m1, m2, m3 = st.columns(3)
                     m1.metric("Prima de reaseguro", f"${float(prima_xl):,.0f}")
-                    m2.metric("Recuperación total", f"${float(resultado_xl.recuperacion_reaseguro):,.0f}")
-                    m3.metric("Resultado neto", f"${float(resultado_xl.resultado_neto_cedente):,.0f}")
+                    m2.metric(
+                        "Recuperación total", f"${float(resultado_xl.recuperacion_reaseguro):,.0f}"
+                    )
+                    m3.metric(
+                        "Resultado neto", f"${float(resultado_xl.resultado_neto_cedente):,.0f}"
+                    )
 
                     # Detalle por siniestro
                     st.subheader("Detalle por siniestro")
@@ -284,14 +332,16 @@ with tab_xl:
                             exceso = monto - xl_retencion
                             recuperado = min(exceso, xl_limite)
                             retenido = monto - recuperado
-                        detalle_data.append({
-                            "ID": s.id_siniestro,
-                            "Monto bruto": f"${monto:,.0f}",
-                            "Retenido": f"${retenido:,.0f}",
-                            "Recuperado": f"${recuperado:,.0f}",
-                            "Retenido_num": retenido,
-                            "Recuperado_num": recuperado,
-                        })
+                        detalle_data.append(
+                            {
+                                "ID": s.id_siniestro,
+                                "Monto bruto": f"${monto:,.0f}",
+                                "Retenido": f"${retenido:,.0f}",
+                                "Recuperado": f"${recuperado:,.0f}",
+                                "Retenido_num": retenido,
+                                "Recuperado_num": recuperado,
+                            }
+                        )
                     df_det = pd.DataFrame(detalle_data)
                     st.dataframe(
                         df_det[["ID", "Monto bruto", "Retenido", "Recuperado"]],
@@ -301,18 +351,22 @@ with tab_xl:
 
                     # Grafico de barras apiladas
                     fig_xl = go.Figure()
-                    fig_xl.add_trace(go.Bar(
-                        name="Retenido",
-                        x=df_det["ID"],
-                        y=df_det["Retenido_num"],
-                        marker_color="#1f77b4",
-                    ))
-                    fig_xl.add_trace(go.Bar(
-                        name="Recuperado",
-                        x=df_det["ID"],
-                        y=df_det["Recuperado_num"],
-                        marker_color="#2ca02c",
-                    ))
+                    fig_xl.add_trace(
+                        go.Bar(
+                            name="Retenido",
+                            x=df_det["ID"],
+                            y=df_det["Retenido_num"],
+                            marker_color="#1f77b4",
+                        )
+                    )
+                    fig_xl.add_trace(
+                        go.Bar(
+                            name="Recuperado",
+                            x=df_det["ID"],
+                            y=df_det["Recuperado_num"],
+                            marker_color="#2ca02c",
+                        )
+                    )
                     fig_xl.add_hline(
                         y=xl_retencion,
                         line_dash="dash",
@@ -324,7 +378,13 @@ with tab_xl:
                         xaxis_title="Siniestro",
                         yaxis_title="Monto (MXN)",
                         height=450,
-                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                        legend={
+                            "orientation": "h",
+                            "yanchor": "bottom",
+                            "y": 1.02,
+                            "xanchor": "right",
+                            "x": 1,
+                        },
                     )
                     st.plotly_chart(fig_xl, use_container_width=True)
 
@@ -413,13 +473,20 @@ with tab_sl:
 
                 # Metricas
                 m1, m2 = st.columns(2)
-                m1.metric("Siniestralidad bruta", resultado_sl.detalles.get("siniestralidad_bruta", "N/A"))
-                m2.metric("Siniestralidad neta", resultado_sl.detalles.get("siniestralidad_neta", "N/A"))
+                m1.metric(
+                    "Siniestralidad bruta", resultado_sl.detalles.get("siniestralidad_bruta", "N/A")
+                )
+                m2.metric(
+                    "Siniestralidad neta", resultado_sl.detalles.get("siniestralidad_neta", "N/A")
+                )
 
                 m3, m4, m5 = st.columns(3)
                 m3.metric("Recuperación", f"${float(resultado_sl.recuperacion_reaseguro):,.0f}")
                 m4.metric("Prima reaseguro", f"${float(resultado_sl.prima_reaseguro_pagada):,.0f}")
-                m5.metric("Contrato activado", "SI" if resultado_sl.detalles.get("contrato_activado") else "NO")
+                m5.metric(
+                    "Contrato activado",
+                    "SI" if resultado_sl.detalles.get("contrato_activado") else "NO",
+                )
 
                 # Grafico de siniestralidad
                 st.subheader("Visualización del contrato")
@@ -429,28 +496,36 @@ with tab_sl:
                 fig_sl = go.Figure()
 
                 # Barra de siniestralidad
-                fig_sl.add_trace(go.Bar(
-                    x=["Cartera"],
-                    y=[min(total_siniestros, attachment_monto)],
-                    name="Retenido (bajo attachment)",
-                    marker_color="#1f77b4",
-                ))
-                if total_siniestros > attachment_monto:
-                    recuperable = min(total_siniestros - attachment_monto, techo_monto - attachment_monto)
-                    fig_sl.add_trace(go.Bar(
+                fig_sl.add_trace(
+                    go.Bar(
                         x=["Cartera"],
-                        y=[recuperable],
-                        name="Cubierto por Stop Loss",
-                        marker_color="#2ca02c",
-                    ))
+                        y=[min(total_siniestros, attachment_monto)],
+                        name="Retenido (bajo attachment)",
+                        marker_color="#1f77b4",
+                    )
+                )
+                if total_siniestros > attachment_monto:
+                    recuperable = min(
+                        total_siniestros - attachment_monto, techo_monto - attachment_monto
+                    )
+                    fig_sl.add_trace(
+                        go.Bar(
+                            x=["Cartera"],
+                            y=[recuperable],
+                            name="Cubierto por Stop Loss",
+                            marker_color="#2ca02c",
+                        )
+                    )
                     exceso_sobre_techo = max(0, total_siniestros - techo_monto)
                     if exceso_sobre_techo > 0:
-                        fig_sl.add_trace(go.Bar(
-                            x=["Cartera"],
-                            y=[exceso_sobre_techo],
-                            name="Sobre el límite (retenido)",
-                            marker_color="#d62728",
-                        ))
+                        fig_sl.add_trace(
+                            go.Bar(
+                                x=["Cartera"],
+                                y=[exceso_sobre_techo],
+                                name="Sobre el límite (retenido)",
+                                marker_color="#d62728",
+                            )
+                        )
 
                 fig_sl.add_hline(
                     y=attachment_monto,
@@ -468,7 +543,13 @@ with tab_sl:
                     barmode="stack",
                     yaxis_title="Monto (MXN)",
                     height=450,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                    legend={
+                        "orientation": "h",
+                        "yanchor": "bottom",
+                        "y": 1.02,
+                        "xanchor": "right",
+                        "x": 1,
+                    },
                 )
                 st.plotly_chart(fig_sl, use_container_width=True)
 
@@ -526,13 +607,19 @@ with tab_comp:
         comp_cesion = st.slider("QS: Cesión (%)", 5, 90, 30, step=5, key="comp_qs")
         comp_comision = st.slider("QS: Comisión (%)", 0, 45, 25, step=1, key="comp_qs_com")
     with c2:
-        comp_ret = st.number_input("XL: Retención ($)", min_value=10000, value=200000, step=25000, key="comp_ret")
-        comp_lim = st.number_input("XL: Límite ($)", min_value=50000, value=500000, step=50000, key="comp_lim")
+        comp_ret = st.number_input(
+            "XL: Retención ($)", min_value=10000, value=200000, step=25000, key="comp_ret"
+        )
+        comp_lim = st.number_input(
+            "XL: Límite ($)", min_value=50000, value=500000, step=50000, key="comp_lim"
+        )
         comp_tasa = st.slider("XL: Tasa prima (%)", 1.0, 20.0, 5.0, step=0.5, key="comp_tasa")
     with c3:
         comp_att = st.slider("SL: Attachment (%)", 50, 150, 80, step=5, key="comp_att")
         comp_sl_lim = st.slider("SL: Límite (%)", 5, 50, 20, step=5, key="comp_sl_lim")
-        comp_sl_prima = st.number_input("SL: Primas sujetas ($)", min_value=100000, value=2500000, step=100000, key="comp_sl_p")
+        comp_sl_prima = st.number_input(
+            "SL: Primas sujetas ($)", min_value=100000, value=2500000, step=100000, key="comp_sl_p"
+        )
 
     if st.button("Comparar las 3 estrategias", key="btn_comp"):
         try:
@@ -584,21 +671,31 @@ with tab_comp:
 
             comp_data = []
             for nombre, res in results.items():
-                comp_data.append({
-                    "Estrategia": nombre,
-                    "Recuperación": f"${float(res.recuperacion_reaseguro):,.0f}",
-                    "Siniestros retenidos": f"${total_sin - float(res.recuperacion_reaseguro):,.0f}",
-                    "Prima/Costo reaseguro": f"${float(res.prima_reaseguro_pagada):,.0f}",
-                    "Resultado neto": f"${float(res.resultado_neto_cedente):,.0f}",
-                    "Recuperacion_num": float(res.recuperacion_reaseguro),
-                    "Retenido_num": total_sin - float(res.recuperacion_reaseguro),
-                    "Costo_num": float(res.prima_reaseguro_pagada),
-                    "Neto_num": float(res.resultado_neto_cedente),
-                })
+                comp_data.append(
+                    {
+                        "Estrategia": nombre,
+                        "Recuperación": f"${float(res.recuperacion_reaseguro):,.0f}",
+                        "Siniestros retenidos": f"${total_sin - float(res.recuperacion_reaseguro):,.0f}",
+                        "Prima/Costo reaseguro": f"${float(res.prima_reaseguro_pagada):,.0f}",
+                        "Resultado neto": f"${float(res.resultado_neto_cedente):,.0f}",
+                        "Recuperacion_num": float(res.recuperacion_reaseguro),
+                        "Retenido_num": total_sin - float(res.recuperacion_reaseguro),
+                        "Costo_num": float(res.prima_reaseguro_pagada),
+                        "Neto_num": float(res.resultado_neto_cedente),
+                    }
+                )
 
             df_comp = pd.DataFrame(comp_data)
             st.dataframe(
-                df_comp[["Estrategia", "Recuperación", "Siniestros retenidos", "Prima/Costo reaseguro", "Resultado neto"]],
+                df_comp[
+                    [
+                        "Estrategia",
+                        "Recuperación",
+                        "Siniestros retenidos",
+                        "Prima/Costo reaseguro",
+                        "Resultado neto",
+                    ]
+                ],
                 use_container_width=True,
                 hide_index=True,
             )
@@ -608,55 +705,75 @@ with tab_comp:
 
             with col_g1:
                 fig_comp1 = go.Figure()
-                fig_comp1.add_trace(go.Bar(
-                    name="Retenido",
-                    x=df_comp["Estrategia"],
-                    y=df_comp["Retenido_num"],
-                    marker_color="#1f77b4",
-                    text=df_comp["Retenido_num"].apply(lambda x: f"${x:,.0f}"),
-                    textposition="outside",
-                ))
-                fig_comp1.add_trace(go.Bar(
-                    name="Recuperado",
-                    x=df_comp["Estrategia"],
-                    y=df_comp["Recuperacion_num"],
-                    marker_color="#2ca02c",
-                    text=df_comp["Recuperacion_num"].apply(lambda x: f"${x:,.0f}"),
-                    textposition="outside",
-                ))
+                fig_comp1.add_trace(
+                    go.Bar(
+                        name="Retenido",
+                        x=df_comp["Estrategia"],
+                        y=df_comp["Retenido_num"],
+                        marker_color="#1f77b4",
+                        text=df_comp["Retenido_num"].apply(lambda x: f"${x:,.0f}"),
+                        textposition="outside",
+                    )
+                )
+                fig_comp1.add_trace(
+                    go.Bar(
+                        name="Recuperado",
+                        x=df_comp["Estrategia"],
+                        y=df_comp["Recuperacion_num"],
+                        marker_color="#2ca02c",
+                        text=df_comp["Recuperacion_num"].apply(lambda x: f"${x:,.0f}"),
+                        textposition="outside",
+                    )
+                )
                 fig_comp1.update_layout(
                     title="Retención vs Recuperación",
                     barmode="group",
                     yaxis_title="Monto (MXN)",
                     height=400,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                    legend={
+                        "orientation": "h",
+                        "yanchor": "bottom",
+                        "y": 1.02,
+                        "xanchor": "right",
+                        "x": 1,
+                    },
                 )
                 st.plotly_chart(fig_comp1, use_container_width=True)
 
             with col_g2:
                 fig_comp2 = go.Figure()
-                fig_comp2.add_trace(go.Bar(
-                    name="Costo reaseguro",
-                    x=df_comp["Estrategia"],
-                    y=df_comp["Costo_num"],
-                    marker_color="#ff7f0e",
-                    text=df_comp["Costo_num"].apply(lambda x: f"${x:,.0f}"),
-                    textposition="outside",
-                ))
-                fig_comp2.add_trace(go.Bar(
-                    name="Resultado neto",
-                    x=df_comp["Estrategia"],
-                    y=df_comp["Neto_num"],
-                    marker_color="#9467bd",
-                    text=df_comp["Neto_num"].apply(lambda x: f"${x:,.0f}"),
-                    textposition="outside",
-                ))
+                fig_comp2.add_trace(
+                    go.Bar(
+                        name="Costo reaseguro",
+                        x=df_comp["Estrategia"],
+                        y=df_comp["Costo_num"],
+                        marker_color="#ff7f0e",
+                        text=df_comp["Costo_num"].apply(lambda x: f"${x:,.0f}"),
+                        textposition="outside",
+                    )
+                )
+                fig_comp2.add_trace(
+                    go.Bar(
+                        name="Resultado neto",
+                        x=df_comp["Estrategia"],
+                        y=df_comp["Neto_num"],
+                        marker_color="#9467bd",
+                        text=df_comp["Neto_num"].apply(lambda x: f"${x:,.0f}"),
+                        textposition="outside",
+                    )
+                )
                 fig_comp2.update_layout(
                     title="Costo vs Resultado neto",
                     barmode="group",
                     yaxis_title="Monto (MXN)",
                     height=400,
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                    legend={
+                        "orientation": "h",
+                        "yanchor": "bottom",
+                        "y": 1.02,
+                        "xanchor": "right",
+                        "x": 1,
+                    },
                 )
                 st.plotly_chart(fig_comp2, use_container_width=True)
 

@@ -10,13 +10,14 @@ from decimal import Decimal
 from pathlib import Path
 
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
 sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
+
+from utils.theme import apply_studio_theme, render_workbench_intro
 
 from suite_actuarial import TablaMortalidad
 from suite_actuarial.pensiones import (
@@ -27,10 +28,7 @@ from suite_actuarial.pensiones import (
 )
 from suite_actuarial.pensiones.tablas_imss import (
     LEY73_FACTORES_EDAD,
-    LEY73_PORCENTAJES,
-    SEMANAS_MINIMAS_LEY73,
 )
-from utils.theme import apply_studio_theme, render_workbench_intro
 
 st.set_page_config(page_title="Pensiones -- suite_actuarial", layout="wide")
 
@@ -44,7 +42,7 @@ render_workbench_intro(
 
 
 @st.cache_data(show_spinner="Cargando tabla EMSSA-09...")
-def cargar_tabla():
+def cargar_tabla() -> TablaMortalidad:
     return TablaMortalidad.cargar_emssa09()
 
 
@@ -91,13 +89,11 @@ with tab_imss:
                 step=50.0,
             )
         with cl2:
-            edad_retiro = st.slider(
-                "Edad de retiro", 60, 65, 65, key="ley73_edad"
-            )
+            edad_retiro = st.slider("Edad de retiro", 60, 65, 65, key="ley73_edad")
             st.markdown("**Factores por edad de retiro (Art. 171):**")
             for e, f in LEY73_FACTORES_EDAD.items():
                 marca = " <--" if e == edad_retiro else ""
-                st.text(f"  {e} años: {float(f)*100:.0f}%{marca}")
+                st.text(f"  {e} años: {float(f) * 100:.0f}%{marca}")
 
         pension73 = PensionLey73(
             semanas_cotizadas=semanas,
@@ -125,8 +121,8 @@ with tab_imss:
             "Valor": [
                 str(resumen["semanas_cotizadas"]),
                 f"${float(resumen['salario_promedio_diario']):,.2f}",
-                f"{float(resumen['porcentaje_pension'])*100:.2f}%",
-                f"{float(resumen['factor_edad'])*100:.0f}%",
+                f"{float(resumen['porcentaje_pension']) * 100:.2f}%",
+                f"{float(resumen['factor_edad']) * 100:.0f}%",
                 f"${float(resumen['pension_mensual']):,.2f}",
                 f"${float(resumen['aguinaldo_anual']):,.2f}",
                 f"${float(resumen['pension_anual_total']):,.2f}",
@@ -210,7 +206,15 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
 
         # Project AFORE balance
         @st.cache_data(show_spinner="Proyectando saldo AFORE...")
-        def _proyectar(saldo, sal, rend, anos, _ed, _sem, _tn):
+        def _proyectar(
+            saldo: float,
+            sal: float,
+            rend: float,
+            anos: int,
+            _ed: int,
+            _sem: int,
+            _tn: str,
+        ) -> list[dict]:
             p = PensionLey97(
                 saldo_afore=Decimal(str(saldo)),
                 edad=_ed - anos,
@@ -225,8 +229,13 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
             )
 
         proyeccion = _proyectar(
-            saldo_afore, salario_actual, rendimiento,
-            anos_restantes, edad_retiro_97, semanas_97, tabla_mortalidad.nombre,
+            saldo_afore,
+            salario_actual,
+            rendimiento,
+            anos_restantes,
+            edad_retiro_97,
+            semanas_97,
+            tabla_mortalidad.nombre,
         )
         df_proy = pd.DataFrame(proyeccion)
         df_proy["saldo_afore"] = df_proy["saldo_afore"].apply(float)
@@ -267,7 +276,7 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
                 y=df_proy["saldo_afore"],
                 mode="lines+markers",
                 name="Saldo AFORE",
-                line=dict(color="#1976D2", width=2),
+                line={"color": "#1976D2", "width": 2},
                 fill="tozeroy",
                 fillcolor="rgba(25, 118, 210, 0.1)",
             )
@@ -281,25 +290,29 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
         st.plotly_chart(fig_proy, use_container_width=True)
 
         # Comparison table
-        comp_df = pd.DataFrame([
-            {
-                "Modalidad": "Renta vitalicia",
-                "Pensión mensual": float(comparacion["renta_vitalicia"]["pension_mensual"]),
-                "Pensión anual": float(comparacion["renta_vitalicia"]["pension_anual"]),
-                "Característica": comparacion["renta_vitalicia"]["tipo"],
-            },
-            {
-                "Modalidad": "Retiro programado",
-                "Pensión mensual": float(comparacion["retiro_programado"]["pension_mensual"]),
-                "Pensión anual": float(comparacion["retiro_programado"]["pension_anual"]),
-                "Característica": comparacion["retiro_programado"]["tipo"],
-            },
-        ])
+        comp_df = pd.DataFrame(
+            [
+                {
+                    "Modalidad": "Renta vitalicia",
+                    "Pensión mensual": float(comparacion["renta_vitalicia"]["pension_mensual"]),
+                    "Pensión anual": float(comparacion["renta_vitalicia"]["pension_anual"]),
+                    "Característica": comparacion["renta_vitalicia"]["tipo"],
+                },
+                {
+                    "Modalidad": "Retiro programado",
+                    "Pensión mensual": float(comparacion["retiro_programado"]["pension_mensual"]),
+                    "Pensión anual": float(comparacion["retiro_programado"]["pension_anual"]),
+                    "Característica": comparacion["retiro_programado"]["tipo"],
+                },
+            ]
+        )
         st.dataframe(
-            comp_df.style.format({
-                "Pensión mensual": "${:,.2f}",
-                "Pensión anual": "${:,.2f}",
-            }),
+            comp_df.style.format(
+                {
+                    "Pensión mensual": "${:,.2f}",
+                    "Pensión anual": "${:,.2f}",
+                }
+            ),
             use_container_width=True,
             hide_index=True,
         )
@@ -392,16 +405,19 @@ with tab_rv:
 
     # Payment projection
     @st.cache_data(show_spinner="Generando tabla de pagos...")
-    def _tabla_pagos(e, s, m, t, _tn):
+    def _tabla_pagos(e: int, s: str, m: float, t: float, _tn: str) -> list[dict]:
         _rv = RentaVitalicia(
-            edad=e, sexo=s,
+            edad=e,
+            sexo=s,
             monto_mensual=Decimal(str(m)),
             tabla_mortalidad=tabla_mortalidad,
             tasa_interes=Decimal(str(t)),
         )
         return _rv.tabla_pagos(anos=35)
 
-    pagos = _tabla_pagos(edad_rv, sexo_rv_code, monto_mensual_rv, tasa_rv / 100, tabla_mortalidad.nombre)
+    pagos = _tabla_pagos(
+        edad_rv, sexo_rv_code, monto_mensual_rv, tasa_rv / 100, tabla_mortalidad.nombre
+    )
     df_pagos = pd.DataFrame(pagos)
     df_pagos["pago_anual"] = df_pagos["pago_anual"].apply(float)
     df_pagos["pago_esperado"] = df_pagos["pago_esperado"].apply(float)
@@ -424,23 +440,26 @@ with tab_rv:
             y=df_pagos["reserva"],
             mode="lines",
             name="Reserva matemática",
-            line=dict(color="#E91E63", width=2),
+            line={"color": "#E91E63", "width": 2},
             yaxis="y2",
         )
     )
     fig_rv.update_layout(
         title="Pagos esperados y reserva por edad",
         xaxis_title="Edad",
-        yaxis=dict(title="Pago esperado (MXN)", side="left"),
-        yaxis2=dict(title="Reserva (MXN)", side="right", overlaying="y"),
+        yaxis={"title": "Pago esperado (MXN)", "side": "left"},
+        yaxis2={"title": "Reserva (MXN)", "side": "right", "overlaying": "y"},
         hovermode="x unified",
-        legend=dict(x=0.7, y=1),
+        legend={"x": 0.7, "y": 1},
     )
     st.plotly_chart(fig_rv, use_container_width=True)
 
     with st.expander("Tabla completa de pagos"):
         st.dataframe(
-            df_pagos[["ano", "edad", "pago_anual", "prob_supervivencia", "pago_esperado", "reserva"]].rename(
+            df_pagos[
+                ["ano", "edad", "pago_anual", "prob_supervivencia", "pago_esperado", "reserva"]
+            ]
+            .rename(
                 columns={
                     "ano": "Año",
                     "edad": "Edad",
@@ -449,12 +468,15 @@ with tab_rv:
                     "pago_esperado": "Pago esperado",
                     "reserva": "Reserva",
                 }
-            ).style.format({
-                "Pago anual": "${:,.2f}",
-                "P(supervivencia)": "{:.4f}",
-                "Pago esperado": "${:,.2f}",
-                "Reserva": "${:,.2f}",
-            }),
+            )
+            .style.format(
+                {
+                    "Pago anual": "${:,.2f}",
+                    "P(supervivencia)": "{:.4f}",
+                    "Pago esperado": "${:,.2f}",
+                    "Reserva": "${:,.2f}",
+                }
+            ),
             use_container_width=True,
             hide_index=True,
         )
@@ -519,10 +541,12 @@ with tab_conm:
         )
     with tc3:
         edad_desde = st.slider("Edad desde", 0, 90, 20, key="tc_desde")
-        edad_hasta = st.slider("Edad hasta", edad_desde + 1, 110, min(edad_desde + 30, 100), key="tc_hasta")
+        edad_hasta = st.slider(
+            "Edad hasta", edad_desde + 1, 110, min(edad_desde + 30, 100), key="tc_hasta"
+        )
 
     @st.cache_data(show_spinner="Construyendo tabla de conmutación...")
-    def _build_tc(sexo_code, tasa, _tn):
+    def _build_tc(sexo_code: str, tasa: float, _tn: str) -> TablaConmutacion:
         tc = TablaConmutacion(
             tabla_mortalidad=tabla_mortalidad,
             sexo=sexo_code,
@@ -536,25 +560,29 @@ with tab_conm:
     filas = []
     for x in range(edad_desde, edad_hasta + 1):
         try:
-            filas.append({
-                "Edad": x,
-                "Dx": float(tc.Dx(x)),
-                "Nx": float(tc.Nx(x)),
-                "Cx": float(tc.Cx(x)),
-                "Mx": float(tc.Mx(x)),
-            })
+            filas.append(
+                {
+                    "Edad": x,
+                    "Dx": float(tc.Dx(x)),
+                    "Nx": float(tc.Nx(x)),
+                    "Cx": float(tc.Cx(x)),
+                    "Mx": float(tc.Mx(x)),
+                }
+            )
         except ValueError:
             break
 
     df_tc = pd.DataFrame(filas)
 
     st.dataframe(
-        df_tc.style.format({
-            "Dx": "{:,.4f}",
-            "Nx": "{:,.4f}",
-            "Cx": "{:,.4f}",
-            "Mx": "{:,.4f}",
-        }),
+        df_tc.style.format(
+            {
+                "Dx": "{:,.4f}",
+                "Nx": "{:,.4f}",
+                "Cx": "{:,.4f}",
+                "Mx": "{:,.4f}",
+            }
+        ),
         use_container_width=True,
         hide_index=True,
     )
@@ -567,7 +595,7 @@ with tab_conm:
             y=df_tc["Dx"],
             mode="lines",
             name="Dx",
-            line=dict(color="#1976D2", width=2),
+            line={"color": "#1976D2", "width": 2},
         )
     )
     fig_tc.add_trace(
@@ -576,17 +604,17 @@ with tab_conm:
             y=df_tc["Nx"],
             mode="lines",
             name="Nx",
-            line=dict(color="#E91E63", width=2),
+            line={"color": "#E91E63", "width": 2},
             yaxis="y2",
         )
     )
     fig_tc.update_layout(
         title=f"Funciones Dx y Nx ({sexo_tc}, tasa {tasa_tc}%)",
         xaxis_title="Edad",
-        yaxis=dict(title="Dx", side="left"),
-        yaxis2=dict(title="Nx", side="right", overlaying="y"),
+        yaxis={"title": "Dx", "side": "left"},
+        yaxis2={"title": "Nx", "side": "right", "overlaying": "y"},
         hovermode="x unified",
-        legend=dict(x=0.8, y=1),
+        legend={"x": 0.8, "y": 1},
     )
     st.plotly_chart(fig_tc, use_container_width=True)
 

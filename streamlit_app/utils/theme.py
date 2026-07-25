@@ -66,4 +66,3 @@ def render_workbench_intro(kicker: str, title: str, question: str) -> None:
     st.markdown(f'<p class="studio-kicker">{kicker}</p>', unsafe_allow_html=True)
     st.title(title)
     st.markdown(f'<p class="studio-question">{question}</p>', unsafe_allow_html=True)
-

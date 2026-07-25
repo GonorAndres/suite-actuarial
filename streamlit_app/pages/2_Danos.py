@@ -8,6 +8,7 @@ y sistema Bonus-Malus.
 import sys
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -19,9 +20,10 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
 sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
-from suite_actuarial.danos import SeguroAuto, ModeloColectivo, CalculadoraBonusMalus, Cobertura
-from suite_actuarial.danos.tablas_amis import GRUPOS_VEHICULO, ZONAS_RIESGO
 from utils.theme import apply_studio_theme, render_workbench_intro
+
+from suite_actuarial.danos import CalculadoraBonusMalus, ModeloColectivo, SeguroAuto
+from suite_actuarial.danos.tablas_amis import GRUPOS_VEHICULO, ZONAS_RIESGO
 
 st.set_page_config(page_title="Daños -- suite_actuarial", layout="wide")
 
@@ -53,9 +55,7 @@ OPCIONES_DEDUCIBLE = {
 # -----------------------------------------------------------------------
 # Tabs
 # -----------------------------------------------------------------------
-tab_auto, tab_colectivo, tab_bms = st.tabs(
-    ["Cotización Auto", "Modelo Colectivo", "Bonus-Malus"]
-)
+tab_auto, tab_colectivo, tab_bms = st.tabs(["Cotización Auto", "Modelo Colectivo", "Bonus-Malus"])
 
 # ===== TAB 1: Cotización Auto =====
 with tab_auto:
@@ -117,10 +117,12 @@ with tab_auto:
     # Tabla de coberturas
     filas_cob = []
     for cob_key, prima in cotizacion["coberturas"].items():
-        filas_cob.append({
-            "Cobertura": cob_key.replace("_", " ").title(),
-            "Prima anual (MXN)": float(prima),
-        })
+        filas_cob.append(
+            {
+                "Cobertura": cob_key.replace("_", " ").title(),
+                "Prima anual (MXN)": float(prima),
+            }
+        )
 
     df_cob = pd.DataFrame(filas_cob)
     st.dataframe(
@@ -186,11 +188,15 @@ with tab_colectivo:
             params_freq = {"lambda_": lam}
         elif dist_freq == "negbinom":
             n_nb = st.number_input("n (éxitos)", min_value=1.0, max_value=50.0, value=5.0, step=1.0)
-            p_nb = st.number_input("p (prob. éxito)", min_value=0.01, max_value=0.99, value=0.30, step=0.05)
+            p_nb = st.number_input(
+                "p (prob. éxito)", min_value=0.01, max_value=0.99, value=0.30, step=0.05
+            )
             params_freq = {"n": n_nb, "p": p_nb}
         else:
             n_b = st.number_input("n (ensayos)", min_value=1, max_value=100, value=20, step=1)
-            p_b = st.number_input("p (probabilidad)", min_value=0.01, max_value=0.99, value=0.10, step=0.05)
+            p_b = st.number_input(
+                "p (probabilidad)", min_value=0.01, max_value=0.99, value=0.10, step=0.05
+            )
             params_freq = {"n": n_b, "p": p_b}
 
     with mc2:
@@ -201,29 +207,65 @@ with tab_colectivo:
             key="sev_dist",
         )
         if dist_sev == "lognormal":
-            mu_ln = st.number_input("mu (log-media)", min_value=0.0, max_value=15.0, value=10.0, step=0.5)
-            sigma_ln = st.number_input("sigma (log-desv)", min_value=0.1, max_value=5.0, value=1.0, step=0.1)
+            mu_ln = st.number_input(
+                "mu (log-media)", min_value=0.0, max_value=15.0, value=10.0, step=0.5
+            )
+            sigma_ln = st.number_input(
+                "sigma (log-desv)", min_value=0.1, max_value=5.0, value=1.0, step=0.1
+            )
             params_sev = {"mu": mu_ln, "sigma": sigma_ln}
         elif dist_sev == "gamma":
-            alpha_g = st.number_input("alpha (forma)", min_value=0.1, max_value=20.0, value=2.0, step=0.5)
-            beta_g = st.number_input("beta (tasa)", min_value=0.0001, max_value=1.0, value=0.0001, step=0.0001, format="%.4f")
+            alpha_g = st.number_input(
+                "alpha (forma)", min_value=0.1, max_value=20.0, value=2.0, step=0.5
+            )
+            beta_g = st.number_input(
+                "beta (tasa)",
+                min_value=0.0001,
+                max_value=1.0,
+                value=0.0001,
+                step=0.0001,
+                format="%.4f",
+            )
             params_sev = {"alpha": alpha_g, "beta": beta_g}
         elif dist_sev == "pareto":
-            alpha_p = st.number_input("alpha (forma)", min_value=1.1, max_value=10.0, value=3.0, step=0.5)
-            scale_p = st.number_input("scale (escala)", min_value=100.0, max_value=1_000_000.0, value=50000.0, step=10000.0)
+            alpha_p = st.number_input(
+                "alpha (forma)", min_value=1.1, max_value=10.0, value=3.0, step=0.5
+            )
+            scale_p = st.number_input(
+                "scale (escala)",
+                min_value=100.0,
+                max_value=1_000_000.0,
+                value=50000.0,
+                step=10000.0,
+            )
             params_sev = {"alpha": alpha_p, "scale": scale_p}
         elif dist_sev == "weibull":
             c_w = st.number_input("c (forma)", min_value=0.1, max_value=10.0, value=1.5, step=0.1)
-            scale_w = st.number_input("scale (escala)", min_value=100.0, max_value=1_000_000.0, value=50000.0, step=10000.0)
+            scale_w = st.number_input(
+                "scale (escala)",
+                min_value=100.0,
+                max_value=1_000_000.0,
+                value=50000.0,
+                step=10000.0,
+            )
             params_sev = {"c": c_w, "scale": scale_w}
         else:  # exponencial
-            lam_e = st.number_input("lambda (tasa)", min_value=0.000001, max_value=0.01, value=0.0001, step=0.00001, format="%.6f")
+            lam_e = st.number_input(
+                "lambda (tasa)",
+                min_value=0.000001,
+                max_value=0.01,
+                value=0.0001,
+                step=0.00001,
+                format="%.6f",
+            )
             params_sev = {"lambda_": lam_e}
 
     n_sim = st.slider("Número de simulaciones", 1_000, 100_000, 10_000, step=1_000)
 
     @st.cache_data(show_spinner="Simulando pérdidas...")
-    def _simular(df, pf, ds, ps, ns, seed):
+    def _simular(
+        df: str, pf: dict, ds: str, ps: dict, ns: int, seed: int
+    ) -> tuple[dict[str, Any], np.ndarray]:
         modelo = ModeloColectivo(df, pf, ds, ps)
         stats = modelo.estadisticas(n_simulaciones=ns, seed=seed)
         perdidas = modelo.simular_perdidas(n_simulaciones=ns, seed=seed)
@@ -334,12 +376,12 @@ with tab_bms:
 
     df_bms = pd.DataFrame(trayectoria)
     df_bms["factor"] = df_bms["factor"].apply(float)
-    df_bms["descuento_recargo"] = df_bms["factor"].apply(
-        lambda f: f"{(f - 1) * 100:+.0f}%"
-    )
+    df_bms["descuento_recargo"] = df_bms["factor"].apply(lambda f: f"{(f - 1) * 100:+.0f}%")
 
     st.dataframe(
-        df_bms[["ano", "siniestros", "nivel_previo", "nivel_nuevo", "factor", "descuento_recargo"]].rename(
+        df_bms[
+            ["ano", "siniestros", "nivel_previo", "nivel_nuevo", "factor", "descuento_recargo"]
+        ].rename(
             columns={
                 "ano": "Año",
                 "siniestros": "Siniestros",
@@ -361,7 +403,7 @@ with tab_bms:
             y=df_bms["factor"],
             mode="lines+markers",
             name="Factor BMS",
-            line=dict(color="#E91E63", width=2),
+            line={"color": "#E91E63", "width": 2},
         )
     )
     fig_bms.add_hline(y=1.0, line_dash="dash", line_color="gray", annotation_text="Base (1.00)")
@@ -369,13 +411,13 @@ with tab_bms:
         title="Trayectoria del factor Bonus-Malus",
         xaxis_title="Año",
         yaxis_title="Factor de prima",
-        yaxis=dict(range=[0.6, 1.6]),
+        yaxis={"range": [0.6, 1.6]},
     )
     st.plotly_chart(fig_bms, use_container_width=True)
 
     with st.expander("Ver código Python"):
         st.code(
-            f'''from suite_actuarial.danos import CalculadoraBonusMalus
+            f"""from suite_actuarial.danos import CalculadoraBonusMalus
 
 bms = CalculadoraBonusMalus(nivel_actual=0)
 
@@ -391,6 +433,6 @@ for paso in trayectoria:
 
 print(f"\\nFactor final: {{bms.factor_actual()}}")
 print(f"Nivel final:  {{bms.nivel_actual}}")
-''',
+""",
             language="python",
         )

@@ -8,6 +8,7 @@ y curva de prima por edad.
 import sys
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import plotly.express as px
@@ -18,8 +19,9 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "src"))
 sys.path.insert(0, str(ROOT_DIR / "streamlit_app"))
 
-from suite_actuarial.salud import GMM, NivelHospitalario, ZonaGeografica
 from utils.theme import apply_studio_theme, render_workbench_intro
+
+from suite_actuarial.salud import GMM, NivelHospitalario, ZonaGeografica
 
 st.set_page_config(page_title="Salud -- suite_actuarial", layout="wide")
 
@@ -51,9 +53,7 @@ DEDUCIBLES_DISPONIBLES = [10_000, 25_000, 50_000, 100_000, 250_000, 500_000]
 # -----------------------------------------------------------------------
 # Tabs
 # -----------------------------------------------------------------------
-tab_calc, tab_gasto, tab_edad = st.tabs(
-    ["Calculadora GMM", "Simulador de Gasto", "Prima por Edad"]
-)
+tab_calc, tab_gasto, tab_edad = st.tabs(["Calculadora GMM", "Simulador de Gasto", "Prima por Edad"])
 
 # ===== TAB 1: Calculadora GMM =====
 with tab_calc:
@@ -62,7 +62,13 @@ with tab_calc:
     c1, c2 = st.columns(2)
     with c1:
         edad = st.slider("Edad del asegurado", 0, 85, 35, key="gmm_edad")
-        sexo = st.radio("Sexo", ["M", "F"], format_func=lambda x: "Masculino" if x == "M" else "Femenino", horizontal=True, key="gmm_sexo")
+        sexo = st.radio(
+            "Sexo",
+            ["M", "F"],
+            format_func=lambda x: "Masculino" if x == "M" else "Femenino",
+            horizontal=True,
+            key="gmm_sexo",
+        )
         sa = st.number_input(
             "Suma asegurada (MXN)",
             min_value=1_000_000,
@@ -119,11 +125,31 @@ with tab_calc:
 
     # Factor breakdown table
     factores_data = [
-        {"Factor": "Banda de edad", "Clave": desglose["asegurado"]["banda_edad"], "Valor": str(desglose["tarificacion"]["tasa_banda_edad"])},
-        {"Factor": "Zona", "Clave": desglose["producto"]["zona"], "Valor": str(desglose["tarificacion"]["factor_zona"])},
-        {"Factor": "Nivel hospitalario", "Clave": desglose["producto"]["nivel"], "Valor": str(desglose["tarificacion"]["factor_nivel"])},
-        {"Factor": "Deducible", "Clave": f"${deducible:,.0f}", "Valor": str(desglose["tarificacion"]["factor_deducible"])},
-        {"Factor": "Coaseguro", "Clave": f"{coaseguro_pct}%", "Valor": str(desglose["tarificacion"]["factor_coaseguro"])},
+        {
+            "Factor": "Banda de edad",
+            "Clave": desglose["asegurado"]["banda_edad"],
+            "Valor": str(desglose["tarificacion"]["tasa_banda_edad"]),
+        },
+        {
+            "Factor": "Zona",
+            "Clave": desglose["producto"]["zona"],
+            "Valor": str(desglose["tarificacion"]["factor_zona"]),
+        },
+        {
+            "Factor": "Nivel hospitalario",
+            "Clave": desglose["producto"]["nivel"],
+            "Valor": str(desglose["tarificacion"]["factor_nivel"]),
+        },
+        {
+            "Factor": "Deducible",
+            "Clave": f"${deducible:,.0f}",
+            "Valor": str(desglose["tarificacion"]["factor_deducible"]),
+        },
+        {
+            "Factor": "Coaseguro",
+            "Clave": f"{coaseguro_pct}%",
+            "Valor": str(desglose["tarificacion"]["factor_coaseguro"]),
+        },
     ]
     df_factores = pd.DataFrame(factores_data)
     st.dataframe(df_factores, use_container_width=True, hide_index=True)
@@ -212,12 +238,28 @@ with tab_gasto:
     g3.metric("Exceso no cubierto", f"${float(sim['exceso_no_cubierto']):,.2f}")
 
     # Waterfall chart
-    waterfall_data = [
-        {"Concepto": "Reclamacion total", "Monto": float(sim["monto_reclamacion"]), "Tipo": "total"},
+    waterfall_data: list[dict[str, Any]] = [
+        {
+            "Concepto": "Reclamacion total",
+            "Monto": float(sim["monto_reclamacion"]),
+            "Tipo": "total",
+        },
         {"Concepto": "Deducible", "Monto": -float(sim["deducible_aplicado"]), "Tipo": "asegurado"},
-        {"Concepto": "Coaseguro asegurado", "Monto": -float(sim["coaseguro_asegurado"]), "Tipo": "asegurado"},
-        {"Concepto": "Exceso no cubierto", "Monto": -float(sim["exceso_no_cubierto"]), "Tipo": "asegurado"},
-        {"Concepto": "Pago aseguradora", "Monto": float(sim["pago_aseguradora"]), "Tipo": "aseguradora"},
+        {
+            "Concepto": "Coaseguro asegurado",
+            "Monto": -float(sim["coaseguro_asegurado"]),
+            "Tipo": "asegurado",
+        },
+        {
+            "Concepto": "Exceso no cubierto",
+            "Monto": -float(sim["exceso_no_cubierto"]),
+            "Tipo": "asegurado",
+        },
+        {
+            "Concepto": "Pago aseguradora",
+            "Monto": float(sim["pago_aseguradora"]),
+            "Tipo": "aseguradora",
+        },
     ]
 
     fig_waterfall = go.Figure(
@@ -227,10 +269,10 @@ with tab_gasto:
             measure=["absolute", "relative", "relative", "relative", "total"],
             textposition="outside",
             text=[f"${abs(d['Monto']):,.0f}" for d in waterfall_data],
-            connector=dict(line=dict(color="rgb(63, 63, 63)")),
-            decreasing=dict(marker=dict(color="#E53935")),
-            increasing=dict(marker=dict(color="#43A047")),
-            totals=dict(marker=dict(color="#1E88E5")),
+            connector={"line": {"color": "rgb(63, 63, 63)"}},
+            decreasing={"marker": {"color": "#E53935"}},
+            increasing={"marker": {"color": "#43A047"}},
+            totals={"marker": {"color": "#1E88E5"}},
         )
     )
     fig_waterfall.update_layout(
@@ -296,13 +338,19 @@ for k, v in resultado.items():
 with tab_edad:
     st.subheader("Curva de prima GMM por edad")
     st.markdown(
-        "Prima ajustada por banda de edad quinquenal, manteniendo fijos "
-        "el resto de los parámetros."
+        "Prima ajustada por banda de edad quinquenal, manteniendo fijos el resto de los parámetros."
     )
 
     # Compute primas for all age bands
     @st.cache_data(show_spinner="Calculando primas por banda de edad...")
-    def _primas_por_edad(sa_val, ded_val, coa_val, zona_val, nivel_val, sexo_val):
+    def _primas_por_edad(
+        sa_val: float,
+        ded_val: float,
+        coa_val: float,
+        zona_val: ZonaGeografica,
+        nivel_val: NivelHospitalario,
+        sexo_val: str,
+    ) -> pd.DataFrame:
         bandas = list(GMM.TASAS_BANDA_EDAD.keys())
         resultados = []
         # Use midpoint of each band for the GMM constructor
@@ -322,17 +370,17 @@ with tab_edad:
                 zona=zona_val,
                 nivel=nivel_val,
             )
-            resultados.append({
-                "Banda de edad": banda,
-                "Edad representativa": edad_rep,
-                "Prima base": float(g.calcular_prima_base()),
-                "Prima ajustada": float(g.calcular_prima_ajustada()),
-            })
+            resultados.append(
+                {
+                    "Banda de edad": banda,
+                    "Edad representativa": edad_rep,
+                    "Prima base": float(g.calcular_prima_base()),
+                    "Prima ajustada": float(g.calcular_prima_ajustada()),
+                }
+            )
         return pd.DataFrame(resultados)
 
-    df_edades = _primas_por_edad(
-        sa, deducible, coaseguro_pct / 100, zona, nivel, sexo
-    )
+    df_edades = _primas_por_edad(sa, deducible, coaseguro_pct / 100, zona, nivel, sexo)
 
     fig_edad = px.bar(
         df_edades,
@@ -347,10 +395,12 @@ with tab_edad:
     st.plotly_chart(fig_edad, use_container_width=True)
 
     st.dataframe(
-        df_edades.style.format({
-            "Prima base": "${:,.2f}",
-            "Prima ajustada": "${:,.2f}",
-        }),
+        df_edades.style.format(
+            {
+                "Prima base": "${:,.2f}",
+                "Prima ajustada": "${:,.2f}",
+            }
+        ),
         use_container_width=True,
         hide_index=True,
     )

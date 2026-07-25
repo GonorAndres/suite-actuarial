@@ -23,12 +23,12 @@ def crear_grafico_comparacion_productos(df: pd.DataFrame) -> go.Figure:
     df_plot = df.copy()
 
     if isinstance(df_plot["Prima Neta"].iloc[0], str):
-        df_plot["Prima Neta"] = df_plot["Prima Neta"].str.replace(
-            "$", ""
-        ).str.replace(",", "").astype(float)
-        df_plot["Prima Total"] = df_plot["Prima Total"].str.replace(
-            "$", ""
-        ).str.replace(",", "").astype(float)
+        df_plot["Prima Neta"] = (
+            df_plot["Prima Neta"].str.replace("$", "").str.replace(",", "").astype(float)
+        )
+        df_plot["Prima Total"] = (
+            df_plot["Prima Total"].str.replace("$", "").str.replace(",", "").astype(float)
+        )
 
     fig = go.Figure()
 
@@ -60,7 +60,7 @@ def crear_grafico_comparacion_productos(df: pd.DataFrame) -> go.Figure:
         yaxis_title="Prima Mensual (MXN)",
         barmode="group",
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
         height=500,
     )
 
@@ -85,8 +85,8 @@ def crear_grafico_sensibilidad_edad(df: pd.DataFrame) -> go.Figure:
             y=df["Prima Neta"],
             mode="lines+markers",
             name="Prima Neta",
-            line=dict(color="#1f77b4", width=3),
-            marker=dict(size=6),
+            line={"color": "#1f77b4", "width": 3},
+            marker={"size": 6},
         )
     )
 
@@ -96,8 +96,8 @@ def crear_grafico_sensibilidad_edad(df: pd.DataFrame) -> go.Figure:
             y=df["Prima Total"],
             mode="lines+markers",
             name="Prima Total",
-            line=dict(color="#ff7f0e", width=3),
-            marker=dict(size=6),
+            line={"color": "#ff7f0e", "width": 3},
+            marker={"size": 6},
         )
     )
 
@@ -106,7 +106,7 @@ def crear_grafico_sensibilidad_edad(df: pd.DataFrame) -> go.Figure:
         xaxis_title="Edad",
         yaxis_title="Prima Mensual (MXN)",
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
         height=500,
     )
 
@@ -131,8 +131,8 @@ def crear_grafico_sensibilidad_tasa(df: pd.DataFrame) -> go.Figure:
             y=df["Prima Neta"],
             mode="lines+markers",
             name="Prima Neta",
-            line=dict(color="#2ca02c", width=3),
-            marker=dict(size=6),
+            line={"color": "#2ca02c", "width": 3},
+            marker={"size": 6},
         )
     )
 
@@ -142,8 +142,8 @@ def crear_grafico_sensibilidad_tasa(df: pd.DataFrame) -> go.Figure:
             y=df["Prima Total"],
             mode="lines+markers",
             name="Prima Total",
-            line=dict(color="#d62728", width=3),
-            marker=dict(size=6),
+            line={"color": "#d62728", "width": 3},
+            marker={"size": 6},
         )
     )
 
@@ -152,7 +152,7 @@ def crear_grafico_sensibilidad_tasa(df: pd.DataFrame) -> go.Figure:
         xaxis_title="Tasa de Interés (%)",
         yaxis_title="Prima Mensual (MXN)",
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
         height=500,
     )
 
@@ -181,7 +181,7 @@ def crear_grafico_reservas(df: pd.DataFrame, suma_asegurada: float) -> go.Figure
             mode="lines",
             name="Reserva Matemática",
             fill="tozeroy",
-            line=dict(color="#1f77b4", width=2),
+            line={"color": "#1f77b4", "width": 2},
             hovertemplate="Año %{x}<br>Reserva: $%{y:,.2f}<extra></extra>",
         ),
         secondary_y=False,
@@ -194,7 +194,7 @@ def crear_grafico_reservas(df: pd.DataFrame, suma_asegurada: float) -> go.Figure
             y=[suma_asegurada] * len(df),
             mode="lines",
             name="Suma Asegurada",
-            line=dict(color="#d62728", width=2, dash="dash"),
+            line={"color": "#d62728", "width": 2, "dash": "dash"},
             hovertemplate="Suma Asegurada: $%{y:,.2f}<extra></extra>",
         ),
         secondary_y=False,
@@ -207,8 +207,8 @@ def crear_grafico_reservas(df: pd.DataFrame, suma_asegurada: float) -> go.Figure
             y=df["% Suma Asegurada"],
             mode="lines+markers",
             name="% Suma Asegurada",
-            line=dict(color="#2ca02c", width=2),
-            marker=dict(size=5),
+            line={"color": "#2ca02c", "width": 2},
+            marker={"size": 5},
             yaxis="y2",
             hovertemplate="Año %{x}<br>%{y:.1f}% de Suma Asegurada<extra></extra>",
         ),
@@ -223,7 +223,7 @@ def crear_grafico_reservas(df: pd.DataFrame, suma_asegurada: float) -> go.Figure
     fig.update_layout(
         title="Evolución de Reserva Matemática",
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
         height=500,
     )
 
@@ -259,7 +259,7 @@ def crear_grafico_desglose_recargos(recargos: dict) -> go.Figure:
         title="Desglose de Recargos",
         height=400,
         showlegend=True,
-        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.05),
+        legend={"orientation": "v", "yanchor": "middle", "y": 0.5, "xanchor": "left", "x": 1.05},
     )
 
     return fig

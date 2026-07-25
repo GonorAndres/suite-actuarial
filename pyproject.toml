@@ -127,6 +127,10 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # imports no usados están ok en __init__
+# Cada pagina de Streamlit inserta la raiz del repo en `sys.path` antes de
+# importar `utils.*`, asi que el import local no puede ir arriba del todo.
+# Es una restriccion del multipage de Streamlit, no descuido de estilo.
+"streamlit_app/**" = ["E402"]
 
 [tool.mypy]
 # El paquete soporta 3.11 en adelante (`requires-python`), pero mypy analiza aqui
@@ -136,6 +140,9 @@ ignore = [
 # job de CI con Python 3.11 ejecuta la suite real, asi que cualquier sintaxis
 # incompatible con 3.11 falla al importar.
 python_version = "3.12"
+# `streamlit_app` se anade a `sys.path` en runtime; mypy necesita lo mismo
+# para resolver los imports locales `utils.*` de las paginas.
+mypy_path = ["streamlit_app"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -145,7 +152,9 @@ plugins = ["pydantic.mypy"]
 module = [
     "openpyxl.*",
     "pandas.*",
+    "plotly.*",
     "scipy.*",
+    "streamlit.*",
 ]
 ignore_missing_imports = true
 
