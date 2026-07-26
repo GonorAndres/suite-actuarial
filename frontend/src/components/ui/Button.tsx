@@ -5,17 +5,17 @@ import { cn } from "@/lib/design-system";
 
 const variantStyles = {
   primary:
-    "bg-terracotta text-cream hover:bg-terracotta/90 hover:shadow-md hover:shadow-terracotta/20 rounded-full",
+    "bg-navy text-offwhite border border-navy hover:bg-navy/90 rounded-sm",
   secondary:
-    "bg-sage text-cream hover:bg-sage/90 hover:shadow-md hover:shadow-sage/20 rounded-full",
+    "bg-terracotta text-offwhite border border-terracotta hover:bg-terracotta/90 rounded-sm",
   outline:
-    "border border-amber/40 text-navy/70 hover:bg-amber/10 hover:text-terracotta rounded-full",
+    "border border-navy/30 text-navy hover:border-navy hover:bg-navy/5 rounded-sm",
 } as const;
 
 const sizeStyles = {
-  sm: "px-3 py-1 text-sm",
-  md: "px-5 py-2.5",
-  lg: "px-7 py-3 text-lg hover:animate-pulse-subtle",
+  sm: "px-3 py-1 text-xs",
+  md: "px-5 py-2.5 text-sm",
+  lg: "px-7 py-3 text-base",
 } as const;
 
 interface ButtonProps
@@ -39,7 +39,7 @@ export default function Button({
       type={type}
       disabled={disabled}
       className={cn(
-        "transition-all duration-200 font-medium",
+        "transition-colors duration-150 font-semibold uppercase tracking-wider",
         variantStyles[variant],
         sizeStyles[size],
         disabled && "opacity-50 cursor-not-allowed",

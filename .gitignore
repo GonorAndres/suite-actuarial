@@ -63,6 +63,7 @@ notebooks/*_executed.ipynb
 # Documentation
 docs/_build/
 site/
+docs/knowledge/
 
 # Environment variables
 .env
@@ -106,3 +107,6 @@ outputs/
 subagents_outputs/
 temp/
 to-do.md
+
+# Cloudflare wrangler local state
+.wrangler/

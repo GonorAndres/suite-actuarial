@@ -25,8 +25,8 @@ from decimal import Decimal
 # ======================================================================
 
 LEY73_PORCENTAJES: dict[int, Decimal] = {
-    500: Decimal("0.3307"),    # 33.07%
-    552: Decimal("0.3536"),    # +2.29 pp por 52 semanas
+    500: Decimal("0.3307"),  # 33.07%
+    552: Decimal("0.3536"),  # +2.29 pp por 52 semanas
     604: Decimal("0.3765"),
     656: Decimal("0.3994"),
     708: Decimal("0.4223"),
@@ -55,7 +55,7 @@ LEY73_PORCENTAJES: dict[int, Decimal] = {
     1904: Decimal("0.9490"),
     1956: Decimal("0.9719"),
     2008: Decimal("0.9948"),
-    2060: Decimal("1.0000"),   # Tope: 100% (no puede exceder salario)
+    2060: Decimal("1.0000"),  # Tope: 100% (no puede exceder salario)
 }
 
 # Increment per 52-week block for Ley 73 interpolation
@@ -71,12 +71,12 @@ LEY73_INCREMENTO_POR_52_SEMANAS = Decimal("0.02290")
 # ======================================================================
 
 LEY73_FACTORES_EDAD: dict[int, Decimal] = {
-    60: Decimal("0.75"),   # 75%
-    61: Decimal("0.80"),   # 80%
-    62: Decimal("0.85"),   # 85%
-    63: Decimal("0.90"),   # 90%
-    64: Decimal("0.95"),   # 95%
-    65: Decimal("1.00"),   # 100%
+    60: Decimal("0.75"),  # 75%
+    61: Decimal("0.80"),  # 80%
+    62: Decimal("0.85"),  # 85%
+    63: Decimal("0.90"),  # 90%
+    64: Decimal("0.95"),  # 95%
+    65: Decimal("1.00"),  # 100%
 }
 
 
@@ -91,13 +91,13 @@ LEY73_FACTORES_EDAD: dict[int, Decimal] = {
 
 LEY97_CUOTA_SOCIAL: dict[str, Decimal] = {
     # Rango salarial en UMAs: porcentaje de cuota social sobre SBC
-    "1.0_a_1.5_umas": Decimal("0.0632"),    # 6.32%
-    "1.5_a_2.0_umas": Decimal("0.0596"),    # 5.96%
-    "2.0_a_2.5_umas": Decimal("0.0560"),    # 5.60%
-    "2.5_a_3.0_umas": Decimal("0.0524"),    # 5.24%
-    "3.0_a_3.5_umas": Decimal("0.0488"),    # 4.88%
-    "3.5_a_4.0_umas": Decimal("0.0452"),    # 4.52%
-    "4.0_umas_o_mas": Decimal("0.0000"),    # 0.00% (sin cuota social)
+    "1.0_a_1.5_umas": Decimal("0.0632"),  # 6.32%
+    "1.5_a_2.0_umas": Decimal("0.0596"),  # 5.96%
+    "2.0_a_2.5_umas": Decimal("0.0560"),  # 5.60%
+    "2.5_a_3.0_umas": Decimal("0.0524"),  # 5.24%
+    "3.0_a_3.5_umas": Decimal("0.0488"),  # 4.88%
+    "3.5_a_4.0_umas": Decimal("0.0452"),  # 4.52%
+    "4.0_umas_o_mas": Decimal("0.0000"),  # 0.00% (sin cuota social)
 }
 
 
@@ -109,35 +109,35 @@ LEY97_CUOTA_SOCIAL: dict[str, Decimal] = {
 
 CUOTAS_IMSS: dict[str, dict[str, Decimal]] = {
     "retiro": {
-        "patronal": Decimal("0.02"),      # 2.0% del SBC
-        "obrero": Decimal("0.0"),         # 0%
+        "patronal": Decimal("0.02"),  # 2.0% del SBC
+        "obrero": Decimal("0.0"),  # 0%
     },
     "cesantia_vejez": {
-        "patronal": Decimal("0.0315"),    # 3.15% del SBC
-        "obrero": Decimal("0.01125"),     # 1.125% del SBC
+        "patronal": Decimal("0.0315"),  # 3.15% del SBC
+        "obrero": Decimal("0.01125"),  # 1.125% del SBC
     },
     "enfermedades_maternidad_especie": {
-        "patronal": Decimal("0.1395"),    # Cuota fija + excedente
+        "patronal": Decimal("0.1395"),  # Cuota fija + excedente
         "obrero": Decimal("0.00375"),
     },
     "enfermedades_maternidad_dinero": {
-        "patronal": Decimal("0.0070"),    # 0.70%
-        "obrero": Decimal("0.0025"),      # 0.25%
+        "patronal": Decimal("0.0070"),  # 0.70%
+        "obrero": Decimal("0.0025"),  # 0.25%
     },
     "invalidez_vida": {
-        "patronal": Decimal("0.0175"),    # 1.75%
-        "obrero": Decimal("0.00625"),     # 0.625%
+        "patronal": Decimal("0.0175"),  # 1.75%
+        "obrero": Decimal("0.00625"),  # 0.625%
     },
     "riesgos_trabajo": {
-        "patronal": Decimal("0.005"),     # Minimo clase I (varia por actividad)
+        "patronal": Decimal("0.005"),  # Minimo clase I (varia por actividad)
         "obrero": Decimal("0.0"),
     },
     "guarderia": {
-        "patronal": Decimal("0.01"),      # 1.0%
+        "patronal": Decimal("0.01"),  # 1.0%
         "obrero": Decimal("0.0"),
     },
     "infonavit": {
-        "patronal": Decimal("0.05"),      # 5.0%
+        "patronal": Decimal("0.05"),  # 5.0%
         "obrero": Decimal("0.0"),
     },
 }
@@ -148,18 +148,20 @@ CUOTAS_IMSS: dict[str, dict[str, Decimal]] = {
 # Art. 170 LSS 1997, actualizado por CONSAR
 # ======================================================================
 
-PENSION_GARANTIZADA_2024 = Decimal("7467.40")   # MXN mensuales (2024)
-PENSION_GARANTIZADA_2025 = Decimal("7800.00")   # Estimado
-PENSION_GARANTIZADA_2026 = Decimal("8100.00")   # Estimado
+PENSION_GARANTIZADA_2024 = Decimal("7467.40")  # MXN mensuales (2024)
+# Escenarios ilustrativos: CONSAR/IMSS deben confirmar el monto vigente para
+# una determinacion individual. No son valores oficiales de este paquete.
+PENSION_GARANTIZADA_2025 = Decimal("7800.00")
+PENSION_GARANTIZADA_2026 = Decimal("8100.00")
 
 # Pension minima por anos cotizados (reforma 2020)
 # Semanas cotizadas -> pension garantizada mensual (como multiplo de UMA mensual)
 PENSION_GARANTIZADA_POR_SEMANAS: dict[int, Decimal] = {
-    750: Decimal("0.70"),    # 0.70 * UMA mensual (~$2,500)
+    750: Decimal("0.70"),  # 0.70 * UMA mensual (~$2,500)
     800: Decimal("0.78"),
     850: Decimal("0.85"),
     900: Decimal("0.93"),
-    950: Decimal("1.00"),    # 1.0 UMA mensual
+    950: Decimal("1.00"),  # 1.0 UMA mensual
     1000: Decimal("1.08"),
     1050: Decimal("1.16"),
     1100: Decimal("1.23"),
@@ -180,14 +182,33 @@ TOPE_SBC_UMAS = 25
 SEMANAS_MINIMAS_LEY73 = 500
 
 # Semanas minimas para pension Ley 97 (reforma 2020, transitorio)
-SEMANAS_MINIMAS_LEY97_2024 = 775    # Incremento anual de 25 semanas
-SEMANAS_MINIMAS_LEY97_2025 = 800
-SEMANAS_MINIMAS_LEY97_2026 = 825
-SEMANAS_MINIMAS_LEY97_META = 1000   # Meta final (2031)
+SEMANAS_MINIMAS_LEY97_2024 = 825  # Tabla transitoria IMSS
+SEMANAS_MINIMAS_LEY97_2025 = 850
+SEMANAS_MINIMAS_LEY97_2026 = 875
+SEMANAS_MINIMAS_LEY97_META = 1000  # Meta final (2031)
+
+
+def obtener_semanas_minimas_ley97(anio: int) -> int:
+    """Obtiene el minimo transitorio publicado para el año solicitado."""
+    transicion = {
+        2024: SEMANAS_MINIMAS_LEY97_2024,
+        2025: SEMANAS_MINIMAS_LEY97_2025,
+        2026: SEMANAS_MINIMAS_LEY97_2026,
+    }
+    if anio in transicion:
+        return transicion[anio]
+    if anio < 2024:
+        raise ValueError("No hay tabla transitoria soportada para años anteriores a 2024")
+    if anio >= 2031:
+        return SEMANAS_MINIMAS_LEY97_META
+    # La progresion anual de 25 semanas es una proyeccion matematica; se marca
+    # como tal en la documentacion y no se presenta como snapshot oficial.
+    return SEMANAS_MINIMAS_LEY97_2026 + 25 * (anio - 2026)
+
 
 # Edad minima de retiro
-EDAD_CESANTIA = 60      # Cesantia en edad avanzada
-EDAD_VEJEZ = 65         # Pension por vejez
+EDAD_CESANTIA = 60  # Cesantia en edad avanzada
+EDAD_VEJEZ = 65  # Pension por vejez
 
 # Aguinaldo para pensionados IMSS (en dias de pension)
 DIAS_AGUINALDO_PENSIONADOS = 30
@@ -199,12 +220,12 @@ DIAS_AGUINALDO_PENSIONADOS = 30
 # ======================================================================
 
 RENDIMIENTO_SIEFORE_REFERENCIA: dict[str, Decimal] = {
-    "SB0_basica_inicial": Decimal("0.0350"),    # 3.50% real
-    "SB1_basica_1": Decimal("0.0400"),           # 4.00%
-    "SB2_basica_2": Decimal("0.0450"),           # 4.50%
-    "SB3_basica_3": Decimal("0.0500"),           # 5.00% (jovenes)
-    "SB4_basica_4": Decimal("0.0520"),           # 5.20%
-    "promedio_sistema": Decimal("0.0450"),        # Promedio ponderado
+    "SB0_basica_inicial": Decimal("0.0350"),  # 3.50% real
+    "SB1_basica_1": Decimal("0.0400"),  # 4.00%
+    "SB2_basica_2": Decimal("0.0450"),  # 4.50%
+    "SB3_basica_3": Decimal("0.0500"),  # 5.00% (jovenes)
+    "SB4_basica_4": Decimal("0.0520"),  # 5.20%
+    "promedio_sistema": Decimal("0.0450"),  # Promedio ponderado
 }
 
 
@@ -225,8 +246,7 @@ def obtener_porcentaje_ley73(semanas: int) -> Decimal:
     """
     if semanas < SEMANAS_MINIMAS_LEY73:
         raise ValueError(
-            f"Se requieren al menos {SEMANAS_MINIMAS_LEY73} semanas cotizadas. "
-            f"Se tienen {semanas}."
+            f"Se requieren al menos {SEMANAS_MINIMAS_LEY73} semanas cotizadas. Se tienen {semanas}."
         )
 
     # Cap at maximum
@@ -275,8 +295,7 @@ def obtener_factor_edad(edad: int) -> Decimal:
     """
     if edad < 60:
         raise ValueError(
-            f"Edad minima de retiro es 60 (cesantia en edad avanzada). "
-            f"Edad proporcionada: {edad}"
+            f"Edad minima de retiro es 60 (cesantia en edad avanzada). Edad proporcionada: {edad}"
         )
     if edad > 65:
         # After 65, factor is always 1.0

@@ -19,6 +19,7 @@ from suite_actuarial.salud.accidentes import AccidentesEnfermedades
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def ae_base():
     """A&E estandar: 35 anos, oficina, SA 1M."""
@@ -45,6 +46,7 @@ def ae_riesgo():
 # Tests de prima basica
 # ---------------------------------------------------------------------------
 
+
 class TestPrimaBasica:
     def test_prima_positiva(self, ae_base):
         prima = ae_base.calcular_prima()
@@ -65,33 +67,52 @@ class TestPrimaBasica:
 # Tests de factor de ocupacion
 # ---------------------------------------------------------------------------
 
+
 class TestFactorOcupacion:
     def test_ocupacion_mayor_riesgo_mayor_prima(self):
         ae_oficina = AccidentesEnfermedades(
-            30, "M", Decimal("1000000"), ocupacion="oficina",
+            30,
+            "M",
+            Decimal("1000000"),
+            ocupacion="oficina",
         )
         ae_pesado = AccidentesEnfermedades(
-            30, "M", Decimal("1000000"), ocupacion="industrial_pesado",
+            30,
+            "M",
+            Decimal("1000000"),
+            ocupacion="industrial_pesado",
         )
         assert ae_pesado.calcular_prima() > ae_oficina.calcular_prima()
 
     def test_alto_riesgo_factor(self):
         """Alto riesgo (2.20) vs oficina (1.00): prima 2.2x mayor."""
         ae_oficina = AccidentesEnfermedades(
-            30, "M", Decimal("1000000"), ocupacion="oficina",
+            30,
+            "M",
+            Decimal("1000000"),
+            ocupacion="oficina",
         )
         ae_alto = AccidentesEnfermedades(
-            30, "M", Decimal("1000000"), ocupacion="alto_riesgo",
+            30,
+            "M",
+            Decimal("1000000"),
+            ocupacion="alto_riesgo",
         )
         ratio = ae_alto.calcular_prima() / ae_oficina.calcular_prima()
         assert ratio == Decimal("2.20")
 
     def test_comercio_mayor_que_oficina(self):
         ae_oficina = AccidentesEnfermedades(
-            30, "M", Decimal("500000"), ocupacion="oficina",
+            30,
+            "M",
+            Decimal("500000"),
+            ocupacion="oficina",
         )
         ae_comercio = AccidentesEnfermedades(
-            30, "M", Decimal("500000"), ocupacion="comercio",
+            30,
+            "M",
+            Decimal("500000"),
+            ocupacion="comercio",
         )
         assert ae_comercio.calcular_prima() > ae_oficina.calcular_prima()
 
@@ -103,6 +124,7 @@ class TestFactorOcupacion:
 # ---------------------------------------------------------------------------
 # Tests de banda de edad
 # ---------------------------------------------------------------------------
+
 
 class TestBandaEdad:
     def test_banda_18(self):
@@ -131,6 +153,7 @@ class TestBandaEdad:
 # ---------------------------------------------------------------------------
 # Tests de tabla de indemnizaciones
 # ---------------------------------------------------------------------------
+
 
 class TestTablaIndemnizaciones:
     def test_tabla_estructura(self, ae_base):
@@ -165,7 +188,9 @@ class TestTablaIndemnizaciones:
 
     def test_indemnizacion_diaria_custom(self):
         ae = AccidentesEnfermedades(
-            30, "M", Decimal("1000000"),
+            30,
+            "M",
+            Decimal("1000000"),
             indemnizacion_diaria=Decimal("2500"),
         )
         tabla = ae.tabla_indemnizaciones()
@@ -175,6 +200,7 @@ class TestTablaIndemnizaciones:
 # ---------------------------------------------------------------------------
 # Tests de validaciones
 # ---------------------------------------------------------------------------
+
 
 class TestValidaciones:
     def test_edad_menor_18(self):

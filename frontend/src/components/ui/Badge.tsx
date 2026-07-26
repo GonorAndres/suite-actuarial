@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
 const variantStyles = {
-  success: "bg-sage/20 text-sage border border-sage/30",
-  warning: "bg-amber/20 text-amber border border-amber/30",
-  error: "bg-red-50 text-red-700 border border-red-200",
-  info: "bg-navy/10 text-navy border border-navy/20",
+  success: "bg-sage/10 text-sage border border-sage/40",
+  warning: "bg-amber/10 text-amber border border-amber/40",
+  error: "bg-terracotta/10 text-terracotta border border-terracotta/40",
+  info: "bg-navy/5 text-navy border border-navy/30",
 } as const;
 
 interface BadgeProps {
@@ -21,7 +21,7 @@ export default function Badge({
   return (
     <span
       className={[
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-widest",
+        "inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-bold uppercase tracking-widest",
         variantStyles[variant],
         className,
       ]

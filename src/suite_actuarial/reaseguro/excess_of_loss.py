@@ -33,6 +33,20 @@ class ExcessOfLoss(ContratoReaseguro):
 
     Notación estándar: "límite xs retención"
     Ejemplo: "500 xs 200" = límite de $500K en exceso de $200K de retención
+
+    Límite por ocurrencia y límite agregado
+    ---------------------------------------
+    El `limite` es el máximo que el reasegurador paga **por ocurrencia**. Las
+    reinstalaciones determinan cuántas veces puede reponerse esa capacidad, así
+    que el tope del periodo es
+
+        límite agregado = límite * (1 + número de reinstalaciones)
+
+    Sin reinstalaciones, el contrato cubre una sola pérdida de tamaño completo.
+    Con una reinstalación, dos; y así sucesivamente. La versión anterior erosionaba
+    un único límite compartido entre todas las ocurrencias y nunca aplicaba las
+    reinstalaciones, de modo que "5M xs 5M con 1 reinstalación" frente a dos
+    pérdidas de 12M cedía 5M en vez de 10M (hallazgo A4 de `docs/AUDIT.md`).
     """
 
     def __init__(self, config: ExcessOfLossConfig):
@@ -45,9 +59,25 @@ class ExcessOfLoss(ContratoReaseguro):
         super().__init__(config)
         self.config: ExcessOfLossConfig = config  # Type hint más específico
 
-        # Tracking de límite disponible (se reduce con siniestros)
-        self.limite_disponible = config.limite
-        self.reinstatements_usados = 0
+        # El agregado del periodo: la capacidad inicial mas las reinstalaciones.
+        self.limite_agregado = config.limite * (
+            Decimal("1") + Decimal(config.numero_reinstatements)
+        )
+        self.limite_disponible = self.limite_agregado
+        self.recuperacion_acumulada = Decimal("0")
+
+    @property
+    def reinstatements_usados(self) -> int:
+        """Reinstalaciones consumidas por la erosión acumulada del agregado.
+
+        Se consume una reinstalación por cada límite completo erosionado: la
+        primera capacidad la paga la prima original, y a partir de ahí cada
+        límite adicional requiere reponer el anterior.
+        """
+        if self.config.limite <= 0:
+            return 0
+        completos = int(self.recuperacion_acumulada / self.config.limite)
+        return min(completos, self.config.numero_reinstatements)
 
     def calcular_recuperacion(self, siniestro: Siniestro) -> Decimal:
         """
@@ -58,7 +88,12 @@ class ExcessOfLoss(ContratoReaseguro):
                 recuperación = 0
             Si monto > retención:
                 exceso = monto - retención
-                recuperación = min(exceso, límite_disponible)
+                por_ocurrencia = min(exceso, límite)
+                recuperación = min(por_ocurrencia, agregado disponible)
+
+        El tope por ocurrencia y el agregado son restricciones distintas: la
+        primera acota cada siniestro al ancho de la capa; la segunda acota la
+        suma del periodo al límite reinstalable.
 
         Args:
             siniestro: Siniestro para el cual calcular recuperación
@@ -70,9 +105,7 @@ class ExcessOfLoss(ContratoReaseguro):
             ValueError: Si el siniestro no está dentro de vigencia
         """
         if not self.validar_siniestro(siniestro):
-            raise ValueError(
-                f"Siniestro {siniestro.id_siniestro} fuera de vigencia del contrato"
-            )
+            raise ValueError(f"Siniestro {siniestro.id_siniestro} fuera de vigencia del contrato")
 
         # Si el siniestro no excede la retención, no hay recuperación
         if siniestro.monto_bruto <= self.config.retencion:
@@ -81,13 +114,45 @@ class ExcessOfLoss(ContratoReaseguro):
         # Calcular exceso sobre la retención
         exceso = siniestro.monto_bruto - self.config.retencion
 
-        # Recuperación limitada al menor de: exceso o límite disponible
-        recuperacion = min(exceso, self.limite_disponible)
+        # Tope por ocurrencia: el ancho de la capa
+        por_ocurrencia = min(exceso, self.config.limite)
 
-        # Actualizar límite disponible
+        # Tope agregado del periodo
+        recuperacion = min(por_ocurrencia, self.limite_disponible)
+
+        # Erosionar el agregado
         self.limite_disponible -= recuperacion
+        self.recuperacion_acumulada += recuperacion
 
         return recuperacion
+
+    def calcular_prima_reinstalacion(self) -> Decimal:
+        """
+        Prima de reinstalación devengada por la erosión del agregado.
+
+        Convención implementada: **pro rata a la cantidad, al 100%**. Cada peso
+        de límite repuesto cuesta la misma proporción de la prima base:
+
+            prima_reinstalacion = (monto repuesto / límite) * prima base
+
+        donde el monto repuesto es la erosión acumulada acotada por la capacidad
+        reinstalable (`límite * número de reinstalaciones`).
+
+        Simplificación declarada: no se aplica prorrateo *temporal* (pro rata a
+        tiempo), que en el mercado ajusta la prima por la fracción de vigencia
+        restante al momento de la pérdida, ni tasas de reinstalación distintas
+        de 100% por cada reinstalación sucesiva.
+
+        Returns:
+            Prima adicional a pagar por las reinstalaciones consumidas
+        """
+        if self.config.numero_reinstatements == 0 or self.config.limite <= 0:
+            return Decimal("0")
+
+        capacidad_reinstalable = self.config.limite * Decimal(self.config.numero_reinstatements)
+        monto_repuesto = min(self.recuperacion_acumulada, capacidad_reinstalable)
+
+        return (monto_repuesto / self.config.limite) * self.calcular_prima_reaseguro()
 
     def calcular_recuperacion_multiple(
         self, siniestros: list[Siniestro]
@@ -112,54 +177,16 @@ class ExcessOfLoss(ContratoReaseguro):
             if self.validar_siniestro(siniestro):
                 recup = self.calcular_recuperacion(siniestro)
                 recuperacion_total += recup
-                detalle.append(
-                    (siniestro.id_siniestro, siniestro.monto_bruto, recup)
-                )
+                detalle.append((siniestro.id_siniestro, siniestro.monto_bruto, recup))
 
         return recuperacion_total, detalle
 
-    def aplicar_reinstatement(
-        self, monto_usado: Decimal
-    ) -> tuple[bool, Decimal]:
-        """
-        Aplica un reinstatement para reinstalar el límite consumido.
-
-        Los reinstatements permiten "recargar" el límite del contrato
-        después de haberlo usado. Típicamente se cobra una prima proporcional.
-
-        Args:
-            monto_usado: Monto del límite que se quiere reinstalar
-
-        Returns:
-            Tupla con:
-            - bool: True si se aplicó el reinstatement exitosamente
-            - Decimal: Prima adicional a pagar por el reinstatement
-
-        Raises:
-            ValueError: Si no quedan reinstatements disponibles
-        """
-        if self.reinstatements_usados >= self.config.numero_reinstatements:
-            raise ValueError("No quedan reinstatements disponibles")
-
-        # Reinstalar el límite (parcial o total)
-        monto_reinstalado = min(monto_usado, self.config.limite)
-        self.limite_disponible += monto_reinstalado
-        self.reinstatements_usados += 1
-
-        # Prima proporcional: (monto_reinstalado / límite) * prima_original
-        # Simplificado: tasa_prima * monto_reinstalado / 100
-        prima_adicional = (
-            monto_reinstalado * self.config.tasa_prima / Decimal("100")
-        )
-
-        return True, prima_adicional
-
     def obtener_limite_disponible(self) -> Decimal:
         """
-        Consulta cuánto límite queda disponible.
+        Consulta cuánto agregado queda disponible en el periodo.
 
         Returns:
-            Monto de límite disponible
+            Monto de límite agregado disponible
         """
         return self.limite_disponible
 
@@ -174,12 +201,12 @@ class ExcessOfLoss(ContratoReaseguro):
 
     def resetear_limite(self) -> None:
         """
-        Resetea el límite disponible y reinstatements.
+        Resetea el agregado disponible y la erosión acumulada.
 
         Útil para simular un nuevo periodo o para testing.
         """
-        self.limite_disponible = self.config.limite
-        self.reinstatements_usados = 0
+        self.limite_disponible = self.limite_agregado
+        self.recuperacion_acumulada = Decimal("0")
 
     def calcular_prima_reaseguro(self) -> Decimal:
         """
@@ -220,33 +247,39 @@ class ExcessOfLoss(ContratoReaseguro):
             ResultadoReaseguro con el análisis completo
         """
         # Calcular siniestros totales
-        siniestros_totales = sum(
-            s.monto_bruto for s in siniestros if self.validar_siniestro(s)
-        )
+        siniestros_totales = sum(s.monto_bruto for s in siniestros if self.validar_siniestro(s))
 
         # Calcular recuperaciones
         # Nota: esto consume el límite disponible
-        recuperacion, detalle_siniestros = self.calcular_recuperacion_multiple(
-            siniestros
-        )
+        recuperacion, detalle_siniestros = self.calcular_recuperacion_multiple(siniestros)
 
         # Siniestros retenidos = siniestros totales - recuperación
         siniestros_retenidos = siniestros_totales - recuperacion
 
-        # Resultado neto para cedente:
-        # - Paga: prima de reaseguro + siniestros retenidos
+        # Resultado neto del contrato de reaseguro para la cedente:
         # + Recibe: recuperación
-        # Neto = recuperación - prima_reaseguro - siniestros_retenidos
+        # - Paga:   prima de reaseguro
+        #
+        # Neto = recuperación - prima_reaseguro
+        #
+        # Mide el contrato, no el resultado técnico: los siniestros retenidos
+        # NO se restan aquí, porque la cedente los pagaría igual sin reaseguro.
+        # Ojo: en Quota Share este mismo campo tiene otra semántica, límite ya
+        # inventariado en docs/AUDIT.md (Clase B). El comentario anterior
+        # enunciaba `- siniestros_retenidos`, término que el código nunca aplicó.
         resultado_neto = recuperacion - prima_reaseguro_cobrada
 
         # Construir detalles
         detalles = {
             "retencion": str(self.config.retencion),
             "limite_original": str(self.config.limite),
+            "limite_por_ocurrencia": str(self.config.limite),
+            "limite_agregado": str(self.limite_agregado),
             "limite_disponible": str(self.limite_disponible),
             "modalidad": self.config.modalidad.value,
             "numero_reinstatements": self.config.numero_reinstatements,
             "reinstatements_usados": self.reinstatements_usados,
+            "prima_reinstalacion": str(self.calcular_prima_reinstalacion()),
             "siniestros_totales": str(siniestros_totales),
             "siniestros_retenidos": str(siniestros_retenidos),
             "numero_siniestros": len(siniestros),
@@ -263,9 +296,7 @@ class ExcessOfLoss(ContratoReaseguro):
         # En XL, monto_cedido y ratio_cesion no aplican de la misma forma
         # que en Quota Share. Usamos valores dummy para cumplir con el modelo.
         ratio_cesion = (
-            (recuperacion / siniestros_totales * 100)
-            if siniestros_totales > 0
-            else Decimal("0")
+            (recuperacion / siniestros_totales * 100) if siniestros_totales > 0 else Decimal("0")
         )
 
         return ResultadoReaseguro(

@@ -17,12 +17,16 @@ properties in sync.
 
 | Token        | Hex       | Usage                                |
 |------------- |---------- |------------------------------------- |
-| navy         | `#1B2A4A` | Text, headings, dark backgrounds     |
-| terracotta   | `#C17654` | Primary actions, CTA buttons         |
-| sage         | `#7A8B6F` | Secondary actions, success states    |
-| cream        | `#E8E0D7` | Page background                      |
-| offwhite     | `#F5F0EA` | Card backgrounds, elevated surfaces  |
-| amber        | `#D4A574` | Accents, highlights, outline buttons |
+| navy         | `#1A2740` | Ink: text, headings, dark surfaces   |
+| terracotta   | `#8A3B34` | Oxblood accent: links, active states |
+| sage         | `#38664A` | Deep green: success states           |
+| cream        | `#F2EEE4` | Secondary paper surface              |
+| offwhite     | `#FBF9F5` | Page background (paper)              |
+| amber        | `#9C7A2F` | Aged gold: rules, borders, warnings  |
+
+Chart series use a separate validated categorical order (see `theme.chart`):
+blue `#2A5FA8`, brick `#BC4B3C`, gold `#C99117`, green `#1F6B3A` -- assigned
+in that fixed order, never cycled.
 
 ## Typography
 

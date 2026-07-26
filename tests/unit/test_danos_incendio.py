@@ -272,10 +272,7 @@ class TestValoresLimite:
         prima = seg.calcular_prima()
         # (100 / 1000) * 0.80 * 0.85 * 1.00 = 0.1 * 0.68 = 0.068 -> 0.07
         expected = (
-            (Decimal("100") / Decimal("1000"))
-            * Decimal("0.80")
-            * Decimal("0.85")
-            * Decimal("1.00")
+            (Decimal("100") / Decimal("1000")) * Decimal("0.80") * Decimal("0.85") * Decimal("1.00")
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         assert prima == expected
 
@@ -306,9 +303,6 @@ class TestValoresLimite:
         prima = seg.calcular_prima()
         # (1 / 1000) * 0.90 * 1.60 * 1.45 = 0.001 * 2.088 = 0.002088 -> 0.00
         expected = (
-            (Decimal("1") / Decimal("1000"))
-            * Decimal("0.90")
-            * Decimal("1.60")
-            * Decimal("1.45")
+            (Decimal("1") / Decimal("1000")) * Decimal("0.90") * Decimal("1.60") * Decimal("1.45")
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         assert prima == expected

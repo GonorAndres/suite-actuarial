@@ -23,7 +23,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
 
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium text-navy/80 mb-1">
+      <label
+        htmlFor={id}
+        className="block text-xs font-semibold uppercase tracking-wider text-navy/70 mb-1.5"
+      >
         {label}
       </label>
       <div className="relative">
@@ -32,8 +35,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
           id={id}
           name={name}
           className={[
-            "w-full px-3 py-2 border border-amber/30 rounded-lg bg-white text-navy",
-            "focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta",
+            "w-full px-3 py-2 border border-navy/25 rounded-sm bg-white text-navy",
+            "focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy",
             "transition-colors appearance-none pr-8",
           ].join(" ")}
           {...rest}
@@ -46,7 +49,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
         </select>
         {/* Custom chevron */}
         <svg
-          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-navy/40"
+          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-navy/50"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"

@@ -9,7 +9,7 @@ from datetime import date
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class MetodoCalculoRRC(StrEnum):
@@ -53,7 +53,7 @@ class ConfiguracionRRC(BaseModel):
 
     @field_validator("prima_devengada")
     @classmethod
-    def validar_devengada(cls, v: Decimal, info) -> Decimal:
+    def validar_devengada(cls, v: Decimal, info: ValidationInfo) -> Decimal:
         """Prima devengada no puede exceder emitida"""
         if "prima_emitida" in info.data:
             if v > info.data["prima_emitida"]:
@@ -90,13 +90,11 @@ class ConfiguracionRM(BaseModel):
 
     @field_validator("edad_asegurado")
     @classmethod
-    def validar_edad(cls, v: int, info) -> int:
+    def validar_edad(cls, v: int, info: ValidationInfo) -> int:
         """Edad actual no puede ser menor a edad de contratación"""
         if "edad_contratacion" in info.data:
             if v < info.data["edad_contratacion"]:
-                raise ValueError(
-                    "Edad actual no puede ser menor a edad de contratación"
-                )
+                raise ValueError("Edad actual no puede ser menor a edad de contratación")
         return v
 
 

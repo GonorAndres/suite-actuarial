@@ -96,12 +96,8 @@ class QuotaShare(ContratoReaseguro):
         Returns:
             Comisión total a recibir del reasegurador
         """
-        comision_base = prima_cedida * (
-            self.config.comision_reaseguro / Decimal("100")
-        )
-        comision_override = prima_cedida * (
-            self.config.comision_override / Decimal("100")
-        )
+        comision_base = prima_cedida * (self.config.comision_reaseguro / Decimal("100"))
+        comision_override = prima_cedida * (self.config.comision_override / Decimal("100"))
         return comision_base + comision_override
 
     def calcular_recuperacion(self, siniestro: Siniestro) -> Decimal:
@@ -124,13 +120,9 @@ class QuotaShare(ContratoReaseguro):
             ValueError: Si el siniestro no está dentro de vigencia
         """
         if not self.validar_siniestro(siniestro):
-            raise ValueError(
-                f"Siniestro {siniestro.id_siniestro} fuera de vigencia del contrato"
-            )
+            raise ValueError(f"Siniestro {siniestro.id_siniestro} fuera de vigencia del contrato")
 
-        return siniestro.monto_bruto * (
-            self.config.porcentaje_cesion / Decimal("100")
-        )
+        return siniestro.monto_bruto * (self.config.porcentaje_cesion / Decimal("100"))
 
     def calcular_recuperacion_multiple(
         self, siniestros: list[Siniestro]
@@ -201,12 +193,8 @@ class QuotaShare(ContratoReaseguro):
         comision = self.calcular_comision(prima_cedida)
 
         # Paso 3: Siniestros
-        siniestros_totales = sum(
-            s.monto_bruto for s in siniestros if self.validar_siniestro(s)
-        )
-        recuperacion, detalle_siniestros = self.calcular_recuperacion_multiple(
-            siniestros
-        )
+        siniestros_totales = sum(s.monto_bruto for s in siniestros if self.validar_siniestro(s))
+        recuperacion, detalle_siniestros = self.calcular_recuperacion_multiple(siniestros)
         siniestros_retenidos = siniestros_totales - recuperacion
 
         # Paso 4: Resultado neto
@@ -226,8 +214,7 @@ class QuotaShare(ContratoReaseguro):
             "siniestros_retenidos": str(siniestros_retenidos),
             "numero_siniestros": len(siniestros),
             "detalle_siniestros": [
-                {"id": id_sin, "recuperacion": str(recup)}
-                for id_sin, recup in detalle_siniestros
+                {"id": id_sin, "recuperacion": str(recup)} for id_sin, recup in detalle_siniestros
             ],
         }
 

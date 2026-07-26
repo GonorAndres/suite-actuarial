@@ -1,5 +1,9 @@
 # Portfolio Site Update Instructions
 
+> **Propuesta histórica.** Los textos, conteos y capturas de esta nota describen una etapa
+> anterior. Para una tarjeta nueva use “Laboratorio actuarial abierto” y dirija primero al
+> laboratorio dotal 20/10, no a la interfaz técnica.
+
 ## 1. Update the project card in `src/data/projects.ts`
 
 Find the existing `actuarial-suite` entry and add/update these fields:

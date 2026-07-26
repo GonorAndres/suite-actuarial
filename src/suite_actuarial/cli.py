@@ -5,6 +5,7 @@ Comando de línea para usar la librería desde terminal.
 """
 
 import sys
+from datetime import date
 from decimal import Decimal
 
 from suite_actuarial import __version__
@@ -17,7 +18,7 @@ def main() -> int:
     Returns:
         Exit code (0 = éxito, 1 = error)
     """
-    print(f"Mexican Insurance Analytics Suite v{__version__}")
+    print(f"suite_actuarial · laboratorio actuarial abierto v{__version__}")
     print("=" * 60)
 
     if len(sys.argv) < 2:
@@ -42,6 +43,24 @@ def main() -> int:
         ejecutar_api()
         return 0
 
+    if comando in {"config", "configuracion"}:
+        fecha = None
+        if "--date" in sys.argv:
+            index = sys.argv.index("--date")
+            if index + 1 >= len(sys.argv):
+                print("Falta una fecha ISO despues de --date")
+                return 1
+            fecha = sys.argv[index + 1]
+        inspeccionar_config(fecha)
+        return 0
+
+    if comando in {"validate-config", "validar-config"}:
+        from suite_actuarial.config import validar_configuraciones
+
+        validar_configuraciones()
+        print("Configuraciones validas")
+        return 0
+
     print(f"Comando desconocido: {comando}")
     print("Usa 'seguros --help' para ver los comandos disponibles.")
     return 1
@@ -53,8 +72,10 @@ def mostrar_ayuda() -> None:
 Uso: seguros [comando] [opciones]
 
 Comandos disponibles:
-  demo              Ejecuta un ejemplo de calculo de primas
-  api               Inicia el servidor REST API (FastAPI)
+  demo              Ejecuta un experimento actuarial reproducible
+  api               Inicia la interfaz tecnica para aplicaciones
+  config            Muestra parametros y fuentes (--date YYYY-MM-DD opcional)
+  validate-config   Valida periodos, unidades y fuentes regulatorias
   --help, -h       Muestra esta ayuda
   --version, -v    Muestra la version
 
@@ -67,6 +88,16 @@ Para más información, visita:
 https://github.com/GonorAndres/suite-actuarial
 """
     print(ayuda)
+
+
+def inspeccionar_config(fecha: str | None = None) -> None:
+    """Muestra cada parametro revisado junto con su fuente y estado."""
+    from suite_actuarial.config import cargar_config_fecha
+
+    config = cargar_config_fecha(date.today() if fecha is None else fecha)
+    print(f"Perfil {config.anio} ({config.validation_tier.value})")
+    for key, info in config.provenance().items():
+        print(f"{key}: {info['value']} {info['unit']} [{info['status']}] - {info['source']['url']}")
 
 
 def ejecutar_demo() -> None:
@@ -122,15 +153,11 @@ def ejecutar_demo() -> None:
 
         print("\n" + "=" * 60)
         print("\nDemostracion completada exitosamente.")
-        print(
-            "\nPara más ejemplos, revisa los notebooks en notebooks/01_ejemplo_basico.ipynb"
-        )
+        print("\nPara más ejemplos, revisa examples/casos/ y los notebooks en examples/")
 
     except FileNotFoundError:
         print("\nError: No se encontro la tabla de mortalidad EMSSA-09")
-        print(
-            "   Asegúrate de que el archivo data/mortality_tables/emssa_09.csv existe."
-        )
+        print("   Asegúrate de que el archivo data/mortality_tables/emssa_09.csv existe.")
     except Exception as e:
         print(f"\nError durante la demostracion: {e}")
 
@@ -143,8 +170,8 @@ def ejecutar_api() -> None:
         print("Error: FastAPI no instalado. Ejecuta: pip install mexican-insurance[api]")
         return
 
-    print("Iniciando API REST en http://localhost:8000")
-    print("Documentacion interactiva en http://localhost:8000/docs")
+    print("Iniciando interfaz tecnica en http://localhost:8000")
+    print("Referencia interactiva en http://localhost:8000/docs")
     print("Presiona Ctrl+C para detener\n")
     uvicorn.run(
         "suite_actuarial.api.main:app",

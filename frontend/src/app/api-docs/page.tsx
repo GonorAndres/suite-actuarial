@@ -508,7 +508,7 @@ const DOMAINS: DomainGroup[] = [
           { name: "triangle", type: "list[list[float|null]]", required: true, default_val: "-", description_es: "Triangulo acumulado (null para celdas vacias)", description_en: "Cumulative triangle (null for missing cells)" },
           { name: "origin_years", type: "list[int]", required: true, default_val: "-", description_es: "Etiquetas de anos de origen (una por fila)", description_en: "Origin year labels (one per row)" },
           { name: "metodo_promedio", type: "string", required: false, default_val: "simple", description_es: "Metodo de promedio: simple, weighted, geometric", description_en: "Averaging method: simple, weighted, geometric" },
-          { name: "calcular_tail_factor", type: "bool", required: false, default_val: "false", description_es: "Estimar factor de cola automaticamente", description_en: "Auto-estimate tail factor" },
+          { name: "calcular_tail_factor", type: "bool", required: false, default_val: "false", description_es: "Estima la cola ajustando la curva de potencia inversa de Sherman (1984) y extrapolando el producto. Es extrapolacion: revise tail_ajuste_r2 y tail_horizonte en los detalles", description_en: "Estimates the tail by fitting Sherman's (1984) inverse power curve and extrapolating the product. This is extrapolation: check tail_ajuste_r2 and tail_horizonte in the details" },
           { name: "tail_factor", type: "float | null", required: false, default_val: "null", description_es: "Factor de cola manual (1.0-2.0)", description_en: "Manual tail factor (1.0-2.0)" },
         ],
         example_req: `{
@@ -573,8 +573,8 @@ const DOMAINS: DomainGroup[] = [
       {
         method: "POST",
         path: "/api/v1/reserves/bootstrap",
-        desc_es: "Calcula reservas con el metodo Bootstrap. Ejecuta simulaciones Monte Carlo sobre triangulos re-muestreados para producir una distribucion completa de estimados de reserva, incluyendo percentiles.",
-        desc_en: "Calculates reserves using Bootstrap simulation. Runs Monte Carlo on re-sampled triangles to produce a full distribution of reserve estimates including percentiles.",
+        desc_es: "Bootstrap ODP de England-Verrall: distribucion predictiva de la reserva, con percentiles. Residuales de Pearson sobre incrementales contra valores ajustados hacia atras desde el ultimate, parametro de dispersion phi con n-p grados de libertad, correccion de England (2002) y varianza de proceso Gamma, asi que la dispersion cubre error de estimacion Y de proceso. detalles.error_prediccion es la desviacion estandar; detalles.conciliacion_cl_relativa reporta la distancia contra Chain Ladder (~1%, por convexidad de la reserva en los factores). Es condicional al modelo: no cubre riesgo de modelo ni es capital regulatorio.",
+        desc_en: "England-Verrall ODP bootstrap: predictive distribution of the reserve, with percentiles. Pearson residuals on incrementals against values fitted backwards from the ultimate, dispersion parameter phi with n-p degrees of freedom, England's (2002) adjustment and Gamma process variance, so the spread covers both estimation AND process error. detalles.error_prediccion is the standard deviation; detalles.conciliacion_cl_relativa reports the gap against Chain Ladder (~1%, from the reserve's convexity in the factors). It is conditional on the model: it does not cover model risk and is not regulatory capital.",
         params: [
           { name: "triangle", type: "list[list[float|null]]", required: true, default_val: "-", description_es: "Triangulo acumulado", description_en: "Cumulative triangle" },
           { name: "origin_years", type: "list[int]", required: true, default_val: "-", description_es: "Anos de origen", description_en: "Origin years" },
@@ -613,8 +613,8 @@ const DOMAINS: DomainGroup[] = [
       {
         method: "POST",
         path: "/api/v1/regulatory/rcs",
-        desc_es: "Calcula el Requerimiento de Capital de Solvencia (RCS) completo. Agrega riesgos de suscripcion (vida y danos) e inversion usando una matriz de correlacion conforme a la CNSF. Se requiere al menos uno de config_vida, config_danos o config_inversion.",
-        desc_en: "Calculates the full Solvency Capital Requirement (RCS). Aggregates subscription risks (life and P&C) and investment risks using a correlation matrix per CNSF regulations. At least one of config_vida, config_danos, or config_inversion must be provided.",
+        desc_es: "Calcula un escenario de referencia del Requerimiento de Capital de Solvencia (RCS). Agrega riesgos de suscripcion (vida y danos) e inversion usando una matriz de correlacion simplificada. No sustituye el modelo regulatorio completo ni un calculo institucional aprobado.",
+        desc_en: "Calculates a reference Solvency Capital Requirement (RCS) scenario. Aggregates subscription risks (life and P&C) and investment risks using a simplified correlation matrix. It does not replace the complete regulatory model or an approved institutional calculation.",
         params: [
           { name: "config_vida", type: "object | null", required: false, default_val: "null", description_es: "Riesgos de suscripcion vida (suma_asegurada_total, reserva_matematica, edad_promedio_asegurados, duracion_promedio_polizas, numero_asegurados)", description_en: "Life subscription risks (suma_asegurada_total, reserva_matematica, edad_promedio_asegurados, duracion_promedio_polizas, numero_asegurados)" },
           { name: "config_danos", type: "object | null", required: false, default_val: "null", description_es: "Riesgos de suscripcion danos (primas_retenidas_12m, reserva_siniestros, coeficiente_variacion, numero_ramos)", description_en: "P&C subscription risks (primas_retenidas_12m, reserva_siniestros, coeficiente_variacion, numero_ramos)" },
@@ -861,7 +861,7 @@ const DOMAINS: DomainGroup[] = [
   "uma": {
     "uma_diaria": 113.14,
     "uma_mensual": 3439.46,
-    "uma_anual": 41296.10
+    "uma_anual": 41273.52
   },
   "tasas_sat": {
     "tasa_retencion_rentas_vitalicias": 0.20,
@@ -886,7 +886,7 @@ const DOMAINS: DomainGroup[] = [
         example_res: `{
   "uma_diaria": 113.14,
   "uma_mensual": 3439.46,
-  "uma_anual": 41296.10
+  "uma_anual": 41273.52
 }`,
         try_link: "/regulatorio",
       },

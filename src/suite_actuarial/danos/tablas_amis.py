@@ -156,16 +156,16 @@ TASAS_BASE: dict[str, dict[int, Decimal]] = {
 # ---------------------------------------------------------------------------
 
 DEPRECIACION_VEHICULO: dict[int, Decimal] = {
-    0: Decimal("1.00"),   # Nuevo
-    1: Decimal("0.80"),   # 1 ano
-    2: Decimal("0.70"),   # 2 anos
-    3: Decimal("0.62"),   # 3 anos
-    4: Decimal("0.55"),   # 4 anos
-    5: Decimal("0.49"),   # 5 anos
-    6: Decimal("0.44"),   # 6 anos
-    7: Decimal("0.39"),   # 7 anos
-    8: Decimal("0.35"),   # 8 anos
-    9: Decimal("0.32"),   # 9 anos
+    0: Decimal("1.00"),  # Nuevo
+    1: Decimal("0.80"),  # 1 ano
+    2: Decimal("0.70"),  # 2 anos
+    3: Decimal("0.62"),  # 3 anos
+    4: Decimal("0.55"),  # 4 anos
+    5: Decimal("0.49"),  # 5 anos
+    6: Decimal("0.44"),  # 6 anos
+    7: Decimal("0.39"),  # 7 anos
+    8: Decimal("0.35"),  # 8 anos
+    9: Decimal("0.32"),  # 9 anos
     10: Decimal("0.29"),  # 10+ anos
 }
 
@@ -186,11 +186,11 @@ FACTOR_EDAD_CONDUCTOR: dict[str, Decimal] = {
 # ---------------------------------------------------------------------------
 
 FACTOR_DEDUCIBLE: dict[Decimal, Decimal] = {
-    Decimal("0.03"): Decimal("1.10"),   # 3% = prima mas alta
-    Decimal("0.05"): Decimal("1.00"),   # 5% = base
-    Decimal("0.10"): Decimal("0.85"),   # 10% = descuento
-    Decimal("0.15"): Decimal("0.75"),   # 15% = descuento mayor
-    Decimal("0.20"): Decimal("0.70"),   # 20% = mayor descuento
+    Decimal("0.03"): Decimal("1.10"),  # 3% = prima mas alta
+    Decimal("0.05"): Decimal("1.00"),  # 5% = base
+    Decimal("0.10"): Decimal("0.85"),  # 10% = descuento
+    Decimal("0.15"): Decimal("0.75"),  # 15% = descuento mayor
+    Decimal("0.20"): Decimal("0.70"),  # 20% = mayor descuento
 }
 
 # ---------------------------------------------------------------------------
@@ -220,12 +220,12 @@ FACTOR_USO_VEHICULO: dict[str, Decimal] = {
 # Funciones auxiliares
 # ---------------------------------------------------------------------------
 
+
 def obtener_grupo(tipo_vehiculo: str) -> int:
     """Devuelve el grupo de vehiculo o lanza error si no existe."""
     if tipo_vehiculo not in GRUPOS_VEHICULO:
         raise ValueError(
-            f"Tipo de vehiculo desconocido: {tipo_vehiculo}. "
-            f"Opciones: {list(GRUPOS_VEHICULO)}"
+            f"Tipo de vehiculo desconocido: {tipo_vehiculo}. Opciones: {list(GRUPOS_VEHICULO)}"
         )
     return GRUPOS_VEHICULO[tipo_vehiculo]
 
@@ -233,9 +233,7 @@ def obtener_grupo(tipo_vehiculo: str) -> int:
 def obtener_zona(zona: str) -> Decimal:
     """Devuelve el factor de zona o lanza error si no existe."""
     if zona not in ZONAS_RIESGO:
-        raise ValueError(
-            f"Zona desconocida: {zona}. Opciones: {list(ZONAS_RIESGO)}"
-        )
+        raise ValueError(f"Zona desconocida: {zona}. Opciones: {list(ZONAS_RIESGO)}")
     return ZONAS_RIESGO[zona]
 
 

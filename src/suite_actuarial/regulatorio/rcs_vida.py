@@ -7,9 +7,11 @@ de la CNSF (Comisión Nacional de Seguros y Fianzas de México).
 """
 
 import math
+import warnings
 from decimal import Decimal
 
 from suite_actuarial.core.validators import ConfiguracionRCSVida
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 
 DISCLAIMER = (
     "AVISO: Los factores de RCS en este modulo son aproximaciones pedagogicas "
@@ -40,6 +42,7 @@ class RCSVida:
             config: Configuración con parámetros de la cartera
         """
         self.config = config
+        warnings.warn(DISCLAIMER, ExperimentalModelWarning, stacklevel=2)
 
     def calcular_rcs_mortalidad(self) -> Decimal:
         """
@@ -73,9 +76,7 @@ class RCSVida:
         # Factor de diversificación: disminuye con más asegurados
         # 1000 asegurados: ~1.0, 10000 asegurados: ~0.7, 100000: ~0.5
         if num_asegurados >= 1000:
-            factor_div = Decimal(
-                str(1.0 / math.sqrt(num_asegurados / 1000.0))
-            )
+            factor_div = Decimal(str(1.0 / math.sqrt(num_asegurados / 1000.0)))
             factor_div = max(factor_div, Decimal("0.5"))  # Mínimo 0.5
         else:
             # Carteras muy pequeñas tienen factor mayor
@@ -191,10 +192,10 @@ class RCSVida:
     # Order: mortalidad, longevidad, invalidez, gastos
     CORRELACION_VIDA = [
         # mort   long   inv    gast
-        [1.00,  -0.25,  0.25,  0.25],  # mortalidad
-        [-0.25,  1.00,  0.00,  0.25],  # longevidad
-        [0.25,   0.00,  1.00,  0.50],  # invalidez
-        [0.25,   0.25,  0.50,  1.00],  # gastos
+        [1.00, -0.25, 0.25, 0.25],  # mortalidad
+        [-0.25, 1.00, 0.00, 0.25],  # longevidad
+        [0.25, 0.00, 1.00, 0.50],  # invalidez
+        [0.25, 0.25, 0.50, 1.00],  # gastos
     ]
 
     def calcular_rcs_total_vida(self) -> tuple[Decimal, dict[str, Decimal]]:
@@ -266,9 +267,7 @@ class RCSVida:
             factor_div = Decimal("1.5")
 
         return {
-            "factor_edad_mortalidad": factor_edad_mort.quantize(
-                Decimal("0.01")
-            ),
+            "factor_edad_mortalidad": factor_edad_mort.quantize(Decimal("0.01")),
             "factor_diversificacion": factor_div.quantize(Decimal("0.01")),
             "numero_asegurados": Decimal(str(num_aseg)),
             "edad_promedio": Decimal(str(edad)),

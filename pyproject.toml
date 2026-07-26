@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "suite-actuarial"
-version = "2.0.0"
-description = "Libreria actuarial fundamental para el mercado mexicano de seguros"
+version = "2.1.0"
+description = "Laboratorio actuarial abierto para construir, probar y comprender productos"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
@@ -28,11 +28,6 @@ dependencies = [
     "numpy>=1.25.0",
     "scipy>=1.11.0",
     "pydantic>=2.5.0",
-    "polars>=0.19.0",
-    "chainladder>=0.8.18",  # Para reservas
-    "lifelines>=0.27.8",    # Análisis de supervivencia
-    "openpyxl>=3.1.0",      # Excel I/O
-    "pyarrow>=14.0.0",      # Parquet support
 ]
 
 [project.optional-dependencies]
@@ -46,6 +41,19 @@ dev = [
     "mypy>=1.7.0",
     "pre-commit>=3.5.0",
     "ipython>=8.18.0",
+    # Vive tambien en el extra `analytics` como dependencia opcional de runtime.
+    # Aqui es dependencia de prueba: sin ella las pruebas de exportacion a Excel
+    # de `tests/unit/test_reportes.py` se saltan en silencio.
+    "openpyxl>=3.1.0",
+]
+
+# Analitica y formatos opcionales; no son necesarios para importar el nucleo.
+analytics = [
+    "polars>=0.19.0",
+    "chainladder>=0.8.18",
+    "lifelines>=0.27.8",
+    "openpyxl>=3.1.0",
+    "pyarrow>=14.0.0",
 ]
 
 # Para visualización y apps
@@ -70,7 +78,7 @@ api = [
 
 # Todo junto
 all = [
-    "suite-actuarial[dev,viz,db,api]",
+    "suite-actuarial[dev,analytics,viz,db,api]",
 ]
 
 [project.scripts]
@@ -86,7 +94,10 @@ Repository = "https://github.com/GonorAndres/suite-actuarial"
 where = ["src"]
 
 [tool.setuptools.package-data]
-suite_actuarial = ["data/mortality_tables/*.csv", "data/mortality_tables/*.json"]
+# `py.typed` (PEP 561) publica las anotaciones del paquete. Sin el, mypy trata
+# `suite_actuarial` como sin tipos cuando lo importa codigo de fuera del arbol
+# comprobado -- que es lo que pasaba con `examples/` y `streamlit_app/`.
+suite_actuarial = ["py.typed", "data/mortality_tables/*.csv", "data/mortality_tables/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -120,9 +131,22 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # imports no usados están ok en __init__
+# Cada pagina de Streamlit inserta la raiz del repo en `sys.path` antes de
+# importar `utils.*`, asi que el import local no puede ir arriba del todo.
+# Es una restriccion del multipage de Streamlit, no descuido de estilo.
+"streamlit_app/**" = ["E402"]
 
 [tool.mypy]
-python_version = "3.11"
+# El paquete soporta 3.11 en adelante (`requires-python`), pero mypy analiza aqui
+# 3.12 a proposito: los stubs de numpy >= 2.3 usan la sentencia `type` de PEP 695 y
+# mypy se niega a parsearlos bajo `python_version = "3.11"`, abortando la revision
+# completa antes de mirar una sola linea del proyecto. Control compensatorio: el
+# job de CI con Python 3.11 ejecuta la suite real, asi que cualquier sintaxis
+# incompatible con 3.11 falla al importar.
+python_version = "3.12"
+# `streamlit_app` se anade a `sys.path` en runtime; mypy necesita lo mismo
+# para resolver los imports locales `utils.*` de las paginas.
+mypy_path = ["streamlit_app"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -130,12 +154,20 @@ plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
 module = [
-    "chainladder.*",
-    "lifelines.*",
+    "openpyxl.*",
+    "pandas.*",
     "plotly.*",
+    "scipy.*",
     "streamlit.*",
 ]
 ignore_missing_imports = true
+
+# Las pruebas no llevan anotaciones de retorno: una funcion `test_*` siempre
+# devuelve `None` y anotarlo no aporta informacion. El resto de comprobaciones
+# (tipos de argumento, atributos, retornos incompatibles) si corre sobre `tests/`.
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
 
 [tool.coverage.run]
 source = ["src"]

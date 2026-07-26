@@ -15,6 +15,35 @@ from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.core.validators import Sexo
 
 
+def _qx_con_edad_terminal(
+    tabla: TablaMortalidad,
+    edad: int,
+    sexo: Sexo | str,
+    edad_terminal: int | None,
+) -> Decimal:
+    """Devuelve q_x aplicando la convencion de edad terminal si corresponde.
+
+    Con `edad_terminal = w`, se fuerza `q_w = 1`: nadie sobrevive mas alla de
+    la edad terminal, asi que un beneficio garantizado se paga siempre. Las
+    tablas publicadas no siempre cierran en 1 — EMSSA-09 publica q_100 = 0.442
+    para hombres — de modo que sin esta convencion una cohorte residual queda
+    viva en la edad terminal y su beneficio nunca se fondea (hallazgo A7 de
+    `docs/AUDIT.md`).
+
+    Args:
+        tabla: Tabla de mortalidad
+        edad: Edad a evaluar
+        sexo: Sexo del asegurado
+        edad_terminal: Edad donde se fuerza q = 1 (None desactiva la convencion)
+
+    Returns:
+        Probabilidad de muerte del ano
+    """
+    if edad_terminal is not None and edad >= edad_terminal:
+        return Decimal("1")
+    return tabla.obtener_qx(edad, sexo, interpolar=True)
+
+
 def calcular_seguro_vida(
     tabla: TablaMortalidad,
     edad: int,
@@ -22,6 +51,7 @@ def calcular_seguro_vida(
     plazo: int,
     tasa_interes: Decimal,
     suma_asegurada: Decimal = Decimal("1"),
+    edad_terminal: int | None = None,
 ) -> Decimal:
     """
     Calcula el valor presente actuarial de un seguro temporal de vida.
@@ -40,6 +70,9 @@ def calcular_seguro_vida(
         plazo: Plazo del seguro en años
         tasa_interes: Tasa de interés técnico (ej: 0.055 = 5.5%)
         suma_asegurada: Suma asegurada (default=1 para calcular por unidad)
+        edad_terminal: Edad donde se fuerza q = 1. Necesario para un beneficio
+            vitalicio garantizado: sin ella la cohorte viva en la edad final
+            nunca cobra. No aplica a un temporal, cuyo plazo termina antes.
 
     Returns:
         Valor presente actuarial del seguro (A_x:n)
@@ -66,7 +99,7 @@ def calcular_seguro_vida(
         edad_actual = edad + t
 
         # Obtener qx para esta edad
-        qx = tabla.obtener_qx(edad_actual, sexo, interpolar=True)
+        qx = _qx_con_edad_terminal(tabla, edad_actual, sexo, edad_terminal)
 
         # Calcular componente: v^(t+1) * t_p_x * q_(x+t)
         factor_descuento = v ** (t + 1)
@@ -88,6 +121,7 @@ def calcular_anualidad(
     plazo: int,
     tasa_interes: Decimal,
     pago_anticipado: bool = True,
+    edad_terminal: int | None = None,
 ) -> Decimal:
     """
     Calcula el valor presente actuarial de una anualidad.
@@ -105,6 +139,9 @@ def calcular_anualidad(
         plazo: Número de pagos
         tasa_interes: Tasa de interés técnico
         pago_anticipado: True para anualidad anticipada, False para vencida
+        edad_terminal: Edad donde se fuerza q = 1. Debe coincidir con la del
+            beneficio que financia: si una pierna cierra en la edad terminal y
+            la otra no, el principio de equivalencia deja de sostenerse.
 
     Returns:
         Valor presente de la anualidad
@@ -134,7 +171,7 @@ def calcular_anualidad(
         valor_presente += componente
 
         # Actualizar probabilidad para siguiente año
-        qx = tabla.obtener_qx(edad_actual, sexo, interpolar=True)
+        qx = _qx_con_edad_terminal(tabla, edad_actual, sexo, edad_terminal)
         prob_supervivencia *= Decimal("1") - qx
 
     return valor_presente
@@ -293,8 +330,7 @@ def _obtener_factor_frecuencia(
     """
     if frecuencia not in _FRECUENCIA_A_M:
         raise ValueError(
-            f"Frecuencia '{frecuencia}' no soportada. "
-            f"Usa una de: {list(_FRECUENCIA_A_M.keys())}"
+            f"Frecuencia '{frecuencia}' no soportada. Usa una de: {list(_FRECUENCIA_A_M.keys())}"
         )
     if metodo == "tradicional":
         return _FACTORES_TRADICIONALES[frecuencia]

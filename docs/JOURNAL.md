@@ -1,4 +1,9 @@
 # Journal Técnico de Desarrollo
+
+> **Documento histórico.** Registra decisiones y métricas de una etapa anterior. La narrativa
+> pública actual se define en [PROJECT_VISION.md](PROJECT_VISION.md) y presenta el repositorio
+> como un laboratorio actuarial abierto.
+
 ## Mexican Insurance Analytics Suite
 
 **Autor**: Desarrollo Actuarial

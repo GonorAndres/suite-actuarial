@@ -55,7 +55,6 @@ def config_only_bonds():
 
 
 class TestRCSMercado:
-
     def test_rcs_mercado_acciones_positive(self, rcs_inversion):
         """RCS mercado acciones must be positive when valor_acciones > 0."""
         result = rcs_inversion.calcular_rcs_mercado_acciones()
@@ -65,9 +64,7 @@ class TestRCSMercado:
         """Acciones shock is exactly 35% of market value."""
         rcs = RCSInversion(config_rcs_inversion)
         result = rcs.calcular_rcs_mercado_acciones()
-        expected = (config_rcs_inversion.valor_acciones * Decimal("0.35")).quantize(
-            Decimal("0.01")
-        )
+        expected = (config_rcs_inversion.valor_acciones * Decimal("0.35")).quantize(Decimal("0.01"))
         assert result == expected
 
     def test_rcs_mercado_inmuebles_formula(self, config_rcs_inversion):
@@ -92,7 +89,6 @@ class TestRCSMercado:
 
 
 class TestRCSCredito:
-
     def test_rcs_credito_positive(self, rcs_inversion):
         """RCS credito must be positive when valor_bonos_corporativos > 0."""
         result = rcs_inversion.calcular_rcs_credito()
@@ -102,9 +98,9 @@ class TestRCSCredito:
         """AA rating => shock 0.005 applied to valor_bonos_corporativos."""
         rcs = RCSInversion(config_rcs_inversion)
         result = rcs.calcular_rcs_credito()
-        expected = (
-            config_rcs_inversion.valor_bonos_corporativos * Decimal("0.005")
-        ).quantize(Decimal("0.01"))
+        expected = (config_rcs_inversion.valor_bonos_corporativos * Decimal("0.005")).quantize(
+            Decimal("0.01")
+        )
         assert result == expected
 
     def test_rcs_credito_returns_decimal(self, rcs_inversion):
@@ -118,7 +114,6 @@ class TestRCSCredito:
 
 
 class TestRCSConcentracion:
-
     def test_rcs_concentracion_positive(self, rcs_inversion):
         """RCS concentracion must be positive for nonzero portfolio."""
         result = rcs_inversion.calcular_rcs_concentracion()
@@ -144,7 +139,6 @@ class TestRCSConcentracion:
 
 
 class TestRCSTotalInversion:
-
     def test_total_structure(self, rcs_inversion):
         """calcular_rcs_total_inversion returns (Decimal, dict)."""
         rcs_total, desglose = rcs_inversion.calcular_rcs_total_inversion()
@@ -167,7 +161,7 @@ class TestRCSTotalInversion:
         rcs_credito = rcs_inversion.calcular_rcs_credito()
         rcs_conc = rcs_inversion.calcular_rcs_concentracion()
 
-        suma = rcs_mercado ** 2 + rcs_credito ** 2 + rcs_conc ** 2
+        suma = rcs_mercado**2 + rcs_credito**2 + rcs_conc**2
         expected = Decimal(str(math.sqrt(float(suma)))).quantize(Decimal("0.01"))
 
         rcs_total, _ = rcs_inversion.calcular_rcs_total_inversion()
@@ -199,7 +193,6 @@ class TestRCSTotalInversion:
 
 
 class TestZeroPortfolio:
-
     def test_all_zero_raises_validation_error(self):
         """All asset values zero must raise ValueError (model validator)."""
         with pytest.raises(ValueError, match="al menos un tipo"):
@@ -217,7 +210,6 @@ class TestZeroPortfolio:
 
 
 class TestDuracionSensitivity:
-
     def test_higher_duration_increases_bonos_gub(self):
         """Longer duration must increase governmental bond RCS."""
         short = ConfiguracionRCSInversion(
@@ -278,7 +270,6 @@ class TestDuracionSensitivity:
 
 
 class TestCreditRatings:
-
     def test_worse_rating_higher_credito(self):
         """Worse credit rating must produce higher RCS credito."""
         cfg_aa = ConfiguracionRCSInversion(
@@ -326,7 +317,6 @@ class TestCreditRatings:
 
 
 class TestOnlyEquities:
-
     def test_only_equities_rcs_acciones(self, config_only_equities):
         """Equities-only portfolio still produces valid acciones RCS."""
         rcs = RCSInversion(config_only_equities)
@@ -353,7 +343,6 @@ class TestOnlyEquities:
 
 
 class TestOnlyBonds:
-
     def test_only_bonds_acciones_zero(self, config_only_bonds):
         """With no equities, acciones RCS should be zero."""
         rcs = RCSInversion(config_only_bonds)
@@ -379,7 +368,6 @@ class TestOnlyBonds:
 
 
 class TestNumericStability:
-
     def test_large_portfolio_no_overflow(self):
         """Very large portfolio values should not cause overflow."""
         cfg = ConfiguracionRCSInversion(
@@ -413,7 +401,6 @@ class TestNumericStability:
 
 
 class TestShocksAplicados:
-
     def test_shocks_keys(self, rcs_inversion):
         """obtener_shocks_aplicados must return all expected keys."""
         shocks = rcs_inversion.obtener_shocks_aplicados()
@@ -451,7 +438,6 @@ class TestShocksAplicados:
 
 
 class TestRepr:
-
     def test_repr_contains_class_name(self, rcs_inversion):
         """__repr__ must include class name."""
         assert "RCSInversion" in repr(rcs_inversion)

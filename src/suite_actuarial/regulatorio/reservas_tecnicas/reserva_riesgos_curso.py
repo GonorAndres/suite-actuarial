@@ -6,8 +6,10 @@ de corto plazo (típicamente daños) para cubrir la porción no devengada
 de las primas.
 """
 
+import warnings
 from decimal import Decimal
 
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.regulatorio.reservas_tecnicas.models import (
     ConfiguracionRRC,
     MetodoCalculoRRC,
@@ -40,6 +42,11 @@ class CalculadoraRRC:
 
     def __init__(self, config: ConfiguracionRRC):
         self.config = config
+        warnings.warn(
+            "La RRC pro-rata es experimental/deprecated y no demuestra cumplimiento CUSF.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
 
     def calcular(self) -> ResultadoRRC:
         """
@@ -76,9 +83,7 @@ class CalculadoraRRC:
             dias_transcurridos = self.config.dias_promedio_transcurridos
             dias_por_transcurrir = max(dias_vigencia - dias_transcurridos, 0)
 
-            fraccion_no_devengada = Decimal(dias_por_transcurrir) / Decimal(
-                dias_vigencia
-            )
+            fraccion_no_devengada = Decimal(dias_por_transcurrir) / Decimal(dias_vigencia)
             reserva = prima_emitida * fraccion_no_devengada
 
             prima_no_devengada = reserva
@@ -89,16 +94,12 @@ class CalculadoraRRC:
             prima_devengada = self.config.prima_devengada
             prima_no_devengada = prima_emitida - prima_devengada
 
-            porcentaje = (
-                prima_no_devengada / prima_emitida if prima_emitida > 0 else Decimal("0")
-            )
+            porcentaje = prima_no_devengada / prima_emitida if prima_emitida > 0 else Decimal("0")
             reserva = prima_no_devengada
 
             # Estimar días transcurridos
             dias_transcurridos = int(
-                dias_vigencia * float(prima_devengada / prima_emitida)
-                if prima_emitida > 0
-                else 0
+                dias_vigencia * float(prima_devengada / prima_emitida) if prima_emitida > 0 else 0
             )
             dias_por_transcurrir = dias_vigencia - dias_transcurridos
 
@@ -122,9 +123,7 @@ class CalculadoraRRC:
         prima_devengada = self.config.prima_devengada
         prima_no_devengada = prima_emitida - prima_devengada
 
-        porcentaje = (
-            prima_no_devengada / prima_emitida if prima_emitida > 0 else Decimal("0")
-        )
+        porcentaje = prima_no_devengada / prima_emitida if prima_emitida > 0 else Decimal("0")
 
         return ResultadoRRC(
             reserva_calculada=prima_no_devengada.quantize(Decimal("0.01")),

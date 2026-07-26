@@ -173,43 +173,33 @@ class TestQuotaShareCalculoPrimas:
 class TestQuotaShareRecuperacion:
     """Tests para cálculo de recuperaciones de siniestros"""
 
-    def test_recuperacion_siniestro_30pct(
-        self, config_qs_30pct, siniestro_100k
-    ):
+    def test_recuperacion_siniestro_30pct(self, config_qs_30pct, siniestro_100k):
         """30% de $100,000 = $30,000"""
         qs = QuotaShare(config_qs_30pct)
         recuperacion = qs.calcular_recuperacion(siniestro_100k)
 
         assert recuperacion == Decimal("30000")
 
-    def test_recuperacion_siniestro_50pct(
-        self, config_qs_50pct, siniestro_250k
-    ):
+    def test_recuperacion_siniestro_50pct(self, config_qs_50pct, siniestro_250k):
         """50% de $250,000 = $125,000"""
         qs = QuotaShare(config_qs_50pct)
         recuperacion = qs.calcular_recuperacion(siniestro_250k)
 
         assert recuperacion == Decimal("125000")
 
-    def test_siniestro_fuera_vigencia(
-        self, config_qs_30pct, siniestro_fuera_vigencia
-    ):
+    def test_siniestro_fuera_vigencia(self, config_qs_30pct, siniestro_fuera_vigencia):
         """No debe procesar siniestros fuera de vigencia"""
         qs = QuotaShare(config_qs_30pct)
 
         with pytest.raises(ValueError, match="fuera de vigencia"):
             qs.calcular_recuperacion(siniestro_fuera_vigencia)
 
-    def test_recuperacion_multiple(
-        self, config_qs_30pct, siniestro_100k, siniestro_250k
-    ):
+    def test_recuperacion_multiple(self, config_qs_30pct, siniestro_100k, siniestro_250k):
         """Debe calcular recuperación de múltiples siniestros"""
         qs = QuotaShare(config_qs_30pct)
         siniestros = [siniestro_100k, siniestro_250k]
 
-        recuperacion_total, detalle = qs.calcular_recuperacion_multiple(
-            siniestros
-        )
+        recuperacion_total, detalle = qs.calcular_recuperacion_multiple(siniestros)
 
         # 30% de (100,000 + 250,000) = 30% de 350,000 = 105,000
         assert recuperacion_total == Decimal("105000")
@@ -221,9 +211,7 @@ class TestQuotaShareRecuperacion:
 class TestQuotaShareResultadoNeto:
     """Tests para cálculo del resultado neto completo"""
 
-    def test_resultado_neto_con_ganancia(
-        self, config_qs_30pct, siniestro_100k
-    ):
+    def test_resultado_neto_con_ganancia(self, config_qs_30pct, siniestro_100k):
         """Debe calcular correctamente con siniestralidad baja"""
         qs = QuotaShare(config_qs_30pct)
 
@@ -249,9 +237,7 @@ class TestQuotaShareResultadoNeto:
         assert resultado.recuperacion_reaseguro == Decimal("30000")
         assert resultado.ratio_cesion == Decimal("30")
 
-    def test_resultado_neto_con_perdida(
-        self, config_qs_30pct, siniestro_100k, siniestro_250k
-    ):
+    def test_resultado_neto_con_perdida(self, config_qs_30pct, siniestro_100k, siniestro_250k):
         """Debe calcular correctamente con siniestralidad alta"""
         qs = QuotaShare(config_qs_30pct)
 

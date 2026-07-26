@@ -12,12 +12,16 @@ Tambien incluye CalculadoraIMSS como interfaz unificada.
 Referencia: Ley del Seguro Social, CONSAR, Circular CONSAR 17-2
 """
 
+import warnings
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.config import cargar_config
+from suite_actuarial.config.schema import ConfigAnual
 from suite_actuarial.core.models.common import Sexo
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 from suite_actuarial.pensiones.tablas_imss import (
     CUOTAS_IMSS,
@@ -47,7 +51,7 @@ class PensionLey73:
         semanas_cotizadas: int,
         salario_promedio_5_anos: Decimal | float,
         edad_retiro: int,
-        config=None,
+        config: ConfigAnual | None = None,
     ):
         """
         Args:
@@ -64,14 +68,18 @@ class PensionLey73:
             )
         if edad_retiro < EDAD_CESANTIA:
             raise ValueError(
-                f"Edad minima de retiro: {EDAD_CESANTIA}. "
-                f"Edad proporcionada: {edad_retiro}"
+                f"Edad minima de retiro: {EDAD_CESANTIA}. Edad proporcionada: {edad_retiro}"
             )
 
         self.semanas_cotizadas = semanas_cotizadas
         self.salario_promedio = Decimal(str(salario_promedio_5_anos))
         self.edad_retiro = edad_retiro
         self.config = config or cargar_config()
+        warnings.warn(
+            "Las proyecciones de pensiones IMSS son experimentales y no determinan derechos.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
 
         # Lookup table values
         self._porcentaje = obtener_porcentaje_ley73(semanas_cotizadas)
@@ -119,7 +127,7 @@ class PensionLey73:
         aguinaldo = self.calcular_aguinaldo()
         return (pension_mensual * Decimal("12") + aguinaldo).quantize(Decimal("0.01"))
 
-    def resumen(self) -> dict:
+    def resumen(self) -> dict[str, Any]:
         """Genera resumen completo del calculo."""
         pension_mensual = self.calcular_pension_mensual()
         return {
@@ -163,7 +171,7 @@ class PensionLey97:
         semanas_cotizadas: int,
         tabla_mortalidad: TablaMortalidad | None = None,
         tasa_interes: Decimal | float | None = None,
-        config=None,
+        config: ConfigAnual | None = None,
     ):
         """
         Args:
@@ -183,6 +191,11 @@ class PensionLey97:
         self.sexo = sexo
         self.semanas_cotizadas = semanas_cotizadas
         self.config = config or cargar_config()
+        warnings.warn(
+            "Las proyecciones de pensiones IMSS son experimentales y no determinan derechos.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
 
         # Defaults
         self.tasa_interes = (
@@ -192,7 +205,7 @@ class PensionLey97:
         )
 
         self._tabla_mortalidad = tabla_mortalidad
-        self._tabla_conm = None
+        self._tabla_conm: TablaConmutacion | None = None
 
     def _get_tabla_conmutacion(self) -> TablaConmutacion:
         """Lazy-load commutation table."""
@@ -246,20 +259,24 @@ class PensionLey97:
 
         for ano in range(anos_restantes + 1):
             edad_ano = self.edad + ano
-            aportacion_anual = salario * Decimal("12") * tasa_aportacion if ano > 0 else Decimal("0")
+            aportacion_anual = (
+                salario * Decimal("12") * tasa_aportacion if ano > 0 else Decimal("0")
+            )
 
             if ano > 0:
                 rendimiento_periodo = saldo * rendimiento
                 saldo = saldo + aportacion_anual + rendimiento_periodo
                 salario = salario * (Decimal("1") + inflacion_anual)
 
-            proyeccion.append({
-                "ano": ano,
-                "edad": edad_ano,
-                "salario_mensual": salario.quantize(Decimal("0.01")),
-                "aportacion_anual": aportacion_anual.quantize(Decimal("0.01")),
-                "saldo_afore": saldo.quantize(Decimal("0.01")),
-            })
+            proyeccion.append(
+                {
+                    "ano": ano,
+                    "edad": edad_ano,
+                    "salario_mensual": salario.quantize(Decimal("0.01")),
+                    "aportacion_anual": aportacion_anual.quantize(Decimal("0.01")),
+                    "saldo_afore": saldo.quantize(Decimal("0.01")),
+                }
+            )
 
         return proyeccion
 
@@ -268,7 +285,11 @@ class PensionLey97:
         Calcula la pension mensual via renta vitalicia.
 
         Se compra una anualidad vitalicia con el saldo AFORE.
-        pension_mensual = saldo_afore / (12 * ax)
+        pension_mensual = saldo_afore / (12 * ax^(12))
+
+        La pension se paga mensualmente, asi que el factor lleva la correccion
+        1/m (`ax^(12) ~= ax - 11/24`). Usar el factor anual subestimaba la
+        pension en ~3.9% (hallazgo A6 de `docs/AUDIT.md`).
 
         Returns:
             Pension mensual estimada via renta vitalicia
@@ -279,12 +300,12 @@ class PensionLey97:
         if self.edad > tc.edad_max or self.edad < tc.edad_min:
             return Decimal("0")
 
-        ax = tc.ax(self.edad)
+        ax = tc.ax_m(self.edad, m=12)
 
-        if ax == 0:
+        if ax <= 0:
             return Decimal("0")
 
-        # Annual pension = saldo / ax
+        # Annual pension = saldo / ax^(12)
         pension_anual = self.saldo_afore / ax
         pension_mensual = pension_anual / Decimal("12")
 
@@ -303,6 +324,20 @@ class PensionLey97:
         En retiro programado, se divide el saldo entre la esperanza de vida
         del titular y beneficiarios. Se recalcula cada ano.
 
+        La esperanza de vida es `e_x = sum t_p_x`, que cuenta anos por vivir.
+        La version anterior usaba `int(ax)`, el factor de anualidad, que
+        descuenta cada pago por interes: a 65 anos daba 11 en vez de ~17, asi
+        que repartia el saldo entre menos anos y sobreestimaba la pension.
+        Ademas dejaba `comparar_modalidades` vacia por construccion, porque
+        ambas modalidades dividian entre denominadores casi iguales
+        (hallazgo A5 de `docs/AUDIT.md`).
+
+        Simplificacion declarada: el reparto es `saldo / e_x` sin acreditar el
+        rendimiento que el saldo remanente sigue ganando, asi que la cifra es
+        conservadora (subestima el retiro). Un modelo completo dividiria entre
+        una anualidad cierta de `e_x` anos a la tasa de rendimiento del fondo,
+        y recalcularia cada ano con el saldo y la edad vigentes.
+
         Args:
             esperanza_vida_anos: Esperanza de vida en anos (si None, usa tabla)
 
@@ -314,8 +349,7 @@ class PensionLey97:
             tc = self._get_tabla_conmutacion()
             if self.edad > tc.edad_max or self.edad < tc.edad_min:
                 return Decimal("0")
-            ax = tc.ax(self.edad)
-            esperanza_vida_anos = max(1, int(float(ax)))
+            esperanza_vida_anos = max(1, int(float(tc.ex(self.edad))))
 
         if esperanza_vida_anos <= 0:
             return Decimal("0")
@@ -329,7 +363,7 @@ class PensionLey97:
 
         return pension_mensual.quantize(Decimal("0.01"))
 
-    def comparar_modalidades(self) -> dict:
+    def comparar_modalidades(self) -> dict[str, Any]:
         """
         Compara renta vitalicia vs retiro programado.
 
@@ -426,8 +460,8 @@ class CalculadoraIMSS:
         saldo_afore: Decimal | float | None = None,
         sexo: Sexo | str = "H",
         tabla_mortalidad: TablaMortalidad | None = None,
-        config=None,
-    ) -> dict:
+        config: ConfigAnual | None = None,
+    ) -> dict[str, Any]:
         """
         Calcula la pension optima para los parametros dados.
 

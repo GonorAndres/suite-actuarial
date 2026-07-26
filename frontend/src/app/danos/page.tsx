@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { DanosStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -9,9 +10,7 @@ import {
   Select,
   Tabs,
   LoadingSpinner,
-  Table,
   MetricCard,
-  ProgressBar,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -84,23 +83,16 @@ interface FreqSevFormState {
 /* ── Chart colors ────────────────────────────────────────────────────── */
 
 const CHART_COLORS = {
-  navy: "#1B2A4A",
-  terracotta: "#C17654",
-  sage: "#7A9E7E",
-  amber: "#D4A853",
-  cream: "#F5F0EA",
+  navy: "#1A2740",
+  terracotta: "#BC4B3C",
+  sage: "#1F6B3A",
+  amber: "#C99117",
+  cream: "#FBF9F5",
 };
 
-const COVERAGE_COLORS = [
-  CHART_COLORS.terracotta,
-  CHART_COLORS.navy,
-  CHART_COLORS.sage,
-  CHART_COLORS.amber,
-  "#8B5A6B",
-  "#4A7C8B",
-  "#9B8B6B",
-  "#6B4A8B",
-];
+// Magnitude across labeled categories: one hue carries the data, the axis
+// carries identity (single-series charts take no legend and no hue cycling).
+const COVERAGE_COLORS = ["#2A5FA8"];
 
 /* ── Defaults ──────────────────────────────────────────────────────────── */
 
@@ -419,15 +411,17 @@ export default function DanosPage() {
   /* ── Render ─────────────────────────────────────────────────────────── */
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <div className="domain-workbench max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Page header */}
-      <div>
+      <div className="domain-workbench-header">
         <h1 className="font-heading text-3xl md:text-4xl font-bold text-navy mb-2">
           {t("danos_titulo")}
         </h1>
         <p className="text-navy/60 text-lg">{t("danos_descripcion")}</p>
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("danos_contexto")}</p>
       </div>
+
+      <DanosStory />
 
       {/* Tabs */}
       <Tabs
@@ -698,6 +692,7 @@ export default function DanosPage() {
       {activeTab === "freq_sev" && freqSev.data && (
         <FreqSevResults result={freqSev.data} t={t} />
       )}
+
     </div>
   );
 }
@@ -777,12 +772,12 @@ function AutoResults({
                   contentStyle={{
                     background: CHART_COLORS.navy,
                     border: "none",
-                    borderRadius: "8px",
+                    borderRadius: "4px",
                     color: CHART_COLORS.cream,
                     fontSize: "13px",
                   }}
                 />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={24}>
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
                   {chartData.map((_, i) => (
                     <Cell key={i} fill={COVERAGE_COLORS[i % COVERAGE_COLORS.length]} />
                   ))}

@@ -9,8 +9,9 @@ from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.salud.accidentes import AccidentesEnfermedades
 from suite_actuarial.salud.gmm import GMM, NivelHospitalario, ZonaGeografica
 
@@ -21,7 +22,11 @@ router = APIRouter(prefix="/salud", tags=["salud"])
 
 
 def _decimal_to_float(obj: Any) -> Any:
-    """Recursively convert Decimal values to float for JSON serialization."""
+    """Recursively convert Decimal values to float for JSON serialization.
+
+    Devuelve `Any` porque acepta cualquier estructura anidada; los endpoints que
+    la usan fijan el tipo concreto en una variable local antes de devolverlo.
+    """
     if isinstance(obj, Decimal):
         return float(obj)
     if isinstance(obj, dict):
@@ -34,17 +39,45 @@ def _decimal_to_float(obj: Any) -> Any:
 # ── GMM Request / Response models ──────────────────────────────────────────
 
 
-class GMMRequest(BaseModel):
+class GMMRequest(SolicitudBase):
     """Request body for GMM premium calculation."""
 
     edad: int = Field(..., ge=0, le=110, description="Edad del asegurado (0-110)")
     sexo: str = Field(..., pattern="^[MF]$", description="Sexo: M (masculino) o F (femenino)")
-    suma_asegurada: float = Field(..., ge=1_000_000, description="Suma asegurada en MXN (minimo 1,000,000)")
+    suma_asegurada: float = Field(
+        ..., ge=1_000_000, description="Suma asegurada en MXN (minimo 1,000,000)"
+    )
     deducible: float = Field(..., ge=0, description="Monto del deducible en MXN")
-    coaseguro_pct: float = Field(..., gt=0, le=1, description="Porcentaje de coaseguro (ej: 0.10 = 10%)")
-    tope_coaseguro: float | None = Field(default=None, ge=0, description="Tope maximo de coaseguro en MXN (None = sin tope)")
+    coaseguro_pct: float = Field(
+        ...,
+        ge=0.10,
+        le=0.30,
+        description=(
+            "Porcentaje de coaseguro (ej: 0.10 = 10%). El rango es el que la "
+            "tabla de factores tarifa; fuera de el no hay dato que respalde un precio"
+        ),
+    )
+    tope_coaseguro: float | None = Field(
+        default=None, ge=0, description="Tope maximo de coaseguro en MXN (None = sin tope)"
+    )
     zona: str = Field(default="urbano", description="Zona geografica: metro, urbano, foraneo")
     nivel: str = Field(default="medio", description="Nivel hospitalario: estandar, medio, alto")
+
+    @model_validator(mode="after")
+    def _deducible_menor_que_suma_asegurada(self) -> "GMMRequest":
+        """Una poliza cuyo deducible alcanza la suma asegurada no paga nunca.
+
+        La reclamacion se topa en la suma asegurada antes de restar el
+        deducible, asi que el pago de la aseguradora seria cero para cualquier
+        siniestro mientras la prima sale positiva.
+        """
+        if self.deducible >= self.suma_asegurada:
+            raise ValueError(
+                f"El deducible ({self.deducible:,.2f}) debe ser menor que la suma "
+                f"asegurada ({self.suma_asegurada:,.2f}); de lo contrario la poliza "
+                "no puede pagar siniestro alguno."
+            )
+        return self
 
 
 class GMMResponse(BaseModel):
@@ -59,7 +92,7 @@ class GMMResponse(BaseModel):
 # ── Accidentes Request / Response models ───────────────────────────────────
 
 
-class AccidentesRequest(BaseModel):
+class AccidentesRequest(SolicitudBase):
     """Request body for Accidentes y Enfermedades premium calculation."""
 
     edad: int = Field(..., ge=18, le=70, description="Edad del asegurado (18-70)")
@@ -90,7 +123,7 @@ class AccidentesResponse(BaseModel):
 
 
 @router.post("/gmm/calcular", response_model=GMMResponse)
-def calcular_gmm(req: GMMRequest):
+def calcular_gmm(req: GMMRequest) -> dict[str, Any]:
     """Calculate GMM (Gastos Medicos Mayores) premium.
 
     Returns a detailed premium breakdown including base rate, adjustment
@@ -104,18 +137,21 @@ def calcular_gmm(req: GMMRequest):
             suma_asegurada=Decimal(str(req.suma_asegurada)),
             deducible=Decimal(str(req.deducible)),
             coaseguro_pct=Decimal(str(req.coaseguro_pct)),
-            tope_coaseguro=Decimal(str(req.tope_coaseguro)) if req.tope_coaseguro is not None else None,
+            tope_coaseguro=Decimal(str(req.tope_coaseguro))
+            if req.tope_coaseguro is not None
+            else None,
             zona=ZonaGeografica(req.zona),
             nivel=NivelHospitalario(req.nivel),
         )
         desglose = producto.desglose_prima()
-        return _decimal_to_float(desglose)
+        respuesta: dict[str, Any] = _decimal_to_float(desglose)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/accidentes/calcular", response_model=AccidentesResponse)
-def calcular_accidentes(req: AccidentesRequest):
+def calcular_accidentes(req: AccidentesRequest) -> dict[str, Any]:
     """Calculate Accidentes y Enfermedades (A&E) premium.
 
     Returns the annual premium, organic-loss indemnification table,
@@ -134,6 +170,7 @@ def calcular_accidentes(req: AccidentesRequest):
             ),
         )
         tabla = producto.tabla_indemnizaciones()
-        return _decimal_to_float(tabla)
+        respuesta: dict[str, Any] = _decimal_to_float(tabla)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

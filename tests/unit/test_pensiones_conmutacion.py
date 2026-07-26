@@ -17,17 +17,30 @@ from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 # Fixtures
 # ======================================================================
 
+
 @pytest.fixture
 def tabla_simple():
     """Small synthetic mortality table for deterministic tests."""
-    datos = pd.DataFrame({
-        "edad": list(range(0, 6)) + list(range(0, 6)),
-        "sexo": ["H"] * 6 + ["M"] * 6,
-        "qx": [
-            0.01, 0.02, 0.03, 0.05, 0.10, 1.00,  # H: omega=5
-            0.005, 0.01, 0.02, 0.03, 0.05, 1.00,  # M: omega=5
-        ],
-    })
+    datos = pd.DataFrame(
+        {
+            "edad": list(range(0, 6)) + list(range(0, 6)),
+            "sexo": ["H"] * 6 + ["M"] * 6,
+            "qx": [
+                0.01,
+                0.02,
+                0.03,
+                0.05,
+                0.10,
+                1.00,  # H: omega=5
+                0.005,
+                0.01,
+                0.02,
+                0.03,
+                0.05,
+                1.00,  # M: omega=5
+            ],
+        }
+    )
     return TablaMortalidad(nombre="Simple", datos=datos)
 
 
@@ -67,6 +80,7 @@ def tc_emssa_m(tabla_emssa09):
 # ======================================================================
 # Tests: basic commutation values
 # ======================================================================
+
 
 class TestCommutationBasic:
     """Verify fundamental commutation function properties."""
@@ -156,6 +170,7 @@ class TestCommutationBoundaries:
 # Tests: annuity (ax)
 # ======================================================================
 
+
 class TestAnnuity:
     """Test ax (annuity) calculations."""
 
@@ -200,6 +215,7 @@ class TestAnnuity:
 # Tests: insurance (Ax)
 # ======================================================================
 
+
 class TestInsurance:
     """Test Ax (insurance) calculations."""
 
@@ -225,6 +241,7 @@ class TestInsurance:
 # ======================================================================
 # Tests: pure endowment (nEx)
 # ======================================================================
+
 
 class TestPureEndowment:
     """Test nEx (pure endowment) calculations."""
@@ -258,6 +275,7 @@ class TestPureEndowment:
 # ======================================================================
 # Tests: net level premium and reserve
 # ======================================================================
+
 
 class TestPremiumAndReserve:
     """Test Px (premium) and tVx (reserve) calculations."""
@@ -311,3 +329,80 @@ class TestCommutationRepr:
         assert "TablaConmutacion" in r
         assert "Simple" in r
         assert "H" in r
+
+
+class TestEsperanzaDeVida:
+    """Esperanza de vida abreviada `e_x` — hallazgo A5 de `docs/AUDIT.md`.
+
+    `e_x` cuenta años por vivir; `ax` descuenta cada pago por interés. Son
+    cantidades distintas y usar una por la otra sesga cualquier reparto de
+    saldo. Estas pruebas fijan la diferencia con una identidad exacta.
+    """
+
+    def test_valor_calculado_a_mano(self, tc_simple):
+        """e_0 sobre la tabla sintética, sumando lx a mano.
+
+        qx = 0.01, 0.02, 0.03, 0.05, 0.10 con raíz 100,000 da
+        lx = 100000, 99000, 97020, 94109.4, 89403.93, 80463.537, así que
+        e_0 = (99000 + 97020 + 94109.4 + 89403.93 + 80463.537) / 100000.
+        """
+        esperado = (99000 + 97020 + 94109.4 + 89403.93 + 80463.537) / 100000
+
+        assert float(tc_simple.ex(0)) == pytest.approx(esperado, rel=1e-9)
+        assert float(tc_simple.ex(0)) == pytest.approx(4.59996867, rel=1e-9)
+
+    def test_recursion_de_la_esperanza(self, tc_emssa_h):
+        """Identidad: e_x = p_x * (1 + e_{x+1}).
+
+        Es la recursión estándar de la esperanza abreviada. Contrasta el
+        resultado contra una ruta distinta del mismo cálculo, así que detecta
+        un error de indexado o de truncamiento en la suma.
+        """
+        for x in (30, 50, 65, 80):
+            p_x = 1 - float(tc_emssa_h.tabla_mortalidad.obtener_qx(x, "H"))
+            esperado = p_x * (1 + float(tc_emssa_h.ex(x + 1)))
+            assert float(tc_emssa_h.ex(x)) == pytest.approx(esperado, rel=1e-9)
+
+    def test_a_interes_cero_la_anualidad_es_uno_mas_la_esperanza(self, tabla_emssa09):
+        """Identidad exacta: con i = 0, `ax = 1 + e_x`.
+
+        La anualidad anticipada suma `v^t * t_p_x`; sin descuento, `v = 1`, así
+        que se reduce a `1 + suma t_p_x = 1 + e_x`. Esta identidad separa las
+        dos cantidades sin ambigüedad: coinciden solo cuando el interés se
+        anula, y es lo que hace incorrecto usar `ax` como esperanza de vida.
+        """
+        sin_interes = TablaConmutacion(tabla_emssa09, sexo="H", tasa_interes=0.0)
+
+        for x in (40, 65, 85):
+            assert float(sin_interes.ax(x)) == pytest.approx(1 + float(sin_interes.ex(x)), rel=1e-9)
+
+    def test_con_interes_positivo_la_anualidad_subestima_la_esperanza(self, tc_emssa_h):
+        """Con i > 0 el descuento hace `ax` estrictamente menor que `e_x`.
+
+        A 65 años la tabla da e_65 ≈ 17.2 contra ax ≈ 11.6: repartir un saldo
+        entre 11 años en vez de 17 sobreestima el retiro en más de 45%. Ese
+        era el defecto A5.
+        """
+        x = 65
+        ax_val = float(tc_emssa_h.ax(x))
+        ex_val = float(tc_emssa_h.ex(x))
+
+        assert ex_val > ax_val
+        assert ex_val == pytest.approx(17.2, abs=0.3)
+        assert ax_val < 12.5
+
+    def test_es_decreciente_con_la_edad(self, tc_emssa_h):
+        """A mayor edad, menos años por vivir."""
+        valores = [float(tc_emssa_h.ex(x)) for x in range(30, 90, 5)]
+
+        assert valores == sorted(valores, reverse=True)
+
+    def test_edad_terminal_no_tiene_esperanza(self, tc_simple):
+        """En omega no quedan años por vivir."""
+        assert tc_simple.ex(tc_simple.edad_max) == Decimal("0")
+
+    def test_lx_expone_la_tabla_de_sobrevivientes(self, tc_simple):
+        """`lx` es la raíz a la edad mínima y decrece."""
+        assert float(tc_simple.lx(0)) == pytest.approx(100_000)
+        assert float(tc_simple.lx(1)) == pytest.approx(99_000)
+        assert tc_simple.lx(5) < tc_simple.lx(4)

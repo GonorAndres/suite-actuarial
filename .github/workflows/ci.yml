@@ -1,17 +1,47 @@
 name: CI
 
+# Sin filtro de rama: cualquier rama de trabajo pasa por CI. Antes solo
+# corrian `main` y `develop`, asi que una rama de feature podia acumular
+# commits sin verificacion hasta el momento del PR.
 on:
   push:
-    branches: [ main, develop ]
   pull_request:
-    branches: [ main, develop ]
 
 jobs:
+  # Las tres compuertas estaticas corren una sola vez: no dependen de la version
+  # del interprete y repetirlas por cada entrada de la matriz no aporta senal.
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,api,viz]"
+
+    - name: Lint with ruff
+      run: ruff check src/ tests/ examples/ streamlit_app/
+
+    - name: Check formatting with ruff
+      run: ruff format --check src/ tests/ examples/ streamlit_app/
+
+    - name: Type check with mypy
+      # Usa la configuracion de pyproject.toml a proposito: pasar
+      # --ignore-missing-imports por linea de comandos ocultaba errores reales.
+      run: mypy src/ tests/ examples/ streamlit_app/
+
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -26,16 +56,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ".[dev,api]"
 
-    - name: Lint with ruff
+    - name: Build and install wheel
       run: |
-        ruff check src/ tests/
-
-    - name: Type check with mypy
-      continue-on-error: true
-      run: |
-        mypy src/ --ignore-missing-imports
+        python -m pip install build
+        python -m build --wheel --outdir /tmp/suite-actuarial-dist
+        python -m pip install --force-reinstall /tmp/suite-actuarial-dist/*.whl
 
     - name: Test with pytest
+      # SUITE_REQUIRE_API=1 convierte en fallo el skip silencioso de las pruebas
+      # de integracion cuando faltan los extras de API.
+      env:
+        SUITE_REQUIRE_API: "1"
       run: |
         pytest --cov=suite_actuarial --cov-report=xml --cov-report=term
 

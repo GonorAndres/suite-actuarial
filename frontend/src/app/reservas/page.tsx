@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { ReservasStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -12,16 +13,18 @@ import {
   Table,
   Badge,
   MetricCard,
+  AvisoIlustrativo,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
 import { reservesApi } from "@/lib/api";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatNumber } from "@/lib/utils";
 import type {
   ChainLadderRequest,
   BornhuetterFergusonRequest,
   BootstrapRequest,
   ReserveResponse,
+  TipoTriangulo,
 } from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
@@ -45,21 +48,12 @@ const SAMPLE_PRIMAS: Record<number, number> = {
   2023: 8500,
 };
 
-const SAMPLE_SINIESTROS_JSON = JSON.stringify(
-  [
-    { id_siniestro: "S001", fecha_ocurrencia: "2024-01-15", monto_bruto: 150000 },
-    { id_siniestro: "S002", fecha_ocurrencia: "2024-03-22", monto_bruto: 85000 },
-    { id_siniestro: "S003", fecha_ocurrencia: "2024-06-10", monto_bruto: 220000 },
-  ],
-  null,
-  2,
-);
-
 /* ── Default form values ───────────────────────────────────────────────── */
 
 interface ChainLadderForm {
   triangle: string;
   origin_years: string;
+  tipo_triangulo: TipoTriangulo;
   metodo_promedio: "simple" | "weighted" | "geometric";
   tail_factor: string;
 }
@@ -67,6 +61,7 @@ interface ChainLadderForm {
 interface BornhuetterForm {
   triangle: string;
   origin_years: string;
+  tipo_triangulo: TipoTriangulo;
   primas_por_anio: string;
   loss_ratio_apriori: number;
   metodo_promedio: string;
@@ -75,6 +70,7 @@ interface BornhuetterForm {
 interface BootstrapForm {
   triangle: string;
   origin_years: string;
+  tipo_triangulo: TipoTriangulo;
   num_simulaciones: number;
   seed: string;
   percentiles: string;
@@ -83,6 +79,7 @@ interface BootstrapForm {
 const DEFAULT_CL: ChainLadderForm = {
   triangle: SAMPLE_TRIANGLE,
   origin_years: SAMPLE_ORIGIN_YEARS,
+  tipo_triangulo: "acumulado",
   metodo_promedio: "weighted",
   tail_factor: "",
 };
@@ -90,6 +87,7 @@ const DEFAULT_CL: ChainLadderForm = {
 const DEFAULT_BF: BornhuetterForm = {
   triangle: SAMPLE_TRIANGLE,
   origin_years: SAMPLE_ORIGIN_YEARS,
+  tipo_triangulo: "acumulado",
   primas_por_anio: JSON.stringify(SAMPLE_PRIMAS),
   loss_ratio_apriori: 0.65,
   metodo_promedio: "weighted",
@@ -98,6 +96,7 @@ const DEFAULT_BF: BornhuetterForm = {
 const DEFAULT_BS: BootstrapForm = {
   triangle: SAMPLE_TRIANGLE,
   origin_years: SAMPLE_ORIGIN_YEARS,
+  tipo_triangulo: "acumulado",
   num_simulaciones: 1000,
   seed: "42",
   percentiles: "50, 75, 90, 95, 99",
@@ -112,42 +111,82 @@ function ReserveResultCard({
   result: ReserveResponse;
   t: (key: TranslationKey) => string;
 }) {
+  const formatMillions = (value: number) => `$${formatNumber(value, 2)} M`;
   const reservasPorAnio = Object.entries(result.reservas_por_anio).map(
-    ([year, val]) => [year, formatCurrency(val)],
+    ([year, val]) => [year, formatMillions(val)],
   );
 
   const ultimatesPorAnio = Object.entries(result.ultimates_por_anio).map(
-    ([year, val]) => [year, formatCurrency(val)],
+    ([year, val]) => [year, formatMillions(val)],
   );
 
   const csvData = {
     metodo: result.metodo,
-    reserva_total: result.reserva_total,
-    ultimate_total: result.ultimate_total,
-    pagado_total: result.pagado_total,
+    unidad_monetaria: result.unidad_monetaria,
+    reserva_total_millones_mxn: result.reserva_total,
+    ultimate_total_millones_mxn: result.ultimate_total,
+    pagado_total_millones_mxn: result.pagado_total,
     ...Object.fromEntries(
-      Object.entries(result.reservas_por_anio).map(([k, v]) => [`reserva_${k}`, v]),
+      Object.entries(result.reservas_por_anio).map(([k, v]) => [
+        `reserva_${k}_millones_mxn`,
+        v,
+      ]),
     ),
   } as Record<string, unknown>;
 
+  // Bootstrap reports the mean as its central estimate. The prediction error and
+  // the gap against Chain Ladder sit next to it: the gap is ~1% because the
+  // reserve is convex in the development factors, not because the fit is off.
+  const mediana = result.detalles?.mediana as string | undefined;
+  const conciliacion = result.detalles?.conciliacion_cl as string | undefined;
+  const errorPrediccion = result.detalles?.error_prediccion as string | undefined;
+  // The bootstrap is the only method returning a distribution, so percentiles
+  // identify it. Its central estimate is a mean, not a point projection.
+  const esBootstrap = Boolean(
+    result.percentiles && Object.keys(result.percentiles).length > 0,
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
+      <AvisoIlustrativo
+        metadata={result.calculation_metadata}
+        titulo={t("aviso_ilustrativo_titulo")}
+      >
+        {t("reservas_bootstrap_aviso")}
+      </AvisoIlustrativo>
+
+      {/* Scope note: the ODP bootstrap is a supported method, but its
+          distribution is conditional on the model. The limit stays next to the
+          number rather than in a footnote. */}
+      {esBootstrap &&
+        result.calculation_metadata?.validation_tier !== "illustrative" && (
+          <div
+            role="note"
+            className="border-l-2 border-navy/20 bg-navy/5 px-4 py-3 text-sm text-navy/80"
+          >
+            <p className="leading-relaxed">{t("reservas_bootstrap_aviso")}</p>
+          </div>
+        )}
+
       {/* Main totals */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <MetricCard
-          label={t("reserva_total")}
-          value={formatCurrency(result.reserva_total)}
+          label={esBootstrap ? t("reservas_bootstrap_media") : t("reserva_total")}
+          value={formatMillions(result.reserva_total)}
           variant="accent"
+          sublabel={t("reservas_unidad_millones")}
         />
         <MetricCard
           label={t("ultimate_total")}
-          value={formatCurrency(result.ultimate_total)}
+          value={formatMillions(result.ultimate_total)}
           variant="primary"
+          sublabel={t("reservas_unidad_millones")}
         />
         <MetricCard
           label={t("reservas_pagado_total")}
-          value={formatCurrency(result.pagado_total)}
+          value={formatMillions(result.pagado_total)}
           variant="default"
+          sublabel={t("reservas_unidad_millones")}
         />
       </div>
 
@@ -203,11 +242,39 @@ function ReserveResultCard({
       {/* Percentiles (Bootstrap) */}
       {result.percentiles && Object.keys(result.percentiles).length > 0 && (
         <Card title={t("reservas_percentiles")}>
+          {(mediana || conciliacion || errorPrediccion) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+              {errorPrediccion && (
+                <MetricCard
+                  label={t("reservas_bootstrap_error")}
+                  value={formatMillions(Number(errorPrediccion))}
+                  variant="accent"
+                  sublabel={t("reservas_unidad_millones")}
+                />
+              )}
+              {mediana && (
+                <MetricCard
+                  label={t("reservas_bootstrap_mediana")}
+                  value={formatMillions(Number(mediana))}
+                  variant="default"
+                  sublabel={t("reservas_unidad_millones")}
+                />
+              )}
+              {conciliacion && (
+                <MetricCard
+                  label={t("reservas_bootstrap_conciliacion")}
+                  value={formatMillions(Number(conciliacion))}
+                  variant="default"
+                  sublabel={t("reservas_unidad_millones")}
+                />
+              )}
+            </div>
+          )}
           <Table
             headers={[t("reservas_percentil"), t("reserva_total")]}
             rows={Object.entries(result.percentiles).map(([pct, val]) => [
               `${pct}%`,
-              formatCurrency(val),
+              formatMillions(val),
             ])}
           />
         </Card>
@@ -273,8 +340,10 @@ export default function ReservasPage() {
           const req: ChainLadderRequest = {
             triangle: parseTriangle(clForm.triangle),
             origin_years: parseOriginYears(clForm.origin_years),
+            tipo_triangulo: clForm.tipo_triangulo,
             metodo_promedio: clForm.metodo_promedio,
             tail_factor: clForm.tail_factor ? Number(clForm.tail_factor) : null,
+            unidad_monetaria: "millones_mxn",
           };
           await chainLadder.calculate(req);
           break;
@@ -284,9 +353,11 @@ export default function ReservasPage() {
           const req: BornhuetterFergusonRequest = {
             triangle: parseTriangle(bfForm.triangle),
             origin_years: parseOriginYears(bfForm.origin_years),
+            tipo_triangulo: bfForm.tipo_triangulo,
             primas_por_anio: primasObj,
             loss_ratio_apriori: bfForm.loss_ratio_apriori,
             metodo_promedio: bfForm.metodo_promedio,
+            unidad_monetaria: "millones_mxn",
           };
           await bornhuetter.calculate(req);
           break;
@@ -295,11 +366,13 @@ export default function ReservasPage() {
           const req: BootstrapRequest = {
             triangle: parseTriangle(bsForm.triangle),
             origin_years: parseOriginYears(bsForm.origin_years),
+            tipo_triangulo: bsForm.tipo_triangulo,
             num_simulaciones: bsForm.num_simulaciones,
             seed: bsForm.seed ? Number(bsForm.seed) : null,
             percentiles: bsForm.percentiles
               .split(",")
               .map((s) => Number(s.trim())),
+            unidad_monetaria: "millones_mxn",
           };
           await bootstrap.calculate(req);
           break;
@@ -332,18 +405,28 @@ export default function ReservasPage() {
     [t],
   );
 
+  const tipoTrianguloOptions = useMemo(
+    () => [
+      { value: "acumulado", label: t("tipo_triangulo_acumulado") },
+      { value: "incremental", label: t("tipo_triangulo_incremental") },
+    ],
+    [t],
+  );
+
   /* ── Render ─────────────────────────────────────────────────────────── */
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <div className="domain-workbench max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Page header */}
-      <div>
+      <div className="domain-workbench-header">
         <h1 className="font-heading text-3xl md:text-4xl font-bold text-navy mb-2">
           {t("reservas_titulo")}
         </h1>
         <p className="text-navy/60 text-lg">{t("reservas_descripcion")}</p>
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("reservas_contexto")}</p>
       </div>
+
+      <ReservasStory />
 
       {/* Tabs */}
       <Tabs
@@ -352,13 +435,27 @@ export default function ReservasPage() {
         onTabChange={(id) => setActiveTab(id as ReserveTab)}
       />
 
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-navy/15 bg-white/65 px-4 py-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-terracotta">
+            {t("reservas_unidad")}
+          </p>
+          <p className="font-heading font-bold text-navy">
+            {t("reservas_unidad_millones")}
+          </p>
+        </div>
+        <p className="text-sm text-navy/55 max-w-xl">
+          {t("reservas_unidad_explicacion")}
+        </p>
+      </div>
+
       {/* ── Chain Ladder Form ──────��───────────────────────────────── */}
       {activeTab === "chainladder" && (
         <Card className="form-depth">
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-navy mb-1">
-                {t("triangulo")}
+                {t("triangulo")} · {t("reservas_unidad_millones")}
               </label>
               <textarea
                 className="w-full rounded-lg border border-navy/20 bg-white px-4 py-3 text-sm text-navy font-mono focus:border-terracotta focus:ring-1 focus:ring-terracotta"
@@ -371,14 +468,29 @@ export default function ReservasPage() {
               <p className="text-xs text-navy/40 mt-1">
                 {t("reservas_triangulo_hint")}
               </p>
+              <p className="text-xs text-navy/40 mt-1">
+                {t("tipo_triangulo_aviso")}
+              </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Input
                 label={t("anios_origen")}
                 name="origin_years"
                 value={clForm.origin_years}
                 onChange={(e) =>
                   setClForm((prev) => ({ ...prev, origin_years: e.target.value }))
+                }
+              />
+              <Select
+                label={t("tipo_triangulo")}
+                name="tipo_triangulo"
+                options={tipoTrianguloOptions}
+                value={clForm.tipo_triangulo}
+                onChange={(e) =>
+                  setClForm((prev) => ({
+                    ...prev,
+                    tipo_triangulo: e.target.value as TipoTriangulo,
+                  }))
                 }
               />
               <Select
@@ -393,17 +505,20 @@ export default function ReservasPage() {
                   }))
                 }
               />
-              <Input
-                label={t("tail_factor")}
-                name="tail_factor"
-                type="number"
-                step={0.001}
-                min={0}
-                value={clForm.tail_factor}
-                onChange={(e) =>
-                  setClForm((prev) => ({ ...prev, tail_factor: e.target.value }))
-                }
-              />
+              <div>
+                <Input
+                  label={t("tail_factor")}
+                  name="tail_factor"
+                  type="number"
+                  step={0.001}
+                  min={0}
+                  value={clForm.tail_factor}
+                  onChange={(e) =>
+                    setClForm((prev) => ({ ...prev, tail_factor: e.target.value }))
+                  }
+                />
+                <p className="text-xs text-navy/40 mt-1">{t("tail_factor_aviso")}</p>
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <Button
@@ -426,7 +541,7 @@ export default function ReservasPage() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-navy mb-1">
-                {t("triangulo")}
+                {t("triangulo")} · {t("reservas_unidad_millones")}
               </label>
               <textarea
                 className="w-full rounded-lg border border-navy/20 bg-white px-4 py-3 text-sm text-navy font-mono focus:border-terracotta focus:ring-1 focus:ring-terracotta"
@@ -439,14 +554,29 @@ export default function ReservasPage() {
               <p className="text-xs text-navy/40 mt-1">
                 {t("reservas_triangulo_hint")}
               </p>
+              <p className="text-xs text-navy/40 mt-1">
+                {t("tipo_triangulo_aviso")}
+              </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input
                 label={t("anios_origen")}
                 name="origin_years"
                 value={bfForm.origin_years}
                 onChange={(e) =>
                   setBfForm((prev) => ({ ...prev, origin_years: e.target.value }))
+                }
+              />
+              <Select
+                label={t("tipo_triangulo")}
+                name="tipo_triangulo"
+                options={tipoTrianguloOptions}
+                value={bfForm.tipo_triangulo}
+                onChange={(e) =>
+                  setBfForm((prev) => ({
+                    ...prev,
+                    tipo_triangulo: e.target.value as TipoTriangulo,
+                  }))
                 }
               />
               <Input
@@ -467,7 +597,7 @@ export default function ReservasPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-navy mb-1">
-                {t("primas_por_anio")}
+                {t("primas_por_anio")} · {t("reservas_unidad_millones")}
               </label>
               <textarea
                 className="w-full rounded-lg border border-navy/20 bg-white px-4 py-3 text-sm text-navy font-mono focus:border-terracotta focus:ring-1 focus:ring-terracotta"
@@ -502,7 +632,7 @@ export default function ReservasPage() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-navy mb-1">
-                {t("triangulo")}
+                {t("triangulo")} · {t("reservas_unidad_millones")}
               </label>
               <textarea
                 className="w-full rounded-lg border border-navy/20 bg-white px-4 py-3 text-sm text-navy font-mono focus:border-terracotta focus:ring-1 focus:ring-terracotta"
@@ -515,6 +645,9 @@ export default function ReservasPage() {
               <p className="text-xs text-navy/40 mt-1">
                 {t("reservas_triangulo_hint")}
               </p>
+              <p className="text-xs text-navy/40 mt-1">
+                {t("tipo_triangulo_aviso")}
+              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Input
@@ -523,6 +656,18 @@ export default function ReservasPage() {
                 value={bsForm.origin_years}
                 onChange={(e) =>
                   setBsForm((prev) => ({ ...prev, origin_years: e.target.value }))
+                }
+              />
+              <Select
+                label={t("tipo_triangulo")}
+                name="tipo_triangulo"
+                options={tipoTrianguloOptions}
+                value={bsForm.tipo_triangulo}
+                onChange={(e) =>
+                  setBsForm((prev) => ({
+                    ...prev,
+                    tipo_triangulo: e.target.value as TipoTriangulo,
+                  }))
                 }
               />
               <Input
@@ -596,6 +741,7 @@ export default function ReservasPage() {
       {activeTab === "bootstrap" && bootstrap.data && (
         <ReserveResultCard result={bootstrap.data} t={t} />
       )}
+
     </div>
   );
 }

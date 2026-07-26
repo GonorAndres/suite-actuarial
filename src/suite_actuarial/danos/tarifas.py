@@ -8,6 +8,7 @@ Incluye:
 """
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 
 class FactorCredibilidad:
@@ -19,7 +20,7 @@ class FactorCredibilidad:
     """
 
     @staticmethod
-    def buhlmann(experiencia_propia: list[Decimal], prima_manual: Decimal) -> dict:
+    def buhlmann(experiencia_propia: list[Decimal], prima_manual: Decimal) -> dict[str, Any]:
         """
         Credibilidad de Buhlmann clasica.
 
@@ -44,7 +45,7 @@ class FactorCredibilidad:
             }
 
         # Media de experiencia propia
-        media = sum(experiencia_propia) / n
+        media = sum(experiencia_propia, Decimal("0")) / n
 
         if n < 2:
             # Con un solo periodo no se puede estimar varianza;
@@ -57,15 +58,21 @@ class FactorCredibilidad:
                 "n_periodos": n,
             }
 
-        # Varianza de proceso (within): promedio de la varianza de cada observacion
-        # Aproximamos la varianza del proceso como la media (modelo Poisson-like)
+        # Varianza de proceso (EPV). Con un solo riesgo no se puede separar
+        # nonparametricamente de la varianza hipotetica, asi que se ASUME un
+        # modelo Poisson: Var(X | theta) = E[X | theta], estimada por la media.
         varianza_proceso = media
 
-        # Varianza hipotetica (between): varianza de las medias observadas
-        varianza_hipotetica = sum((x - media) ** 2 for x in experiencia_propia) / (n - 1)
+        # Varianza total observada entre periodos. Cada observacion carga las
+        # dos fuentes: Var(X_i) = EPV + VHM.
+        varianza_total = sum(((x - media) ** 2 for x in experiencia_propia), Decimal("0")) / (n - 1)
 
-        # Ajuste: restar componente de proceso de la varianza entre periodos
-        varianza_hipotetica_neta = varianza_hipotetica - varianza_proceso / Decimal(str(n))
+        # VHM = varianza total - EPV. Se resta la varianza de proceso COMPLETA,
+        # no dividida entre n: la varianza muestral estima la dispersion de una
+        # observacion, no la de la media. Dividir entre n restaba de menos,
+        # inflaba la VHM y sobreestimaba la credibilidad (hallazgo A8 de
+        # `docs/AUDIT.md`).
+        varianza_hipotetica_neta = varianza_total - varianza_proceso
 
         if varianza_hipotetica_neta <= 0:
             # No hay variacion entre periodos; toda la variacion es proceso
@@ -97,9 +104,7 @@ class FactorCredibilidad:
         }
 
     @staticmethod
-    def buhlmann_straub(
-        experiencias: list[dict], prima_manual: Decimal
-    ) -> dict:
+    def buhlmann_straub(experiencias: list[dict], prima_manual: Decimal) -> dict[str, Any]:
         """
         Buhlmann-Straub (ponderado por exposicion).
 
@@ -138,32 +143,26 @@ class FactorCredibilidad:
             }
 
         # Tasa propia ponderada por exposicion
-        tasa_propia = sum(
-            e["siniestros"] for e in experiencias
-        ) / Decimal(str(exposicion_total))
+        tasa_propia = sum(e["siniestros"] for e in experiencias) / Decimal(str(exposicion_total))
 
         if n < 2:
             return {
                 "Z": Decimal("0"),
                 "k": None,
                 "prima_credibilidad": prima_manual,
-                "tasa_propia": tasa_propia.quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                ),
+                "tasa_propia": tasa_propia.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
                 "exposicion_total": exposicion_total,
             }
 
-        # Varianza de proceso (within)
-        varianza_proceso = Decimal("0")
+        # Variacion ponderada observada entre periodos: sum m_i (r_i - r)^2.
+        # Carga las dos fuentes de variabilidad, proceso y parametro.
+        variacion_ponderada = Decimal("0")
         for e in experiencias:
             m_i = e["exposicion"]
             if m_i > 0:
                 tasa_i = e["siniestros"] / Decimal(str(m_i))
-                varianza_proceso += Decimal(str(m_i)) * (tasa_i - tasa_propia) ** 2
+                variacion_ponderada += Decimal(str(m_i)) * (tasa_i - tasa_propia) ** 2
 
-        varianza_proceso = varianza_proceso / Decimal(str(n - 1))
-
-        # Varianza hipotetica
         m_total = Decimal(str(exposicion_total))
         m_sq_sum = sum(Decimal(str(e["exposicion"])) ** 2 for e in experiencias)
         c = m_total - m_sq_sum / m_total
@@ -173,24 +172,32 @@ class FactorCredibilidad:
                 "Z": Decimal("0"),
                 "k": None,
                 "prima_credibilidad": prima_manual,
-                "tasa_propia": tasa_propia.quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                ),
+                "tasa_propia": tasa_propia.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
                 "exposicion_total": exposicion_total,
             }
 
-        varianza_hipotetica = (varianza_proceso - tasa_propia) / c
-        if varianza_hipotetica <= 0:
-            varianza_hipotetica = varianza_proceso / c
+        # Varianza de proceso (EPV) por unidad de exposicion. Mismo supuesto
+        # Poisson que en `buhlmann`: Var(N_i) = m_i * r, luego v = r. Con un
+        # solo riesgo no hay forma nonparametrica de separarla de la VHM.
+        varianza_proceso = tasa_propia
+
+        # VHM insesgada: se descuenta de la variacion observada la parte que el
+        # proceso explica, y se escala por c = m - sum(m_i^2)/m.
+        # La version anterior calculaba (variacion/(n-1) - tasa_propia)/c, es
+        # decir, restaba una MEDIA de una VARIANZA, y ademas tenia un fallback
+        # que descartaba la correccion cuando el resultado salia negativo
+        # (hallazgo A8 de `docs/AUDIT.md`).
+        varianza_hipotetica = (variacion_ponderada - Decimal(str(n - 1)) * varianza_proceso) / c
 
         if varianza_hipotetica <= 0:
+            # Toda la variacion observada la explica el proceso: la experiencia
+            # propia no aporta informacion y se usa la prima manual completa.
+            # No se sustituye por un valor positivo arbitrario.
             return {
                 "Z": Decimal("0"),
                 "k": None,
                 "prima_credibilidad": prima_manual,
-                "tasa_propia": tasa_propia.quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                ),
+                "tasa_propia": tasa_propia.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
                 "exposicion_total": exposicion_total,
             }
 
@@ -211,9 +218,7 @@ class FactorCredibilidad:
             "Z": z,
             "k": k,
             "prima_credibilidad": prima_cred,
-            "tasa_propia": tasa_propia.quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            ),
+            "tasa_propia": tasa_propia.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
             "exposicion_total": exposicion_total,
         }
 
@@ -229,15 +234,15 @@ class CalculadoraBonusMalus:
 
     # Escala estandar mexicana
     NIVELES: dict[int, Decimal] = {
-        -5: Decimal("0.70"),   # Max descuento: 30%
+        -5: Decimal("0.70"),  # Max descuento: 30%
         -4: Decimal("0.75"),
         -3: Decimal("0.80"),
         -2: Decimal("0.85"),
         -1: Decimal("0.90"),
-         0: Decimal("1.00"),   # Base
-         1: Decimal("1.15"),
-         2: Decimal("1.30"),
-         3: Decimal("1.50"),   # Max recargo: 50%
+        0: Decimal("1.00"),  # Base
+        1: Decimal("1.15"),
+        2: Decimal("1.30"),
+        3: Decimal("1.50"),  # Max recargo: 50%
     }
 
     NIVEL_MIN = -5
@@ -300,13 +305,15 @@ class CalculadoraBonusMalus:
         for i, siniestros in enumerate(historial_siniestros):
             nivel_previo = self.nivel_actual
             self.transicion(siniestros)
-            resultado.append({
-                "ano": i + 1,
-                "siniestros": siniestros,
-                "nivel_previo": nivel_previo,
-                "nivel_nuevo": self.nivel_actual,
-                "factor": self.factor_actual(),
-            })
+            resultado.append(
+                {
+                    "ano": i + 1,
+                    "siniestros": siniestros,
+                    "nivel_previo": nivel_previo,
+                    "nivel_nuevo": self.nivel_actual,
+                    "factor": self.factor_actual(),
+                }
+            )
         return resultado
 
 
@@ -318,7 +325,7 @@ class TablaTarifas:
     a una prima base.
     """
 
-    def __init__(self, factores: dict) -> None:
+    def __init__(self, factores: dict[str, dict[str, Decimal]]) -> None:
         """
         Args:
             factores: dict anidado de factores de tarificacion.
@@ -343,13 +350,16 @@ class TablaTarifas:
         dimension, valor = next(iter(kwargs.items()))
 
         if dimension not in self.factores:
-            raise KeyError(f"Dimension no encontrada: {dimension}. "
-                           f"Disponibles: {list(self.factores)}")
+            raise KeyError(
+                f"Dimension no encontrada: {dimension}. Disponibles: {list(self.factores)}"
+            )
 
         tabla = self.factores[dimension]
         if valor not in tabla:
-            raise KeyError(f"Valor '{valor}' no encontrado en dimension '{dimension}'. "
-                           f"Disponibles: {list(tabla)}")
+            raise KeyError(
+                f"Valor '{valor}' no encontrado en dimension '{dimension}'. "
+                f"Disponibles: {list(tabla)}"
+            )
 
         return tabla[valor]
 
@@ -368,7 +378,5 @@ class TablaTarifas:
         resultado = prima_base
         for dimension, valor in kwargs.items():
             factor = self.obtener_factor(**{dimension: valor})
-            resultado = (resultado * factor).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            resultado = (resultado * factor).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         return resultado

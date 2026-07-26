@@ -6,6 +6,23 @@
 
 // ── Pricing (Vida) ──────────────────────────────────────────────────────────
 
+export interface CalculationMetadata {
+  model_version: string;
+  valuation_date?: string | null;
+  assumption_id?: string | null;
+  assumption_hash?: string | null;
+  validation_tier:
+    | "supported"
+    | "experimental"
+    | "illustrative"
+    | "deprecated"
+    | string;
+  sources: string[];
+  warnings: string[];
+  reproducibility_id?: string | null;
+  assumptions_snapshot: Record<string, unknown>;
+}
+
 export interface PricingRequest {
   edad: number;
   sexo: "H" | "M";
@@ -25,12 +42,46 @@ export interface PricingResponse {
   moneda: string;
   desglose_recargos: Record<string, number>;
   metadata: Record<string, unknown>;
+  calculation_metadata?: CalculationMetadata | null;
 }
 
 export interface CompareResponse {
   temporal: PricingResponse;
   ordinario: PricingResponse;
   dotal: PricingResponse;
+}
+
+export interface DotalLabRequest extends PricingRequest {
+  plazo_pago: number;
+}
+
+export interface ReservaDotalPoint {
+  anio: number;
+  edad_alcanzada: number;
+  reserva: number;
+}
+
+export interface DotalLabChecks {
+  descomposicion_beneficios: boolean;
+  principio_equivalencia: boolean;
+  reserva_inicial_cero: boolean;
+  reserva_final_igual_beneficio: boolean;
+  recursion_fackler: boolean;
+  diferencia_equivalencia: number;
+  diferencia_descomposicion: number;
+  diferencia_recursion: number;
+}
+
+export interface DotalLabResponse {
+  prima: PricingResponse;
+  plazo_pago: number;
+  vp_beneficio_muerte: number;
+  vp_beneficio_supervivencia: number;
+  vp_beneficios_total: number;
+  factor_anualidad_primas: number;
+  prima_neta_anual_equivalente: number;
+  reservas: ReservaDotalPoint[];
+  verificaciones: DotalLabChecks;
 }
 
 // ── Danos (P&C) ─────────────────────────────────────────────────────────────
@@ -229,32 +280,46 @@ export interface RentaVitaliciaResponse {
 
 // ── Reserves ────────────────────────────────────────────────────────────────
 
+/** Shape of a submitted triangle. Declared, never inferred: an incremental
+ *  triangle read as cumulative understates the reserve. */
+export type TipoTriangulo = "acumulado" | "incremental";
+
 export interface ChainLadderRequest {
   triangle: (number | null)[][];
   origin_years: number[];
+  tipo_triangulo: TipoTriangulo;
+  permitir_desarrollo_negativo?: boolean;
   metodo_promedio?: "simple" | "weighted" | "geometric";
   calcular_tail_factor?: boolean;
   tail_factor?: number | null;
+  unidad_monetaria?: "millones_mxn";
 }
 
 export interface BornhuetterFergusonRequest {
   triangle: (number | null)[][];
   origin_years: number[];
+  tipo_triangulo: TipoTriangulo;
+  permitir_desarrollo_negativo?: boolean;
   primas_por_anio: Record<number, number>;
   loss_ratio_apriori: number;
   metodo_promedio?: string;
+  unidad_monetaria?: "millones_mxn";
 }
 
 export interface BootstrapRequest {
   triangle: (number | null)[][];
   origin_years: number[];
+  tipo_triangulo: TipoTriangulo;
+  permitir_desarrollo_negativo?: boolean;
   num_simulaciones?: number;
   seed?: number | null;
   percentiles?: number[];
+  unidad_monetaria?: "millones_mxn";
 }
 
 export interface ReserveResponse {
   metodo: string;
+  unidad_monetaria: "millones_mxn";
   reserva_total: number;
   ultimate_total: number;
   pagado_total: number;
@@ -263,6 +328,7 @@ export interface ReserveResponse {
   factores_desarrollo?: number[] | null;
   percentiles?: Record<number, number> | null;
   detalles: Record<string, unknown>;
+  calculation_metadata?: CalculationMetadata | null;
 }
 
 // ── Regulatory ──────────────────────────────────────────────────────────────
@@ -317,13 +383,20 @@ export interface RCSResponse {
   ratio_solvencia: number;
   cumple_regulacion: boolean;
   desglose_por_riesgo: Record<string, number>;
+  anio_regulatorio: number;
+  validation_tier: string;
+  disclaimer: string;
+  correlaciones_aplicadas: Record<string, number>;
 }
 
 export interface DeductibilityRequest {
   tipo_seguro: string;
   monto_prima: number;
   es_persona_fisica?: boolean;
-  uma_anual?: number;
+  uma_anual?: number | null;
+  ingreso_anual?: number | null;
+  metodo_pago?: string | null;
+  relacion_beneficiario?: string | null;
 }
 
 export interface DeductibilityResponse {
@@ -333,6 +406,10 @@ export interface DeductibilityResponse {
   porcentaje_deducible: number;
   limite_aplicado: string | null;
   fundamento_legal: string;
+  estado: string;
+  factores_faltantes: string[];
+  uma_anual_aplicada: number;
+  anio_regulatorio: number | null;
 }
 
 export interface WithholdingRequest {
@@ -351,6 +428,8 @@ export interface WithholdingResponse {
   tasa_retencion: number;
   monto_retencion: number;
   monto_neto_pagar: number;
+  regla_aplicada: string | null;
+  disclaimer: string;
 }
 
 // ── Reinsurance ─────────────────────────────────────────────────────────────
@@ -423,6 +502,7 @@ export interface UMAResponse {
 export interface TasasSATResponse {
   tasa_retencion_rentas_vitalicias: number;
   tasa_retencion_retiros_ahorro: number;
+  tasa_retencion_otros_ingresos: number;
   tasa_isr_personas_morales: number;
   tasa_iva: number;
   limite_deducciones_pf_umas: number;
@@ -452,4 +532,8 @@ export interface ConfigAnualResponse {
   tasas_sat: TasasSATResponse;
   factores_cnsf: FactoresCNSFResponse;
   factores_tecnicos: FactoresTecnicosResponse;
+  effective_from?: string | null;
+  effective_to?: string | null;
+  validation_tier: string;
+  provenance: Record<string, unknown>;
 }

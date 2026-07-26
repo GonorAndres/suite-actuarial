@@ -62,7 +62,7 @@ class TestRCSVidaCreacion:
         rcs = RCSVida(config_vida_basico)
         repr_str = repr(rcs)
         assert "RCSVida" in repr_str
-        assert ("500000000" in repr_str or "500,000,000" in repr_str)
+        assert "500000000" in repr_str or "500,000,000" in repr_str
 
 
 class TestRCSMortalidad:
@@ -86,12 +86,8 @@ class TestRCSMortalidad:
 
         # Cartera madura debe tener mayor RCS mortalidad
         # (ajustado por suma asegurada)
-        ratio_joven = (
-            mort_joven / config_vida_cartera_joven.suma_asegurada_total
-        )
-        ratio_madura = (
-            mort_madura / config_vida_cartera_madura.suma_asegurada_total
-        )
+        ratio_joven = mort_joven / config_vida_cartera_joven.suma_asegurada_total
+        ratio_madura = mort_madura / config_vida_cartera_madura.suma_asegurada_total
 
         assert ratio_madura > ratio_joven
 
@@ -288,9 +284,7 @@ class TestValidacionesConfiguracion:
         with pytest.raises(ValueError, match="muy alta"):
             ConfiguracionRCSVida(
                 suma_asegurada_total=Decimal("100000000"),
-                reserva_matematica=Decimal(
-                    "300000000"
-                ),  # 3x suma asegurada
+                reserva_matematica=Decimal("300000000"),  # 3x suma asegurada
                 edad_promedio_asegurados=40,
                 duracion_promedio_polizas=10,
             )

@@ -1,7 +1,6 @@
 """Integration tests for the salud (health) API endpoints."""
 
 
-
 class TestGMMCalcular:
     def test_success(self, api_client):
         payload = {

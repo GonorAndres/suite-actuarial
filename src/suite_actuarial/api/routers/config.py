@@ -5,12 +5,19 @@ Exposes GET endpoints for retrieving year-specific regulatory parameters
 (UMA, SAT rates, CNSF factors) via the configuration loader.
 """
 
+from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from suite_actuarial.config.loader import cargar_config
+from suite_actuarial.config.loader import (
+    cargar_config,
+    cargar_config_fecha,
+    validar_configuraciones,
+)
+from suite_actuarial.config.schema import ConfigAnual
 
 router = APIRouter(prefix="/config", tags=["config"])
 
@@ -35,9 +42,10 @@ class TasasSATResponse(BaseModel):
     tasa_retencion_retiros_ahorro: float = Field(
         ..., description="Retencion ISR sobre retiros de ahorro"
     )
-    tasa_isr_personas_morales: float = Field(
-        ..., description="Tasa ISR personas morales"
+    tasa_retencion_otros_ingresos: float = Field(
+        ..., description="Retencion ISR sobre otros ingresos gravables"
     )
+    tasa_isr_personas_morales: float = Field(..., description="Tasa ISR personas morales")
     tasa_iva: float = Field(..., description="Tasa IVA general")
     limite_deducciones_pf_umas: int = Field(
         ..., description="Limite de deducciones personales en UMAs (Art. 151 LISR)"
@@ -48,22 +56,12 @@ class FactoresCNSFResponse(BaseModel):
     """CNSF regulatory factors for RCS calculation."""
 
     shock_acciones: float = Field(..., description="Shock a acciones")
-    shock_bonos_gubernamentales: float = Field(
-        ..., description="Shock a bonos gubernamentales"
-    )
-    shock_bonos_corporativos: float = Field(
-        ..., description="Shock a bonos corporativos"
-    )
+    shock_bonos_gubernamentales: float = Field(..., description="Shock a bonos gubernamentales")
+    shock_bonos_corporativos: float = Field(..., description="Shock a bonos corporativos")
     shock_inmuebles: float = Field(..., description="Shock a inmuebles")
-    shocks_credito: dict[str, float] = Field(
-        ..., description="Shock de credito por calificacion"
-    )
-    correlacion_vida_danos: float = Field(
-        ..., description="Correlacion RCS vida vs danos"
-    )
-    correlacion_vida_inversion: float = Field(
-        ..., description="Correlacion RCS vida vs inversion"
-    )
+    shocks_credito: dict[str, float] = Field(..., description="Shock de credito por calificacion")
+    correlacion_vida_danos: float = Field(..., description="Correlacion RCS vida vs danos")
+    correlacion_vida_inversion: float = Field(..., description="Correlacion RCS vida vs inversion")
     correlacion_danos_inversion: float = Field(
         ..., description="Correlacion RCS danos vs inversion"
     )
@@ -92,17 +90,21 @@ class ConfigAnualResponse(BaseModel):
     tasas_sat: TasasSATResponse
     factores_cnsf: FactoresCNSFResponse
     factores_tecnicos: FactoresTecnicosResponse
+    effective_from: date | None = None
+    effective_to: date | None = None
+    validation_tier: str = "experimental"
+    provenance: dict = Field(default_factory=dict)
 
 
 # -- Helpers ------------------------------------------------------------------
 
 
-def _decimal_to_float(val):
+def _decimal_to_float(val: Any) -> Any:
     """Convert a value to float if it is a Decimal."""
     return float(val) if isinstance(val, Decimal) else val
 
 
-def _load_config_or_404(anio: int):
+def _load_config_or_404(anio: int) -> ConfigAnual:
     """Load config for the given year or raise HTTP 404."""
     try:
         return cargar_config(anio)
@@ -110,7 +112,7 @@ def _load_config_or_404(anio: int):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-def _config_to_response(config) -> ConfigAnualResponse:
+def _config_to_response(config: ConfigAnual) -> ConfigAnualResponse:
     """Convert a ConfigAnual (with Decimals) to a JSON-safe response."""
     return ConfigAnualResponse(
         anio=config.anio,
@@ -123,58 +125,60 @@ def _config_to_response(config) -> ConfigAnualResponse:
             tasa_retencion_rentas_vitalicias=float(
                 config.tasas_sat.tasa_retencion_rentas_vitalicias
             ),
-            tasa_retencion_retiros_ahorro=float(
-                config.tasas_sat.tasa_retencion_retiros_ahorro
-            ),
-            tasa_isr_personas_morales=float(
-                config.tasas_sat.tasa_isr_personas_morales
-            ),
+            tasa_retencion_retiros_ahorro=float(config.tasas_sat.tasa_retencion_retiros_ahorro),
+            tasa_retencion_otros_ingresos=float(config.tasas_sat.tasa_retencion_otros_ingresos),
+            tasa_isr_personas_morales=float(config.tasas_sat.tasa_isr_personas_morales),
             tasa_iva=float(config.tasas_sat.tasa_iva),
             limite_deducciones_pf_umas=config.tasas_sat.limite_deducciones_pf_umas,
         ),
         factores_cnsf=FactoresCNSFResponse(
             shock_acciones=float(config.factores_cnsf.shock_acciones),
-            shock_bonos_gubernamentales=float(
-                config.factores_cnsf.shock_bonos_gubernamentales
-            ),
-            shock_bonos_corporativos=float(
-                config.factores_cnsf.shock_bonos_corporativos
-            ),
+            shock_bonos_gubernamentales=float(config.factores_cnsf.shock_bonos_gubernamentales),
+            shock_bonos_corporativos=float(config.factores_cnsf.shock_bonos_corporativos),
             shock_inmuebles=float(config.factores_cnsf.shock_inmuebles),
-            shocks_credito={
-                k: float(v)
-                for k, v in config.factores_cnsf.shocks_credito.items()
-            },
-            correlacion_vida_danos=float(
-                config.factores_cnsf.correlacion_vida_danos
-            ),
-            correlacion_vida_inversion=float(
-                config.factores_cnsf.correlacion_vida_inversion
-            ),
-            correlacion_danos_inversion=float(
-                config.factores_cnsf.correlacion_danos_inversion
-            ),
+            shocks_credito={k: float(v) for k, v in config.factores_cnsf.shocks_credito.items()},
+            correlacion_vida_danos=float(config.factores_cnsf.correlacion_vida_danos),
+            correlacion_vida_inversion=float(config.factores_cnsf.correlacion_vida_inversion),
+            correlacion_danos_inversion=float(config.factores_cnsf.correlacion_danos_inversion),
         ),
         factores_tecnicos=FactoresTecnicosResponse(
-            tasa_interes_tecnico_vida=float(
-                config.factores_tecnicos.tasa_interes_tecnico_vida
-            ),
+            tasa_interes_tecnico_vida=float(config.factores_tecnicos.tasa_interes_tecnico_vida),
             tasa_interes_tecnico_pensiones=float(
                 config.factores_tecnicos.tasa_interes_tecnico_pensiones
             ),
             edad_omega=config.factores_tecnicos.edad_omega,
-            margen_seguridad_s114=float(
-                config.factores_tecnicos.margen_seguridad_s114
-            ),
+            margen_seguridad_s114=float(config.factores_tecnicos.margen_seguridad_s114),
         ),
+        effective_from=config.effective_from,
+        effective_to=config.effective_to,
+        validation_tier=config.validation_tier.value,
+        provenance=config.provenance(),
     )
 
 
 # -- Endpoints ----------------------------------------------------------------
 
 
+@router.get("/fecha/{fecha}", response_model=ConfigAnualResponse)
+def get_config_fecha(fecha: date) -> ConfigAnualResponse:
+    """Return the reviewed profile effective on an ISO date."""
+    try:
+        return _config_to_response(cargar_config_fecha(fecha))
+    except (ModuleNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/validate", response_model=list[str])
+def validate_config() -> list[str]:
+    """Validate bundled periods, units and source completeness."""
+    try:
+        return validar_configuraciones()
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @router.get("/{anio}", response_model=ConfigAnualResponse)
-def get_config(anio: int):
+def get_config(anio: int) -> ConfigAnualResponse:
     """Return the full regulatory configuration for a fiscal year.
 
     Loads all parameters (UMA, SAT rates, CNSF factors, technical factors)
@@ -185,7 +189,7 @@ def get_config(anio: int):
 
 
 @router.get("/{anio}/uma", response_model=UMAResponse)
-def get_uma(anio: int):
+def get_uma(anio: int) -> UMAResponse:
     """Return UMA values for a fiscal year.
 
     Returns the daily, monthly, and annual UMA (Unidad de Medida y
@@ -200,7 +204,7 @@ def get_uma(anio: int):
 
 
 @router.get("/{anio}/tasas-sat", response_model=TasasSATResponse)
-def get_tasas_sat(anio: int):
+def get_tasas_sat(anio: int) -> TasasSATResponse:
     """Return SAT tax rates for a fiscal year.
 
     Returns ISR withholding rates, corporate tax rate, IVA rate, and
@@ -208,22 +212,17 @@ def get_tasas_sat(anio: int):
     """
     config = _load_config_or_404(anio)
     return TasasSATResponse(
-        tasa_retencion_rentas_vitalicias=float(
-            config.tasas_sat.tasa_retencion_rentas_vitalicias
-        ),
-        tasa_retencion_retiros_ahorro=float(
-            config.tasas_sat.tasa_retencion_retiros_ahorro
-        ),
-        tasa_isr_personas_morales=float(
-            config.tasas_sat.tasa_isr_personas_morales
-        ),
+        tasa_retencion_rentas_vitalicias=float(config.tasas_sat.tasa_retencion_rentas_vitalicias),
+        tasa_retencion_retiros_ahorro=float(config.tasas_sat.tasa_retencion_retiros_ahorro),
+        tasa_retencion_otros_ingresos=float(config.tasas_sat.tasa_retencion_otros_ingresos),
+        tasa_isr_personas_morales=float(config.tasas_sat.tasa_isr_personas_morales),
         tasa_iva=float(config.tasas_sat.tasa_iva),
         limite_deducciones_pf_umas=config.tasas_sat.limite_deducciones_pf_umas,
     )
 
 
 @router.get("/{anio}/factores-cnsf", response_model=FactoresCNSFResponse)
-def get_factores_cnsf(anio: int):
+def get_factores_cnsf(anio: int) -> FactoresCNSFResponse:
     """Return CNSF regulatory factors for a fiscal year.
 
     Returns market shocks by asset type, credit shocks by rating, and
@@ -233,24 +232,11 @@ def get_factores_cnsf(anio: int):
     config = _load_config_or_404(anio)
     return FactoresCNSFResponse(
         shock_acciones=float(config.factores_cnsf.shock_acciones),
-        shock_bonos_gubernamentales=float(
-            config.factores_cnsf.shock_bonos_gubernamentales
-        ),
-        shock_bonos_corporativos=float(
-            config.factores_cnsf.shock_bonos_corporativos
-        ),
+        shock_bonos_gubernamentales=float(config.factores_cnsf.shock_bonos_gubernamentales),
+        shock_bonos_corporativos=float(config.factores_cnsf.shock_bonos_corporativos),
         shock_inmuebles=float(config.factores_cnsf.shock_inmuebles),
-        shocks_credito={
-            k: float(v)
-            for k, v in config.factores_cnsf.shocks_credito.items()
-        },
-        correlacion_vida_danos=float(
-            config.factores_cnsf.correlacion_vida_danos
-        ),
-        correlacion_vida_inversion=float(
-            config.factores_cnsf.correlacion_vida_inversion
-        ),
-        correlacion_danos_inversion=float(
-            config.factores_cnsf.correlacion_danos_inversion
-        ),
+        shocks_credito={k: float(v) for k, v in config.factores_cnsf.shocks_credito.items()},
+        correlacion_vida_danos=float(config.factores_cnsf.correlacion_vida_danos),
+        correlacion_vida_inversion=float(config.factores_cnsf.correlacion_vida_inversion),
+        correlacion_danos_inversion=float(config.factores_cnsf.correlacion_danos_inversion),
     )

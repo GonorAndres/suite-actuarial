@@ -32,15 +32,15 @@ export default function ProgressBar({
 
   return (
     <div className={cn("space-y-3", className)}>
-      {/* Bar */}
-      <div className="relative h-8 rounded-full overflow-hidden bg-navy/5 flex">
+      {/* Bar: squared segments with a 2px paper gap between fills */}
+      <div className="relative h-8 rounded-sm overflow-hidden bg-navy/5 flex gap-[2px]">
         {segments.map((seg, i) => {
           const pct = (seg.value / computedTotal) * 100;
           if (pct <= 0) return null;
           return (
             <div
               key={i}
-              className="relative h-full transition-all duration-500 ease-out first:rounded-l-full last:rounded-r-full"
+              className="relative h-full transition-all duration-500 ease-out"
               style={{
                 width: `${pct}%`,
                 backgroundColor: seg.color,
@@ -50,7 +50,7 @@ export default function ProgressBar({
             >
               {/* Tooltip */}
               {hoveredIdx === i && (
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-navy text-cream text-xs font-semibold px-2.5 py-1 rounded-md whitespace-nowrap shadow-lg z-10">
+                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-navy text-offwhite text-xs font-semibold px-2.5 py-1 rounded-sm whitespace-nowrap shadow-lg z-10">
                   {seg.label}: {formatValue(seg.value)}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-navy" />
                 </div>
@@ -66,7 +66,7 @@ export default function ProgressBar({
           {segments.map((seg, i) => (
             <div key={i} className="flex items-center gap-2 text-sm">
               <span
-                className="inline-block w-3 h-3 rounded-sm shrink-0"
+                className="inline-block w-3 h-3 rounded-[2px] shrink-0"
                 style={{ backgroundColor: seg.color }}
               />
               <span className="text-navy/60">{seg.label}</span>

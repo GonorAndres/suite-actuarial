@@ -11,7 +11,16 @@ Soporta:
 Referencia: Banco de Mexico, vectores de precios de MBonos y CETES.
 """
 
+import warnings
+from collections.abc import Sequence
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 
 
 class CurvaRendimiento:
@@ -27,10 +36,22 @@ class CurvaRendimiento:
     Las tasas se expresan en forma decimal (ej: 0.08 = 8%).
     """
 
-    def __init__(self, plazos: list[int], tasas: list[Decimal]) -> None:
+    def __init__(
+        self,
+        plazos: Sequence[float],
+        tasas: Sequence[Decimal],
+        *,
+        valuation_date: date | None = None,
+        currency: str = "MXN",
+        compounding_basis: str = "annual_effective",
+        interpolation_method: str = "linear",
+        extrapolation_method: str = "flat",
+        source: str | None = None,
+    ) -> None:
         """
         Args:
             plazos: List of tenors in years [1, 2, 3, 5, 10, 20, 30].
+                Fractional tenors are allowed; `tasa_spot` interpolates over them.
             tasas: Corresponding annual spot rates [0.08, 0.085, ...].
 
         Raises:
@@ -38,9 +59,7 @@ class CurvaRendimiento:
                 are empty, or contain invalid values.
         """
         if len(plazos) != len(tasas):
-            raise ValueError(
-                "plazos y tasas deben tener la misma longitud."
-            )
+            raise ValueError("plazos y tasas deben tener la misma longitud.")
         if len(plazos) == 0:
             raise ValueError("Se requiere al menos un plazo y tasa.")
         if any(p <= 0 for p in plazos):
@@ -52,6 +71,18 @@ class CurvaRendimiento:
         pares = sorted(zip(plazos, tasas, strict=True))
         self.plazos = [p for p, _ in pares]
         self.tasas = [Decimal(str(t)) for _, t in pares]
+        if len(set(self.plazos)) != len(self.plazos):
+            raise ValueError("No puede haber plazos duplicados en una curva")
+        if interpolation_method != "linear":
+            raise ValueError("Solo se admite interpolacion lineal en esta version")
+        if extrapolation_method not in {"flat", "error"}:
+            raise ValueError("extrapolation_method debe ser 'flat' o 'error'")
+        self.valuation_date = valuation_date
+        self.currency = currency
+        self.compounding_basis = compounding_basis
+        self.interpolation_method = interpolation_method
+        self.extrapolation_method = extrapolation_method
+        self.source = source
 
     def tasa_spot(self, plazo: float) -> Decimal:
         """
@@ -78,10 +109,14 @@ class CurvaRendimiento:
 
         # Below minimum: use first rate (flat extrapolation)
         if plazo_d < Decimal(str(self.plazos[0])):
+            if self.extrapolation_method == "error":
+                raise ValueError("El plazo esta fuera del rango de la curva")
             return self.tasas[0]
 
         # Above maximum: use last rate (flat extrapolation)
         if plazo_d > Decimal(str(self.plazos[-1])):
+            if self.extrapolation_method == "error":
+                raise ValueError("El plazo esta fuera del rango de la curva")
             return self.tasas[-1]
 
         # Linear interpolation between surrounding tenors
@@ -137,9 +172,7 @@ class CurvaRendimiento:
         ratio_float = float(ratio)
         dt_float = float(dt)
         forward_float = ratio_float ** (1.0 / dt_float) - 1.0
-        forward = Decimal(str(forward_float)).quantize(
-            Decimal("0.000001"), rounding=ROUND_HALF_UP
-        )
+        forward = Decimal(str(forward_float)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
         return forward
 
@@ -163,9 +196,7 @@ class CurvaRendimiento:
         factor = Decimal("1") / ((Decimal("1") + r) ** plazo_d)
         return factor.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
-    def valor_presente(
-        self, flujos: list[Decimal], plazos: list[float]
-    ) -> Decimal:
+    def valor_presente(self, flujos: list[Decimal], plazos: list[float]) -> Decimal:
         """
         Present value of a series of cashflows.
 
@@ -182,9 +213,7 @@ class CurvaRendimiento:
             ValueError: If flujos and plazos have different lengths.
         """
         if len(flujos) != len(plazos):
-            raise ValueError(
-                "flujos y plazos deben tener la misma longitud."
-            )
+            raise ValueError("flujos y plazos deben tener la misma longitud.")
 
         pv = Decimal("0")
         for flujo, plazo in zip(flujos, plazos, strict=True):
@@ -212,6 +241,40 @@ class CurvaRendimiento:
         return cls(plazos, tasas)
 
     @classmethod
+    def desde_csv(
+        cls,
+        path: str | Path,
+        *,
+        fecha_valuacion: date | None = None,
+        currency: str = "MXN",
+        source: str | None = None,
+        plazo_columna: str = "plazo",
+        tasa_columna: str = "tasa",
+    ) -> "CurvaRendimiento":
+        """Importa una curva desde CSV sin convertir tasas silenciosamente."""
+        frame = pd.read_csv(path)
+        if plazo_columna not in frame or tasa_columna not in frame:
+            raise ValueError(f"El CSV debe incluir {plazo_columna!r} y {tasa_columna!r}")
+        return cls(
+            [float(value) for value in frame[plazo_columna]],
+            [Decimal(str(value)) for value in frame[tasa_columna]],
+            valuation_date=fecha_valuacion,
+            currency=currency,
+            source=source or str(path),
+        )
+
+    @classmethod
+    def desde_dataframe(cls, frame: pd.DataFrame, **kwargs: Any) -> "CurvaRendimiento":
+        """Importa una curva desde un DataFrame con columnas ``plazo`` y ``tasa``."""
+        if not {"plazo", "tasa"}.issubset(frame.columns):
+            raise ValueError("El DataFrame debe incluir columnas 'plazo' y 'tasa'")
+        return cls(
+            [float(value) for value in frame["plazo"]],
+            [Decimal(str(value)) for value in frame["tasa"]],
+            **kwargs,
+        )
+
+    @classmethod
     def cetes_referencia(cls) -> "CurvaRendimiento":
         """
         Create a representative CETES/MBonos yield curve for Mexico.
@@ -230,6 +293,11 @@ class CurvaRendimiento:
         Returns:
             CurvaRendimiento with representative Mexican rates.
         """
+        warnings.warn(
+            "cetes_referencia() es un escenario ilustrativo, no una curva CUSF institucional.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
         plazos = [1, 2, 3, 5, 10, 20, 30]
         tasas = [
             Decimal("0.1080"),  # 1 year
@@ -240,4 +308,9 @@ class CurvaRendimiento:
             Decimal("0.0950"),  # 20 years
             Decimal("0.0940"),  # 30 years
         ]
-        return cls(plazos, tasas)
+        return cls(
+            plazos,
+            tasas,
+            currency="MXN",
+            source="Escenario ilustrativo CETES/MBonos 2024 (sin proveedor de precios)",
+        )

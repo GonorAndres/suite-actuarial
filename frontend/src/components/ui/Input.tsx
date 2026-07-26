@@ -19,7 +19,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium text-navy/80 mb-1">
+      <label
+        htmlFor={id}
+        className="block text-xs font-semibold uppercase tracking-wider text-navy/70 mb-1.5"
+      >
         {label}
       </label>
       <input
@@ -29,15 +32,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         className={[
-          "w-full px-3 py-2 border rounded-lg bg-white text-navy",
-          "focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta",
+          "w-full px-3 py-2 border rounded-sm bg-white text-navy",
+          "focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy",
           "transition-colors",
-          error ? "border-red-400" : "border-amber/30",
+          error ? "border-terracotta" : "border-navy/25",
         ].join(" ")}
         {...rest}
       />
       {error && (
-        <p id={errorId} className="text-red-600 text-sm mt-1" role="alert">
+        <p id={errorId} className="text-terracotta text-sm mt-1" role="alert">
           {error}
         </p>
       )}

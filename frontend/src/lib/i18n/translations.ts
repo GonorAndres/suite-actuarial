@@ -47,7 +47,7 @@ export const translations = {
 
     // -- Vida (Life) --
     vida_titulo: "Seguros de Vida",
-    vida_descripcion: "Cálculo de primas para seguros de vida temporal, ordinario y dotal.",
+    vida_descripcion: "Beneficios, primas y reservas para seguros temporal, ordinario y dotal.",
     vida_temporal: "Vida Temporal",
     vida_ordinario: "Vida Ordinario",
     vida_dotal: "Dotal",
@@ -58,7 +58,7 @@ export const translations = {
 
     // -- Danos (P&C) --
     danos_titulo: "Seguros de Daños",
-    danos_descripcion: "Cotización de seguros de automóvil, incendio y responsabilidad civil.",
+    danos_descripcion: "Modelos de pérdidas y tarificación para automóvil, incendio y responsabilidad civil.",
     danos_auto: "Seguro de Auto",
     danos_incendio: "Seguro de Incendio",
     danos_rc: "Responsabilidad Civil",
@@ -80,7 +80,7 @@ export const translations = {
 
     // -- Salud (Health) --
     salud_titulo: "Seguros de Salud",
-    salud_descripcion: "Cálculo de primas para GMM y Accidentes y Enfermedades.",
+    salud_descripcion: "Diseño de costos compartidos y primas para salud y accidentes.",
     salud_gmm: "Gastos Médicos Mayores",
     salud_accidentes: "Accidentes y Enfermedades",
     coaseguro: "Coaseguro",
@@ -92,7 +92,7 @@ export const translations = {
 
     // -- Pensiones --
     pensiones_titulo: "Pensiones",
-    pensiones_descripcion: "Cálculo de pensiones IMSS Ley 73/97, rentas vitalicias y tablas de conmutación.",
+    pensiones_descripcion: "Beneficios de retiro, rentas vitalicias y tablas de conmutación.",
     pensiones_ley73: "Pensión Ley 73",
     pensiones_ley97: "Pensión Ley 97",
     pensiones_renta_vitalicia: "Renta Vitalicia",
@@ -109,14 +109,28 @@ export const translations = {
 
     // -- Reservas --
     reservas_titulo: "Reservas",
-    reservas_descripcion: "Cálculo de reservas con Chain Ladder, Bornhuetter-Ferguson y Bootstrap.",
+    reservas_descripcion: "Desarrollo de siniestros, estimación de reservas e incertidumbre.",
     reservas_chain_ladder: "Chain Ladder",
     reservas_bornhuetter: "Bornhuetter-Ferguson",
-    reservas_bootstrap: "Bootstrap",
+    reservas_bootstrap: "Bootstrap ODP",
+    aviso_ilustrativo_titulo: "Resultado ilustrativo",
+    reservas_bootstrap_aviso:
+      "Bootstrap ODP de England-Verrall: remuestrea residuales de Pearson sobre los incrementales, contra valores ajustados hacia atrás desde el ultimate, y simula la varianza de proceso de cada celda futura. La dispersión es el error de predicción de la reserva. Es condicional al modelo — patrón de desarrollo estable y varianza proporcional a la media — así que no cubre riesgo de modelo, cambio de mezcla ni inflación no observada, y no es una medida de capital regulatorio.",
+    reservas_bootstrap_media: "Media (estimador central)",
+    reservas_bootstrap_mediana: "Mediana",
+    reservas_bootstrap_conciliacion: "Diferencia contra Chain Ladder",
+    reservas_bootstrap_error: "Error de predicción",
     triangulo: "Triángulo de desarrollo",
     anios_origen: "Años de origen",
     metodo_promedio: "Método de promedio",
+    tipo_triangulo: "Tipo de triángulo",
+    tipo_triangulo_acumulado: "Acumulado",
+    tipo_triangulo_incremental: "Incremental",
+    tipo_triangulo_aviso:
+      "Declara la forma en que vienen los valores del triángulo. No se deduce: un triángulo incremental leído como acumulado produce una reserva menor a la correcta, sin error ni advertencia.",
     tail_factor: "Factor de cola",
+    tail_factor_aviso:
+      "El factor de cola representa el desarrollo posterior al último periodo observado. Decláralo con su justificación, o deja que el paquete lo estime ajustando la curva de potencia inversa de Sherman (1984) a los factores observados. En cualquier caso es extrapolación: ningún dato del triángulo respalda ese tramo.",
     primas_por_anio: "Primas por año",
     loss_ratio: "Loss ratio a priori",
     num_simulaciones: "Número de simulaciones",
@@ -125,17 +139,17 @@ export const translations = {
 
     // -- Regulatorio --
     regulatorio_titulo: "Regulatorio",
-    regulatorio_descripcion: "Cálculo del RCS (CNSF) y validaciones fiscales SAT.",
+    regulatorio_descripcion: "Escenarios de referencia para capital, reservas y reglas fiscales.",
     regulatorio_rcs: "Requerimiento de Capital de Solvencia",
     regulatorio_deducibilidad: "Deducibilidad SAT",
     regulatorio_retenciones: "Retenciones ISR",
     capital_minimo: "Capital mínimo pagado",
-    ratio_solvencia: "Ratio de solvencia",
+    ratio_solvencia: "Ratio de solvencia (capital/RCS)",
     cumple_regulacion: "Cumple regulación",
 
     // -- Reaseguro --
     reaseguro_titulo: "Reaseguro",
-    reaseguro_descripcion: "Cálculo de contratos cuota parte, exceso de pérdida y stop loss.",
+    reaseguro_descripcion: "Estructuras de cesión, retención y recuperación de pérdidas.",
     reaseguro_quota_share: "Cuota Parte",
     reaseguro_xl: "Exceso de Pérdida",
     reaseguro_stop_loss: "Stop Loss",
@@ -146,7 +160,7 @@ export const translations = {
     recuperacion: "Recuperación de reaseguro",
 
     // -- Footer --
-    footer_version: "v2.0.0",
+    footer_version: "v2.1.0",
     footer_derechos: "(c) 2026 Andrés González Ortega",
     footer_github: "GitHub",
     footer_api_docs: "API Docs",
@@ -155,8 +169,8 @@ export const translations = {
     hero_titulo: "suite_actuarial",
     hero_subtitulo: "Plataforma actuarial open-source para el mercado mexicano",
     hero_descripcion:
-      "Calcula primas de vida, daños, salud, pensiones. Estima reservas. " +
-      "Valida cumplimiento regulatorio. Modela reaseguro. Todo en un solo lugar.",
+      "Explora primas de vida, daños, salud y pensiones. Estima reservas. " +
+      "Compara modelos de referencia, supuestos y esquemas de reaseguro.",
     hero_cta: "Explorar calculadoras",
     hero_docs: "Ver en GitHub",
 
@@ -171,8 +185,8 @@ export const translations = {
     home_inicio_desc: "Página principal de suite_actuarial.",
 
     // -- Home features --
-    feature_regulatory_title: "Cumplimiento regulatorio",
-    feature_regulatory_desc: "Cálculo de RCS conforme a la CNSF y validaciones fiscales del SAT.",
+    feature_regulatory_title: "Referencia regulatoria",
+    feature_regulatory_desc: "Modelos CNSF, SAT e IMSS con supuestos y limitaciones explícitos.",
     feature_opensource_title: "Código abierto",
     feature_opensource_desc: "100% open source bajo licencia MIT. Auditable, extensible, gratuito.",
     feature_domains_title: "8 dominios actuariales",
@@ -342,8 +356,11 @@ export const translations = {
     reservas_factores_desarrollo: "Factores de desarrollo",
     reservas_percentiles: "Percentiles",
     reservas_percentil: "Percentil",
-    reservas_triangulo_hint: "JSON: matriz de arreglos. null para celdas vacías. Ej: [[3000,5000,null],[3200,null,null]]",
-    reservas_primas_hint: "JSON: objeto con año como clave y prima como valor. Ej: {\"2020\": 7000, \"2021\": 7500}",
+    reservas_unidad: "Unidad monetaria del ejercicio",
+    reservas_unidad_millones: "Millones de MXN",
+    reservas_unidad_explicacion: "Cada importe capturado y calculado usa esta escala. Por ejemplo, 3,000 representa MXN 3,000 millones.",
+    reservas_triangulo_hint: "Importes en millones de MXN. JSON: matriz de arreglos; null para celdas vacías. Ej.: [[3000,5000,null],[3200,null,null]]",
+    reservas_primas_hint: "Primas en millones de MXN. JSON: objeto con año como clave. Ej.: {\"2020\": 7000, \"2021\": 7500}",
     reservas_promedio_simple: "Simple",
     reservas_promedio_ponderado: "Ponderado",
     reservas_promedio_geometrico: "Geométrico",
@@ -401,6 +418,26 @@ export const translations = {
     reg_tipo_invalidez: "Invalidez",
     reg_monto_pago: "Monto del pago",
     reg_monto_gravable: "Monto gravable",
+    reg_aviso_alcance: "Alcance del modelo",
+    reg_aviso_rcs: "Los shocks, la matriz de correlación y los factores de mortalidad y longevidad de este cálculo son valores ilustrativos con fines didácticos. No son el modelo de solvencia publicado por la CNSF y no deben usarse como referencia regulatoria.",
+    reg_perfil_regulatorio: "Perfil regulatorio aplicado",
+    reg_correlaciones_aplicadas: "Correlaciones aplicadas",
+    reg_uma_aplicada: "UMA anual aplicada",
+    reg_estado_fiscal: "Estado",
+    reg_estado_indeterminate: "Indeterminado",
+    reg_estado_eligible: "Deducible",
+    reg_estado_not_eligible: "No deducible",
+    reg_factores_faltantes: "Faltan datos para una respuesta determinante",
+    reg_ingreso_anual: "Ingreso anual",
+    reg_metodo_pago: "Método de pago",
+    reg_metodo_pago_no_declarado: "Sin declarar",
+    reg_metodo_transferencia: "Transferencia",
+    reg_metodo_cheque: "Cheque nominativo",
+    reg_metodo_tarjeta: "Tarjeta",
+    reg_metodo_efectivo: "Efectivo",
+    reg_regla_aplicada: "Regla que aplicó",
+    reg_aviso_retenciones: "Las tasas de retención y las citas de artículos de esta pestaña no están verificadas contra el texto vigente de la LISR. Son ilustrativas.",
+    reg_exclusivo_renta_retiro: "Un pago es renta vitalicia o retiro de ahorro, no ambos.",
     reg_es_renta_vitalicia: "Renta vitalicia",
     reg_es_retiro_ahorro: "Retiro de ahorro",
     reg_requiere_retencion: "Requiere retención",
@@ -435,7 +472,7 @@ export const translations = {
 
     // -- API Docs --
     api_docs_title: "Documentación de la API",
-    api_docs_subtitle: "Referencia completa de los 26 endpoints REST disponibles.",
+    api_docs_subtitle: "Referencia de los 30 endpoints de dominio REST disponibles.",
     api_docs_base_url: "URL base",
     api_docs_auth: "Sin autenticación requerida",
     api_docs_swagger: "Ver documentación interactiva en",
@@ -453,16 +490,79 @@ export const translations = {
 
     // -- Home "What is" section --
     home_what_title: "¿Qué es suite_actuarial?",
-    home_what_text: "suite_actuarial es una plataforma actuarial de código abierto diseñada para profesionales del mercado asegurador mexicano. Calcula primas, estima reservas, valida cumplimiento regulatorio y modela esquemas de reaseguro — todo basado en la normativa vigente de la CNSF, SAT e IMSS. Selecciona un dominio para comenzar.",
+    home_what_text: "suite_actuarial es una plataforma abierta para aprender, investigar y desarrollar modelos actuariales desde el contexto asegurador mexicano. Hace visibles fórmulas, supuestos, fuentes, resultados y alcance. Los usos profesionales requieren la revisión técnica y regulatoria correspondiente.",
 
     // -- Contextual help per calculator --
-    vida_contexto: "Calcula la prima neta y bruta para seguros de vida temporal, ordinario (vida entera) y dotal (mixto). Ingresa los datos del asegurado y los parámetros del producto para obtener el desglose completo de la prima con recargos por gastos y utilidad.",
-    danos_contexto: "Cotiza seguros de daños para el mercado mexicano: automóvil con tarifas AMIS, incendio por tipo de construcción, responsabilidad civil por clase de actividad. Incluye sistema bonus-malus y modelo colectivo de frecuencia-severidad.",
-    salud_contexto: "Tarifica productos de salud: Gastos Médicos Mayores (GMM) con deducible, coaseguro y nivel hospitalario, y Accidentes y Enfermedades con tabla de indemnizaciones por ocupación.",
-    pensiones_contexto: "Calcula pensiones bajo los regímenes IMSS Ley 73 (beneficio definido) y Ley 97 (contribución definida con Afore). Incluye rentas vitalicias y tablas de conmutación actuariales.",
-    reservas_contexto: "Estima reservas IBNR (Incurred But Not Reported) usando tres métodos estándar de la industria: Chain Ladder, Bornhuetter-Ferguson y Bootstrap. Ingresa un triángulo de desarrollo acumulado para obtener las reservas por año de origen.",
-    regulatorio_contexto: "Valida el cumplimiento regulatorio: calcula el Requerimiento de Capital de Solvencia (RCS) conforme a la CNSF, verifica la deducibilidad de primas según el SAT, y determina retenciones de ISR sobre pagos de seguros.",
-    reaseguro_contexto: "Analiza esquemas de reaseguro: cuota parte (proporcional), exceso de pérdida (no proporcional por riesgo o evento) y stop loss (agregado). Ingresa los parámetros del contrato y los siniestros para ver el impacto en la retención.",
+    vida_contexto: "Estudia cómo la promesa contractual, la mortalidad, el descuento y el plazo de pago determinan la prima y la reserva. Los modelos permiten comparar temporal, vida entera y dotal bajo un mismo conjunto de supuestos.",
+    danos_contexto: "Estudia cómo exposición, frecuencia, severidad, deducible y experiencia modifican el costo esperado. Incluye ejemplos de automóvil, incendio, responsabilidad civil, credibilidad y bonus-malus.",
+    salud_contexto: "Estudia cómo edad, morbilidad, deducible, coaseguro, nivel hospitalario y ocupación distribuyen el costo entre asegurado y aseguradora.",
+    pensiones_contexto: "Estudia cómo historial laboral, ahorro, mortalidad e interés se convierten en beneficios de retiro. Incluye escenarios Ley 73/97, rentas vitalicias y funciones de conmutación.",
+    reservas_contexto: "Estudia el desarrollo futuro de siniestros con Chain Ladder, Bornhuetter-Ferguson y Bootstrap. El ejemplo mantiene triángulos, primas y resultados en millones de MXN.",
+    regulatorio_contexto: "Estudia escenarios simplificados de capital, reservas, deducibilidad y retenciones con fuentes y alcance declarados. Cada uso debe contrastarse con la normativa vigente y el método aprobado por la organización.",
+    reaseguro_contexto: "Estudia cómo cuota parte, exceso de pérdida y stop loss modifican primas, siniestros, retención y recuperación bajo diferentes estructuras contractuales.",
+
+    // -- Casos ilustrativos por dominio --
+    hist_kicker: "Ejemplo aplicado",
+    hist_leccion: "Interpretación actuarial",
+    hist_recalculo: "Ajuste los parámetros para observar cómo cambia el resultado.",
+    hist_api_error: "El motor de cálculo no está disponible en este momento.",
+    hist_anios: "años",
+
+    hist1_title: "Ana contrata un temporal a 20 años",
+    hist1_narrativa: "Ana, de 32 años, contrata un seguro temporal para garantizar el pago de la hipoteca y la educación de su hija en caso de fallecer. La póliza paga la suma asegurada únicamente si el fallecimiento ocurre dentro del plazo y no acumula valor de rescate. El costo de la cobertura depende de tres variables que puede ajustar aquí.",
+    hist1_edad: "Edad de contratación",
+    hist1_sa: "Suma asegurada",
+    hist1_plazo: "Plazo",
+    hist1_prima_anual: "Prima anual de tarifa",
+    hist1_por_dia: "por día",
+    hist1_leccion: "La prima refleja la mortalidad esperada a cada edad: al aumentar la edad de contratación la prima crece, mientras que el plazo y la suma asegurada la escalan. El cálculo usa la tabla EMSSA-09, una tasa técnica de 5.5% anual y recargos por gastos y utilidad.",
+
+    hist2_title: "Miguel elige su deducible",
+    hist2_narrativa: "Miguel asegura un sedán de $420,000 en la Ciudad de México. Al elegir el deducible define qué parte de cada siniestro asume directamente y qué parte transfiere a la aseguradora; esa decisión se refleja en la prima.",
+    hist2_deducible: "Deducible",
+    hist2_del_valor: "del valor del vehículo",
+    hist2_prima: "Prima anual",
+    hist2_leccion: "Un deducible mayor excluye los siniestros pequeños del contrato y reduce el costo esperado para la aseguradora, por lo que la prima disminuye. La protección frente a pérdidas mayores se mantiene sin cambios.",
+
+    hist3_title: "La renovación de Laura",
+    hist3_narrativa: "Laura, de 45 años, renueva un plan de gastos médicos mayores con suma asegurada de $5,000,000, deducible de $40,000 y coaseguro de 10%. La prima aumenta cada año aunque no haya presentado reclamaciones.",
+    hist3_edad: "Edad de la asegurada",
+    hist3_prima: "Prima anual",
+    hist3_leccion: "La prima de gastos médicos crece con la edad porque la frecuencia y el costo de las hospitalizaciones aumentan (curva de morbilidad). A esto se suma la inflación médica, que en México supera a la inflación general; por ello las renovaciones se proyectan con una tendencia médica cercana al 10% anual y no con el INPC.",
+
+    hist4_title: "Roberto y Sofía: dos regímenes del IMSS",
+    hist4_narrativa: "Roberto se afilió al IMSS en 1990 y se pensiona bajo la Ley de 1973: el monto se determina por las semanas cotizadas y el salario promedio, con tope de 25 UMA. Su hija Sofía, afiliada en 2005, se pensionará bajo la Ley de 1997: su saldo de AFORE se convierte en una renta vitalicia.",
+    hist4_semanas: "Semanas cotizadas (Roberto)",
+    hist4_salario: "Salario promedio diario (tope: 25 UMA = $2,932.75)",
+    hist4_pension73: "Pensión mensual Ley 73",
+    hist4_saldo: "Saldo AFORE al retiro (Sofía)",
+    hist4_pension97: "Renta vitalicia mensual Ley 97",
+    hist4_leccion: "En el esquema de beneficio definido (Ley 73) el monto depende del historial laboral y el sistema asume el riesgo de longevidad. En contribución definida (Ley 97) depende del saldo acumulado y de la tabla de mortalidad con la que se calcula la renta. El régimen aplicable lo determina la fecha de afiliación, no la de retiro.",
+
+    hist5_title: "La reserva y el factor de cola",
+    hist5_narrativa: "Los siniestros de un ejercicio generan pagos durante varios años. Para estimar la reserva necesaria, el actuario proyecta un triángulo de pagos históricos (2019-2024, millones de MXN) con Chain Ladder. El factor de cola representa el desarrollo esperado después del último periodo observado.",
+    hist5_cola: "Factor de cola",
+    hist5_sin_cola: "sin cola",
+    hist5_reserva: "Reserva estimada",
+    hist5_ultimate: "Costo último estimado",
+    hist5_leccion: "Un factor de cola de 3% modifica la reserva en varios millones de pesos. Las reservas son estimaciones sensibles a los supuestos; la regulación exige documentarlos y la práctica actuarial cuantifica su incertidumbre. El laboratorio implementa el modelo de Mack (1993), que estima una varianza por periodo de desarrollo y compone el error de predicción por año de origen; mide el error condicionado al Chain Ladder, no el riesgo de modelo.",
+
+    hist6_title: "Capital y solvencia",
+    hist6_narrativa: "El Requerimiento de Capital de Solvencia (RCS) es el capital que la CNSF exige a una aseguradora para absorber un ejercicio adverso. Este ejemplo estudia la agregación de módulos de vida, daños e inversión mediante un escenario simplificado, cuyo alcance está documentado como referencia didáctica.",
+    hist6_capital: "Capital disponible",
+    hist6_rcs: "RCS agregado",
+    hist6_cobertura: "Índice de cobertura",
+    hist6_cumple: "Cubre el requerimiento",
+    hist6_no_cumple: "No cubre el requerimiento",
+    hist6_diversificacion: "Beneficio de diversificación",
+    hist6_leccion: "La solvencia se evalúa comparando el capital disponible contra el requerimiento. La agregación con correlaciones reconoce que los riesgos de vida, daños e inversión no se materializan simultáneamente, por lo que el RCS total es menor que la suma de los módulos.",
+
+    hist7_title: "Una capa catastrófica $80M xs $20M",
+    hist7_narrativa: "Una aseguradora expuesta a huracán contrata una capa de exceso de pérdida de $80 millones en exceso de $20 millones. En cada evento retiene la prioridad y recupera del reasegurador el exceso, hasta agotar la capacidad de la capa.",
+    hist7_perdida: "Pérdida del evento",
+    hist7_cedente: "Retiene la cedente",
+    hist7_reasegurador: "Recupera del reasegurador",
+    hist7_leccion: "La recuperación del reasegurador equivale a min(max(0, S − prioridad), capacidad). Para pérdidas mayores a $100 millones la capa se agota y el excedente regresa a la cedente; en la práctica se cubre con capas adicionales o reaseguro facultativo.",
   },
 
   en: {
@@ -507,7 +607,7 @@ export const translations = {
 
     // -- Vida (Life) --
     vida_titulo: "Life Insurance",
-    vida_descripcion: "Premium calculation for term life, whole life, and endowment products.",
+    vida_descripcion: "Benefits, premiums, and reserves for term, whole life, and endowment insurance.",
     vida_temporal: "Term Life",
     vida_ordinario: "Whole Life",
     vida_dotal: "Endowment",
@@ -518,7 +618,7 @@ export const translations = {
 
     // -- Danos (P&C) --
     danos_titulo: "Property & Casualty",
-    danos_descripcion: "Auto, fire, and liability insurance quotation.",
+    danos_descripcion: "Loss and pricing models for auto, fire, and liability insurance.",
     danos_auto: "Auto Insurance",
     danos_incendio: "Fire Insurance",
     danos_rc: "General Liability",
@@ -540,7 +640,7 @@ export const translations = {
 
     // -- Salud (Health) --
     salud_titulo: "Health Insurance",
-    salud_descripcion: "Premium calculation for GMM and Accident & Sickness products.",
+    salud_descripcion: "Cost-sharing and premium design for health and accident products.",
     salud_gmm: "Major Medical Expenses (GMM)",
     salud_accidentes: "Accident & Sickness",
     coaseguro: "Coinsurance",
@@ -552,7 +652,7 @@ export const translations = {
 
     // -- Pensiones --
     pensiones_titulo: "Pensions",
-    pensiones_descripcion: "IMSS Ley 73/97 pension calculation, life annuities, and commutation tables.",
+    pensiones_descripcion: "Retirement benefits, life annuities, and commutation tables.",
     pensiones_ley73: "Ley 73 Pension",
     pensiones_ley97: "Ley 97 Pension",
     pensiones_renta_vitalicia: "Life Annuity",
@@ -569,14 +669,28 @@ export const translations = {
 
     // -- Reservas --
     reservas_titulo: "Reserves",
-    reservas_descripcion: "Reserve estimation using Chain Ladder, Bornhuetter-Ferguson, and Bootstrap.",
+    reservas_descripcion: "Claims development, reserve estimation, and uncertainty.",
     reservas_chain_ladder: "Chain Ladder",
     reservas_bornhuetter: "Bornhuetter-Ferguson",
-    reservas_bootstrap: "Bootstrap",
+    reservas_bootstrap: "ODP bootstrap",
+    aviso_ilustrativo_titulo: "Illustrative result",
+    reservas_bootstrap_aviso:
+      "England-Verrall ODP bootstrap: it re-samples Pearson residuals on incremental claims, against values fitted backwards from the ultimate, and simulates the process variance of each future cell. The spread is the reserve's prediction error. It is conditional on the model — stable development pattern and variance proportional to the mean — so it does not cover model risk, mix change or unobserved inflation, and it is not a regulatory capital measure.",
+    reservas_bootstrap_media: "Mean (central estimate)",
+    reservas_bootstrap_mediana: "Median",
+    reservas_bootstrap_conciliacion: "Difference vs Chain Ladder",
+    reservas_bootstrap_error: "Prediction error",
     triangulo: "Development triangle",
     anios_origen: "Origin years",
     metodo_promedio: "Averaging method",
+    tipo_triangulo: "Triangle type",
+    tipo_triangulo_acumulado: "Cumulative",
+    tipo_triangulo_incremental: "Incremental",
+    tipo_triangulo_aviso:
+      "State the shape the triangle values come in. It is not inferred: an incremental triangle read as cumulative produces a reserve lower than the correct one, with no error and no warning.",
     tail_factor: "Tail factor",
+    tail_factor_aviso:
+      "The tail factor stands for development beyond the last observed period. State it with its justification, or let the package estimate it by fitting Sherman's (1984) inverse power curve to the observed factors. Either way it is extrapolation: no data in the triangle backs that stretch.",
     primas_por_anio: "Premiums by year",
     loss_ratio: "A priori loss ratio",
     num_simulaciones: "Number of simulations",
@@ -585,17 +699,17 @@ export const translations = {
 
     // -- Regulatorio --
     regulatorio_titulo: "Regulatory",
-    regulatorio_descripcion: "RCS capital requirements (CNSF) and SAT fiscal validations.",
+    regulatorio_descripcion: "Reference scenarios for capital, reserves, and fiscal rules.",
     regulatorio_rcs: "Solvency Capital Requirement",
     regulatorio_deducibilidad: "SAT Deductibility",
     regulatorio_retenciones: "ISR Withholding",
     capital_minimo: "Minimum paid-in capital",
-    ratio_solvencia: "Solvency ratio",
+    ratio_solvencia: "Solvency ratio (capital/RCS)",
     cumple_regulacion: "Meets regulation",
 
     // -- Reaseguro --
     reaseguro_titulo: "Reinsurance",
-    reaseguro_descripcion: "Quota share, excess of loss, and stop loss contract calculations.",
+    reaseguro_descripcion: "Structures for ceding, retaining, and recovering losses.",
     reaseguro_quota_share: "Quota Share",
     reaseguro_xl: "Excess of Loss",
     reaseguro_stop_loss: "Stop Loss",
@@ -606,7 +720,7 @@ export const translations = {
     recuperacion: "Reinsurance recovery",
 
     // -- Footer --
-    footer_version: "v2.0.0",
+    footer_version: "v2.1.0",
     footer_derechos: "(c) 2026 Andrés González Ortega",
     footer_github: "GitHub",
     footer_api_docs: "API Docs",
@@ -615,8 +729,8 @@ export const translations = {
     hero_titulo: "suite_actuarial",
     hero_subtitulo: "Open-source actuarial platform for the Mexican market",
     hero_descripcion:
-      "Calculate life, P&C, health, and pension premiums. Estimate reserves. " +
-      "Validate regulatory compliance. Model reinsurance. All in one place.",
+      "Explore life, P&C, health, and pension premiums. Estimate reserves. " +
+      "Compare reference models, assumptions, and reinsurance schemes.",
     hero_cta: "Explore calculators",
     hero_docs: "View on GitHub",
 
@@ -631,8 +745,8 @@ export const translations = {
     home_inicio_desc: "suite_actuarial home page.",
 
     // -- Home features --
-    feature_regulatory_title: "Regulatory compliance",
-    feature_regulatory_desc: "RCS calculation per CNSF standards and SAT fiscal validations.",
+    feature_regulatory_title: "Regulatory reference",
+    feature_regulatory_desc: "CNSF, SAT, and IMSS reference models with explicit assumptions and limits.",
     feature_opensource_title: "Open source",
     feature_opensource_desc: "100% open source under MIT license. Auditable, extensible, free.",
     feature_domains_title: "8 actuarial domains",
@@ -802,8 +916,11 @@ export const translations = {
     reservas_factores_desarrollo: "Development factors",
     reservas_percentiles: "Percentiles",
     reservas_percentil: "Percentile",
-    reservas_triangulo_hint: "JSON: array of arrays. null for empty cells. E.g.: [[3000,5000,null],[3200,null,null]]",
-    reservas_primas_hint: "JSON: object with year as key, premium as value. E.g.: {\"2020\": 7000, \"2021\": 7500}",
+    reservas_unidad: "Exercise monetary unit",
+    reservas_unidad_millones: "MXN millions",
+    reservas_unidad_explicacion: "Every input and result uses this scale. For example, 3,000 means MXN 3,000 million.",
+    reservas_triangulo_hint: "Amounts in MXN millions. JSON array of arrays; null for empty cells. E.g.: [[3000,5000,null],[3200,null,null]]",
+    reservas_primas_hint: "Premiums in MXN millions. JSON object keyed by year. E.g.: {\"2020\": 7000, \"2021\": 7500}",
     reservas_promedio_simple: "Simple",
     reservas_promedio_ponderado: "Weighted",
     reservas_promedio_geometrico: "Geometric",
@@ -861,6 +978,26 @@ export const translations = {
     reg_tipo_invalidez: "Disability",
     reg_monto_pago: "Payment amount",
     reg_monto_gravable: "Taxable amount",
+    reg_aviso_alcance: "Model scope",
+    reg_aviso_rcs: "The shocks, correlation matrix, and mortality and longevity factors behind this figure are illustrative teaching values. They are not the solvency model published by the CNSF and must not be used as a regulatory reference.",
+    reg_perfil_regulatorio: "Regulatory profile applied",
+    reg_correlaciones_aplicadas: "Correlations applied",
+    reg_uma_aplicada: "Annual UMA applied",
+    reg_estado_fiscal: "Status",
+    reg_estado_indeterminate: "Indeterminate",
+    reg_estado_eligible: "Deductible",
+    reg_estado_not_eligible: "Not deductible",
+    reg_factores_faltantes: "Missing inputs for a determinate answer",
+    reg_ingreso_anual: "Annual income",
+    reg_metodo_pago: "Payment method",
+    reg_metodo_pago_no_declarado: "Not stated",
+    reg_metodo_transferencia: "Bank transfer",
+    reg_metodo_cheque: "Nominative cheque",
+    reg_metodo_tarjeta: "Card",
+    reg_metodo_efectivo: "Cash",
+    reg_regla_aplicada: "Rule applied",
+    reg_aviso_retenciones: "The withholding rates and article citations on this tab are not verified against the LISR text in force. They are illustrative.",
+    reg_exclusivo_renta_retiro: "A payment is either a life annuity or a savings withdrawal, not both.",
     reg_es_renta_vitalicia: "Life annuity",
     reg_es_retiro_ahorro: "Savings withdrawal",
     reg_requiere_retencion: "Requires withholding",
@@ -895,7 +1032,7 @@ export const translations = {
 
     // -- API Docs --
     api_docs_title: "API Documentation",
-    api_docs_subtitle: "Complete reference for all 26 available REST endpoints.",
+    api_docs_subtitle: "Reference for the 30 available domain REST endpoints.",
     api_docs_base_url: "Base URL",
     api_docs_auth: "No authentication required",
     api_docs_swagger: "View interactive documentation at",
@@ -913,16 +1050,79 @@ export const translations = {
 
     // -- Home "What is" section --
     home_what_title: "What is suite_actuarial?",
-    home_what_text: "suite_actuarial is an open-source actuarial platform designed for professionals in the Mexican insurance market. It calculates premiums, estimates reserves, validates regulatory compliance, and models reinsurance schemes — all based on current CNSF, SAT, and IMSS regulations. Select a domain to get started.",
+    home_what_text: "suite_actuarial is an open platform for learning, researching, and developing actuarial models from the Mexican insurance context. It makes formulas, assumptions, sources, results, and scope visible. Professional uses require the corresponding technical and regulatory review.",
 
     // -- Contextual help per calculator --
-    vida_contexto: "Calculate the net and gross premium for term life, whole life, and endowment products. Enter the insured's data and product parameters to get a full premium breakdown with expense and profit loadings.",
-    danos_contexto: "Quote P&C insurance for the Mexican market: auto with AMIS rate tables, fire by construction type, general liability by activity class. Includes bonus-malus system and collective frequency-severity model.",
-    salud_contexto: "Rate health products: Major Medical Expenses (GMM) with deductible, coinsurance, and hospital level, and Accident & Sickness with indemnity schedules by occupation.",
-    pensiones_contexto: "Calculate pensions under the IMSS Ley 73 (defined benefit) and Ley 97 (defined contribution with Afore) regimes. Includes life annuities and actuarial commutation tables.",
-    reservas_contexto: "Estimate IBNR (Incurred But Not Reported) reserves using three industry-standard methods: Chain Ladder, Bornhuetter-Ferguson, and Bootstrap. Enter a cumulative development triangle to obtain reserves by origin year.",
-    regulatorio_contexto: "Validate regulatory compliance: calculate the Solvency Capital Requirement (RCS) per CNSF standards, verify premium deductibility under SAT rules, and determine ISR withholding on insurance payments.",
-    reaseguro_contexto: "Analyze reinsurance schemes: quota share (proportional), excess of loss (per-risk or per-event non-proportional), and stop loss (aggregate). Enter contract parameters and claims to see the impact on retention.",
+    vida_contexto: "Examine how the contractual promise, mortality, discounting, and premium term determine the premium and reserve. Compare term, whole life, and endowment under one assumption set.",
+    danos_contexto: "Examine how exposure, frequency, severity, deductibles, and experience change expected cost. Includes auto, fire, liability, credibility, and bonus-malus examples.",
+    salud_contexto: "Examine how age, morbidity, deductibles, coinsurance, hospital level, and occupation distribute cost between the insured and the insurer.",
+    pensiones_contexto: "Examine how employment history, savings, mortality, and interest become retirement benefits. Includes Ley 73/97 scenarios, life annuities, and commutation functions.",
+    reservas_contexto: "Examine future claims development using Chain Ladder, Bornhuetter-Ferguson, and Bootstrap. The example keeps triangles, premiums, and results in MXN millions.",
+    regulatorio_contexto: "Examine simplified capital, reserve, deductibility, and withholding scenarios with declared sources and scope. Each use must be checked against current rules and the organization's approved method.",
+    reaseguro_contexto: "Examine how quota share, excess of loss, and stop loss change premiums, claims, retention, and recovery under different contract structures.",
+
+    // -- Casos ilustrativos por dominio --
+    hist_kicker: "Applied example",
+    hist_leccion: "Actuarial interpretation",
+    hist_recalculo: "Adjust the parameters to observe how the result changes.",
+    hist_api_error: "The calculation engine is currently unavailable.",
+    hist_anios: "years",
+
+    hist1_title: "Ana buys a 20-year term policy",
+    hist1_narrativa: "Ana, age 32, buys a term life policy to cover her mortgage and her daughter's education in case of death. The policy pays the sum assured only if death occurs within the term and builds no surrender value. The cost of the coverage depends on three variables, adjustable here.",
+    hist1_edad: "Issue age",
+    hist1_sa: "Sum assured",
+    hist1_plazo: "Term",
+    hist1_prima_anual: "Annual gross premium",
+    hist1_por_dia: "per day",
+    hist1_leccion: "The premium reflects expected mortality at each age: a higher issue age raises it, while the term and the sum assured scale it. The calculation uses the EMSSA-09 table, a 5.5% technical rate, and expense and profit loadings.",
+
+    hist2_title: "Miguel chooses his deductible",
+    hist2_narrativa: "Miguel insures a $420,000 sedan in Mexico City. Choosing the deductible determines which portion of each claim he bears directly and which portion he transfers to the insurer; that decision is reflected in the premium.",
+    hist2_deducible: "Deductible",
+    hist2_del_valor: "of the vehicle's value",
+    hist2_prima: "Annual premium",
+    hist2_leccion: "A higher deductible removes small claims from the contract and lowers the insurer's expected cost, so the premium decreases. Protection against large losses is unchanged.",
+
+    hist3_title: "Laura's renewal",
+    hist3_narrativa: "Laura, age 45, renews a major medical plan with a $5,000,000 sum assured, a $40,000 deductible, and 10% coinsurance. The premium increases every year even without claims.",
+    hist3_edad: "Insured's age",
+    hist3_prima: "Annual premium",
+    hist3_leccion: "Major medical premiums grow with age because both the frequency and the cost of hospitalizations increase (the morbidity curve). Medical inflation compounds this effect and in Mexico exceeds general inflation, so renewals are projected with a medical trend near 10% per year rather than the CPI.",
+
+    hist4_title: "Roberto and Sofia: two IMSS regimes",
+    hist4_narrativa: "Roberto joined IMSS in 1990 and retires under the 1973 law: the benefit is determined by weeks of contributions and average wage, capped at 25 UMA. His daughter Sofia, enrolled in 2005, will retire under the 1997 law: her AFORE balance is converted into a life annuity.",
+    hist4_semanas: "Weeks of contributions (Roberto)",
+    hist4_salario: "Average daily wage (cap: 25 UMA = $2,932.75)",
+    hist4_pension73: "Monthly pension, Ley 73",
+    hist4_saldo: "AFORE balance at retirement (Sofia)",
+    hist4_pension97: "Monthly life annuity, Ley 97",
+    hist4_leccion: "Under defined benefit (Ley 73) the amount depends on the work history and the system bears the longevity risk. Under defined contribution (Ley 97) it depends on the accumulated balance and on the mortality table used to price the annuity. The applicable regime is determined by the enrollment date, not the retirement date.",
+
+    hist5_title: "The reserve and the tail factor",
+    hist5_narrativa: "Claims from a given year generate payments over several years. To estimate the required reserve, the actuary projects a triangle of historical payments (2019-2024, MXN millions) with Chain Ladder. The tail factor represents development expected after the last observed period.",
+    hist5_cola: "Tail factor",
+    hist5_sin_cola: "no tail",
+    hist5_reserva: "Estimated reserve",
+    hist5_ultimate: "Estimated ultimate cost",
+    hist5_leccion: "A 3% tail factor changes the reserve by several million pesos. Reserves are estimates that are sensitive to assumptions; regulation requires documenting them, and actuarial practice quantifies their uncertainty. The lab implements Mack's (1993) model, which estimates a variance per development period and composes the prediction error by origin year; it measures error conditional on Chain Ladder, not model risk.",
+
+    hist6_title: "Capital and solvency",
+    hist6_narrativa: "The Solvency Capital Requirement (RCS) is the capital the CNSF requires an insurer to hold for an adverse year. This example examines aggregation across life, P&C, and investment modules through a simplified scenario whose scope is documented as an educational reference.",
+    hist6_capital: "Available capital",
+    hist6_rcs: "Aggregate RCS",
+    hist6_cobertura: "Coverage ratio",
+    hist6_cumple: "Meets the requirement",
+    hist6_no_cumple: "Does not meet the requirement",
+    hist6_diversificacion: "Diversification benefit",
+    hist6_leccion: "Solvency is assessed by comparing available capital against the requirement. Aggregation with correlations recognizes that life, P&C, and investment risks do not materialize simultaneously, so the total RCS is lower than the sum of the modules.",
+
+    hist7_title: "A catastrophe layer, $80M xs $20M",
+    hist7_narrativa: "An insurer exposed to hurricanes buys an excess-of-loss layer of $80 million in excess of $20 million. In each event it retains the priority and recovers the excess from the reinsurer, up to the layer's capacity.",
+    hist7_perdida: "Event loss",
+    hist7_cedente: "Retained by the cedent",
+    hist7_reasegurador: "Recovered from the reinsurer",
+    hist7_leccion: "The reinsurer's recovery equals min(max(0, S − priority), capacity). For losses above $100 million the layer is exhausted and the excess reverts to the cedent; in practice this is covered with additional layers or facultative reinsurance.",
   },
 } as const;
 

@@ -9,6 +9,8 @@ from decimal import Decimal
 
 import pytest
 
+from suite_actuarial.config.loader import config_vigente
+from suite_actuarial.config.schema import TasasSAT
 from suite_actuarial.regulatorio.validaciones_sat import (
     CalculadoraRetencionesISR,
     TipoSeguroFiscal,
@@ -524,9 +526,7 @@ class TestIntegracionValidaciones:
 
         assert retencion_resultado.requiere_retencion is False
 
-    def test_flujo_completo_renta_vitalicia(
-        self, validador_siniestros, calculadora_retenciones
-    ):
+    def test_flujo_completo_renta_vitalicia(self, validador_siniestros, calculadora_retenciones):
         """Flujo completo: renta parcialmente gravable + retención 10%"""
         # 1. Validar gravabilidad (50% gravable)
         siniestro_resultado = validador_siniestros.validar_gravabilidad(
@@ -551,3 +551,89 @@ class TestIntegracionValidaciones:
         assert retencion_resultado.requiere_retencion is True
         assert retencion_resultado.monto_retencion == Decimal("1000.00")
         assert retencion_resultado.monto_neto_pagar == Decimal("19000.00")
+
+
+class TestTasasVienenDelPerfilAnual:
+    """Las cifras SAT deben salir del perfil del año, no de literales en la clase.
+
+    `TasasSAT` estaba versionada por año, pero nadie la leía para calcular:
+    `CalculadoraRetencionesISR` llevaba sus tasas como constantes de clase y ni
+    siquiera aceptaba configuración, y `ValidadorPrimasDeducibles` multiplicaba
+    la UMA por un `5` escrito a mano. Como 2024, 2025 y 2026 traen los mismos
+    valores, la divergencia no se veía; habría aparecido sin aviso en cuanto un
+    año trajera otra cifra.
+
+    Estas pruebas usan un perfil sintético con cifras distintas: si el cálculo
+    volviera a leer literales, darían el valor viejo y fallarían.
+    """
+
+    @staticmethod
+    def _tasas_divergentes() -> TasasSAT:
+        """Un año hipotético donde las tres tasas y el tope cambian."""
+        return TasasSAT(
+            tasa_retencion_rentas_vitalicias=Decimal("0.12"),  # vs 0.10
+            tasa_retencion_retiros_ahorro=Decimal("0.25"),  # vs 0.20
+            tasa_retencion_otros_ingresos=Decimal("0.15"),  # vs 0.10
+            tasa_isr_personas_morales=Decimal("0.30"),
+            tasa_iva=Decimal("0.16"),
+            limite_deducciones_pf_umas=7,  # vs 5
+        )
+
+    def test_renta_vitalicia_usa_la_tasa_del_perfil(self):
+        calc = CalculadoraRetencionesISR(tasas=self._tasas_divergentes())
+        r = calc.calcular_retencion(
+            tipo_seguro=TipoSeguroFiscal.PENSIONES,
+            monto_pago=Decimal("50000"),
+            monto_gravable=Decimal("25000"),
+            es_renta_vitalicia=True,
+        )
+        # 25,000 x 12% = 3,000 (con la tasa vieja de 10% habrian sido 2,500).
+        assert r.tasa_retencion == Decimal("0.12")
+        assert r.monto_retencion == Decimal("3000.00")
+
+    def test_retiro_de_ahorro_usa_la_tasa_del_perfil(self):
+        calc = CalculadoraRetencionesISR(tasas=self._tasas_divergentes())
+        r = calc.calcular_retencion(
+            tipo_seguro=TipoSeguroFiscal.VIDA,
+            monto_pago=Decimal("100000"),
+            monto_gravable=Decimal("40000"),
+            es_retiro_ahorro=True,
+        )
+        # 40,000 x 25% = 10,000 (con 20% habrian sido 8,000).
+        assert r.tasa_retencion == Decimal("0.25")
+        assert r.monto_retencion == Decimal("10000.00")
+
+    def test_otros_ingresos_usa_la_tasa_del_perfil(self):
+        """Esta tasa ni siquiera existía en el esquema: se agregó al migrarla."""
+        calc = CalculadoraRetencionesISR(tasas=self._tasas_divergentes())
+        r = calc.calcular_retencion(
+            tipo_seguro=TipoSeguroFiscal.PENSIONES,
+            monto_pago=Decimal("10000"),
+            monto_gravable=Decimal("10000"),
+            es_renta_vitalicia=False,
+            requiere_retencion_forzosa=True,
+        )
+        assert r.tasa_retencion == Decimal("0.15")
+        assert r.monto_retencion == Decimal("1500.00")
+
+    def test_el_tope_de_deducciones_usa_el_perfil(self):
+        """El tope en UMAs se leía como un 5 literal junto a una UMA configurada."""
+        uma_anual = Decimal("40000")
+        validador = ValidadorPrimasDeducibles(uma_anual=uma_anual, limite_deducciones_umas=7)
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.PENSIONES,
+            monto_prima=Decimal("1000000"),  # por encima de cualquier tope
+            es_persona_fisica=True,
+        )
+        # 7 UMAs x 40,000 = 280,000 (con el 5 literal habrian sido 200,000).
+        assert r.monto_deducible == Decimal("280000")
+        assert "7 UMAs" in r.limite_aplicado
+
+    def test_por_omision_toma_el_perfil_vigente(self):
+        """Sin argumento debe leer la configuración, no una constante."""
+        vigente = config_vigente().tasas_sat
+        calc = CalculadoraRetencionesISR()
+        assert calc.tasas.tasa_retencion_rentas_vitalicias == (
+            vigente.tasa_retencion_rentas_vitalicias
+        )
+        assert calc.tasas.tasa_retencion_otros_ingresos == vigente.tasa_retencion_otros_ingresos

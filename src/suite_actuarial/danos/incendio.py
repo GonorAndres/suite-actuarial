@@ -5,6 +5,7 @@ Producto basico para inmuebles residenciales, comerciales e industriales.
 """
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 # Tasas base por millar segun tipo de construccion
 TASAS_CONSTRUCCION: dict[str, Decimal] = {
@@ -70,15 +71,9 @@ class SeguroIncendio:
                 f"Opciones: {list(TASAS_CONSTRUCCION)}"
             )
         if zona not in ZONAS_INCENDIO:
-            raise ValueError(
-                f"Zona desconocida: {zona}. "
-                f"Opciones: {list(ZONAS_INCENDIO)}"
-            )
+            raise ValueError(f"Zona desconocida: {zona}. Opciones: {list(ZONAS_INCENDIO)}")
         if uso not in FACTOR_USO:
-            raise ValueError(
-                f"Uso desconocido: {uso}. "
-                f"Opciones: {list(FACTOR_USO)}"
-            )
+            raise ValueError(f"Uso desconocido: {uso}. Opciones: {list(FACTOR_USO)}")
 
         self.valor_inmueble = valor_inmueble
         self.tipo_construccion = tipo_construccion
@@ -106,7 +101,7 @@ class SeguroIncendio:
         )
         return prima.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-    def generar_cotizacion(self) -> dict:
+    def generar_cotizacion(self) -> dict[str, Any]:
         """Cotizacion completa con desglose de factores."""
         return {
             "valor_inmueble": self.valor_inmueble,

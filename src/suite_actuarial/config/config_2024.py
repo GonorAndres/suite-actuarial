@@ -1,13 +1,20 @@
 """Configuracion regulatoria para el ano fiscal 2024."""
 
+from datetime import date
 from decimal import Decimal
 
+from suite_actuarial.config.records import (
+    imss_transition,
+    legacy_scenario_parameters,
+    uma_parameters,
+)
 from suite_actuarial.config.schema import (
     ConfigAnual,
     FactoresCNSF,
     FactoresTecnicos,
     TasasSAT,
     UMAConfig,
+    ValidationTier,
 )
 
 CONFIG = ConfigAnual(
@@ -15,11 +22,12 @@ CONFIG = ConfigAnual(
     uma=UMAConfig(
         uma_diaria=Decimal("108.57"),
         uma_mensual=Decimal("3300.53"),
-        uma_anual=Decimal("39628.05"),
+        uma_anual=Decimal("39606.36"),
     ),
     tasas_sat=TasasSAT(
         tasa_retencion_rentas_vitalicias=Decimal("0.10"),
         tasa_retencion_retiros_ahorro=Decimal("0.20"),
+        tasa_retencion_otros_ingresos=Decimal("0.10"),
         tasa_isr_personas_morales=Decimal("0.30"),
         tasa_iva=Decimal("0.16"),
         limite_deducciones_pf_umas=5,
@@ -50,4 +58,10 @@ CONFIG = ConfigAnual(
         edad_omega=100,
         margen_seguridad_s114=Decimal("0.05"),
     ),
+    effective_from=date(2024, 2, 1),
+    effective_to=date(2025, 1, 31),
+    parametros=uma_parameters(diaria="108.57", mensual="3300.53", anual="39606.36", year=2024)
+    + legacy_scenario_parameters(2024),
+    imss=imss_transition(2024),
+    validation_tier=ValidationTier.EXPERIMENTAL,
 )

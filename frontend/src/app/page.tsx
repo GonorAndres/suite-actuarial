@@ -1,400 +1,193 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { Card, Tabs } from "@/components/ui";
-import type { TranslationKey } from "@/lib/i18n/translations";
-
-/* ── Domain card data ──────────────────────────────────────────────────── */
-
-interface DomainCard {
-  href: string;
-  titleKey: TranslationKey;
-  descKey: TranslationKey;
-  icon: string; // unicode symbol
-}
-
-const DOMAINS: DomainCard[] = [
-  { href: "/vida", titleKey: "nav_vida", descKey: "home_vida_desc", icon: "❤" },
-  { href: "/danos", titleKey: "nav_danos", descKey: "home_danos_desc", icon: "⚠" },
-  { href: "/salud", titleKey: "nav_salud", descKey: "home_salud_desc", icon: "⚕" },
-  { href: "/pensiones", titleKey: "nav_pensiones", descKey: "home_pensiones_desc", icon: "⏳" },
-  { href: "/reservas", titleKey: "nav_reservas", descKey: "home_reservas_desc", icon: "Δ" },
-  { href: "/regulatorio", titleKey: "nav_regulatorio", descKey: "home_regulatorio_desc", icon: "⚖" },
-  { href: "/reaseguro", titleKey: "nav_reaseguro", descKey: "home_reaseguro_desc", icon: "⇄" },
-];
-
-/* ── Feature highlights data ───────────────────────────────────────────── */
-
-interface Feature {
-  titleKey: TranslationKey;
-  descKey: TranslationKey;
-  svg: string; // SVG path for geometric icon
-}
-
-const FEATURES: Feature[] = [
-  {
-    titleKey: "feature_regulatory_title",
-    descKey: "feature_regulatory_desc",
-    svg: "M3 6l9-4 9 4v6c0 5.6-3.8 10.7-9 12-5.2-1.3-9-6.4-9-12V6z",
-  },
-  {
-    titleKey: "feature_opensource_title",
-    descKey: "feature_opensource_desc",
-    svg: "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z",
-  },
-  {
-    titleKey: "feature_domains_title",
-    descKey: "feature_domains_desc",
-    svg: "M4 4h16v16H4V4zm2 2v5h5V6H6zm7 0v5h5V6h-5zM6 13v5h5v-5H6zm7 0v5h5v-5h-5z",
-  },
-  {
-    titleKey: "feature_bilingual_title",
-    descKey: "feature_bilingual_desc",
-    svg: "M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z",
-  },
-];
 
 const GITHUB_URL = "https://github.com/GonorAndres/suite-actuarial";
 
-/* ── Page component ────────────────────────────────────────────────────── */
+const COPY = {
+  es: {
+    kicker: "Modelación actuarial en código abierto · México",
+    title: "Construye, prueba y comprende modelos actuariales, en abierto.",
+    intro:
+      "suite_actuarial reúne métodos, ejemplos y herramientas para pasar de una pregunta de producto a un modelo reproducible. Cada análisis conecta beneficios, supuestos, cálculo, resultados y pruebas para que otros actuarios puedan revisarlo y extenderlo.",
+    primary: "Revisar el ejemplo guiado",
+    secondary: "Explorar la biblioteca",
+    note: "Desarrollado desde el contexto asegurador mexicano, con métodos clásicos, fuentes visibles y código abierto.",
+    processKicker: "Método común",
+    processTitle: "Seis etapas para documentar y revisar cada modelo",
+    videoKicker: "Demostración",
+    videoTitle: "Dotal educativo 20/10, paso a paso",
+    videoText:
+      "El recorrido documenta la promesa contractual, la base de mortalidad, el descuento, la prima, la reserva, la sensibilidad y las verificaciones del mismo ejemplo disponible en código.",
+    videoPending: "Grabación pendiente",
+    videoFallback: "El ejemplo escrito e interactivo ya está disponible.",
+    featuredKicker: "Ejemplo guiado · Vida",
+    featuredTitle: "Seguro dotal a 20 años con primas durante 10",
+    featuredText:
+      "Este caso parte de una necesidad educativa y define un beneficio por fallecimiento o supervivencia. Permite modificar los supuestos, calcular la prima neta, seguir la reserva prospectiva y comprobar las identidades utilizadas.",
+    featuredCta: "Revisar el ejemplo",
+    coverageLabel: "Cobertura: 20 años",
+    premiumLabel: "Pago de primas: 10 años",
+    modelsKicker: "Biblioteca actuarial",
+    modelsTitle: "Modelos organizados por la pregunta que ayudan a estudiar",
+    evidenceKicker: "Trazabilidad",
+    evidenceTitle: "Supuestos, fuentes, pruebas y límites junto al resultado",
+    evidenceText:
+      "Cada ejemplo identifica su base técnica, fecha o contexto de referencia, nivel de validación, comprobaciones y alcance. Así se puede distinguir entre una implementación reproducible y un modelo listo para uso profesional.",
+    validation: "Pruebas e identidades",
+    provenance: "Fuentes y contexto",
+    limitations: "Alcance declarado",
+    openKicker: "Trabajo abierto",
+    openTitle: "Una base compartida para aprender, investigar y desarrollar",
+    openText:
+      "El repositorio permite estudiar modelos existentes, comparar resultados, proponer nuevas bases técnicas y construir ejemplos para proyectos universitarios, investigación aplicada e innovación actuarial.",
+    github: "Consultar el repositorio",
+  },
+  en: {
+    kicker: "Open actuarial platform · Mexico",
+    title: "Build, test, and understand actuarial models in the open.",
+    intro:
+      "suite_actuarial brings together methods, examples, and tools for moving from a product question to a reproducible model. Each analysis connects benefits, assumptions, calculations, results, and tests so other actuaries can review and extend it.",
+    primary: "Review the guided example",
+    secondary: "Explore the library",
+    note: "Built from the Mexican insurance context, with classical methods, visible sources, and open code.",
+    processKicker: "Shared method",
+    processTitle: "Six stages for documenting and reviewing each model",
+    videoKicker: "Demonstration",
+    videoTitle: "20/10 education endowment, step by step",
+    videoText:
+      "The walkthrough documents the contractual promise, mortality basis, discounting, premium, reserve, sensitivity, and checks for the same example available in code.",
+    videoPending: "Recording pending",
+    videoFallback: "The written and interactive example is already available.",
+    featuredKicker: "Guided example · Life",
+    featuredTitle: "20-year endowment with premiums paid for 10 years",
+    featuredText:
+      "This case starts with an education need and defines a benefit on death or survival. It lets users change assumptions, calculate the net premium, follow the prospective reserve, and check the identities used.",
+    featuredCta: "Review the example",
+    coverageLabel: "Coverage: 20 years",
+    premiumLabel: "Premium payments: 10 years",
+    modelsKicker: "Actuarial library",
+    modelsTitle: "Models organized by the question they help examine",
+    evidenceKicker: "Traceability",
+    evidenceTitle: "Assumptions, sources, tests, and limits beside the result",
+    evidenceText:
+      "Each example identifies its technical basis, reference date or context, validation level, checks, and scope. This distinguishes a reproducible implementation from a model ready for professional use.",
+    validation: "Tests and identities",
+    provenance: "Sources and context",
+    limitations: "Declared scope",
+    openKicker: "Open work",
+    openTitle: "A shared foundation for learning, research, and development",
+    openText:
+      "The repository supports studying existing models, comparing results, proposing technical bases, and building examples for university projects, applied research, and actuarial innovation.",
+    github: "View the repository",
+  },
+} as const;
 
-export default function Home() {
-  const { t } = useLanguage();
+const PROCESS = {
+  es: ["Propósito", "Beneficios", "Supuestos", "Método", "Resultados", "Validación"],
+  en: ["Purpose", "Benefits", "Assumptions", "Method", "Results", "Validation"],
+};
 
-  const scrollToGrid = () => {
-    const el = document.getElementById("calculators-grid");
-    el?.scrollIntoView({ behavior: "smooth" });
-  };
+const MODELS = {
+  es: [
+    ["¿Cómo financiar un beneficio?", "Vida", "Temporal, ordinario, dotal y reservas matemáticas", "/vida"],
+    ["¿Cómo emerge una pérdida agregada?", "Daños", "Tarificación, frecuencia-severidad, credibilidad y bonus-malus", "/danos"],
+    ["¿Cómo se comparte un gasto médico?", "Salud", "GMM, deducible, coaseguro y accidentes", "/salud"],
+    ["¿Cómo convertir ahorro en ingreso vitalicio?", "Pensiones", "Ley 73/97, rentas vitalicias y conmutación", "/pensiones"],
+    ["¿Qué costo falta por desarrollarse?", "Reservas", "Chain Ladder, Bornhuetter-Ferguson y bandas ilustrativas de dispersión", "/reservas"],
+    ["¿Cómo transferir cola y capital?", "Reaseguro", "Cuota parte, exceso de pérdida y stop loss", "/reaseguro"],
+    ["¿Cómo examinar solvencia y reglas?", "Referencia regulatoria", "RCS, reservas técnicas, SAT y configuración efectiva", "/regulatorio"],
+  ],
+  en: [
+    ["How should a benefit be funded?", "Life", "Term, whole life, endowment, and mathematical reserves", "/vida"],
+    ["How does aggregate loss emerge?", "P&C", "Rating, frequency-severity, credibility, and bonus-malus", "/danos"],
+    ["How is a medical bill shared?", "Health", "Major medical, deductibles, coinsurance, and accidents", "/salud"],
+    ["How does savings become lifetime income?", "Pensions", "Ley 73/97, life annuities, and commutation", "/pensiones"],
+    ["Which cost remains undeveloped?", "Reserves", "Chain Ladder, Bornhuetter-Ferguson, and illustrative dispersion bands", "/reservas"],
+    ["How can tail risk and capital be transferred?", "Reinsurance", "Quota share, excess of loss, and stop loss", "/reaseguro"],
+    ["How can solvency and rules be examined?", "Regulatory reference", "RCS, technical reserves, SAT, and effective configuration", "/regulatorio"],
+  ],
+} as const;
+
+function DemoVideo({ lang }: { lang: "es" | "en" }) {
+  const copy = COPY[lang];
+  const videoId = process.env.NEXT_PUBLIC_DEMO_VIDEO_ID;
 
   return (
-    <div className="space-y-24">
-      {/* ── Hero section ──────────────────────────────────────────────── */}
-      <section className="relative max-w-6xl mx-auto px-6 pt-20 pb-16 text-center overflow-hidden">
-        {/* Decorative geometric accent */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          {/* Top-right decorative circle */}
-          <div
-            className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-[0.04]"
-            style={{ background: "radial-gradient(circle, #C17654, transparent 70%)" }}
-          />
-          {/* Bottom-left decorative circle */}
-          <div
-            className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full opacity-[0.03]"
-            style={{ background: "radial-gradient(circle, #D4A574, transparent 70%)" }}
-          />
-          {/* Thin horizontal accent line */}
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 w-96 h-px"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(212,165,116,0.2), transparent)" }}
-          />
+    <div className="video-frame">
+      {videoId ? (
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+          title={copy.videoTitle}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      ) : (
+        <div className="video-pending">
+          <span>20/10</span>
+          <div><strong>{copy.videoPending}</strong><p>{copy.videoFallback}</p></div>
+          <Link href="/lab">{copy.featuredCta} →</Link>
         </div>
-
-        <div className="relative z-10">
-          <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-navy mb-5 animate-fade-in">
-            {t("hero_titulo")}
-          </h1>
-          <p className="text-lg md:text-xl text-navy/70 max-w-2xl mx-auto mb-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            {t("hero_subtitulo")}
-          </p>
-          <p className="text-base text-navy/55 max-w-3xl mx-auto mb-10 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            {t("hero_descripcion")}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            <button
-              type="button"
-              onClick={scrollToGrid}
-              className="px-8 py-3.5 bg-terracotta text-cream rounded-full font-medium hover:bg-terracotta/90 hover:shadow-lg hover:shadow-terracotta/20 transition-all duration-200"
-            >
-              {t("hero_cta")}
-            </button>
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3.5 border border-amber/40 text-navy/70 rounded-full font-medium hover:bg-amber/10 hover:text-terracotta transition-all duration-200"
-            >
-              {t("hero_docs")}
-            </a>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="mt-14 flex justify-center animate-bounce-down">
-          <svg
-            className="w-6 h-6 text-amber/60"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </section>
-
-      {/* ── "What is suite_actuarial?" section ─────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6">
-        <Card>
-          <h2 className="font-heading text-xl font-bold text-navy mb-3">
-            {t("home_what_title")}
-          </h2>
-          <p className="text-navy/60 text-base leading-relaxed">
-            {t("home_what_text")}
-          </p>
-        </Card>
-      </section>
-
-      {/* ── Quick Start Python tutorial ─────────────────────────────── */}
-      <QuickStartSection />
-
-      {/* ── Domain cards grid ─────────────────────────────────────────── */}
-      <section id="calculators-grid" className="max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {DOMAINS.map((domain, i) => (
-            <Link
-              key={domain.href}
-              href={domain.href}
-              className="block animate-fade-in-up"
-              style={{ animationDelay: `${i * 0.07}s` }}
-            >
-              <Card hoverable className="h-full">
-                <div className="text-3xl mb-3" aria-hidden="true">
-                  {domain.icon}
-                </div>
-                <h3 className="font-heading text-lg font-bold text-navy mb-2">
-                  {t(domain.titleKey)}
-                </h3>
-                <p className="text-sm text-navy/60 leading-relaxed">
-                  {t(domain.descKey)}
-                </p>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Features section ──────────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        {/* Section divider */}
-        <div className="section-divider mb-16" />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {FEATURES.map((feature, i) => (
-            <div
-              key={feature.titleKey}
-              style={{ animationDelay: `${i * 0.1}s` }}
-              className="text-center animate-fade-in-up"
-            >
-              <Card className="h-full">
-                {/* SVG geometric icon */}
-                <div className="flex justify-center mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-terracotta/10 flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-terracotta"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path d={feature.svg} />
-                    </svg>
-                  </div>
-                </div>
-                <h3 className="font-heading text-base font-bold text-navy mb-2">
-                  {t(feature.titleKey)}
-                </h3>
-                <p className="text-sm text-navy/60 leading-relaxed">
-                  {t(feature.descKey)}
-                </p>
-              </Card>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Community / Contribute section ────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <Card className="text-center">
-          <div className="max-w-2xl mx-auto">
-            <div className="flex justify-center mb-4">
-              <div className="w-14 h-14 rounded-full bg-sage/15 flex items-center justify-center">
-                <svg className="w-7 h-7 text-sage" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-                </svg>
-              </div>
-            </div>
-            <h2 className="font-heading text-2xl font-bold text-navy mb-3">
-              {t("community_title")}
-            </h2>
-            <p className="text-navy/55 leading-relaxed mb-6">
-              {t("community_text")}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <a
-                href="https://github.com/GonorAndres/suite-actuarial"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-2.5 bg-sage text-cream rounded-full font-medium hover:bg-sage/90 transition-all duration-200"
-              >
-                {t("community_cta")}
-              </a>
-              <a
-                href="https://github.com/GonorAndres/suite-actuarial/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-2.5 border border-sage/40 text-navy/60 rounded-full font-medium hover:bg-sage/10 hover:text-sage transition-all duration-200"
-              >
-                {t("community_discuss")}
-              </a>
-            </div>
-          </div>
-        </Card>
-      </section>
+      )}
     </div>
   );
 }
 
-/* ── Quick Start Python Tutorial ──────────────────────────────────────── */
-
-const CODE_SNIPPETS = {
-  install: `# Instalar desde GitHub
-pip install git+https://github.com/GonorAndres/suite-actuarial.git
-
-# O clonar y desarrollar localmente
-git clone https://github.com/GonorAndres/suite-actuarial.git
-cd suite-actuarial
-pip install -e ".[dev]"`,
-
-  vida: `from suite_actuarial import VidaTemporal, TablaMortalidad
-from suite_actuarial import Asegurado, ConfiguracionProducto
-from decimal import Decimal
-
-# Cargar tabla de mortalidad EMSSA-09
-tabla = TablaMortalidad.cargar_emssa09()
-
-# Configurar producto: temporal 20 años, tasa 5.5%
-config = ConfiguracionProducto(
-    nombre_producto="Temporal 20",
-    plazo_years=20,
-    tasa_interes_tecnico=Decimal("0.055"),
-)
-
-# Crear asegurado: hombre, 35 años, $1M de suma asegurada
-asegurado = Asegurado(
-    edad=35, sexo="H",
-    suma_asegurada=Decimal("1000000"),
-)
-
-# Calcular prima
-producto = VidaTemporal(tabla_mortalidad=tabla, config=config)
-resultado = producto.calcular_prima(asegurado)
-
-print(f"Prima neta:  \${float(resultado.prima_neta):,.2f} MXN")
-print(f"Prima total: \${float(resultado.prima_total):,.2f} MXN")
-# -> Prima neta:  $2,024.08 MXN
-# -> Prima total: $2,388.42 MXN`,
-
-  pension: `from suite_actuarial import PensionLey73
-from decimal import Decimal
-
-# Calcular pensión IMSS Ley 73
-pension = PensionLey73(
-    semanas_cotizadas=1500,
-    salario_promedio_diario=Decimal("800"),
-    edad_retiro=65,
-)
-
-resumen = pension.resumen()
-print(f"Pensión mensual: \${resumen['pension_mensual']:,.2f} MXN")
-print(f"Porcentaje:      {resumen['porcentaje_pension']:.1%}")
-print(f"Aguinaldo anual: \${resumen['aguinaldo_anual']:,.2f} MXN")
-# -> Pensión mensual: $18,506.03 MXN
-# -> Porcentaje:      77.1%
-# -> Aguinaldo anual: $18,506.03 MXN`,
-
-  reservas: `from suite_actuarial.reservas.chain_ladder import ChainLadder
-from suite_actuarial.core.validators import ConfiguracionChainLadder
-
-# Triángulo de desarrollo acumulado
-triangle = [
-    [3000, 5000, 5600, 5800, 5900],
-    [3200, 5200, 5800, 6000, None],
-    [3500, 5500, 6100, None, None],
-    [3800, 5900, None, None, None],
-    [4000, None, None, None, None],
-]
-
-config = ConfiguracionChainLadder(
-    triangulo=triangle,
-    anios_origen=[2019, 2020, 2021, 2022, 2023],
-)
-
-resultado = ChainLadder(config).calcular()
-print(f"Reserva IBNR total: \${float(resultado.reserva_total):,.2f}")
-print(f"Ultimate total:     \${float(resultado.ultimate_total):,.2f}")
-# -> Reserva IBNR total: $4,983.22
-# -> Ultimate total:     $32,883.22`,
-};
-
-const QUICKSTART_TABS = [
-  { id: "install", labelKey: "quickstart_tab_install" as TranslationKey },
-  { id: "vida", labelKey: "quickstart_tab_vida" as TranslationKey },
-  { id: "pension", labelKey: "quickstart_tab_pension" as TranslationKey },
-  { id: "reservas", labelKey: "quickstart_tab_reservas" as TranslationKey },
-];
-
-function QuickStartSection() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState("install");
-
-  const tabs = QUICKSTART_TABS.map((tab) => ({
-    id: tab.id,
-    label: t(tab.labelKey),
-  }));
-
-  const code = CODE_SNIPPETS[activeTab as keyof typeof CODE_SNIPPETS];
+export default function Home() {
+  const { lang } = useLanguage();
+  const copy = COPY[lang];
 
   return (
-    <section className="max-w-6xl mx-auto px-6">
-      <Card>
-        <div className="mb-6">
-          <h2 className="font-heading text-2xl font-bold text-navy mb-2">
-            {t("quickstart_title")}
-          </h2>
-          <p className="text-navy/60">
-            {t("quickstart_subtitle")}
-          </p>
-        </div>
-
-        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} className="mb-6" />
-
-        <div className="relative rounded-xl overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-10 bg-[#1e1e2e] flex items-center px-4 gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-400/80" />
-            <div className="w-3 h-3 rounded-full bg-amber/80" />
-            <div className="w-3 h-3 rounded-full bg-sage/80" />
-            <span className="ml-3 text-xs text-white/40 font-mono">python</span>
+    <div className="studio-home">
+      <section className="studio-hero">
+        <div>
+          <p className="eyebrow">{copy.kicker}</p>
+          <h1>{copy.title}</h1>
+          <p className="hero-intro">{copy.intro}</p>
+          <div className="hero-actions">
+            <Link href="/lab" className="primary-action">{copy.primary}</Link>
+            <a href="#models" className="secondary-action">{copy.secondary}</a>
           </div>
-          <pre className="bg-[#1e1e2e] text-[#cdd6f4] p-6 pt-14 overflow-x-auto text-sm leading-relaxed font-mono">
-            <code>{code}</code>
-          </pre>
+          <p className="hero-note">{copy.note}</p>
         </div>
+        <div className="hero-model" aria-hidden="true">
+          <p>MODEL / 01</p>
+          <strong>A<sub>x:n</sub> = A<sup>1</sup><sub>x:n</sub> + v<sup>n</sup> · <sub>n</sub>p<sub>x</sub></strong>
+          <div><span>death</span><span>survival</span></div>
+          <svg viewBox="0 0 400 150"><path d="M5 138 C70 136 100 124 145 112 S210 85 260 60 S335 28 395 10" /></svg>
+        </div>
+      </section>
 
-        {activeTab === "install" && (
-          <div className="mt-4 space-y-3">
-            <p className="text-sm text-navy/50">
-              {t("quickstart_pip_note")}
-            </p>
-            <div className="rounded-lg bg-navy/5 px-4 py-3">
-              <p className="text-xs text-navy/50 mb-1">{t("quickstart_api_note")}</p>
-              <code className="text-sm text-terracotta font-mono">
-                python -m uvicorn suite_actuarial.api.main:app --port 8000
-              </code>
-            </div>
-          </div>
-        )}
-      </Card>
-    </section>
+      <section className="process-section">
+        <p className="eyebrow">{copy.processKicker}</p>
+        <h2>{copy.processTitle}</h2>
+        <div className="process-line">{PROCESS[lang].map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, "0")}</span><strong>{item}</strong></div>)}</div>
+      </section>
+
+      <section className="featured-lab">
+        <div><p className="eyebrow">{copy.featuredKicker}</p><h2>{copy.featuredTitle}</h2><p>{copy.featuredText}</p><Link href="/lab">{copy.featuredCta} →</Link></div>
+        <div className="contract-diagram"><span>{copy.coverageLabel}</span><div className="timeline"><i /><i /></div><span>{copy.premiumLabel}</span></div>
+      </section>
+
+      <section className="video-section">
+        <div><p className="eyebrow">{copy.videoKicker}</p><h2>{copy.videoTitle}</h2><p>{copy.videoText}</p></div>
+        <DemoVideo lang={lang} />
+      </section>
+
+      <section id="models" className="models-section">
+        <p className="eyebrow">{copy.modelsKicker}</p><h2>{copy.modelsTitle}</h2>
+        <div className="model-index">{MODELS[lang].map(([question, domain, detail, href], index) => <Link href={href} key={href}><span>{String(index + 1).padStart(2, "0")}</span><div><p>{domain}</p><h3>{question}</h3><small>{detail}</small></div><b>↗</b></Link>)}</div>
+      </section>
+
+      <section id="evidence" className="evidence-section">
+        <div><p className="eyebrow">{copy.evidenceKicker}</p><h2>{copy.evidenceTitle}</h2><p>{copy.evidenceText}</p></div>
+        <ol><li><span>01</span>{copy.validation}</li><li><span>02</span>{copy.provenance}</li><li><span>03</span>{copy.limitations}</li></ol>
+      </section>
+
+      <section className="open-section">
+        <p className="eyebrow">{copy.openKicker}</p><h2>{copy.openTitle}</h2><p>{copy.openText}</p><a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">{copy.github} →</a>
+      </section>
+    </div>
   );
 }

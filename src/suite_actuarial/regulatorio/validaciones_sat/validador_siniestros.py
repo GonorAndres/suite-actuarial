@@ -8,6 +8,7 @@ según la Ley del ISR.
 from decimal import Decimal
 
 from suite_actuarial.regulatorio.validaciones_sat.models import (
+    EstadoFiscal,
     ResultadoGravabilidadSiniestro,
     TipoSeguroFiscal,
 )
@@ -46,7 +47,9 @@ class ValidadorSiniestrosGravables:
         es_indemnizacion_muerte: bool = False,
         es_renta_vitalicia: bool = False,
         es_retiro_ahorro: bool = False,
-        monto_primas_pagadas: Decimal = None,
+        monto_primas_pagadas: Decimal | None = None,
+        metodo_pago: str | None = None,
+        relacion_beneficiario: str | None = None,
     ) -> ResultadoGravabilidadSiniestro:
         """
         Valida si un pago por siniestro está gravado para ISR.
@@ -64,7 +67,7 @@ class ValidadorSiniestrosGravables:
             ResultadoGravabilidadSiniestro con análisis de gravabilidad
         """
         if es_persona_fisica:
-            return self._validar_persona_fisica(
+            resultado = self._validar_persona_fisica(
                 tipo_seguro=tipo_seguro,
                 monto_pago=monto_pago,
                 es_indemnizacion_muerte=es_indemnizacion_muerte,
@@ -73,11 +76,22 @@ class ValidadorSiniestrosGravables:
                 monto_primas_pagadas=monto_primas_pagadas,
             )
         else:
-            return self._validar_persona_moral(
+            resultado = self._validar_persona_moral(
                 tipo_seguro=tipo_seguro,
                 monto_pago=monto_pago,
                 es_indemnizacion_muerte=es_indemnizacion_muerte,
             )
+        faltantes: list[str] = []
+        if metodo_pago is None:
+            faltantes.append("metodo_pago")
+        if not es_persona_fisica and relacion_beneficiario is None:
+            faltantes.append("relacion_beneficiario")
+        if es_renta_vitalicia and monto_primas_pagadas is None:
+            faltantes.append("monto_primas_pagadas")
+        if faltantes:
+            resultado.estado = EstadoFiscal.INDETERMINATE
+            resultado.factores_faltantes = faltantes
+        return resultado
 
     def _validar_persona_fisica(
         self,
@@ -86,7 +100,7 @@ class ValidadorSiniestrosGravables:
         es_indemnizacion_muerte: bool = False,
         es_renta_vitalicia: bool = False,
         es_retiro_ahorro: bool = False,
-        monto_primas_pagadas: Decimal = None,
+        monto_primas_pagadas: Decimal | None = None,
     ) -> ResultadoGravabilidadSiniestro:
         """
         Valida gravabilidad para personas físicas.

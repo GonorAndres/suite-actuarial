@@ -2,12 +2,12 @@
 
 
 class TestRoot:
-    def test_root_returns_200(self, api_client):
-        response = api_client.get("/")
+    def test_api_info_returns_200(self, api_client):
+        response = api_client.get("/api/info")
         assert response.status_code == 200
 
     def test_root_contains_modules(self, api_client):
-        response = api_client.get("/")
+        response = api_client.get("/api/info")
         data = response.json()
         assert "modules" in data
         expected_modules = [
@@ -24,11 +24,11 @@ class TestRoot:
             assert mod in data["modules"]
 
     def test_root_contains_name_and_version(self, api_client):
-        response = api_client.get("/")
+        response = api_client.get("/api/info")
         data = response.json()
         assert "name" in data
         assert "version" in data
-        assert data["version"] == "1.0.0"
+        assert data["version"] == "2.1.0"
 
 
 class TestHealth:

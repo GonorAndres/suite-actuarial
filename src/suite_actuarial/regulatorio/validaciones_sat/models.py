@@ -8,7 +8,15 @@ de primas y siniestros según la Ley del ISR mexicana.
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+
+class EstadoFiscal(StrEnum):
+    """Resultado fiscal tri-state; indeterminate evita inferencias peligrosas."""
+
+    ELIGIBLE = "eligible"
+    NOT_ELIGIBLE = "not_eligible"
+    INDETERMINATE = "indeterminate"
 
 
 class TipoSeguroFiscal(StrEnum):
@@ -34,6 +42,14 @@ class ResultadoDeducibilidadPrima(BaseModel):
     porcentaje_deducible: Decimal = Field(..., ge=0, le=100)
     limite_aplicado: str | None = None
     fundamento_legal: str
+    estado: EstadoFiscal | None = None
+    factores_faltantes: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def derive_status(self) -> "ResultadoDeducibilidadPrima":
+        if self.estado is None:
+            self.estado = EstadoFiscal.ELIGIBLE if self.es_deducible else EstadoFiscal.NOT_ELIGIBLE
+        return self
 
     @property
     def monto_no_deducible(self) -> Decimal:
@@ -54,6 +70,14 @@ class ResultadoGravabilidadSiniestro(BaseModel):
     monto_exento: Decimal = Field(..., ge=0)
     tasa_isr_aplicable: Decimal = Field(..., ge=0, le=1)
     fundamento_legal: str
+    estado: EstadoFiscal | None = None
+    factores_faltantes: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def derive_status(self) -> "ResultadoGravabilidadSiniestro":
+        if self.estado is None:
+            self.estado = EstadoFiscal.ELIGIBLE if self.esta_gravado else EstadoFiscal.NOT_ELIGIBLE
+        return self
 
 
 class ResultadoRetencion(BaseModel):
@@ -69,6 +93,14 @@ class ResultadoRetencion(BaseModel):
     monto_retencion: Decimal = Field(..., ge=0)
     monto_neto_pagar: Decimal = Field(..., ge=0)
     requiere_retencion: bool
+    regla_aplicada: str | None = Field(
+        default=None,
+        description=(
+            "Rama del calculo que determino el resultado. Describe que condicion "
+            "se cumplio, no su fundamento legal: las citas de articulos de este "
+            "modulo estan sin verificar (ver docs/AUDIT.md)."
+        ),
+    )
 
 
 class ResultadoIVA(BaseModel):

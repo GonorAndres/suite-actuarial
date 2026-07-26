@@ -103,9 +103,7 @@ def calcular_prima_ordinario(
         tasa_interes_tecnico=Decimal(str(tasa_interes)),
     )
 
-    producto = VidaOrdinario(
-        config, tabla, plazo_pago_vitalicio=(plazo_pago is None)
-    )
+    producto = VidaOrdinario(config, tabla, plazo_pago_vitalicio=(plazo_pago is None))
     asegurado = crear_asegurado(edad, sexo, suma_asegurada)
 
     resultado = producto.calcular_prima(asegurado, frecuencia_pago="mensual")
@@ -179,7 +177,7 @@ def calcular_reserva_matematica(
             plazo_years=plazo,
             tasa_interes_tecnico=Decimal(str(tasa_interes)),
         )
-        producto = VidaTemporal(config, tabla)
+        producto: VidaTemporal | VidaOrdinario | VidaDotal = VidaTemporal(config, tabla)
 
     elif producto_tipo == "Ordinario":
         config = ConfiguracionProducto(
@@ -219,17 +217,11 @@ def generar_tabla_comparacion(
         DataFrame con comparación de productos
     """
     # Calcular primas para cada producto
-    temporal = calcular_prima_temporal(
-        edad, sexo, suma_asegurada, plazo, tasa_interes, tabla
-    )
+    temporal = calcular_prima_temporal(edad, sexo, suma_asegurada, plazo, tasa_interes, tabla)
 
-    ordinario = calcular_prima_ordinario(
-        edad, sexo, suma_asegurada, None, tasa_interes, tabla
-    )
+    ordinario = calcular_prima_ordinario(edad, sexo, suma_asegurada, None, tasa_interes, tabla)
 
-    dotal = calcular_prima_dotal(
-        edad, sexo, suma_asegurada, plazo, tasa_interes, tabla
-    )
+    dotal = calcular_prima_dotal(edad, sexo, suma_asegurada, plazo, tasa_interes, tabla)
 
     # Crear DataFrame comparativo
     data = {
@@ -290,18 +282,18 @@ def analisis_sensibilidad_edad(
                 edad, sexo, suma_asegurada, None, tasa_interes, tabla
             )
         elif producto_tipo == "Dotal":
-            resultado = calcular_prima_dotal(
-                edad, sexo, suma_asegurada, plazo, tasa_interes, tabla
-            )
+            resultado = calcular_prima_dotal(edad, sexo, suma_asegurada, plazo, tasa_interes, tabla)
 
         primas_netas.append(resultado["prima_neta"])
         primas_totales.append(resultado["prima_total"])
 
-    return pd.DataFrame({
-        "Edad": list(edades),
-        "Prima Neta": primas_netas,
-        "Prima Total": primas_totales,
-    })
+    return pd.DataFrame(
+        {
+            "Edad": list(edades),
+            "Prima Neta": primas_netas,
+            "Prima Total": primas_totales,
+        }
+    )
 
 
 def analisis_sensibilidad_tasa(
@@ -333,26 +325,22 @@ def analisis_sensibilidad_tasa(
 
     for tasa in tasas:
         if producto_tipo == "Temporal":
-            resultado = calcular_prima_temporal(
-                edad, sexo, suma_asegurada, plazo, tasa, tabla
-            )
+            resultado = calcular_prima_temporal(edad, sexo, suma_asegurada, plazo, tasa, tabla)
         elif producto_tipo == "Ordinario":
-            resultado = calcular_prima_ordinario(
-                edad, sexo, suma_asegurada, None, tasa, tabla
-            )
+            resultado = calcular_prima_ordinario(edad, sexo, suma_asegurada, None, tasa, tabla)
         elif producto_tipo == "Dotal":
-            resultado = calcular_prima_dotal(
-                edad, sexo, suma_asegurada, plazo, tasa, tabla
-            )
+            resultado = calcular_prima_dotal(edad, sexo, suma_asegurada, plazo, tasa, tabla)
 
         primas_netas.append(resultado["prima_neta"])
         primas_totales.append(resultado["prima_total"])
 
-    return pd.DataFrame({
-        "Tasa (%)": [t * 100 for t in tasas],
-        "Prima Neta": primas_netas,
-        "Prima Total": primas_totales,
-    })
+    return pd.DataFrame(
+        {
+            "Tasa (%)": [t * 100 for t in tasas],
+            "Prima Neta": primas_netas,
+            "Prima Total": primas_totales,
+        }
+    )
 
 
 def proyeccion_reservas(
@@ -386,8 +374,10 @@ def proyeccion_reservas(
         )
         reservas.append(reserva)
 
-    return pd.DataFrame({
-        "Año": list(anos),
-        "Reserva Matemática": reservas,
-        "% Suma Asegurada": [(r / suma_asegurada) * 100 for r in reservas],
-    })
+    return pd.DataFrame(
+        {
+            "Año": list(anos),
+            "Reserva Matemática": reservas,
+            "% Suma Asegurada": [(r / suma_asegurada) * 100 for r in reservas],
+        }
+    )

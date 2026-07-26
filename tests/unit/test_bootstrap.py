@@ -1,22 +1,68 @@
-"""
-Tests para método Bootstrap.
+"""Tests del bootstrap ODP de England-Verrall — hallazgo A2 de `docs/AUDIT.md`.
 
-Valida simulación Monte Carlo, generación de triángulos sintéticos,
-cálculo de distribución completa y percentiles.
+Oráculos independientes que sostienen estas pruebas:
+
+1. **Triángulo de Taylor & Ashe (1983).** El parámetro de dispersión publicado
+   para el modelo ODP sobre este triángulo es phi ≈ 52,601, y el error de
+   predicción del bootstrap (CV ≈ 16%) queda por encima del error estándar de
+   Mack (CV ≈ 13%), como reporta la literatura. Ninguna de las dos cifras sale
+   de la fórmula bajo prueba.
+2. **Propiedad del estimador máximo-verosímil del ODP.** Los incrementales
+   ajustados reproducen exactamente las sumas por fila y por columna del
+   triángulo observado. Es una identidad algebraica del método, verificable sin
+   simular nada.
+3. **Ajuste perfecto.** Sobre un triángulo exactamente multiplicativo todos los
+   residuales de Pearson son cero, phi es cero y la distribución colapsa en un
+   punto. La versión anterior inyectaba ruido `N(0, 0.05)` justo ahí y fabricaba
+   un CV del 5-15%.
 """
 
 from decimal import Decimal
 
+import numpy as np
 import pandas as pd
 import pytest
 
-from suite_actuarial.core.validators import ConfiguracionBootstrap
+from suite_actuarial.core.validators import ConfiguracionBootstrap, TipoTriangulo
 from suite_actuarial.reservas.bootstrap import Bootstrap
+from suite_actuarial.reservas.mack import calcular_mack
+
+TAYLOR_ASHE_INCREMENTAL = [
+    [357848, 766940, 610542, 482940, 527326, 574398, 146342, 139950, 227229, 67948],
+    [352118, 884021, 933894, 1183289, 445745, 320996, 527804, 266172, 425046, None],
+    [290507, 1001799, 926219, 1016654, 750816, 146923, 495992, 280405, None, None],
+    [310608, 1108250, 776189, 1562400, 272482, 352053, 206286, None, None, None],
+    [443160, 693190, 991983, 769488, 504851, 470639, None, None, None, None],
+    [396132, 937085, 847498, 805037, 705960, None, None, None, None, None],
+    [440832, 847631, 1131398, 1063269, None, None, None, None, None, None],
+    [359480, 1061648, 1443370, None, None, None, None, None, None, None],
+    [376686, 986608, None, None, None, None, None, None, None, None],
+    [344014, None, None, None, None, None, None, None, None, None],
+]
+
+
+@pytest.fixture
+def taylor_ashe():
+    """Triángulo acumulado de Taylor & Ashe (1983)."""
+    acumulado = []
+    for fila in TAYLOR_ASHE_INCREMENTAL:
+        total = 0.0
+        salida = []
+        for valor in fila:
+            if valor is None:
+                salida.append(None)
+            else:
+                total += valor
+                salida.append(total)
+        acumulado.append(salida)
+
+    columnas = {j: [acumulado[i][j] for i in range(10)] for j in range(10)}
+    return pd.DataFrame(columnas, index=list(range(1981, 1991)))
 
 
 @pytest.fixture
 def triangulo_simple():
-    """Triángulo acumulado simple de 5x5"""
+    """Triángulo acumulado simple de 5x5."""
     data = {
         0: [1000, 1200, 1100, 1300, 1250],
         1: [1500, 1800, 1650, 1950, None],
@@ -28,446 +74,395 @@ def triangulo_simple():
 
 
 @pytest.fixture
+def triangulo_multiplicativo():
+    """Triángulo exactamente multiplicativo: C[i,j] = a[i] * b[j].
+
+    Cada razón age-to-age es idéntica en toda la columna, así que Chain Ladder
+    ajusta el triángulo sin error y todos los residuales de Pearson son cero por
+    construcción. Es el caso límite que separa un remuestreo honesto de uno que
+    fabrica dispersión.
+
+    Se usa un triángulo de 6x6: el modelo ODP tiene `I + J - 1` parámetros, así
+    que hacen falta más celdas que eso para tener grados de libertad.
+    """
+    a = [1000.0, 1200.0, 1500.0, 1800.0, 2000.0, 2200.0]
+    b = [1.0, 1.5, 1.8, 1.9, 1.95, 1.97]
+    data = {j: [a[i] * b[j] if i + j <= 5 else None for i in range(6)] for j in range(6)}
+    return pd.DataFrame(data, index=[2019, 2020, 2021, 2022, 2023, 2024])
+
+
+@pytest.fixture
 def config_100_sims():
-    """Configuración con 100 simulaciones"""
-    return ConfiguracionBootstrap(
-        num_simulaciones=100,
-        seed=42,  # Para reproducibilidad
-        percentiles=[50, 75, 90, 95, 99],
-    )
+    return ConfiguracionBootstrap(num_simulaciones=100, seed=42, percentiles=[50, 75, 90, 95, 99])
 
 
 @pytest.fixture
 def config_1000_sims():
-    """Configuración con 1000 simulaciones"""
-    return ConfiguracionBootstrap(
-        num_simulaciones=1000,
-        seed=42,
-        percentiles=[50, 75, 90, 95, 99],
-    )
+    return ConfiguracionBootstrap(num_simulaciones=1000, seed=42, percentiles=[50, 75, 90, 95, 99])
 
 
-class TestBootstrapCreacion:
-    """Tests para creación de Bootstrap"""
+class TestAjusteODP:
+    """El ajuste hacia atrás y sus identidades algebraicas."""
 
-    def test_crear_bootstrap_valido(self, config_100_sims):
-        """Debe crear un Bootstrap válido"""
-        bs = Bootstrap(config_100_sims)
-        assert bs.config.num_simulaciones == 100
-        assert bs.config.seed == 42
+    def test_los_ajustados_reproducen_las_sumas_por_fila_y_columna(self, taylor_ashe):
+        """Identidad del estimador máximo-verosímil del ODP.
 
-    def test_num_simulaciones_muy_bajo_invalido(self):
-        """No debe permitir muy pocas simulaciones"""
-        with pytest.raises(ValueError):
-            ConfiguracionBootstrap(num_simulaciones=50)  # < 100
+        El modelo ODP ajustado por máxima verosimilitud reproduce exactamente
+        los totales marginales del triángulo observado, y su estimador coincide
+        con Chain Ladder. Es una identidad algebraica: se verifica sin simular.
 
-    def test_num_simulaciones_muy_alto_invalido(self):
-        """No debe permitir demasiadas simulaciones"""
-        with pytest.raises(ValueError):
-            ConfiguracionBootstrap(num_simulaciones=20000)  # > 10000
+        El ajuste anterior construía los valores hacia adelante desde la primera
+        columna, así que ni siquiera reproducía la diagonal observada (A2).
+        """
+        bootstrap = Bootstrap(ConfiguracionBootstrap(num_simulaciones=100, seed=1))
+        observados, ajustados = bootstrap.ajustar_incrementales(taylor_ashe)
 
-    def test_percentiles_invalidos(self):
-        """No debe permitir percentiles fuera de rango"""
-        with pytest.raises(ValueError, match="fuera de rango"):
-            ConfiguracionBootstrap(percentiles=[0, 50, 100])  # 0 y 100 inválidos
+        assert np.allclose(np.nansum(observados, axis=1), np.nansum(ajustados, axis=1))
+        assert np.allclose(np.nansum(observados, axis=0), np.nansum(ajustados, axis=0))
 
-    def test_percentiles_se_ordenan_y_deduplicant(self):
-        """Percentiles deben ordenarse y eliminar duplicados"""
-        config = ConfiguracionBootstrap(percentiles=[90, 50, 90, 75])
-        # Deben quedar: [50, 75, 90]
-        assert config.percentiles == [50, 75, 90]
+    def test_la_diagonal_ajustada_reproduce_la_observada(self, taylor_ashe):
+        """El ajuste hacia atrás parte del ultimate, así que cierra en la diagonal."""
+        bootstrap = Bootstrap(ConfiguracionBootstrap(num_simulaciones=100, seed=1))
+        bootstrap.ajustar_incrementales(taylor_ashe)
+
+        acumulado_ajustado = np.nancumsum(
+            np.where(
+                np.isnan(bootstrap.incrementales_ajustados),
+                0.0,
+                bootstrap.incrementales_ajustados,
+            ),
+            axis=1,
+        )
+        observado = taylor_ashe.to_numpy(dtype=float)
+
+        for i in range(observado.shape[0]):
+            ultima = int(np.where(~np.isnan(observado[i]))[0][-1])
+            assert acumulado_ajustado[i, ultima] == pytest.approx(observado[i, ultima], rel=1e-9)
+
+    def test_phi_reproduce_el_valor_publicado(self, taylor_ashe):
+        """phi ≈ 52,601 para el triángulo de Taylor & Ashe.
+
+        El parámetro de dispersión es el que gobierna la varianza de proceso
+        (`Var = phi * media`). Reproducirlo exige que estén bien el ajuste hacia
+        atrás, los residuales sobre incrementales y los grados de libertad
+        `n - p` con `p = I + J - 1`. Cualquiera de los tres mal cambia el valor.
+        """
+        bootstrap = Bootstrap(ConfiguracionBootstrap(num_simulaciones=100, seed=1))
+        observados, ajustados = bootstrap.ajustar_incrementales(taylor_ashe)
+        bootstrap.calcular_residuales_pearson(observados, ajustados)
+
+        assert bootstrap.phi == pytest.approx(52_601, rel=1e-3)
+        assert bootstrap.celdas_utilizables == 55
+        assert bootstrap.parametros_modelo == 19  # I + J - 1 = 10 + 10 - 1
+        assert bootstrap.grados_libertad == 36
+
+    def test_sin_grados_de_libertad_falla(self):
+        """Un triángulo diminuto no permite estimar la dispersión."""
+        triangulo = pd.DataFrame({0: [1000.0, 1200.0], 1: [1500.0, None]}, index=[2023, 2024])
+        bootstrap = Bootstrap(ConfiguracionBootstrap(num_simulaciones=100, seed=1))
+
+        with pytest.raises(ValueError, match="grados de libertad"):
+            bootstrap.calcular(triangulo, TipoTriangulo.ACUMULADO)
 
 
-class TestBootstrapTrianguloAjustado:
-    """Tests para cálculo de triángulo ajustado"""
+class TestDistribucionPredictiva:
+    """Contraste de la distribución contra referencias externas."""
 
-    def test_calcular_triangulo_ajustado(
-        self, triangulo_simple, config_100_sims
+    def test_la_media_concilia_con_chain_ladder(self, taylor_ashe, config_1000_sims):
+        """La media de las réplicas queda a ~1% de la reserva Chain Ladder.
+
+        Reconciliar era el criterio de salida del hallazgo A2: la versión
+        anterior usaba la mediana y quedaba 2.5x por encima. La diferencia
+        residual no es ruido de Monte Carlo — la reserva es convexa en los
+        factores de desarrollo, así que remuestrearlos eleva la media
+        (desigualdad de Jensen). Por eso se acota, se reporta y no se afirma
+        que sea cero.
+        """
+        bootstrap = Bootstrap(config_1000_sims)
+        resultado = bootstrap.calcular(taylor_ashe, TipoTriangulo.ACUMULADO)
+
+        reserva_cl = Decimal(resultado.detalles["reserva_base_cl"])
+        relativa = Decimal(resultado.detalles["conciliacion_cl_relativa"])
+
+        assert float(reserva_cl) == pytest.approx(18_680_856, abs=1)
+        assert relativa < Decimal("0.02")
+        assert resultado.detalles["estimador_central"] == "media"
+
+    def test_el_error_de_prediccion_supera_al_de_mack(self, taylor_ashe, config_1000_sims):
+        """El bootstrap ODP es más disperso que Mack sobre el mismo triángulo.
+
+        Ambos miden error de predicción condicionado al Chain Ladder, pero bajo
+        supuestos de varianza distintos: Mack supone `Var = sigma_k^2 * C`, el
+        ODP supone `Var = phi * m`. Para este triángulo la literatura reporta
+        CV ≈ 16% para el bootstrap contra 13.1% de Mack. Que ambos queden en el
+        mismo orden de magnitud, con el bootstrap por encima, es la prueba
+        cruzada entre dos métodos independientes.
+        """
+        bootstrap = Bootstrap(config_1000_sims)
+        resultado = bootstrap.calcular(taylor_ashe, TipoTriangulo.ACUMULADO)
+        mack = calcular_mack(taylor_ashe)
+
+        error_bootstrap = float(resultado.detalles["error_prediccion"])
+        cv_bootstrap = float(resultado.detalles["coeficiente_variacion"])
+
+        assert error_bootstrap > float(mack.standard_error)
+        assert error_bootstrap < 2 * float(mack.standard_error)
+        assert cv_bootstrap == pytest.approx(0.16, abs=0.02)
+
+    def test_la_varianza_de_proceso_agrega_dispersion(self, taylor_ashe, config_1000_sims):
+        """Apagar el paso de proceso reduce el error de predicción.
+
+        Las dos fuentes se componen: error de estimación (remuestreo de
+        residuales) y error de proceso (Gamma con `Var = phi*m`). Si el segundo
+        no aportara nada, el paso no estaría haciendo su trabajo.
+        """
+        bootstrap = Bootstrap(config_1000_sims)
+        resultado = bootstrap.calcular(taylor_ashe, TipoTriangulo.ACUMULADO)
+        con_proceso = float(resultado.detalles["error_prediccion"])
+
+        bootstrap.phi = 0.0  # desactiva la simulación de proceso
+        rng = np.random.default_rng(config_1000_sims.seed)
+        solo_estimacion = np.array(
+            [
+                float(bootstrap.ejecutar_replica(rng))
+                for _ in range(config_1000_sims.num_simulaciones)
+            ]
+        )
+
+        assert con_proceso > float(solo_estimacion.std(ddof=1))
+
+    def test_percentiles_ordenados_y_completos(self, triangulo_simple, config_1000_sims):
+        bootstrap = Bootstrap(config_1000_sims)
+        resultado = bootstrap.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
+
+        assert set(resultado.percentiles.keys()) == {50, 75, 90, 95, 99}
+        valores = [resultado.percentiles[p] for p in sorted(resultado.percentiles)]
+        assert valores == sorted(valores)
+
+    def test_identidad_contable_del_resultado(self, triangulo_simple, config_100_sims):
+        """ultimate = pagado + reserva, con la reserva igual a la media."""
+        bootstrap = Bootstrap(config_100_sims)
+        resultado = bootstrap.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
+
+        assert resultado.ultimate_total == resultado.pagado_total + resultado.reserva_total
+        assert resultado.reserva_total == Decimal(resultado.detalles["media"])
+
+
+class TestAjustePerfecto:
+    """Sin dispersión observada no puede haber dispersión simulada."""
+
+    def test_triangulo_multiplicativo_produce_banda_de_ancho_cero(
+        self, triangulo_multiplicativo, config_100_sims
     ):
-        """Debe calcular triángulo ajustado (fitted values)"""
-        bs = Bootstrap(config_100_sims)
+        """Todos los residuales son cero, luego phi es cero y la banda colapsa.
 
-        # Primero ejecutar Chain Ladder para tener factores
-        from suite_actuarial.core.validators import ConfiguracionChainLadder
-        from suite_actuarial.reservas.chain_ladder import ChainLadder
+        Este es el oráculo decisivo del hallazgo A2: la implementación anterior
+        inyectaba `N(0, 0.05)` exactamente aquí y fabricaba un CV del 5-15% a
+        partir de un triángulo sin ninguna variabilidad.
+        """
+        bootstrap = Bootstrap(config_100_sims)
+        resultado = bootstrap.calcular(triangulo_multiplicativo, TipoTriangulo.ACUMULADO)
 
-        config_cl = ConfiguracionChainLadder()
-        cl = ChainLadder(config_cl)
-        cl.calcular(triangulo_simple)
+        assert bootstrap.phi == pytest.approx(0.0, abs=1e-12)
+        assert np.allclose(bootstrap.residuales, 0.0)
 
-        triangulo_ajustado = bs.calcular_triangulo_ajustado(
-            triangulo_simple, cl
-        )
+        # Las réplicas coinciden hasta el ruido de punto flotante (~1e-12
+        # relativo): no queda nada que remuestrear.
+        simulaciones = np.array([float(s) for s in bootstrap.simulaciones_reservas])
+        assert np.ptp(simulaciones) / simulaciones.mean() < 1e-9
+        assert float(resultado.detalles["error_prediccion"]) == pytest.approx(0.0, abs=1e-6)
 
-        # Debe tener mismas dimensiones
-        assert triangulo_ajustado.shape == triangulo_simple.shape
-
-        # Primera columna debe ser igual
-        assert triangulo_ajustado.iloc[0, 0] == triangulo_simple.iloc[0, 0]
-
-
-class TestBootstrapResiduales:
-    """Tests para cálculo de residuales"""
-
-    def test_calcular_residuales_pearson(
-        self, triangulo_simple, config_100_sims
+    def test_el_ajuste_perfecto_concilia_exactamente_con_chain_ladder(
+        self, triangulo_multiplicativo, config_100_sims
     ):
-        """Debe calcular residuales de Pearson"""
-        bs = Bootstrap(config_100_sims)
+        """Sin variabilidad no hay convexidad que sesgue la media."""
+        bootstrap = Bootstrap(config_100_sims)
+        resultado = bootstrap.calcular(triangulo_multiplicativo, TipoTriangulo.ACUMULADO)
 
-        from suite_actuarial.core.validators import ConfiguracionChainLadder
-        from suite_actuarial.reservas.chain_ladder import ChainLadder
+        conciliacion = float(resultado.detalles["conciliacion_cl"])
+        assert conciliacion == pytest.approx(0.0, abs=1e-6)
 
-        config_cl = ConfiguracionChainLadder()
-        cl = ChainLadder(config_cl)
-        cl.calcular(triangulo_simple)
 
-        triangulo_ajustado = bs.calcular_triangulo_ajustado(
-            triangulo_simple, cl
+class TestSinSesgoPorDescarte:
+    """Perturbar incrementales elimina la causa raíz del sesgo por selección."""
+
+    def test_ninguna_replica_se_descarta(self, triangulo_simple, config_1000_sims):
+        """Todas las réplicas configuradas llegan a la distribución.
+
+        La versión anterior sumaba residuales a valores ACUMULADOS, así que
+        ~9% de los intentos quedaban no monótonos y se descartaban, sesgando la
+        banda por selección. Aquí se perturban incrementales y se recumula: no
+        hay nada que descartar, y el conteo lo demuestra.
+        """
+        bootstrap = Bootstrap(config_1000_sims)
+        bootstrap.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
+
+        assert len(bootstrap.simulaciones_reservas) == config_1000_sims.num_simulaciones
+
+    def test_no_hay_masa_puntual_en_la_reserva_base(self, triangulo_simple, config_1000_sims):
+        """Ningún valor concentra una fracción anómala de las réplicas.
+
+        La versión anterior sustituía las réplicas fallidas por la reserva base
+        de Chain Ladder, lo que apilaba una masa puntual y producía los
+        percentiles bimodales que documenta A2.
+        """
+        bootstrap = Bootstrap(config_1000_sims)
+        bootstrap.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
+
+        valores = [round(float(s), 6) for s in bootstrap.simulaciones_reservas]
+        repeticion_maxima = max(valores.count(v) for v in set(valores))
+
+        assert repeticion_maxima / len(valores) < 0.01
+
+
+class TestReproducibilidad:
+    """La semilla fija la distribución completa."""
+
+    def test_misma_semilla_mismos_resultados(self, triangulo_simple):
+        config = ConfiguracionBootstrap(num_simulaciones=200, seed=7)
+
+        primera = Bootstrap(config).calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
+        segunda = Bootstrap(config).calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
+
+        assert primera.reserva_total == segunda.reserva_total
+        assert primera.percentiles == segunda.percentiles
+
+    def test_distinta_semilla_distintos_resultados(self, triangulo_simple):
+        una = Bootstrap(ConfiguracionBootstrap(num_simulaciones=200, seed=7)).calcular(
+            triangulo_simple, TipoTriangulo.ACUMULADO
         )
-        residuales = bs.calcular_residuales_pearson(
-            triangulo_simple, triangulo_ajustado
-        )
-
-        # Debe tener mismas dimensiones
-        assert residuales.shape == triangulo_simple.shape
-
-        # Residuales en celdas conocidas no deben ser NaN
-        assert pd.notna(residuales.iloc[0, 0])
-
-
-class TestBootstrapTrianguloSintetico:
-    """Tests para generación de triángulos sintéticos"""
-
-    def test_generar_triangulo_sintetico(
-        self, triangulo_simple, config_100_sims
-    ):
-        """Debe generar triángulo sintético re-muestreando residuales"""
-        bs = Bootstrap(config_100_sims)
-
-        from suite_actuarial.core.validators import ConfiguracionChainLadder
-        from suite_actuarial.reservas.chain_ladder import ChainLadder
-
-        config_cl = ConfiguracionChainLadder()
-        cl = ChainLadder(config_cl)
-        cl.calcular(triangulo_simple)
-
-        triangulo_ajustado = bs.calcular_triangulo_ajustado(
-            triangulo_simple, cl
-        )
-        residuales = bs.calcular_residuales_pearson(
-            triangulo_simple, triangulo_ajustado
-        )
-
-        triangulo_sintetico = bs.generar_triangulo_sintetico(
-            triangulo_ajustado, residuales
-        )
-
-        # Debe tener mismas dimensiones
-        assert triangulo_sintetico.shape == triangulo_simple.shape
-
-        # All non-NaN values must be >= 0
-        mask = triangulo_sintetico.notna()
-        assert (triangulo_sintetico[mask] >= 0).all().all()
-
-    def test_triangulossinteticos_son_diferentes(
-        self, triangulo_simple, config_100_sims
-    ):
-        """Múltiples triángulos sintéticos deben ser diferentes"""
-        bs = Bootstrap(config_100_sims)
-
-        from suite_actuarial.core.validators import ConfiguracionChainLadder
-        from suite_actuarial.reservas.chain_ladder import ChainLadder
-
-        config_cl = ConfiguracionChainLadder()
-        cl = ChainLadder(config_cl)
-        cl.calcular(triangulo_simple)
-
-        triangulo_ajustado = bs.calcular_triangulo_ajustado(
-            triangulo_simple, cl
-        )
-        residuales = bs.calcular_residuales_pearson(
-            triangulo_simple, triangulo_ajustado
+        otra = Bootstrap(ConfiguracionBootstrap(num_simulaciones=200, seed=8)).calcular(
+            triangulo_simple, TipoTriangulo.ACUMULADO
         )
 
-        # Generar dos triángulos
-        t1 = bs.generar_triangulo_sintetico(triangulo_ajustado, residuales)
-        t2 = bs.generar_triangulo_sintetico(triangulo_ajustado, residuales)
-
-        # Deben ser diferentes (con alta probabilidad)
-        # Comparar algunos valores
-        diferencias = (t1 != t2).sum().sum()
-        # Al menos algunas celdas deben ser diferentes
-        assert diferencias > 0
+        assert una.reserva_total != otra.reserva_total
 
 
-class TestBootstrapSimulacion:
-    """Tests para ejecución de simulaciones"""
+class TestInvarianzaDeEscala:
+    """El modelo ODP tiene una estructura de escala conocida."""
 
-    def test_ejecutar_simulacion(self, triangulo_simple, config_100_sims):
-        """Debe ejecutar una simulación completa"""
-        bs = Bootstrap(config_100_sims)
+    def test_escalar_el_triangulo_escala_reserva_y_error(self, triangulo_simple):
+        """Multiplicar por 100 multiplica reserva y error por 100; phi también.
 
-        from suite_actuarial.core.validators import ConfiguracionChainLadder
-        from suite_actuarial.reservas.chain_ladder import ChainLadder
+        En el modelo ODP `Var = phi * m`, así que al escalar los montos por `c`
+        la media escala por `c`, la varianza por `c^2` y por tanto `phi` por `c`.
+        El coeficiente de variación queda invariante. Es una identidad del
+        modelo, no una repetición del cálculo.
+        """
+        config = ConfiguracionBootstrap(num_simulaciones=300, seed=11)
 
-        config_cl = ConfiguracionChainLadder()
-        cl = ChainLadder(config_cl)
-        cl.calcular(triangulo_simple)
+        base = Bootstrap(config)
+        resultado_base = base.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
+        escalado = Bootstrap(config)
+        resultado_escalado = escalado.calcular(triangulo_simple * 100, TipoTriangulo.ACUMULADO)
 
-        # Preparar bootstrap
-        bs.triangulo_ajustado = bs.calcular_triangulo_ajustado(
-            triangulo_simple, cl
+        assert escalado.phi == pytest.approx(100 * base.phi, rel=1e-9)
+        assert float(resultado_escalado.reserva_total) == pytest.approx(
+            100 * float(resultado_base.reserva_total), rel=1e-9
         )
-        bs.residuales = bs.calcular_residuales_pearson(
-            triangulo_simple, bs.triangulo_ajustado
+        assert float(resultado_escalado.detalles["coeficiente_variacion"]) == pytest.approx(
+            float(resultado_base.detalles["coeficiente_variacion"]), rel=1e-9
         )
 
-        # Ejecutar una simulación
-        reserva_sim = bs.ejecutar_simulacion(triangulo_simple, cl)
 
-        # Debe retornar un Decimal positivo
-        assert isinstance(reserva_sim, Decimal)
-        assert reserva_sim >= Decimal("0")
+class TestMetadatosYAlcance:
+    """Lo que el resultado declara sobre sí mismo."""
 
+    def test_declara_el_metodo_y_su_alcance(self, triangulo_simple, config_100_sims):
+        resultado = Bootstrap(config_100_sims).calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
-class TestBootstrapPercentiles:
-    """Tests para cálculo de percentiles"""
+        assert resultado.detalles["metodo"] == "bootstrap-odp-england-verrall"
+        assert resultado.calculation_metadata.validation_tier == "supported"
+        assert any(
+            "CONDICIONAL al modelo" in aviso for aviso in resultado.calculation_metadata.warnings
+        )
 
-    def test_calcular_percentiles(self, config_100_sims):
-        """Debe calcular percentiles correctamente"""
-        bs = Bootstrap(config_100_sims)
+    def test_reporta_los_diagnosticos_del_ajuste(self, taylor_ashe, config_100_sims):
+        """phi, grados de libertad y celdas excluidas viajan con el resultado."""
+        resultado = Bootstrap(config_100_sims).calcular(taylor_ashe, TipoTriangulo.ACUMULADO)
 
-        # Simulaciones de ejemplo
-        simulaciones = [Decimal(str(x)) for x in range(100)]
-
-        percentiles = bs.calcular_percentiles(simulaciones)
-
-        # Debe tener todos los percentiles configurados
-        assert len(percentiles) == len(config_100_sims.percentiles)
-        assert 50 in percentiles
-        assert 95 in percentiles
-
-        # P50 debe ser cercano a 50 (mediana)
-        assert abs(float(percentiles[50]) - 49.5) < 2
-
-        # P95 debe ser cercano a 95
-        assert abs(float(percentiles[95]) - 95) < 2
-
-    def test_percentiles_ordenados(self, triangulo_simple, config_100_sims):
-        """Percentiles deben estar ordenados ascendentemente"""
-        bs = Bootstrap(config_100_sims)
-        resultado = bs.calcular(triangulo_simple)
-
-        percentiles_valores = [
-            resultado.percentiles[p] for p in sorted(resultado.percentiles.keys())
-        ]
-
-        # Deben estar ordenados
-        for i in range(len(percentiles_valores) - 1):
-            assert percentiles_valores[i] <= percentiles_valores[i + 1]
+        assert float(resultado.detalles["phi_dispersion"]) == pytest.approx(52_601, rel=1e-3)
+        assert resultado.detalles["grados_libertad"] == 36
+        assert resultado.detalles["parametros_modelo"] == 19
+        assert float(resultado.detalles["ajuste_grados_libertad"]) == pytest.approx(
+            (55 / 36) ** 0.5, rel=1e-9
+        )
 
 
-class TestBootstrapCalculoCompleto:
-    """Tests para cálculo completo end-to-end"""
+class TestVaRTVaR:
+    """Lecturas de cola de la distribución predictiva."""
 
-    def test_calcular_completo_exitoso(
-        self, triangulo_simple, config_100_sims
-    ):
-        """Debe ejecutar cálculo completo sin errores"""
-        bs = Bootstrap(config_100_sims)
-        resultado = bs.calcular(triangulo_simple)
+    def test_tvar_no_es_menor_que_var(self, triangulo_simple, config_1000_sims):
+        """El TVaR promedia la cola que empieza en el VaR."""
+        bootstrap = Bootstrap(config_1000_sims)
+        bootstrap.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
-        assert resultado is not None
-        assert resultado.reserva_total >= Decimal("0")
-        assert resultado.percentiles is not None
+        var = bootstrap.calcular_var(0.95)
+        tvar = bootstrap.calcular_tvar(0.95)
 
-    def test_resultado_tiene_percentiles_configurados(
-        self, triangulo_simple, config_100_sims
-    ):
-        """Resultado debe tener todos los percentiles configurados"""
-        bs = Bootstrap(config_100_sims)
-        resultado = bs.calcular(triangulo_simple)
+        assert tvar >= var
 
-        for p in config_100_sims.percentiles:
-            assert p in resultado.percentiles
+    def test_var_creciente_en_el_nivel_de_confianza(self, triangulo_simple, config_1000_sims):
+        bootstrap = Bootstrap(config_1000_sims)
+        bootstrap.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
-    def test_reserva_total_es_p50(self, triangulo_simple, config_100_sims):
-        """Reserva total debe ser el percentil 50 (mediana)"""
-        bs = Bootstrap(config_100_sims)
-        resultado = bs.calcular(triangulo_simple)
+        assert bootstrap.calcular_var(0.99) >= bootstrap.calcular_var(0.95)
+        assert bootstrap.calcular_var(0.95) >= bootstrap.calcular_var(0.75)
 
-        # La reserva total debe ser la mediana
-        assert resultado.reserva_total == resultado.percentiles[50]
-
-    def test_detalles_incluyen_estadisticas(
-        self, triangulo_simple, config_100_sims
-    ):
-        """Detalles deben incluir estadísticas descriptivas"""
-        bs = Bootstrap(config_100_sims)
-        resultado = bs.calcular(triangulo_simple)
-
-        assert "num_simulaciones" in resultado.detalles
-        assert "media" in resultado.detalles
-        assert "desviacion_estandar" in resultado.detalles
-        assert "minimo" in resultado.detalles
-        assert "maximo" in resultado.detalles
-        assert "coeficiente_variacion" in resultado.detalles
+    def test_var_antes_de_calcular_falla(self, config_100_sims):
+        with pytest.raises(ValueError, match="antes de calcular"):
+            Bootstrap(config_100_sims).calcular_var()
 
 
-class TestBootstrapReproducibilidad:
-    """Tests para reproducibilidad con seed"""
-
-    def test_mismo_seed_mismos_resultados(self, triangulo_simple):
-        """Mismo seed debe producir mismos resultados"""
-        config1 = ConfiguracionBootstrap(num_simulaciones=100, seed=42)
-        config2 = ConfiguracionBootstrap(num_simulaciones=100, seed=42)
-
-        bs1 = Bootstrap(config1)
-        bs2 = Bootstrap(config2)
-
-        resultado1 = bs1.calcular(triangulo_simple)
-        resultado2 = bs2.calcular(triangulo_simple)
-
-        # Los resultados deben ser idénticos
-        assert resultado1.reserva_total == resultado2.reserva_total
-        assert resultado1.percentiles[95] == resultado2.percentiles[95]
-
-    def test_diferente_seed_diferentes_resultados(self, triangulo_simple):
-        """Diferente seed debe produce different internal distributions"""
-        config1 = ConfiguracionBootstrap(num_simulaciones=500, seed=42)
-        config2 = ConfiguracionBootstrap(num_simulaciones=500, seed=999)
-
-        bs1 = Bootstrap(config1)
-        bs2 = Bootstrap(config2)
-
-        bs1.calcular(triangulo_simple)
-        bs2.calcular(triangulo_simple)
-
-        # Both should produce valid results (distributions may converge
-        # for small triangles, but internal simulation lists should exist)
-        assert bs1.simulaciones_reservas is not None
-        assert bs2.simulaciones_reservas is not None
-        assert len(bs1.simulaciones_reservas) == 500
-        assert len(bs2.simulaciones_reservas) == 500
-
-
-class TestBootstrapDistribucion:
-    """Tests para análisis de distribución"""
+class TestSalidasAuxiliares:
+    """Distribución y datos de graficación."""
 
     def test_obtener_distribucion(self, triangulo_simple, config_100_sims):
-        """Debe poder obtener distribución completa"""
-        bs = Bootstrap(config_100_sims)
-        bs.calcular(triangulo_simple)
+        bootstrap = Bootstrap(config_100_sims)
+        bootstrap.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
-        distribucion = bs.obtener_distribucion()
-
+        distribucion = bootstrap.obtener_distribucion()
         assert distribucion is not None
         assert len(distribucion) == 100
 
-    def test_graficar_distribucion(self, triangulo_simple, config_100_sims):
-        """Debe generar datos para histograma"""
-        bs = Bootstrap(config_100_sims)
-        bs.calcular(triangulo_simple)
-
-        df_hist = bs.graficar_distribucion()
-
-        assert isinstance(df_hist, pd.DataFrame)
-        assert "frequency" in df_hist.columns
-        assert "relative_frequency" in df_hist.columns
-        assert len(df_hist) > 0
-
     def test_obtener_distribucion_antes_de_calcular(self, config_100_sims):
-        """Antes de calcular debe retornar None"""
-        bs = Bootstrap(config_100_sims)
-        distribucion = bs.obtener_distribucion()
-        assert distribucion is None
+        assert Bootstrap(config_100_sims).obtener_distribucion() is None
 
+    def test_graficar_distribucion(self, triangulo_simple, config_100_sims):
+        bootstrap = Bootstrap(config_100_sims)
+        bootstrap.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
-class TestBootstrapVaRTVaR:
-    """Tests para cálculo de VaR y TVaR"""
+        histograma = bootstrap.graficar_distribucion()
+        assert len(histograma) == 50
+        assert histograma["relative_frequency"].sum() == pytest.approx(1.0)
 
-    def test_calcular_var(self, triangulo_simple, config_100_sims):
-        """Debe calcular VaR al 95%"""
-        bs = Bootstrap(config_100_sims)
-        resultado = bs.calcular(triangulo_simple)
-
-        var_95 = bs.calcular_var(nivel_confianza=0.95)
-
-        # VaR debe ser positivo
-        assert var_95 >= Decimal("0")
-
-        # VaR al 95% debe be reasonably close to the P95 percentile from result
-        p95 = resultado.percentiles[95]
-        assert abs(var_95 - p95) / max(p95, Decimal("1")) < Decimal("0.1")
-
-    def test_calcular_tvar(self, triangulo_simple, config_100_sims):
-        """Debe calcular TVaR al 95%"""
-        bs = Bootstrap(config_100_sims)
-        bs.calcular(triangulo_simple)
-
-        tvar_95 = bs.calcular_tvar(nivel_confianza=0.95)
-        var_95 = bs.calcular_var(nivel_confianza=0.95)
-
-        # TVaR debe ser >= VaR
-        assert tvar_95 >= var_95
-
-    def test_tvar_mayor_que_var(self, triangulo_simple, config_1000_sims):
-        """TVaR debe ser mayor que VaR (cola superior)"""
-        bs = Bootstrap(config_1000_sims)
-        bs.calcular(triangulo_simple)
-
-        var_95 = bs.calcular_var(nivel_confianza=0.95)
-        tvar_95 = bs.calcular_tvar(nivel_confianza=0.95)
-
-        # TVaR >= VaR (con >= porque en distribuciones simétricas pueden ser iguales)
-        assert tvar_95 >= var_95
-
-    def test_error_var_sin_calcular(self, config_100_sims):
-        """Debe fallar si se calcula VaR antes de ejecutar bootstrap"""
-        bs = Bootstrap(config_100_sims)
-
-        with pytest.raises(ValueError, match="Debe ejecutar calcular"):
-            bs.calcular_var()
-
-
-class TestBootstrapConvergencia:
-    """Tests para convergencia con más simulaciones"""
-
-    def test_mas_simulaciones_mas_estable(self, triangulo_simple):
-        """Más simulaciones deben producir resultados más estables"""
-        # 100 simulaciones
-        config_100 = ConfiguracionBootstrap(num_simulaciones=100, seed=42)
-        bs_100 = Bootstrap(config_100)
-        resultado_100 = bs_100.calcular(triangulo_simple)
-
-        # 1000 simulaciones
-        config_1000 = ConfiguracionBootstrap(num_simulaciones=1000, seed=42)
-        bs_1000 = Bootstrap(config_1000)
-        resultado_1000 = bs_1000.calcular(triangulo_simple)
-
-        # Ambos deben ser razonables
-        assert resultado_100.reserva_total > Decimal("0")
-        assert resultado_1000.reserva_total > Decimal("0")
-
-        # Con más simulaciones, la desviación estándar relativa
-        # debería ser menor (más concentrado)
-        cv_100 = Decimal(resultado_100.detalles["coeficiente_variacion"])
-        cv_1000 = Decimal(resultado_1000.detalles["coeficiente_variacion"])
-
-        # Ambos CV deben ser razonables (< 3 for small triangles)
-        assert cv_100 < Decimal("3.0")
-        assert cv_1000 < Decimal("3.0")
-
-
-class TestBootstrapRepr:
-    """Tests para representación string"""
+    def test_graficar_antes_de_calcular_falla(self, config_100_sims):
+        with pytest.raises(ValueError, match="antes de graficar"):
+            Bootstrap(config_100_sims).graficar_distribucion()
 
     def test_repr_contiene_info_relevante(self, config_100_sims):
-        """__repr__ debe contener información útil"""
-        bs = Bootstrap(config_100_sims)
-        repr_str = repr(bs)
+        texto = repr(Bootstrap(config_100_sims))
 
-        assert "Bootstrap" in repr_str
-        assert "100" in repr_str  # Número de simulaciones
-        assert "42" in repr_str  # Seed
+        assert "Bootstrap" in texto
+        assert "100" in texto
+
+
+class TestConfiguracion:
+    """Validación de la configuración."""
+
+    def test_num_simulaciones_muy_bajo_invalido(self):
+        with pytest.raises(ValueError):
+            ConfiguracionBootstrap(num_simulaciones=50)
+
+    def test_num_simulaciones_muy_alto_invalido(self):
+        with pytest.raises(ValueError):
+            ConfiguracionBootstrap(num_simulaciones=50000)
+
+    def test_percentiles_invalidos(self):
+        with pytest.raises(ValueError):
+            ConfiguracionBootstrap(percentiles=[50, 150])
+
+    def test_percentiles_se_ordenan_y_deduplican(self):
+        config = ConfiguracionBootstrap(percentiles=[95, 50, 95, 75])
+
+        assert config.percentiles == [50, 75, 95]

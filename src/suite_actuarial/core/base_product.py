@@ -8,6 +8,7 @@ Esta es la clase padre de la que heredan todos los productos específicos
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from enum import StrEnum
+from typing import Any
 
 from suite_actuarial.core.validators import (
     Asegurado,
@@ -66,7 +67,7 @@ class ProductoSeguro(ABC):
     def calcular_prima(
         self,
         asegurado: Asegurado,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un asegurado dado.
@@ -91,7 +92,7 @@ class ProductoSeguro(ABC):
         self,
         asegurado: Asegurado,
         anio: int,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> Decimal:
         """
         Calcula la reserva matemática en un año dado.

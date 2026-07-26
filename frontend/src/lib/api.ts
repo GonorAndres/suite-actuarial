@@ -16,6 +16,8 @@ import type {
   ConfigAnualResponse,
   DeductibilityRequest,
   DeductibilityResponse,
+  DotalLabRequest,
+  DotalLabResponse,
   ExcessOfLossRequest,
   FrecuenciaSeveridadRequest,
   FrecuenciaSeveridadResponse,
@@ -46,8 +48,9 @@ import type {
 
 // ── Base URL ────────────────────────────────────────────────────────────────
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+// Same-origin by default: production is served by FastAPI and development is
+// forwarded by Next.js. This also works through remote preview proxies.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
 // ── Error class ─────────────────────────────────────────────────────────────
 
@@ -113,6 +116,9 @@ export const pricingApi = {
 
   dotal: (req: PricingRequest) =>
     apiPost<PricingRequest, PricingResponse>("/pricing/dotal", req),
+
+  dotalLab: (req: DotalLabRequest) =>
+    apiPost<DotalLabRequest, DotalLabResponse>("/pricing/dotal/lab", req),
 
   compare: (req: PricingRequest) =>
     apiPost<PricingRequest, CompareResponse>("/pricing/compare", req),

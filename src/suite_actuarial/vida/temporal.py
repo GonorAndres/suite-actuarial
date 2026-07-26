@@ -9,6 +9,7 @@ Este es uno de los productos más básicos y populares:
 """
 
 from decimal import Decimal
+from typing import Any
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.actuarial.pricing.vida_pricing import (
@@ -17,6 +18,7 @@ from suite_actuarial.actuarial.pricing.vida_pricing import (
     calcular_seguro_vida,
 )
 from suite_actuarial.core.base_product import ProductoSeguro, TipoProducto
+from suite_actuarial.core.models.common import CalculationMetadata
 from suite_actuarial.core.validators import (
     Asegurado,
     ConfiguracionProducto,
@@ -96,7 +98,7 @@ class VidaTemporal(ProductoSeguro):
         self,
         asegurado: Asegurado,
         frecuencia_pago: str = "anual",
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> ResultadoCalculo:
         """
         Calcula la prima para un asegurado dado.
@@ -152,13 +154,22 @@ class VidaTemporal(ProductoSeguro):
                 "edad": asegurado.edad,
                 "sexo": asegurado.sexo.value,
             },
+            calculation_metadata=CalculationMetadata(
+                validation_tier="experimental"
+                if self.tabla_mortalidad.metadata.get("data_status") == "illustrative"
+                else "supported",
+                sources=[
+                    self.tabla_mortalidad.metadata.get("source", self.tabla_mortalidad.nombre)
+                ],
+                assumptions_snapshot={"tabla_mortalidad": self.tabla_mortalidad.nombre},
+            ),
         )
 
     def calcular_reserva(
         self,
         asegurado: Asegurado,
         anio: int,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> Decimal:
         """
         Calcula la reserva matemática en un año dado.
@@ -187,9 +198,7 @@ class VidaTemporal(ProductoSeguro):
             >>> print(f"Reserva al año 5: ${reserva_5:,.2f}")
         """
         if anio < 0 or anio > self.config.plazo_years:
-            raise ValueError(
-                f"Año {anio} fuera de rango [0, {self.config.plazo_years}]"
-            )
+            raise ValueError(f"Año {anio} fuera de rango [0, {self.config.plazo_years}]")
 
         # Al inicio y al final, la reserva es 0
         if anio == 0 or anio == self.config.plazo_years:

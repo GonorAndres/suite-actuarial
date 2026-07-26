@@ -25,23 +25,22 @@ export default function Table({
 }: TableProps) {
   return (
     <div
-      className={`overflow-x-auto rounded-xl border border-navy/10 ${className}`}
+      className={`overflow-x-auto rounded-sm border border-navy/15 bg-white ${className}`}
     >
       <table className="w-full text-left">
         <thead>
           <tr
-            className={[
+            className={
               highlightHeader
-                ? "bg-gradient-to-r from-navy to-navy/90"
-                : "bg-navy/80",
-              "first:[&>th]:rounded-tl-xl last:[&>th]:rounded-tr-xl",
-            ].join(" ")}
+                ? "border-b-2 border-navy"
+                : "border-b border-navy/30"
+            }
           >
             {headers.map((header) => (
               <th
                 key={header}
                 scope="col"
-                className="text-cream text-left text-sm font-medium px-5 py-3.5 tracking-wide"
+                className="text-navy text-left text-xs font-bold uppercase tracking-widest px-5 py-3.5"
               >
                 {header}
               </th>
@@ -52,13 +51,7 @@ export default function Table({
           {rows.map((row, rowIdx) => (
             <tr
               key={rowIdx}
-              className={[
-                "border-b border-navy/5 transition-all duration-200",
-                "hover:bg-terracotta/[0.04] hover:shadow-[inset_3px_0_0_0_var(--color-terracotta)]",
-                rowIdx % 2 === 1 ? "bg-navy/[0.02]" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+              className="border-b border-navy/10 last:border-b-0 transition-colors hover:bg-cream/50"
             >
               {row.map((cell, cellIdx) => {
                 const numeric = isNumericValue(cell);
@@ -67,10 +60,10 @@ export default function Table({
                   <td
                     key={cellIdx}
                     className={[
-                      "px-5 py-3.5 text-sm",
+                      "px-5 py-3 text-sm",
                       numeric ? "text-right tabular-nums" : "",
                       currency ? "font-semibold" : "",
-                      cellIdx === 0 ? "font-medium text-navy/70" : "",
+                      cellIdx === 0 ? "font-medium text-navy/80" : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}

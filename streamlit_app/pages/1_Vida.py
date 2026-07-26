@@ -25,14 +25,20 @@ from utils.calculations import (
     generar_tabla_comparacion,
     proyeccion_reservas,
 )
-from suite_actuarial import TablaMortalidad
+from utils.theme import apply_studio_theme, render_workbench_intro
+
+from suite_actuarial import Asegurado, ConfiguracionProducto, TablaMortalidad
+from suite_actuarial.core.models.common import Sexo
+from suite_actuarial.vida import VidaDotal
 
 st.set_page_config(page_title="Vida -- suite_actuarial", layout="wide")
 
-st.title("Seguros de Vida")
-st.markdown(
-    "Calculadora de primas y reservas para los 3 productos de vida "
-    "implementados en `suite_actuarial.vida`: **Temporal**, **Ordinario** y **Dotal**."
+apply_studio_theme()
+render_workbench_intro(
+    "MODEL WORKBENCH · VIDA",
+    "¿Cómo se financia una promesa de seguro?",
+    "Construye beneficios de fallecimiento y supervivencia, selecciona mortalidad y "
+    "descuento, y examina primas, reservas y sensibilidad.",
 )
 
 
@@ -40,7 +46,7 @@ st.markdown(
 # Carga de tabla de mortalidad (cacheada)
 # -----------------------------------------------------------------------
 @st.cache_data(show_spinner="Cargando tabla EMSSA-09...")
-def cargar_tabla():
+def cargar_tabla() -> TablaMortalidad:
     return TablaMortalidad.cargar_emssa09()
 
 
@@ -74,9 +80,77 @@ with st.sidebar:
 # -----------------------------------------------------------------------
 # Tabs
 # -----------------------------------------------------------------------
-tab_calc, tab_comp, tab_reservas = st.tabs(
-    ["Calculadora", "Comparación", "Reservas"]
+tab_lab, tab_calc, tab_comp, tab_reservas = st.tabs(
+    ["Laboratorio dotal", "Productos", "Comparación", "Reservas"]
 )
+
+# ===== TAB 0: Laboratorio dotal limitado =====
+with tab_lab:
+    st.subheader("Dotal educativo con pago limitado")
+    st.markdown(
+        "Define un beneficio pagadero por fallecimiento durante el plazo o por "
+        "supervivencia al vencimiento. Las primas se concentran en un periodo menor."
+    )
+    plazo_pago = st.slider("Años de pago de prima", 1, plazo, min(10, plazo))
+    sexo_modelo = Sexo.HOMBRE if sexo == "Hombre" else Sexo.MUJER
+    try:
+        config_lab = ConfiguracionProducto(
+            nombre_producto=f"Dotal educativo {plazo}/{plazo_pago}",
+            plazo_years=plazo,
+            tasa_interes_tecnico=Decimal(str(tasa_decimal)),
+        )
+        asegurado_lab = Asegurado(
+            edad=edad,
+            sexo=sexo_modelo,
+            suma_asegurada=Decimal(str(suma_asegurada)),
+        )
+        producto_lab = VidaDotal(config_lab, tabla, plazo_pago=plazo_pago)
+        analisis_lab = producto_lab.analizar_producto(asegurado_lab)
+
+        metrica_1, metrica_2, metrica_3 = st.columns(3)
+        metrica_1.metric(
+            "Prima neta anual",
+            f"${analisis_lab.prima_neta_anual_equivalente:,.2f}",
+        )
+        metrica_2.metric(
+            "VP beneficio por muerte",
+            f"${analisis_lab.vp_beneficio_muerte:,.2f}",
+        )
+        metrica_3.metric(
+            "VP beneficio por supervivencia",
+            f"${analisis_lab.vp_beneficio_supervivencia:,.2f}",
+        )
+
+        reservas_lab = pd.DataFrame(
+            [punto.model_dump(mode="json") for punto in analisis_lab.reservas]
+        )
+        st.line_chart(reservas_lab, x="anio", y="reserva", color="#176B74")
+
+        checks_lab = analisis_lab.verificaciones
+        st.markdown("#### Verificaciones")
+        st.caption(
+            "Cada verificación contrasta el motor de valuación contra una ruta de "
+            "cálculo independiente: las funciones de conmutación (Dx/Nx/Mx) para la "
+            "descomposición del beneficio, y la recursión de Fackler —retrospectiva— "
+            "para la trayectoria de la reserva, que se calcula de forma prospectiva."
+        )
+        st.write(
+            {
+                "Muerte + supervivencia = beneficio total": checks_lab.descomposicion_beneficios,
+                "Principio de equivalencia": checks_lab.principio_equivalencia,
+                "Reserva inicial = 0": checks_lab.reserva_inicial_cero,
+                "Reserva final = suma asegurada": checks_lab.reserva_final_igual_beneficio,
+                "Recursion de Fackler entre reservas": checks_lab.recursion_fackler,
+            }
+        )
+        with st.expander("Ver Python reproducible"):
+            st.code(
+                "producto = VidaDotal(config, tabla, plazo_pago=10)\n"
+                "analisis = producto.analizar_producto(asegurado)",
+                language="python",
+            )
+    except ValueError as exc:
+        st.warning(str(exc))
 
 # ===== TAB 1: Calculadora =====
 with tab_calc:
@@ -85,15 +159,15 @@ with tab_calc:
     col_t, col_o, col_d = st.columns(3)
 
     @st.cache_data(show_spinner=False)
-    def _prima_temporal(e, s, sa, p, t, _tabla_nombre):
+    def _prima_temporal(e: int, s: str, sa: float, p: int, t: float, _tabla_nombre: str) -> dict:
         return calcular_prima_temporal(e, s, sa, p, t, tabla)
 
     @st.cache_data(show_spinner=False)
-    def _prima_ordinario(e, s, sa, t, _tabla_nombre):
+    def _prima_ordinario(e: int, s: str, sa: float, t: float, _tabla_nombre: str) -> dict:
         return calcular_prima_ordinario(e, s, sa, None, t, tabla)
 
     @st.cache_data(show_spinner=False)
-    def _prima_dotal(e, s, sa, p, t, _tabla_nombre):
+    def _prima_dotal(e: int, s: str, sa: float, p: int, t: float, _tabla_nombre: str) -> dict:
         return calcular_prima_dotal(e, s, sa, p, t, tabla)
 
     res_temporal = _prima_temporal(edad, sexo, suma_asegurada, plazo, tasa_decimal, tabla.nombre)
@@ -174,7 +248,7 @@ with tab_comp:
     st.subheader("Comparación entre productos")
 
     @st.cache_data(show_spinner=False)
-    def _tabla_comparacion(e, s, sa, p, t, _tn):
+    def _tabla_comparacion(e: int, s: str, sa: float, p: int, t: float, _tn: str) -> pd.DataFrame:
         return generar_tabla_comparacion(e, s, sa, p, t, tabla)
 
     df_comp = _tabla_comparacion(edad, sexo, suma_asegurada, plazo, tasa_decimal, tabla.nombre)
@@ -256,7 +330,7 @@ with tab_reservas:
     )
 
     @st.cache_data(show_spinner="Calculando reservas...")
-    def _reservas(prod, e, s, sa, p, t, _tn):
+    def _reservas(prod: str, e: int, s: str, sa: float, p: int, t: float, _tn: str) -> pd.DataFrame:
         return proyeccion_reservas(prod, e, s, sa, p, t, tabla)
 
     df_res = _reservas(
@@ -270,7 +344,7 @@ with tab_reservas:
             y=df_res["Reserva Matemática"],
             mode="lines+markers",
             name="Reserva (MXN)",
-            line=dict(color="#1976D2", width=2),
+            line={"color": "#1976D2", "width": 2},
         )
     )
     fig_res.update_layout(
@@ -283,9 +357,7 @@ with tab_reservas:
 
     with st.expander("Tabla de reservas"):
         st.dataframe(
-            df_res.style.format(
-                {"Reserva Matemática": "${:,.2f}", "% Suma Asegurada": "{:.2f}%"}
-            ),
+            df_res.style.format({"Reserva Matemática": "${:,.2f}", "% Suma Asegurada": "{:.2f}%"}),
             use_container_width=True,
             hide_index=True,
         )

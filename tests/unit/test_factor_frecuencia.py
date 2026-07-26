@@ -59,9 +59,7 @@ class TestFactorUDD:
         for m in [1, 2, 4, 12]:
             factor = factor_frecuencia_udd(m, Decimal("0"))
             expected = Decimal(str(1.0 / m))
-            assert factor == expected, (
-                f"m={m}: expected {expected}, got {factor}"
-            )
+            assert factor == expected, f"m={m}: expected {expected}, got {factor}"
 
 
 class TestObtenerFactorFrecuencia:
@@ -71,9 +69,7 @@ class TestObtenerFactorFrecuencia:
         """Default method must return the old hardcoded values (backward compat)."""
         for freq, expected in _FACTORES_TRADICIONALES.items():
             result = _obtener_factor_frecuencia(freq)
-            assert result == expected, (
-                f"Default for '{freq}': expected {expected}, got {result}"
-            )
+            assert result == expected, f"Default for '{freq}': expected {expected}, got {result}"
 
     def test_udd_method_returns_decimal(self):
         """UDD method must return a Decimal."""

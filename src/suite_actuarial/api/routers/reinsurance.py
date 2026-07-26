@@ -11,6 +11,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from suite_actuarial.api.schemas import SolicitudBase
+from suite_actuarial.core.models.reaseguro import ResultadoReaseguro
 from suite_actuarial.core.validators import (
     ExcessOfLossConfig,
     ModalidadXL,
@@ -41,7 +43,7 @@ class SiniestroIn(BaseModel):
     descripcion: str | None = None
 
 
-class QuotaShareRequest(BaseModel):
+class QuotaShareRequest(SolicitudBase):
     """Request body for quota share calculation."""
 
     porcentaje_cesion: float = Field(..., gt=0, le=100)
@@ -54,11 +56,11 @@ class QuotaShareRequest(BaseModel):
     siniestros: list[SiniestroIn]
 
 
-class ExcessOfLossRequest(BaseModel):
+class ExcessOfLossRequest(SolicitudBase):
     """Request body for excess of loss calculation."""
 
     retencion: float = Field(..., gt=0)
-    limite: float = Field(..., gt=0)
+    limite: float = Field(..., gt=0, description="Width of the XL layer")
     modalidad: str = Field(default="por_riesgo", description="por_riesgo or por_evento")
     numero_reinstatements: int = Field(default=0, ge=0, le=3)
     tasa_prima: float = Field(..., gt=0, le=100)
@@ -69,7 +71,7 @@ class ExcessOfLossRequest(BaseModel):
     siniestros: list[SiniestroIn]
 
 
-class StopLossRequest(BaseModel):
+class StopLossRequest(SolicitudBase):
     """Request body for stop loss calculation."""
 
     attachment_point: float = Field(..., gt=0, le=200)
@@ -111,8 +113,8 @@ def _to_siniestro(s: SiniestroIn) -> Siniestro:
     )
 
 
-def _resultado_to_response(resultado) -> ReinsuranceResponse:
-    def _convert(val):
+def _resultado_to_response(resultado: ResultadoReaseguro) -> ReinsuranceResponse:
+    def _convert(val: Any) -> Any:
         if isinstance(val, Decimal):
             return float(val)
         if isinstance(val, dict):
@@ -138,7 +140,7 @@ def _resultado_to_response(resultado) -> ReinsuranceResponse:
 
 
 @router.post("/quota-share", response_model=ReinsuranceResponse)
-def calculate_quota_share(req: QuotaShareRequest):
+def calculate_quota_share(req: QuotaShareRequest) -> ReinsuranceResponse:
     """Calculate quota share reinsurance results.
 
     Applies a proportional cession percentage to premiums and claims,
@@ -166,11 +168,17 @@ def calculate_quota_share(req: QuotaShareRequest):
 
 
 @router.post("/excess-of-loss", response_model=ReinsuranceResponse)
-def calculate_excess_of_loss(req: ExcessOfLossRequest):
+def calculate_excess_of_loss(req: ExcessOfLossRequest) -> ReinsuranceResponse:
     """Calculate excess of loss (XL) reinsurance results.
 
-    The reinsurer pays when a claim exceeds the retention, up to the
-    contract limit. Returns recoveries and net result for the ceding company.
+    The reinsurer pays when a claim exceeds the retention, capped per
+    occurrence at the layer width (`limite`). Reinstatements set how many times
+    that capacity is restored, so the period aggregate is
+    `limite * (1 + numero_reinstatements)`; recoveries erode it in order.
+
+    `detalles` reports `limite_agregado`, `limite_disponible`,
+    `reinstatements_usados` and `prima_reinstalacion` — the latter charged pro
+    rata to amount at 100%, with no pro-rata-to-time adjustment.
     """
     try:
         config = ExcessOfLossConfig(
@@ -196,7 +204,7 @@ def calculate_excess_of_loss(req: ExcessOfLossRequest):
 
 
 @router.post("/stop-loss", response_model=ReinsuranceResponse)
-def calculate_stop_loss(req: StopLossRequest):
+def calculate_stop_loss(req: StopLossRequest) -> ReinsuranceResponse:
     """Calculate stop loss reinsurance results.
 
     Protects when aggregate loss ratio exceeds the attachment point.
@@ -217,9 +225,7 @@ def calculate_stop_loss(req: StopLossRequest):
 
         prima_kwarg = {}
         if req.prima_reaseguro_cobrada is not None:
-            prima_kwarg["prima_reaseguro_cobrada"] = Decimal(
-                str(req.prima_reaseguro_cobrada)
-            )
+            prima_kwarg["prima_reaseguro_cobrada"] = Decimal(str(req.prima_reaseguro_cobrada))
 
         resultado = contrato.calcular_resultado_neto(
             primas_totales=Decimal(str(req.primas_totales)),

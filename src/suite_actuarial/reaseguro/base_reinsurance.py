@@ -8,6 +8,7 @@ Usa el patrón Template Method para compartir lógica común.
 from abc import ABC, abstractmethod
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from suite_actuarial.core.validators import (
     ConfiguracionReaseguro,
@@ -50,9 +51,7 @@ class ContratoReaseguro(ABC):
         """
         # Validar que las fechas sean coherentes
         if self.config.vigencia_fin <= self.config.vigencia_inicio:
-            raise ValueError(
-                "La fecha de fin debe ser posterior a la de inicio"
-            )
+            raise ValueError("La fecha de fin debe ser posterior a la de inicio")
 
     def validar_siniestro(self, siniestro: Siniestro) -> bool:
         """
@@ -64,11 +63,7 @@ class ContratoReaseguro(ABC):
         Returns:
             True si el siniestro está dentro de vigencia, False si no
         """
-        return (
-            self.config.vigencia_inicio
-            <= siniestro.fecha_ocurrencia
-            <= self.config.vigencia_fin
-        )
+        return self.config.vigencia_inicio <= siniestro.fecha_ocurrencia <= self.config.vigencia_fin
 
     def validar_vigencia(self, fecha: date) -> bool:
         """
@@ -83,7 +78,7 @@ class ContratoReaseguro(ABC):
         return self.config.vigencia_inicio <= fecha <= self.config.vigencia_fin
 
     @abstractmethod
-    def calcular_recuperacion(self, *args, **kwargs) -> Decimal:
+    def calcular_recuperacion(self, *args: Any, **kwargs: Any) -> Decimal:
         """
         Calcula la recuperación del reasegurador para un siniestro o cartera.
 
@@ -113,7 +108,7 @@ class ContratoReaseguro(ABC):
         recuperacion: Decimal,
         comision: Decimal = Decimal("0"),
         prima_pagada: Decimal = Decimal("0"),
-        detalles: dict = None,
+        detalles: dict | None = None,
     ) -> ResultadoReaseguro:
         """
         Genera un objeto ResultadoReaseguro con la información del cálculo.
@@ -142,9 +137,7 @@ class ContratoReaseguro(ABC):
         # Resultado neto = monto retenido + comisión - prima pagada + recuperación
         # Para primas: retenido + comisión - prima_reaseguro
         # Para siniestros: -retenido + recuperacion
-        resultado_neto = (
-            monto_retenido + comision - prima_pagada + recuperacion
-        )
+        resultado_neto = monto_retenido + comision - prima_pagada + recuperacion
 
         return ResultadoReaseguro(
             tipo_contrato=self.config.tipo_contrato,

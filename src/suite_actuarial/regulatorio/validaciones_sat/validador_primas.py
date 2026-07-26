@@ -7,7 +7,9 @@ y sus límites aplicables.
 
 from decimal import Decimal
 
+from suite_actuarial.config.loader import config_vigente
 from suite_actuarial.regulatorio.validaciones_sat.models import (
+    EstadoFiscal,
     ResultadoDeducibilidadPrima,
     TipoSeguroFiscal,
 )
@@ -33,20 +35,36 @@ class ValidadorPrimasDeducibles:
         >>> print(f"Deducible: ${resultado.monto_deducible:,.0f}")
     """
 
-    def __init__(self, uma_anual: Decimal):
+    def __init__(self, uma_anual: Decimal, limite_deducciones_umas: int | None = None):
         """
-        Inicializa validador con UMA anual.
+        Inicializa validador con UMA anual y el tope de deducciones en UMAs.
+
+        El tope viene del perfil regulatorio anual
+        (`config/config_<anio>.py: TasasSAT.limite_deducciones_pf_umas`), no de
+        un literal. Esta clase ya recibía `uma_anual` de la configuración, pero
+        multiplicaba por un `5` escrito a mano, de modo que la mitad del cálculo
+        estaba versionada por año y la otra mitad no.
 
         Args:
             uma_anual: Valor de UMA anual vigente (UMA diaria × 365)
+            limite_deducciones_umas: Tope de deducciones personales en UMAs. Si
+                se omite, se toma del perfil regulatorio vigente.
         """
         self.uma_anual = uma_anual
+        self.limite_deducciones_umas = (
+            limite_deducciones_umas
+            if limite_deducciones_umas is not None
+            else config_vigente().tasas_sat.limite_deducciones_pf_umas
+        )
 
     def validar_deducibilidad(
         self,
         tipo_seguro: TipoSeguroFiscal,
         monto_prima: Decimal,
         es_persona_fisica: bool = True,
+        ingreso_anual: Decimal | None = None,
+        metodo_pago: str | None = None,
+        relacion_beneficiario: str | None = None,
     ) -> ResultadoDeducibilidadPrima:
         """
         Valida si una prima es deducible y hasta qué monto.
@@ -60,12 +78,32 @@ class ValidadorPrimasDeducibles:
             ResultadoDeducibilidadPrima con análisis de deducibilidad
         """
         if es_persona_fisica:
-            return self._validar_persona_fisica(tipo_seguro, monto_prima)
+            resultado = self._validar_persona_fisica(
+                tipo_seguro, monto_prima, ingreso_anual=ingreso_anual
+            )
         else:
-            return self._validar_persona_moral(tipo_seguro, monto_prima)
+            resultado = self._validar_persona_moral(tipo_seguro, monto_prima)
+        faltantes: list[str] = []
+        if metodo_pago is None:
+            faltantes.append("metodo_pago")
+        if (
+            es_persona_fisica
+            and tipo_seguro == TipoSeguroFiscal.PENSIONES
+            and ingreso_anual is None
+        ):
+            faltantes.append("ingreso_anual")
+        if not es_persona_fisica and relacion_beneficiario is None:
+            faltantes.append("relacion_beneficiario")
+        if faltantes:
+            resultado.estado = EstadoFiscal.INDETERMINATE
+            resultado.factores_faltantes = faltantes
+        return resultado
 
     def _validar_persona_fisica(
-        self, tipo_seguro: TipoSeguroFiscal, monto_prima: Decimal
+        self,
+        tipo_seguro: TipoSeguroFiscal,
+        monto_prima: Decimal,
+        ingreso_anual: Decimal | None = None,
     ) -> ResultadoDeducibilidadPrima:
         """
         Valida deducibilidad para personas físicas.
@@ -96,20 +134,28 @@ class ValidadorPrimasDeducibles:
             )
 
         elif tipo_seguro == TipoSeguroFiscal.PENSIONES:
-            # Aportaciones a planes de pensiones: deducible hasta 10% ingresos o 5 UMAs
-            limite_uma = self.uma_anual * 5
-            monto_deducible = min(monto_prima, limite_uma)
+            # Aportaciones a planes de pensiones: deducible hasta 15% del ingreso
+            # o el tope en UMAs del perfil regulatorio del anio.
+            limite_uma = self.uma_anual * self.limite_deducciones_umas
+            limite_ingreso = ingreso_anual * Decimal("0.15") if ingreso_anual is not None else None
+            limite_aplicable = (
+                min(limite_uma, limite_ingreso) if limite_ingreso is not None else limite_uma
+            )
+            monto_deducible = min(monto_prima, limite_aplicable)
 
             return ResultadoDeducibilidadPrima(
                 es_deducible=True,
                 monto_prima=monto_prima,
                 monto_deducible=monto_deducible,
-                porcentaje_deducible=(monto_deducible / monto_prima * 100).quantize(
-                    Decimal("0.01")
-                )
+                porcentaje_deducible=(monto_deducible / monto_prima * 100).quantize(Decimal("0.01"))
                 if monto_prima > 0
                 else Decimal("0"),
-                limite_aplicado=f"5 UMAs anuales (${limite_uma:,.2f})",
+                limite_aplicado=(
+                    f"Menor de {self.limite_deducciones_umas} UMAs "
+                    f"(${limite_uma:,.2f}) y 15% del ingreso"
+                    if limite_ingreso is not None
+                    else f"{self.limite_deducciones_umas} UMAs anuales (${limite_uma:,.2f})"
+                ),
                 fundamento_legal="LISR Art. 151, fracc. V - Planes personales de retiro",
             )
 

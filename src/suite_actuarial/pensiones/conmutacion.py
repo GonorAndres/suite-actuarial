@@ -59,6 +59,21 @@ class TablaConmutacion:
             sexo = Sexo(sexo)
         self.sexo = sexo
 
+        # Mismo rango que `ConfiguracionProducto.tasa_interes_tecnico`, que ya
+        # lo acotaba en la rama de vida. Aqui no habia cota alguna y `v` se
+        # calculaba directo como 1/(1+i): con i = -1 reventaba con
+        # ZeroDivisionError, y con i < -1 el factor de descuento se volvia
+        # negativo y `ax` devolvia una anualidad negativa, que es
+        # actuarialmente imposible. Como `RentaVitalicia` y `PensionLey97`
+        # construyen esta clase, validar aqui cubre las tres.
+        tasa = Decimal(str(tasa_interes))
+        if tasa < 0:
+            raise ValueError(f"La tasa de interes no puede ser negativa; se recibio {tasa}.")
+        if tasa > Decimal("0.15"):
+            raise ValueError(
+                f"Tasa de interes muy alta (tipicamente max 15% anual); se recibio {tasa}."
+            )
+
         self.tasa_interes = float(tasa_interes)
         self.raiz = raiz
         self.tabla_mortalidad = tabla_mortalidad
@@ -75,6 +90,7 @@ class TablaConmutacion:
         # Extract lx and dx as float arrays for numpy operations
         lx = df_vida["lx"].values.astype(float)
         dx = df_vida["dx"].values.astype(float)
+        self._lx = lx
 
         # Discount factor
         v = 1.0 / (1.0 + self.tasa_interes)
@@ -104,8 +120,7 @@ class TablaConmutacion:
         """Convert age x to array index. Raises ValueError if out of range."""
         if x < self._edad_min or x > self._edad_max:
             raise ValueError(
-                f"Edad {x} fuera del rango de la tabla "
-                f"[{self._edad_min}, {self._edad_max}]"
+                f"Edad {x} fuera del rango de la tabla [{self._edad_min}, {self._edad_max}]"
             )
         return x - self._edad_min
 
@@ -141,6 +156,38 @@ class TablaConmutacion:
     # Derived actuarial values
     # ------------------------------------------------------------------
 
+    def lx(self, x: int) -> Decimal:
+        """Sobrevivientes a la edad x, con raiz `self.raiz`."""
+        return Decimal(str(self._lx[self._idx(x)]))
+
+    def ex(self, x: int) -> Decimal:
+        """Esperanza de vida abreviada (curtate): anos completos por vivir.
+
+            e_x = sum_{t>=1} t_p_x = sum_{t>=1} l_{x+t} / l_x
+
+        No lleva descuento financiero: cuenta anos, no valor presente. Es la
+        cantidad que corresponde cuando hay que repartir un saldo entre los
+        anos que se espera vivir, distinta de la anualidad `ax`, que descuenta
+        cada pago por interes y por tanto es menor. Confundirlas fue el
+        hallazgo A5 de `docs/AUDIT.md`.
+
+        La suma se trunca en la edad terminal de la tabla, asi que la
+        esperanza queda acotada por el alcance de la tabla, no por la vida.
+
+        Args:
+            x: Edad
+
+        Returns:
+            Esperanza de vida abreviada, en anos
+        """
+        idx = self._idx(x)
+        l_x = self._lx[idx]
+        if l_x <= 0:
+            return Decimal("0")
+
+        posteriores = self._lx[idx + 1 :]
+        return Decimal(str(float(posteriores.sum() / l_x)))
+
     def ax(self, x: int, n: int | None = None) -> Decimal:
         """
         Anualidad vitalicia anticipada o temporal anticipada.
@@ -169,6 +216,61 @@ class TablaConmutacion:
                 # If x+n exceeds omega, treat as whole-life from x
                 return self.Nx(x) / dx_val
             return (self.Nx(x) - self.Nx(x_n)) / dx_val
+
+    @staticmethod
+    def ajuste_fraccionamiento(m: int = 12) -> Decimal:
+        """Correccion 1/m de una anualidad anticipada pagadera m veces al ano.
+
+            a_x^(m) ~= a_x - (m - 1) / (2m)
+
+        Para m = 12 el ajuste es 11/24 ~= 0.4583. Es el primer termino de la
+        formula de Woolhouse: una anualidad anual anticipada paga todo el ano
+        al principio, mientras que la mensual reparte los pagos a lo largo del
+        ano, en promedio medio periodo mas tarde. Ignorarlo sobreestima el
+        valor presente de una pension mensual.
+
+        Args:
+            m: Pagos por ano (12 = mensual)
+
+        Returns:
+            Termino a restar del factor anual
+        """
+        if m < 1:
+            raise ValueError("El numero de pagos por ano debe ser al menos 1")
+        return Decimal(m - 1) / (Decimal(2) * Decimal(m))
+
+    def ax_m(self, x: int, m: int = 12, n: int | None = None) -> Decimal:
+        """Anualidad anticipada pagadera m veces al ano.
+
+        - Vitalicia:  a_x^(m) ~= a_x - (m-1)/(2m)
+        - Temporal:   a_{x:n}^(m) ~= a_{x:n} - (m-1)/(2m) * (1 - nEx)
+
+        El termino de la temporal se pondera por `1 - nEx` porque la
+        correccion aplica al primer pago de cada ano efectivamente pagado; al
+        final del plazo no hay pago que corregir.
+
+        Limite declarado: es la aproximacion de primer orden. Woolhouse tiene
+        un segundo termino, `-(m^2-1)/(12m^2) * (delta + mu_x)`, que este
+        modulo no incluye; su efecto es de segundo orden frente al 11/24.
+
+        Args:
+            x: Edad
+            m: Pagos por ano (12 = mensual)
+            n: Plazo (None para vitalicia)
+
+        Returns:
+            Valor actuarial de la anualidad fraccionada
+        """
+        factor_anual = self.ax(x, n)
+        if factor_anual == 0:
+            return Decimal("0")
+
+        ajuste = self.ajuste_fraccionamiento(m)
+        if n is None:
+            return factor_anual - ajuste
+
+        peso = Decimal("1") - self.nEx(x, n)
+        return factor_anual - ajuste * peso
 
     def Ax(self, x: int, n: int | None = None) -> Decimal:
         """
@@ -259,9 +361,7 @@ class TablaConmutacion:
             ValueError: Si t esta fuera de rango
         """
         if t < 0 or t > n:
-            raise ValueError(
-                f"Tiempo t={t} fuera de rango [0, {n}]"
-            )
+            raise ValueError(f"Tiempo t={t} fuera de rango [0, {n}]")
         if t == 0 or t == n:
             return Decimal("0")
 

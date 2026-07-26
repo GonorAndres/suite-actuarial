@@ -1,27 +1,33 @@
 import type { Metadata } from "next";
-import { Source_Sans_3, Playfair_Display } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+import { DocumentLanguage } from "@/components/layout/DocumentLanguage";
 
-const sourceSans = Source_Sans_3({
-  variable: "--font-inter",
+const plexSans = IBM_Plex_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-lora",
+const plexSerif = IBM_Plex_Serif({
+  variable: "--font-serif",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
-  title: "suite_actuarial -- Actuarial Analytics for Mexico",
+  title: "suite_actuarial — Open Actuarial Laboratory",
   description:
-    "Open-source actuarial calculation suite for the Mexican insurance market. " +
-    "Life, P&C, health, pensions, reserves, reinsurance, and regulatory compliance.",
+    "Build, test, and understand actuarial products in the open. A Mexico-rooted laboratory for inspectable models, assumptions, and evidence.",
 };
 
 export default function RootLayout({
@@ -32,10 +38,11 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${sourceSans.variable} ${playfair.variable} h-full antialiased`}
+      className={`${plexSans.variable} ${plexSerif.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <LanguageProvider>
+          <DocumentLanguage />
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />

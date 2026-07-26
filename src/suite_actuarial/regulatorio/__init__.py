@@ -1,8 +1,8 @@
 """
 Módulo Regulatorio (Fase 5A).
 
-Implementa herramientas para cumplimiento de normativas de la CNSF
-(Comisión Nacional de Seguros y Fianzas de México).
+Implementa herramientas de referencia y escenarios experimentales para
+normativa CNSF; no constituye una determinacion de cumplimiento.
 
 Componentes:
 - RCS Vida: Requerimiento de Capital de Solvencia para riesgos de vida

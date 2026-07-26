@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { VidaStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -9,14 +10,14 @@ import {
   Select,
   Tabs,
   LoadingSpinner,
-  Table,
   MetricCard,
   ProgressBar,
+  Badge,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
 import { pricingApi } from "@/lib/api";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import type { PricingRequest, PricingResponse, CompareResponse } from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import {
@@ -64,12 +65,16 @@ const DEFAULT_FORM: FormState = {
 /* ── Chart color palette ──────────────────────────────────────────────── */
 
 const CHART_COLORS = {
-  navy: "#1B2A4A",
-  terracotta: "#C17654",
-  sage: "#7A9E7E",
-  amber: "#D4A853",
-  cream: "#F5F0EA",
+  navy: "#1A2740",
+  terracotta: "#BC4B3C",
+  sage: "#1F6B3A",
+  amber: "#C99117",
+  cream: "#FBF9F5",
 };
+
+// Validated categorical order (blue, brick, gold, green) -- assign in this
+// fixed order, never cycled past what the data needs.
+const SERIES_COLORS = ["#2A5FA8", "#BC4B3C", "#C99117", "#1F6B3A"];
 
 /* ── Result display component ──────────────────────────────────────────── */
 
@@ -88,17 +93,13 @@ function ResultCard({
   const recargosSegments = recargosEntries.map(([key, val], i) => ({
     label: key,
     value: val,
-    color: [CHART_COLORS.navy, CHART_COLORS.terracotta, CHART_COLORS.sage, CHART_COLORS.amber][
-      i % 4
-    ],
+    color: SERIES_COLORS[i % SERIES_COLORS.length],
   }));
 
   const pieData = recargosEntries.map(([key, val], i) => ({
     name: key,
     value: val,
-    color: [CHART_COLORS.navy, CHART_COLORS.terracotta, CHART_COLORS.sage, CHART_COLORS.amber][
-      i % 4
-    ],
+    color: SERIES_COLORS[i % SERIES_COLORS.length],
   }));
 
   const metadataEntries = Object.entries(result.metadata);
@@ -116,6 +117,26 @@ function ResultCard({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {result.calculation_metadata && (
+        <div className="flex items-center gap-3">
+          <Badge
+            variant={
+              result.calculation_metadata.validation_tier === "supported"
+                ? "success"
+                : result.calculation_metadata.validation_tier === "deprecated"
+                  ? "error"
+                  : "warning"
+            }
+          >
+            {result.calculation_metadata.validation_tier}
+          </Badge>
+          {result.calculation_metadata.warnings.map((warning) => (
+            <span key={warning} className="text-xs text-amber">
+              {warning}
+            </span>
+          ))}
+        </div>
+      )}
       {/* Hero metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <MetricCard
@@ -158,7 +179,7 @@ function ResultCard({
                     contentStyle={{
                       background: CHART_COLORS.navy,
                       border: "none",
-                      borderRadius: "8px",
+                      borderRadius: "4px",
                       color: CHART_COLORS.cream,
                       fontSize: "13px",
                     }}
@@ -283,6 +304,19 @@ export default function VidaPage() {
     };
   }, [form]);
 
+  const handleTabChange = useCallback(
+    (id: string) => {
+      const tab = id as ProductTab;
+      const req = buildRequest();
+      setActiveTab(tab);
+      if (tab === "temporal") void temporal.calculate(req);
+      if (tab === "ordinario") void ordinario.calculate(req);
+      if (tab === "dotal") void dotal.calculate(req);
+      if (tab === "comparar") void compare.calculate(req);
+    },
+    [buildRequest, temporal, ordinario, dotal, compare],
+  );
+
   const handleCalculate = useCallback(async () => {
     const req = buildRequest();
     switch (activeTab) {
@@ -336,9 +370,9 @@ export default function VidaPage() {
   /* ── Render ─────────────────────────────────────────────────────────── */
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <div className="domain-workbench max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Page header */}
-      <div>
+      <div className="domain-workbench-header">
         <h1 className="font-heading text-3xl md:text-4xl font-bold text-navy mb-2">
           {t("vida_titulo")}
         </h1>
@@ -346,12 +380,20 @@ export default function VidaPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("vida_contexto")}</p>
       </div>
 
+      <VidaStory />
+
       {/* Tabs */}
       <Tabs
         tabs={tabs}
         activeTab={activeTab}
-        onTabChange={(id) => setActiveTab(id as ProductTab)}
+        onTabChange={handleTabChange}
       />
+
+      <p className="text-sm text-navy/55 -mt-5" aria-live="polite">
+        {activeTab === "comparar"
+          ? t("vida_compare_desc")
+          : `${tabs.find((tab) => tab.id === activeTab)?.label}: ${t("vida_descripcion")}`}
+      </p>
 
       {/* Calculator form */}
       <Card className="form-depth">
@@ -537,6 +579,7 @@ export default function VidaPage() {
       {activeTab === "comparar" && compare.data && (
         <CompareResults data={compare.data} t={t} />
       )}
+
     </div>
   );
 }
@@ -664,7 +707,7 @@ function CompareResults({
                 contentStyle={{
                   background: CHART_COLORS.navy,
                   border: "none",
-                  borderRadius: "8px",
+                  borderRadius: "4px",
                   color: CHART_COLORS.cream,
                   fontSize: "13px",
                 }}
@@ -672,14 +715,14 @@ function CompareResults({
               <Bar
                 dataKey="prima_neta"
                 name={t("prima_neta")}
-                fill={CHART_COLORS.navy}
-                radius={[6, 6, 0, 0]}
+                fill={SERIES_COLORS[0]}
+                radius={[4, 4, 0, 0]}
               />
               <Bar
                 dataKey="prima_total"
                 name={t("prima_total")}
-                fill={CHART_COLORS.terracotta}
-                radius={[6, 6, 0, 0]}
+                fill={SERIES_COLORS[1]}
+                radius={[4, 4, 0, 0]}
               />
             </BarChart>
           </ResponsiveContainer>

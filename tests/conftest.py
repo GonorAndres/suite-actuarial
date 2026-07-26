@@ -1,5 +1,6 @@
 """Shared test fixtures for suite_actuarial test suite."""
 
+import os
 from decimal import Decimal
 
 import pytest
@@ -123,11 +124,22 @@ def origin_years_5():
 
 @pytest.fixture(scope="session")
 def api_client():
-    """TestClient for FastAPI integration tests."""
+    """TestClient for FastAPI integration tests.
+
+    Only the optional test dependencies are guarded. Importing the API package
+    itself stays outside the ``try`` on purpose: a real ``ImportError`` inside
+    ``suite_actuarial.api`` (a renamed model, a broken router) must fail the
+    suite, not degrade to a silent skip. Set ``SUITE_REQUIRE_API=1`` to also
+    turn a missing optional dependency into a failure.
+    """
     try:
         from fastapi.testclient import TestClient
+    except ImportError as exc:
+        mensaje = f"fastapi/httpx not installed (install with: pip install -e '.[dev,api]'): {exc}"
+        if os.environ.get("SUITE_REQUIRE_API") == "1":
+            pytest.fail(mensaje)
+        pytest.skip(mensaje)
 
-        from suite_actuarial.api.main import app
-        return TestClient(app)
-    except ImportError:
-        pytest.skip("fastapi/httpx not installed (install with: pip install -e '.[dev,api]')")
+    from suite_actuarial.api.main import app
+
+    return TestClient(app)

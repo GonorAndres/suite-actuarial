@@ -21,6 +21,7 @@ from suite_actuarial.salud.gmm import GMM, NivelHospitalario, ZonaGeografica
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def gmm_base():
     """GMM estandar: 35 anos, CDMX, nivel medio, deducible 50k, coaseguro 10%."""
@@ -69,6 +70,7 @@ def gmm_senior():
 # Tests de bandas de edad
 # ---------------------------------------------------------------------------
 
+
 class TestBandasEdad:
     def test_banda_edad_0(self):
         g = GMM(0, "M", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
@@ -103,6 +105,7 @@ class TestBandasEdad:
 # Tests de prima base
 # ---------------------------------------------------------------------------
 
+
 class TestPrimaBase:
     def test_prima_base_positiva(self, gmm_base):
         prima = gmm_base.calcular_prima_base()
@@ -129,73 +132,130 @@ class TestPrimaBase:
 # Tests de factores
 # ---------------------------------------------------------------------------
 
+
 class TestFactores:
     def test_factor_zona_metro(self):
         g_metro = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
-            zona=ZonaGeografica.METRO, nivel=NivelHospitalario.MEDIO,
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.10"),
+            zona=ZonaGeografica.METRO,
+            nivel=NivelHospitalario.MEDIO,
         )
         g_urbano = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
-            zona=ZonaGeografica.URBANO, nivel=NivelHospitalario.MEDIO,
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.10"),
+            zona=ZonaGeografica.URBANO,
+            nivel=NivelHospitalario.MEDIO,
         )
         assert g_metro.calcular_prima_ajustada() > g_urbano.calcular_prima_ajustada()
 
     def test_factor_zona_foraneo_menor(self):
         g_foraneo = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
-            zona=ZonaGeografica.FORANEO, nivel=NivelHospitalario.MEDIO,
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.10"),
+            zona=ZonaGeografica.FORANEO,
+            nivel=NivelHospitalario.MEDIO,
         )
         g_urbano = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
-            zona=ZonaGeografica.URBANO, nivel=NivelHospitalario.MEDIO,
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.10"),
+            zona=ZonaGeografica.URBANO,
+            nivel=NivelHospitalario.MEDIO,
         )
         assert g_foraneo.calcular_prima_ajustada() < g_urbano.calcular_prima_ajustada()
 
     def test_factor_nivel_alto_mayor(self):
         g_alto = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.10"),
             nivel=NivelHospitalario.ALTO,
         )
         g_medio = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.10"),
             nivel=NivelHospitalario.MEDIO,
         )
         assert g_alto.calcular_prima_ajustada() > g_medio.calcular_prima_ajustada()
 
     def test_factor_nivel_estandar_menor(self):
         g_estandar = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.10"),
             nivel=NivelHospitalario.ESTANDAR,
         )
         g_medio = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.10"),
             nivel=NivelHospitalario.MEDIO,
         )
         assert g_estandar.calcular_prima_ajustada() < g_medio.calcular_prima_ajustada()
 
     def test_deducible_alto_menor_prima(self):
         g_ded_alto = GMM(
-            35, "M", Decimal("5000000"), Decimal("500000"), Decimal("0.10"),
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("500000"),
+            Decimal("0.10"),
         )
         g_ded_bajo = GMM(
-            35, "M", Decimal("5000000"), Decimal("10000"), Decimal("0.10"),
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("10000"),
+            Decimal("0.10"),
         )
         assert g_ded_alto.calcular_prima_ajustada() < g_ded_bajo.calcular_prima_ajustada()
 
     def test_coaseguro_alto_menor_prima(self):
         g_coa_30 = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.30"),
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.30"),
         )
         g_coa_10 = GMM(
-            35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("50000"),
+            Decimal("0.10"),
         )
         assert g_coa_30.calcular_prima_ajustada() < g_coa_10.calcular_prima_ajustada()
 
     def test_factor_deducible_interpolacion(self):
         """Deducible no estandar (75000) se interpola linealmente."""
         g = GMM(
-            35, "M", Decimal("5000000"), Decimal("75000"), Decimal("0.10"),
+            35,
+            "M",
+            Decimal("5000000"),
+            Decimal("75000"),
+            Decimal("0.10"),
         )
         factor = g._obtener_factor_deducible()
         # Between 50000 (1.00) and 100000 (0.80), at 50% => 0.90
@@ -206,13 +266,18 @@ class TestFactores:
 # Tests de mayor edad = mayor prima
 # ---------------------------------------------------------------------------
 
+
 class TestEdadMonotona:
     def test_mayor_edad_mayor_prima(self):
         """Primas deben crecer con la edad (misma configuracion)."""
         primas = []
         for edad in [20, 35, 50, 65]:
             g = GMM(
-                edad, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"),
+                edad,
+                "M",
+                Decimal("5000000"),
+                Decimal("50000"),
+                Decimal("0.10"),
             )
             primas.append(g.calcular_prima_ajustada())
         for i in range(len(primas) - 1):
@@ -222,6 +287,7 @@ class TestEdadMonotona:
 # ---------------------------------------------------------------------------
 # Tests de desglose
 # ---------------------------------------------------------------------------
+
 
 class TestDesglose:
     def test_desglose_estructura(self, gmm_base):
@@ -254,6 +320,7 @@ class TestDesglose:
 # ---------------------------------------------------------------------------
 # Tests de simulacion de gasto medico
 # ---------------------------------------------------------------------------
+
 
 class TestSimulacionGasto:
     def test_gasto_menor_deducible(self, gmm_base):
@@ -303,6 +370,7 @@ class TestSimulacionGasto:
 # Tests de validaciones de entrada
 # ---------------------------------------------------------------------------
 
+
 class TestValidaciones:
     def test_edad_negativa(self):
         with pytest.raises(ValueError, match="edad"):
@@ -319,3 +387,91 @@ class TestValidaciones:
     def test_suma_asegurada_minima(self):
         with pytest.raises(ValueError, match="minima"):
             GMM(35, "M", Decimal("500000"), Decimal("50000"), Decimal("0.10"))
+
+
+class TestDeducibleMenorQueSumaAsegurada:
+    """Una poliza cuyo deducible alcanza la suma asegurada no puede pagar nunca.
+
+    `simular_gasto_medico` topa la reclamacion en la suma asegurada ANTES de
+    restar el deducible. Con deducible >= suma asegurada el pago de la
+    aseguradora es cero para cualquier siniestro, por grande que sea, mientras
+    la prima sale positiva: se cobraria por una cobertura inexistente.
+    """
+
+    def test_deducible_mayor_que_suma_asegurada_se_rechaza(self):
+        with pytest.raises(ValueError, match="debe ser menor que la suma"):
+            GMM(
+                edad=40,
+                sexo="M",
+                suma_asegurada=Decimal("1000000"),
+                deducible=Decimal("2000000"),
+                coaseguro_pct=Decimal("0.10"),
+            )
+
+    def test_deducible_igual_a_la_suma_asegurada_se_rechaza(self):
+        """El caso borde tambien deja el pago en cero."""
+        with pytest.raises(ValueError, match="debe ser menor que la suma"):
+            GMM(
+                edad=40,
+                sexo="M",
+                suma_asegurada=Decimal("1000000"),
+                deducible=Decimal("1000000"),
+                coaseguro_pct=Decimal("0.10"),
+            )
+
+    def test_un_deducible_normal_sigue_construyendo(self):
+        gmm = GMM(
+            edad=40,
+            sexo="M",
+            suma_asegurada=Decimal("1000000"),
+            deducible=Decimal("20000"),
+            coaseguro_pct=Decimal("0.10"),
+        )
+        assert gmm.calcular_prima_ajustada() > 0
+        resultado = gmm.simular_gasto_medico(Decimal("500000"))
+        assert resultado["pago_aseguradora"] > 0
+
+
+class TestFactorCoaseguroInterpola:
+    """El factor de coaseguro debe interpolar, como ya hacía el de deducible.
+
+    Tomaba "la llave mayor que no excediera el valor dado", sin interpolar ni
+    extrapolar, así que quedaba plano en tramos enteros del dominio admitido:
+    0.30, 0.50, 0.75 y 0.99 cobraban lo mismo, y 0.10 y 0.15 también. Fuera de
+    la tabla no se extrapola: no hay dato que respalde un factor ahí.
+    """
+
+    @staticmethod
+    def _gmm(coaseguro: str) -> GMM:
+        return GMM(
+            edad=40,
+            sexo="M",
+            suma_asegurada=Decimal("1000000"),
+            deducible=Decimal("20000"),
+            coaseguro_pct=Decimal(coaseguro),
+        )
+
+    def test_los_puntos_de_la_tabla_no_cambian(self):
+        assert self._gmm("0.10")._obtener_factor_coaseguro() == Decimal("1.00")
+        assert self._gmm("0.20")._obtener_factor_coaseguro() == Decimal("0.90")
+        assert self._gmm("0.30")._obtener_factor_coaseguro() == Decimal("0.82")
+
+    def test_interpola_a_medio_camino(self):
+        """0.15 está a mitad de 0.10 y 0.20: (1.00 + 0.90) / 2 = 0.95."""
+        assert self._gmm("0.15")._obtener_factor_coaseguro() == Decimal("0.9500")
+        # 0.25 esta a mitad de 0.20 y 0.30: (0.90 + 0.82) / 2 = 0.86
+        assert self._gmm("0.25")._obtener_factor_coaseguro() == Decimal("0.8600")
+
+    def test_la_prima_es_estrictamente_decreciente(self):
+        """Más coaseguro nunca debe costar lo mismo o más: antes sí pasaba."""
+        primas = [
+            self._gmm(c).calcular_prima_ajustada() for c in ("0.10", "0.15", "0.20", "0.25", "0.30")
+        ]
+        for anterior, siguiente in zip(primas, primas[1:], strict=False):
+            assert siguiente < anterior
+
+    @pytest.mark.parametrize("fuera", ["0.05", "0.31", "0.50", "0.75", "0.99"])
+    def test_fuera_de_la_tabla_se_rechaza(self, fuera):
+        """Antes devolvía en silencio el factor del extremo más cercano."""
+        with pytest.raises(ValueError, match="rango que la tabla de factores tarifa"):
+            self._gmm(fuera)

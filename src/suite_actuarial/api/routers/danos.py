@@ -5,12 +5,14 @@ Wraps SeguroAuto, SeguroIncendio, SeguroRC, CalculadoraBonusMalus,
 and ModeloColectivo domain classes.
 """
 
+import math
 from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.danos.auto import SeguroAuto
 from suite_actuarial.danos.frecuencia_severidad import ModeloColectivo
 from suite_actuarial.danos.incendio import SeguroIncendio
@@ -19,12 +21,20 @@ from suite_actuarial.danos.tarifas import CalculadoraBonusMalus
 
 router = APIRouter(prefix="/danos", tags=["danos"])
 
+# Techo por parametro de distribucion aceptado en el borde HTTP. No es una cota
+# actuarial: acota el trabajo que un cuerpo de peticion arbitrario puede pedir.
+MAX_PARAMETRO = 1e6
+
 
 # ── Helper ──────────────────────────────────────────────────────────────────
 
 
 def _decimal_to_float(obj: Any) -> Any:
-    """Recursively convert Decimal values to float for JSON serialisation."""
+    """Recursively convert Decimal values to float for JSON serialisation.
+
+    Devuelve `Any` porque acepta cualquier estructura anidada; los endpoints que
+    la usan fijan el tipo concreto en una variable local antes de devolverlo.
+    """
     if isinstance(obj, Decimal):
         return float(obj)
     if isinstance(obj, dict):
@@ -37,16 +47,20 @@ def _decimal_to_float(obj: Any) -> Any:
 # ── 1. Auto insurance quotation ────────────────────────────────────────────
 
 
-class AutoRequest(BaseModel):
+class AutoRequest(SolicitudBase):
     """Request body for auto insurance quotation."""
 
-    valor_vehiculo: float = Field(..., gt=0, description="Valor comercial del vehiculo en pesos MXN")
+    valor_vehiculo: float = Field(
+        ..., gt=0, description="Valor comercial del vehiculo en pesos MXN"
+    )
     tipo_vehiculo: str = Field(..., description="Clave del tipo de vehiculo (ver GRUPOS_VEHICULO)")
     antiguedad_anos: int = Field(..., ge=0, description="Anos de antiguedad del vehiculo")
     zona: str = Field(..., description="Clave de la zona de riesgo")
     edad_conductor: int = Field(..., ge=18, description="Edad del conductor principal en anos")
     deducible_pct: float = Field(default=0.05, description="Porcentaje de deducible (default 5%)")
-    coberturas: list[str] | None = Field(default=None, description="Lista de coberturas a cotizar (None = todas)")
+    coberturas: list[str] | None = Field(
+        default=None, description="Lista de coberturas a cotizar (None = todas)"
+    )
     historial_siniestros: list[int] | None = Field(
         default=None, description="Historial de siniestros anuales para Bonus-Malus"
     )
@@ -66,7 +80,7 @@ class AutoResponse(BaseModel):
 
 
 @router.post("/auto/calcular", response_model=AutoResponse)
-def calcular_auto(req: AutoRequest):
+def calcular_auto(req: AutoRequest) -> dict[str, Any]:
     """Generate a complete auto insurance quotation.
 
     Calculates premiums per coverage using AMIS reference tables, zone
@@ -83,12 +97,14 @@ def calcular_auto(req: AutoRequest):
             deducible_pct=Decimal(str(req.deducible_pct)),
         )
         from suite_actuarial.danos.auto import Cobertura
+
         coberturas_enum = [Cobertura(c) for c in req.coberturas] if req.coberturas else None
         cotizacion = seguro.generar_cotizacion(
             coberturas=coberturas_enum,
             historial_siniestros=req.historial_siniestros,
         )
-        return _decimal_to_float(cotizacion)
+        respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -96,13 +112,23 @@ def calcular_auto(req: AutoRequest):
 # ── 2. Fire insurance premium ──────────────────────────────────────────────
 
 
-class IncendioRequest(BaseModel):
+class IncendioRequest(SolicitudBase):
     """Request body for fire insurance quotation."""
 
-    valor_inmueble: float = Field(..., gt=0, description="Valor de reposicion del inmueble en pesos MXN")
-    tipo_construccion: str = Field(..., description="Tipo de construccion (concreto, acero, ladrillo, mixta, madera, lamina)")
-    zona: str = Field(..., description="Zona de riesgo (urbana_baja, urbana_media, urbana_alta, industrial, rural, forestal)")
-    uso: str = Field(..., description="Uso del inmueble (habitacional, comercial, oficinas, industrial, bodega, restaurante)")
+    valor_inmueble: float = Field(
+        ..., gt=0, description="Valor de reposicion del inmueble en pesos MXN"
+    )
+    tipo_construccion: str = Field(
+        ..., description="Tipo de construccion (concreto, acero, ladrillo, mixta, madera, lamina)"
+    )
+    zona: str = Field(
+        ...,
+        description="Zona de riesgo (urbana_baja, urbana_media, urbana_alta, industrial, rural, forestal)",
+    )
+    uso: str = Field(
+        ...,
+        description="Uso del inmueble (habitacional, comercial, oficinas, industrial, bodega, restaurante)",
+    )
 
 
 class IncendioResponse(BaseModel):
@@ -119,7 +145,7 @@ class IncendioResponse(BaseModel):
 
 
 @router.post("/incendio/calcular", response_model=IncendioResponse)
-def calcular_incendio(req: IncendioRequest):
+def calcular_incendio(req: IncendioRequest) -> dict[str, Any]:
     """Generate a fire insurance quotation.
 
     Calculates the annual premium based on property value, construction
@@ -133,7 +159,8 @@ def calcular_incendio(req: IncendioRequest):
             uso=req.uso,
         )
         cotizacion = seguro.generar_cotizacion()
-        return _decimal_to_float(cotizacion)
+        respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -141,10 +168,12 @@ def calcular_incendio(req: IncendioRequest):
 # ── 3. Liability insurance premium ─────────────────────────────────────────
 
 
-class RCRequest(BaseModel):
+class RCRequest(SolicitudBase):
     """Request body for liability insurance quotation."""
 
-    limite_responsabilidad: float = Field(..., gt=0, description="Limite maximo de cobertura en pesos MXN")
+    limite_responsabilidad: float = Field(
+        ..., gt=0, description="Limite maximo de cobertura en pesos MXN"
+    )
     deducible: float = Field(..., ge=0, description="Monto del deducible en pesos MXN")
     clase_actividad: str = Field(
         ...,
@@ -166,7 +195,7 @@ class RCResponse(BaseModel):
 
 
 @router.post("/rc/calcular", response_model=RCResponse)
-def calcular_rc(req: RCRequest):
+def calcular_rc(req: RCRequest) -> dict[str, Any]:
     """Generate a general liability insurance quotation.
 
     Calculates the annual premium based on liability limit, deductible,
@@ -179,7 +208,8 @@ def calcular_rc(req: RCRequest):
             clase_actividad=req.clase_actividad,
         )
         cotizacion = seguro.generar_cotizacion()
-        return _decimal_to_float(cotizacion)
+        respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -187,7 +217,7 @@ def calcular_rc(req: RCRequest):
 # ── 4. Bonus-Malus calculation ─────────────────────────────────────────────
 
 
-class BonusMalusRequest(BaseModel):
+class BonusMalusRequest(SolicitudBase):
     """Request body for Bonus-Malus calculation."""
 
     nivel_actual: int = Field(
@@ -206,7 +236,7 @@ class BonusMalusResponse(BaseModel):
 
 
 @router.post("/bonus-malus", response_model=BonusMalusResponse)
-def calcular_bonus_malus(req: BonusMalusRequest):
+def calcular_bonus_malus(req: BonusMalusRequest) -> BonusMalusResponse:
     """Calculate the Bonus-Malus level transition.
 
     Applies the standard Mexican BMS scale: no claims = -1 level (discount),
@@ -230,7 +260,7 @@ def calcular_bonus_malus(req: BonusMalusRequest):
 # ── 5. Collective risk model (frequency-severity) ─────────────────────────
 
 
-class FrecuenciaSeveridadRequest(BaseModel):
+class FrecuenciaSeveridadRequest(SolicitudBase):
     """Request body for the collective risk model simulation."""
 
     dist_frecuencia: str = Field(
@@ -251,8 +281,30 @@ class FrecuenciaSeveridadRequest(BaseModel):
         "lognormal: {mu, sigma}, pareto: {alpha, scale}, gamma: {alpha, beta}, "
         "weibull: {c, scale}, exponencial: {lambda_}",
     )
-    n_simulaciones: int = Field(default=100_000, ge=1_000, le=1_000_000, description="Numero de simulaciones Monte Carlo")
+    n_simulaciones: int = Field(
+        default=100_000, ge=1_000, le=1_000_000, description="Numero de simulaciones Monte Carlo"
+    )
     seed: int | None = Field(default=None, description="Semilla para reproducibilidad")
+
+    @field_validator("params_frecuencia", "params_severidad")
+    @classmethod
+    def _parametros_finitos_y_acotados(cls, v: dict[str, float]) -> dict[str, float]:
+        """Rechaza parametros no finitos o desmedidos antes de construir el modelo.
+
+        El costo de la simulacion escala con la frecuencia media, no con el
+        tamano de la peticion: sin este limite un cuerpo de pocos bytes puede
+        pedir una asignacion de memoria arbitraria. El techo es de defensa, no
+        actuarial.
+        """
+        for nombre, valor in v.items():
+            if not math.isfinite(valor):
+                raise ValueError(f"El parametro '{nombre}' debe ser finito, se recibio {valor}.")
+            if abs(valor) > MAX_PARAMETRO:
+                raise ValueError(
+                    f"El parametro '{nombre}' = {valor:.3g} excede el limite de "
+                    f"{MAX_PARAMETRO:,.0f} admitido por este servicio."
+                )
+        return v
 
 
 class FrecuenciaSeveridadResponse(BaseModel):
@@ -272,7 +324,7 @@ class FrecuenciaSeveridadResponse(BaseModel):
 
 
 @router.post("/frecuencia-severidad", response_model=FrecuenciaSeveridadResponse)
-def calcular_frecuencia_severidad(req: FrecuenciaSeveridadRequest):
+def calcular_frecuencia_severidad(req: FrecuenciaSeveridadRequest) -> dict[str, Any]:
     """Run a collective risk model simulation (S = X1 + ... + XN).
 
     Fits frequency and severity distributions, runs Monte Carlo simulation,
@@ -289,6 +341,7 @@ def calcular_frecuencia_severidad(req: FrecuenciaSeveridadRequest):
             n_simulaciones=req.n_simulaciones,
             seed=req.seed,
         )
-        return _decimal_to_float(stats)
+        respuesta: dict[str, Any] = _decimal_to_float(stats)
+        return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

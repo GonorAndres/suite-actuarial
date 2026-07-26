@@ -32,6 +32,16 @@ _DIST_SEVERIDAD = {
     "exponencial": lambda p: stats.expon(scale=1.0 / p["lambda_"]),
 }
 
+# Techo de siniestros individuales que una simulacion puede muestrear.
+#
+# El trabajo de `simular_perdidas` no escala con `n_simulaciones` sino con
+# E[N] * n_simulaciones: la severidad se muestrea una vez por siniestro, no una
+# vez por simulacion. Una frecuencia media alta convierte una peticion pequena
+# en una asignacion de memoria arbitrariamente grande. El limite es de defensa,
+# no actuarial: 2e7 muestras son ~160 MB en float64 y cubren cualquier corrida
+# educativa razonable (1e5 simulaciones con frecuencia media 200).
+MAX_SINIESTROS_SIMULADOS = 20_000_000
+
 
 class ModeloColectivo:
     """
@@ -119,9 +129,7 @@ class ModeloColectivo:
     # Simulacion Monte Carlo
     # ------------------------------------------------------------------
 
-    def simular_perdidas(
-        self, n_simulaciones: int = 10_000, seed: int | None = None
-    ) -> np.ndarray:
+    def simular_perdidas(self, n_simulaciones: int = 10_000, seed: int | None = None) -> np.ndarray:
         """
         Simulacion Monte Carlo de perdidas agregadas.
 
@@ -141,6 +149,27 @@ class ModeloColectivo:
         ):
             return self._cache_sim
 
+        if n_simulaciones < 1:
+            raise ValueError(f"n_simulaciones debe ser al menos 1, se recibio {n_simulaciones}.")
+
+        # El costo lo fija E[N] * n_simulaciones, no n_simulaciones. Se estima
+        # antes de muestrear nada para rechazar la peticion en O(1) en vez de
+        # intentar la asignacion y morir con MemoryError.
+        media_frecuencia = float(self._freq.mean())
+        if not np.isfinite(media_frecuencia):
+            raise ValueError(
+                "La distribucion de frecuencia no tiene media finita; "
+                "revise los parametros antes de simular."
+            )
+        esperado = media_frecuencia * n_simulaciones
+        if esperado > MAX_SINIESTROS_SIMULADOS:
+            raise ValueError(
+                f"La simulacion muestrearia del orden de {esperado:.3g} siniestros "
+                f"(frecuencia media {media_frecuencia:.3g} x {n_simulaciones} "
+                f"simulaciones), por encima del limite de {MAX_SINIESTROS_SIMULADOS:,}. "
+                "Reduzca n_simulaciones o la frecuencia media."
+            )
+
         rng = np.random.default_rng(seed)
 
         # Muestrear frecuencias
@@ -149,6 +178,13 @@ class ModeloColectivo:
 
         # Muestrear severidades vectorizadamente
         total_siniestros = int(frecuencias.sum())
+        if total_siniestros > MAX_SINIESTROS_SIMULADOS:
+            # Respaldo: la media pasó el filtro pero la realizacion se disparo.
+            raise ValueError(
+                f"La simulacion produjo {total_siniestros:,} siniestros, por encima "
+                f"del limite de {MAX_SINIESTROS_SIMULADOS:,}. "
+                "Reduzca n_simulaciones o la frecuencia media."
+            )
         if total_siniestros > 0:
             severidades = self._sev.rvs(size=total_siniestros, random_state=rng)
         else:
@@ -172,13 +208,17 @@ class ModeloColectivo:
     # Medidas de riesgo
     # ------------------------------------------------------------------
 
-    def var(self, nivel: float = 0.95, n_simulaciones: int = 100_000, seed: int | None = None) -> Decimal:
+    def var(
+        self, nivel: float = 0.95, n_simulaciones: int = 100_000, seed: int | None = None
+    ) -> Decimal:
         """Value at Risk al nivel de confianza dado."""
         perdidas = self.simular_perdidas(n_simulaciones=n_simulaciones, seed=seed)
         valor = float(np.quantile(perdidas, nivel))
         return Decimal(str(round(valor, 2)))
 
-    def tvar(self, nivel: float = 0.95, n_simulaciones: int = 100_000, seed: int | None = None) -> Decimal:
+    def tvar(
+        self, nivel: float = 0.95, n_simulaciones: int = 100_000, seed: int | None = None
+    ) -> Decimal:
         """Tail Value at Risk (CVaR / Expected Shortfall)."""
         perdidas = self.simular_perdidas(n_simulaciones=n_simulaciones, seed=seed)
         umbral = float(np.quantile(perdidas, nivel))
@@ -212,7 +252,7 @@ class ModeloColectivo:
 
     def estadisticas(
         self, n_simulaciones: int = 100_000, seed: int | None = None
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Resumen estadistico completo del modelo.
 

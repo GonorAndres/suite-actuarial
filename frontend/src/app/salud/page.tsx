@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { SaludStory } from "@/components/stories";
 import {
   Card,
   Button,
@@ -192,15 +193,17 @@ export default function SaludPage() {
   /* ── Render ─────────────────────────────────────────────────────────── */
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <div className="domain-workbench max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Page header */}
-      <div>
+      <div className="domain-workbench-header">
         <h1 className="font-heading text-3xl md:text-4xl font-bold text-navy mb-2">
           {t("salud_titulo")}
         </h1>
         <p className="text-navy/60 text-lg">{t("salud_descripcion")}</p>
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("salud_contexto")}</p>
       </div>
+
+      <SaludStory />
 
       {/* Tabs */}
       <Tabs
@@ -365,6 +368,7 @@ export default function SaludPage() {
       {activeTab === "accidentes" && accidentes.data && (
         <AccidentesResults result={accidentes.data} t={t} />
       )}
+
     </div>
   );
 }

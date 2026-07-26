@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from suite_actuarial.core.models.common import Moneda
+from suite_actuarial.core.models.common import CalculationMetadata, Moneda
 
 
 class ConfiguracionProducto(BaseModel):
@@ -67,23 +67,15 @@ class ConfiguracionProducto(BaseModel):
         if v < 0:
             raise ValueError("La tasa de interes no puede ser negativa")
         if v > Decimal("0.15"):
-            raise ValueError(
-                "Tasa de interes muy alta (tipicamente max 15% anual)"
-            )
+            raise ValueError("Tasa de interes muy alta (tipicamente max 15% anual)")
         return v
 
     @model_validator(mode="after")
     def validar_recargos_totales(self) -> "ConfiguracionProducto":
         """Los recargos totales no deberian ser mayores al 100%"""
-        total_recargos = (
-            self.recargo_gastos_admin
-            + self.recargo_gastos_adq
-            + self.recargo_utilidad
-        )
+        total_recargos = self.recargo_gastos_admin + self.recargo_gastos_adq + self.recargo_utilidad
         if total_recargos > Decimal("1.0"):
-            raise ValueError(
-                f"Recargos totales ({total_recargos:.2%}) superan el 100%"
-            )
+            raise ValueError(f"Recargos totales ({total_recargos:.2%}) superan el 100%")
         return self
 
     model_config = {
@@ -133,14 +125,16 @@ class ResultadoCalculo(BaseModel):
         default_factory=dict,
         description="Informacion adicional sobre el calculo",
     )
+    calculation_metadata: CalculationMetadata | None = Field(
+        default=None,
+        description="Linaje, fuentes y nivel de validacion del calculo",
+    )
 
     @model_validator(mode="after")
     def validar_prima_total(self) -> "ResultadoCalculo":
         """La prima total debe ser >= prima neta"""
         if self.prima_total < self.prima_neta:
-            raise ValueError(
-                "La prima total no puede ser menor a la prima neta"
-            )
+            raise ValueError("La prima total no puede ser menor a la prima neta")
         return self
 
     model_config = {

@@ -1,7 +1,6 @@
 """Integration tests for the pensiones API endpoints."""
 
 
-
 class TestLey73Calcular:
     def test_success(self, api_client):
         payload = {

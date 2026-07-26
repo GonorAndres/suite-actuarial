@@ -169,8 +169,7 @@ class TestCalculadoraRM:
         assert resultado.edad_actuarial == 45
         # RM = VP beneficios - VP primas (puede ser 0 si primas cubren)
         esperado = max(
-            resultado.valor_presente_beneficios - resultado.valor_presente_primas,
-            Decimal("0")
+            resultado.valor_presente_beneficios - resultado.valor_presente_primas, Decimal("0")
         )
         assert resultado.reserva_matematica == esperado.quantize(Decimal("0.01"))
 
@@ -319,9 +318,7 @@ class TestValidadorSuficiencia:
             "incendio": Decimal("16000000"),  # Insuficiente
         }
 
-        resultados = validador.validar_reservas_agregadas(
-            reservas_const, reservas_calc
-        )
+        resultados = validador.validar_reservas_agregadas(reservas_const, reservas_calc)
 
         # Autos y vida suficientes, incendio insuficiente
         assert resultados["autos"].es_suficiente is True
@@ -342,9 +339,7 @@ class TestValidadorSuficiencia:
             "vida": Decimal("75000000"),
         }
 
-        validaciones = validador.validar_reservas_agregadas(
-            reservas_const, reservas_calc
-        )
+        validaciones = validador.validar_reservas_agregadas(reservas_const, reservas_calc)
         reporte = validador.generar_reporte_suficiencia(validaciones)
 
         assert reporte["numero_ramos_total"] == 2

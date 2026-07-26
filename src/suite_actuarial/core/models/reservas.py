@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from suite_actuarial.core.models.common import CalculationMetadata
+
 
 class TipoTriangulo(StrEnum):
     """Tipo de triangulo de desarrollo"""
@@ -44,13 +46,27 @@ class ConfiguracionChainLadder(BaseModel):
     )
     calcular_tail_factor: bool = Field(
         default=False,
-        description="Si se debe calcular factor de cola (tail)",
+        description=(
+            "Estima el factor de cola ajustando la curva de potencia inversa de "
+            "Sherman (1984) a los factores observados. Es extrapolacion: revise "
+            "tail_ajuste_r2 y tail_horizonte en los detalles del resultado"
+        ),
     )
     tail_factor: Decimal | None = Field(
         default=None,
         ge=Decimal("1.0"),
         le=Decimal("2.0"),
         description="Factor de cola manual (si no se calcula)",
+    )
+    permitir_desarrollo_negativo: bool = Field(
+        default=False,
+        description=(
+            "Admite triangulos con desarrollo negativo: incrementos negativos o "
+            "filas acumuladas no monotonas. Ocurre de verdad con salvamento y "
+            "subrogacion en pagados, y con liberacion de reserva en incurridos. "
+            "Va apagado por omision para que un triangulo mal capturado no pase "
+            "en silencio"
+        ),
     )
 
 
@@ -71,6 +87,16 @@ class ConfiguracionBornhuetterFerguson(BaseModel):
     metodo_promedio: MetodoPromedio = Field(
         default=MetodoPromedio.SIMPLE,
         description="Metodo para factores de desarrollo",
+    )
+    permitir_desarrollo_negativo: bool = Field(
+        default=False,
+        description=(
+            "Admite triangulos con desarrollo negativo: incrementos negativos o "
+            "filas acumuladas no monotonas. Ocurre de verdad con salvamento y "
+            "subrogacion en pagados, y con liberacion de reserva en incurridos. "
+            "Va apagado por omision para que un triangulo mal capturado no pase "
+            "en silencio"
+        ),
     )
 
     @field_validator("loss_ratio_apriori")
@@ -101,6 +127,16 @@ class ConfiguracionBootstrap(BaseModel):
     seed: int | None = Field(
         default=None,
         description="Semilla para reproducibilidad",
+    )
+    permitir_desarrollo_negativo: bool = Field(
+        default=False,
+        description=(
+            "Admite triangulos con desarrollo negativo: incrementos negativos o "
+            "filas acumuladas no monotonas. Ocurre de verdad con salvamento y "
+            "subrogacion en pagados, y con liberacion de reserva en incurridos. "
+            "Va apagado por omision para que un triangulo mal capturado no pase "
+            "en silencio"
+        ),
     )
     metodo_residuales: str = Field(
         default="pearson",
@@ -134,18 +170,22 @@ class ResultadoReserva(BaseModel):
     )
     reserva_total: Decimal = Field(
         ...,
-        ge=0,
         description="Reserva total estimada",
     )
     ultimate_total: Decimal = Field(
         ...,
-        ge=0,
         description="Estimacion final total de siniestros",
     )
     pagado_total: Decimal = Field(
         ...,
-        ge=0,
         description="Total pagado a la fecha",
+    )
+    permite_desarrollo_negativo: bool = Field(
+        default=False,
+        description=(
+            "El calculo admitio desarrollo negativo. Solo entonces los totales "
+            "pueden salir negativos; con desarrollo creciente se exigen >= 0"
+        ),
     )
 
     # Por ano de origen
@@ -174,6 +214,36 @@ class ResultadoReserva(BaseModel):
         default_factory=dict,
         description="Detalles adicionales del calculo",
     )
+    calculation_metadata: CalculationMetadata | None = Field(
+        default=None,
+        description="Linaje, fuentes y diagnosticos del calculo",
+    )
+
+    @model_validator(mode="after")
+    def validar_signo(self) -> "ResultadoReserva":
+        """Los totales no pueden ser negativos salvo con desarrollo negativo.
+
+        El piso estaba como `ge=0` en los tres campos, lo que hacia
+        irrepresentable justo el caso que `permitir_desarrollo_negativo`
+        pretende habilitar: una cartera con salvamento o subrogacion fuertes
+        cuya reserva neta agregada resulta negativa. El calculo llegaba a la
+        cifra correcta y el modelo se negaba a envolverla, y el router traducia
+        ese fallo a un 400, como si el triangulo del usuario fuera invalido.
+
+        Ahora el piso se aplica salvo cuando el calculo declaro que admitia
+        desarrollo negativo, asi que sigue protegiendo todos los caminos
+        normales.
+        """
+        if self.permite_desarrollo_negativo:
+            return self
+        for campo in ("reserva_total", "ultimate_total", "pagado_total"):
+            valor = getattr(self, campo)
+            if valor < 0:
+                raise ValueError(
+                    f"{campo} = {valor} es negativo sin haber declarado "
+                    "desarrollo negativo (permitir_desarrollo_negativo)."
+                )
+        return self
 
     @model_validator(mode="after")
     def validar_consistencia(self) -> "ResultadoReserva":

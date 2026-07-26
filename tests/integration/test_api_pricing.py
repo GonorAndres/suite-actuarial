@@ -1,5 +1,6 @@
 """Integration tests for the pricing API endpoints."""
 
+import pytest
 
 VALID_PRICING_PAYLOAD = {
     "edad": 35,
@@ -77,6 +78,42 @@ class TestPricingDotal:
     def test_validation_error_zero_suma(self, api_client):
         payload = {**VALID_PRICING_PAYLOAD, "suma_asegurada": 0}
         response = api_client.post("/api/v1/pricing/dotal", json=payload)
+        assert response.status_code == 422
+
+
+class TestDotalLaboratory:
+    def test_limited_pay_analysis(self, api_client):
+        payload = {**VALID_PRICING_PAYLOAD, "plazo_pago": 10}
+        response = api_client.post("/api/v1/pricing/dotal/lab", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        _assert_pricing_response(data["prima"])
+        assert data["plazo_pago"] == 10
+        assert data["vp_beneficios_total"] == pytest.approx(
+            data["vp_beneficio_muerte"] + data["vp_beneficio_supervivencia"]
+        )
+        assert len(data["reservas"]) == payload["plazo_years"] + 1
+        assert data["reservas"][0]["reserva"] == 0
+        assert data["reservas"][-1]["reserva"] == payload["suma_asegurada"]
+        checks = data["verificaciones"]
+        assert checks["descomposicion_beneficios"]
+        assert checks["principio_equivalencia"]
+        assert checks["reserva_inicial_cero"]
+        assert checks["reserva_final_igual_beneficio"]
+        assert checks["diferencia_equivalencia"] <= 0.01
+
+    def test_rejects_payment_term_longer_than_contract(self, api_client):
+        payload = {**VALID_PRICING_PAYLOAD, "plazo_pago": 25}
+        response = api_client.post("/api/v1/pricing/dotal/lab", json=payload)
+        assert response.status_code == 400
+
+    def test_rejects_unsupported_frequency(self, api_client):
+        payload = {
+            **VALID_PRICING_PAYLOAD,
+            "plazo_pago": 10,
+            "frecuencia_pago": "semanal",
+        }
+        response = api_client.post("/api/v1/pricing/dotal/lab", json=payload)
         assert response.status_code == 422
 
 

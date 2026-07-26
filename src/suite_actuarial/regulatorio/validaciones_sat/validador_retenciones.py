@@ -6,7 +6,10 @@ sujetos a retención conforme a la Ley del ISR.
 """
 
 from decimal import Decimal
+from typing import Any
 
+from suite_actuarial.config.loader import config_vigente
+from suite_actuarial.config.schema import TasasSAT
 from suite_actuarial.regulatorio.validaciones_sat.models import (
     ResultadoRetencion,
     TipoSeguroFiscal,
@@ -22,6 +25,17 @@ class CalculadoraRetencionesISR:
     - Art. 158: Retención por retiros de seguros con ahorro
     - Tarifas aplicables según tipo de ingreso
 
+    ADVERTENCIA (auditoría 2026-07-26): ni las tasas de retención de esta clase
+    ni las citas de artículos anteriores están verificadas contra el texto vigente
+    de la LISR. Son cifras ilustrativas heredadas del desarrollo inicial. No las
+    uses como referencia fiscal. Ver docs/AUDIT.md.
+
+    Limitación conocida de `requiere_retencion_forzosa`: la rama que lo consume
+    está al final de la cadena `elif`, después de las salidas anticipadas de
+    vida-sin-retiro y de gastos médicos/daños/invalidez. En la práctica solo es
+    alcanzable para PENSIONES sin renta vitalicia; para el resto de los tipos el
+    parámetro no tiene efecto observable.
+
     Ejemplo:
         >>> from decimal import Decimal
         >>> calculadora = CalculadoraRetencionesISR()
@@ -35,10 +49,23 @@ class CalculadoraRetencionesISR:
         Retención: $2,500.00
     """
 
-    # Tasas de retención según tipo de pago
-    TASA_RETENCION_RENTAS_VITALICIAS = Decimal("0.10")  # 10%
-    TASA_RETENCION_RETIROS_AHORRO = Decimal("0.20")  # 20%
-    TASA_RETENCION_OTROS_INGRESOS = Decimal("0.10")  # 10%
+    def __init__(self, tasas: TasasSAT | None = None):
+        """
+        Inicializa la calculadora con las tasas de retención a aplicar.
+
+        Las tasas vienen del perfil regulatorio anual
+        (`config/config_<anio>.py`), no de constantes de esta clase. Antes eran
+        constantes de clase y la clase no recibía configuración alguna, así que
+        `TasasSAT` quedaba versionada por año pero nadie la leía para calcular:
+        cambiar el perfil de un año no cambiaba ninguna retención. Los valores
+        coincidían entre 2024 y 2026, de modo que la divergencia no se veía
+        todavía; habría aparecido, sin aviso, en cuanto un año trajera otra tasa.
+
+        Args:
+            tasas: Tasas SAT a aplicar. Si se omite, se toman del perfil
+                regulatorio vigente a la fecha de hoy.
+        """
+        self.tasas = tasas if tasas is not None else config_vigente().tasas_sat
 
     def calcular_retencion(
         self,
@@ -62,7 +89,19 @@ class CalculadoraRetencionesISR:
 
         Returns:
             ResultadoRetencion con cálculo de retención
+
+        Raises:
+            ValueError: Si el pago se declara simultáneamente renta vitalicia y
+                retiro de ahorro.
         """
+        # Un pago es una renta vitalicia o un retiro del componente de ahorro,
+        # no ambos. Aceptar la combinación obligaría a inventar una precedencia
+        # que este modulo no tiene fundamentada.
+        if es_renta_vitalicia and es_retiro_ahorro:
+            raise ValueError(
+                "Un pago no puede ser renta vitalicia y retiro de ahorro a la vez; elige uno."
+            )
+
         # Si no hay monto gravable, no hay retención
         if monto_gravable <= 0:
             return ResultadoRetencion(
@@ -72,21 +111,25 @@ class CalculadoraRetencionesISR:
                 tasa_retencion=Decimal("0"),
                 monto_retencion=Decimal("0"),
                 monto_neto_pagar=monto_pago,
+                regla_aplicada="Sin monto gravable: no hay base sobre la cual retener.",
             )
 
         # Determinar si requiere retención y tasa aplicable
         requiere_retencion = False
         tasa_retencion = Decimal("0")
+        regla = ""
 
         # Rentas vitalicias: REQUIEREN RETENCIÓN
         if es_renta_vitalicia and tipo_seguro == TipoSeguroFiscal.PENSIONES:
             requiere_retencion = True
-            tasa_retencion = self.TASA_RETENCION_RENTAS_VITALICIAS
+            tasa_retencion = self.tasas.tasa_retencion_rentas_vitalicias
+            regla = "Pensiones + renta vitalicia: se aplica la tasa de rentas vitalicias."
 
         # Retiros de ahorro: REQUIEREN RETENCIÓN
         elif es_retiro_ahorro and tipo_seguro == TipoSeguroFiscal.VIDA:
             requiere_retencion = True
-            tasa_retencion = self.TASA_RETENCION_RETIROS_AHORRO
+            tasa_retencion = self.tasas.tasa_retencion_retiros_ahorro
+            regla = "Vida + retiro de ahorro: se aplica la tasa de retiros de ahorro."
 
         # Indemnizaciones por muerte: NO RETENCIÓN (exentas)
         elif tipo_seguro == TipoSeguroFiscal.VIDA and not es_retiro_ahorro:
@@ -97,6 +140,10 @@ class CalculadoraRetencionesISR:
                 tasa_retencion=Decimal("0"),
                 monto_retencion=Decimal("0"),
                 monto_neto_pagar=monto_pago,
+                regla_aplicada=(
+                    "Vida sin retiro de ahorro: el modulo trata la indemnizacion "
+                    "por muerte como exenta."
+                ),
             )
 
         # Gastos médicos, daños, invalidez: NO RETENCIÓN (exentos)
@@ -112,18 +159,26 @@ class CalculadoraRetencionesISR:
                 tasa_retencion=Decimal("0"),
                 monto_retencion=Decimal("0"),
                 monto_neto_pagar=monto_pago,
+                regla_aplicada=(f"{tipo_seguro.value}: el modulo trata este pago como exento."),
             )
 
-        # Otros casos con retención forzosa
+        # Otros casos con retención forzosa.
+        # Alcanzable solo para PENSIONES sin renta vitalicia: las ramas anteriores
+        # ya retornaron para vida, gastos medicos, danos e invalidez.
         elif requiere_retencion_forzosa:
             requiere_retencion = True
-            tasa_retencion = self.TASA_RETENCION_OTROS_INGRESOS
+            tasa_retencion = self.tasas.tasa_retencion_otros_ingresos
+            regla = "Retencion forzosa declarada: se aplica la tasa de otros ingresos."
+
+        if not requiere_retencion and not regla:
+            regla = (
+                "Ninguna regla de retencion del modulo aplico a esta combinacion "
+                "de tipo de seguro y banderas."
+            )
 
         # Calcular retención si aplica
         if requiere_retencion:
-            monto_retencion = (monto_gravable * tasa_retencion).quantize(
-                Decimal("0.01")
-            )
+            monto_retencion = (monto_gravable * tasa_retencion).quantize(Decimal("0.01"))
             monto_neto = monto_pago - monto_retencion
         else:
             monto_retencion = Decimal("0")
@@ -136,6 +191,7 @@ class CalculadoraRetencionesISR:
             tasa_retencion=tasa_retencion,
             monto_retencion=monto_retencion,
             monto_neto_pagar=monto_neto.quantize(Decimal("0.01")),
+            regla_aplicada=regla,
         )
 
     def calcular_retencion_masiva(
@@ -155,14 +211,12 @@ class CalculadoraRetencionesISR:
 
         for pago in pagos:
             resultado = self.calcular_retencion(
-                tipo_seguro=pago.get("tipo_seguro"),
-                monto_pago=pago.get("monto_pago"),
-                monto_gravable=pago.get("monto_gravable"),
+                tipo_seguro=pago["tipo_seguro"],
+                monto_pago=pago["monto_pago"],
+                monto_gravable=pago["monto_gravable"],
                 es_renta_vitalicia=pago.get("es_renta_vitalicia", False),
                 es_retiro_ahorro=pago.get("es_retiro_ahorro", False),
-                requiere_retencion_forzosa=pago.get(
-                    "requiere_retencion_forzosa", False
-                ),
+                requiere_retencion_forzosa=pago.get("requiere_retencion_forzosa", False),
             )
             resultados.append(resultado)
 
@@ -171,7 +225,7 @@ class CalculadoraRetencionesISR:
     def generar_resumen_retenciones(
         self,
         retenciones: list[ResultadoRetencion],
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Genera resumen agregado de retenciones.
 
@@ -181,10 +235,10 @@ class CalculadoraRetencionesISR:
         Returns:
             Diccionario con totales y estadísticas
         """
-        total_pagos = sum(r.monto_pago for r in retenciones)
-        total_gravable = sum(r.base_retencion for r in retenciones)
-        total_retenido = sum(r.monto_retencion for r in retenciones)
-        total_neto = sum(r.monto_neto_pagar for r in retenciones)
+        total_pagos = sum((r.monto_pago for r in retenciones), Decimal("0"))
+        total_gravable = sum((r.base_retencion for r in retenciones), Decimal("0"))
+        total_retenido = sum((r.monto_retencion for r in retenciones), Decimal("0"))
+        total_neto = sum((r.monto_neto_pagar for r in retenciones), Decimal("0"))
 
         pagos_con_retencion = sum(1 for r in retenciones if r.requiere_retencion)
 

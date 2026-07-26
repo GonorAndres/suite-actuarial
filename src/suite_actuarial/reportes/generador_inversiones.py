@@ -6,6 +6,7 @@ para exportar a Excel o CSV.
 """
 
 from decimal import Decimal
+from typing import Any
 
 import pandas as pd
 
@@ -75,7 +76,7 @@ class GeneradorReporteInversiones:
 
         return df
 
-    def generar_resumen(self, reporte: ReporteInversiones) -> dict[str, any]:
+    def generar_resumen(self, reporte: ReporteInversiones) -> dict[str, Any]:
         """
         Genera resumen ejecutivo del reporte de inversiones.
 
@@ -93,9 +94,7 @@ class GeneradorReporteInversiones:
         total_ganancia = reporte.total_ganancia_no_realizada
 
         # Rendimiento total de la cartera
-        rendimiento_total = (
-            ((total_mercado / total_libros) - 1) * 100 if total_libros > 0 else 0
-        )
+        rendimiento_total = ((total_mercado / total_libros) - 1) * 100 if total_libros > 0 else 0
 
         # Activo con mayor valor
         activo_top = max(reporte.datos_por_activo, key=lambda x: x.valor_mercado)
@@ -104,9 +103,7 @@ class GeneradorReporteInversiones:
         )
 
         # Activo con mejor rendimiento
-        activo_mejor_rend = max(
-            reporte.datos_por_activo, key=lambda x: x.rendimiento_trimestre
-        )
+        activo_mejor_rend = max(reporte.datos_por_activo, key=lambda x: x.rendimiento_trimestre)
 
         # Composición por tipo
         composicion = reporte.obtener_composicion_pct()
@@ -127,15 +124,11 @@ class GeneradorReporteInversiones:
                 activo_mejor_rend.tipo_activo
             ),
             "mejor_rendimiento_pct": float(
-                (activo_mejor_rend.rendimiento_trimestre * 100).quantize(
-                    Decimal("0.01")
-                )
+                (activo_mejor_rend.rendimiento_trimestre * 100).quantize(Decimal("0.01"))
             ),
             "numero_tipos_activos": len(reporte.datos_por_activo),
             "composicion_detallada": {
-                self._formatear_nombre_activo(
-                    TipoActivoInversion(tipo)
-                ): float(pct)
+                self._formatear_nombre_activo(TipoActivoInversion(tipo)): float(pct)
                 for tipo, pct in composicion.items()
             },
         }

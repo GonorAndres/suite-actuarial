@@ -1,14 +1,9 @@
-# Stage 1: Build Next.js frontend
-FROM node:22-slim AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ .
-ARG NEXT_PUBLIC_API_URL=/api/v1
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-RUN npm run build
-
-# Stage 2: Python backend + static frontend
+# API-only image. The dashboard is built and served by Cloudflare Pages; this
+# container is the backend behind it. Dropping the Node build stage keeps the
+# image small and gives each layer a single owner.
+#
+# The static export is no longer copied in, so `SUITE_ACTUARIAL_FRONTEND` finds
+# no directory and the app keeps a JSON root response instead of mounting a site.
 FROM python:3.12-slim
 WORKDIR /app
 
@@ -22,11 +17,6 @@ COPY src/ src/
 COPY data/ data/
 
 RUN pip install --no-cache-dir -e ".[api]"
-
-# Copy built frontend
-COPY --from=frontend-build /app/frontend/.next/standalone ./frontend-standalone
-COPY --from=frontend-build /app/frontend/.next/static ./frontend-standalone/.next/static
-COPY --from=frontend-build /app/frontend/public ./frontend-standalone/public
 
 EXPOSE 8080
 

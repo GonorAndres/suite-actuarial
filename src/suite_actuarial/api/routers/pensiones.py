@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.core.models.common import Sexo
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 from suite_actuarial.pensiones.plan_retiro import PensionLey73, PensionLey97
@@ -36,7 +37,7 @@ def _get_tabla() -> TablaMortalidad:
 # -- Request / Response models -------------------------------------------------
 
 
-class Ley73Request(BaseModel):
+class Ley73Request(SolicitudBase):
     """Request body for Ley 73 pension calculation."""
 
     semanas_cotizadas: int = Field(
@@ -45,9 +46,7 @@ class Ley73Request(BaseModel):
     salario_promedio_diario: float = Field(
         ..., gt=0, description="Average daily salary over last 250 weeks (5 years)"
     )
-    edad_retiro: int = Field(
-        ..., ge=60, le=65, description="Retirement age (60-65)"
-    )
+    edad_retiro: int = Field(..., ge=60, le=65, description="Retirement age (60-65)")
 
 
 class Ley73Response(BaseModel):
@@ -64,23 +63,17 @@ class Ley73Response(BaseModel):
     pension_anual_total: float
 
 
-class Ley97Request(BaseModel):
+class Ley97Request(SolicitudBase):
     """Request body for Ley 97 pension calculation."""
 
-    saldo_afore: float = Field(
-        ..., gt=0, description="Current AFORE account balance in MXN"
-    )
-    edad: int = Field(
-        ..., ge=60, le=70, description="Current age of the worker"
-    )
-    sexo: str = Field(
-        ..., pattern="^[HM]$", description="Sex: H (male) or M (female)"
-    )
-    semanas_cotizadas: int = Field(
-        ..., ge=0, description="Total weeks contributed to IMSS"
-    )
+    saldo_afore: float = Field(..., gt=0, description="Current AFORE account balance in MXN")
+    edad: int = Field(..., ge=60, le=70, description="Current age of the worker")
+    sexo: str = Field(..., pattern="^[HM]$", description="Sex: H (male) or M (female)")
+    semanas_cotizadas: int = Field(..., ge=0, description="Total weeks contributed to IMSS")
     tasa_interes: float = Field(
-        default=0.035, ge=0, le=0.15,
+        default=0.035,
+        ge=0,
+        le=0.15,
         description="Technical interest rate (default: 3.5%)",
     )
 
@@ -107,21 +100,21 @@ class Ley97Response(BaseModel):
     pension_garantizada: float
 
 
-class RentaVitaliciaRequest(BaseModel):
+class RentaVitaliciaRequest(SolicitudBase):
     """Request body for life annuity calculation."""
 
     edad: int = Field(
-        ..., ge=0, le=110, description="Age of the annuitant"
+        ...,
+        ge=18,
+        le=100,
+        description=(
+            "Age of the annuitant. Bounded by the EMSSA-09 mortality table "
+            "(18-100); outside it there is no tabulated mortality"
+        ),
     )
-    sexo: str = Field(
-        ..., pattern="^[HM]$", description="Sex: H (male) or M (female)"
-    )
-    monto_mensual: float = Field(
-        ..., gt=0, description="Monthly annuity payment in MXN"
-    )
-    tasa_interes: float = Field(
-        ..., ge=0, le=0.15, description="Technical interest rate"
-    )
+    sexo: str = Field(..., pattern="^[HM]$", description="Sex: H (male) or M (female)")
+    monto_mensual: float = Field(..., gt=0, description="Monthly annuity payment in MXN")
+    tasa_interes: float = Field(..., ge=0, le=0.15, description="Technical interest rate")
     periodo_diferimiento: int = Field(
         default=0, ge=0, description="Deferral period in years (0 = immediate)"
     )
@@ -169,7 +162,7 @@ class ConmutacionResponse(BaseModel):
 
 def _decimal_dict_to_float(d: dict) -> dict[str, Any]:
     """Recursively convert Decimal values in a dict to float."""
-    result = {}
+    result: dict[str, Any] = {}
     for k, v in d.items():
         if isinstance(v, Decimal):
             result[k] = float(v)
@@ -184,7 +177,7 @@ def _decimal_dict_to_float(d: dict) -> dict[str, Any]:
 
 
 @router.post("/ley73/calcular", response_model=Ley73Response)
-def calcular_ley73(req: Ley73Request):
+def calcular_ley73(req: Ley73Request) -> Ley73Response:
     """Calculate an IMSS Ley 73 pension (defined-benefit regime).
 
     Computes the monthly pension, annual bonus (aguinaldo), and total
@@ -215,7 +208,7 @@ def calcular_ley73(req: Ley73Request):
 
 
 @router.post("/ley97/calcular", response_model=Ley97Response)
-def calcular_ley97(req: Ley97Request):
+def calcular_ley97(req: Ley97Request) -> Ley97Response:
     """Calculate an IMSS Ley 97 pension (defined-contribution regime).
 
     Compares renta vitalicia (life annuity) vs retiro programado
@@ -258,7 +251,7 @@ def calcular_ley97(req: Ley97Request):
 
 
 @router.post("/renta-vitalicia/calcular", response_model=RentaVitaliciaResponse)
-def calcular_renta_vitalicia(req: RentaVitaliciaRequest):
+def calcular_renta_vitalicia(req: RentaVitaliciaRequest) -> RentaVitaliciaResponse:
     """Calculate a life annuity (renta vitalicia) single premium and factor.
 
     Computes the annuity factor and the single premium needed to fund a
@@ -300,7 +293,7 @@ def tabla_conmutacion(
     tasa_interes: float = Query(..., ge=0, le=0.15, description="Technical interest rate"),
     edad_min: int = Query(default=0, ge=0, description="Minimum age to include"),
     edad_max: int = Query(default=110, ge=0, description="Maximum age to include"),
-):
+) -> ConmutacionResponse:
     """Look up commutation table values for a range of ages.
 
     Loads the EMSSA-09 mortality table, builds a TablaConmutacion for

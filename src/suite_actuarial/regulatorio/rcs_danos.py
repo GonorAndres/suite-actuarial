@@ -7,9 +7,11 @@ la normativa de la CNSF.
 """
 
 import math
+import warnings
 from decimal import Decimal
 
 from suite_actuarial.core.validators import ConfiguracionRCSDanos
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 
 DISCLAIMER = (
     "AVISO: Los factores de RCS en este modulo son aproximaciones pedagogicas "
@@ -40,6 +42,11 @@ class RCSDanos:
             config: Configuración con parámetros de la cartera de daños
         """
         self.config = config
+        warnings.warn(
+            "El RCS de danos implementado es un escenario simplificado experimental.",
+            ExperimentalModelWarning,
+            stacklevel=2,
+        )
 
     def calcular_rcs_prima(self) -> Decimal:
         """
@@ -175,24 +182,14 @@ class RCSDanos:
         else:
             factor_ramos = Decimal("0.75")
 
-        sigma_reserva = Decimal(
-            str(math.sqrt(float(self.config.coeficiente_variacion)))
-        )
+        sigma_reserva = Decimal(str(math.sqrt(float(self.config.coeficiente_variacion))))
 
         return {
-            "primas_retenidas_12m": self.config.primas_retenidas_12m.quantize(
-                Decimal("0.01")
-            ),
-            "reserva_siniestros": self.config.reserva_siniestros.quantize(
-                Decimal("0.01")
-            ),
-            "coeficiente_variacion": self.config.coeficiente_variacion.quantize(
-                Decimal("0.01")
-            ),
+            "primas_retenidas_12m": self.config.primas_retenidas_12m.quantize(Decimal("0.01")),
+            "reserva_siniestros": self.config.reserva_siniestros.quantize(Decimal("0.01")),
+            "coeficiente_variacion": self.config.coeficiente_variacion.quantize(Decimal("0.01")),
             "numero_ramos": Decimal(str(num_ramos)),
-            "factor_diversificacion_ramos": factor_ramos.quantize(
-                Decimal("0.01")
-            ),
+            "factor_diversificacion_ramos": factor_ramos.quantize(Decimal("0.01")),
             "sigma_reserva": sigma_reserva.quantize(Decimal("0.01")),
             "correlacion_prima_reserva": Decimal("0.5"),
         }

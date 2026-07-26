@@ -8,3 +8,5 @@ export { default as LoadingSpinner } from "./LoadingSpinner";
 export { default as Tabs } from "./Tabs";
 export { default as MetricCard } from "./MetricCard";
 export { default as ProgressBar } from "./ProgressBar";
+export { default as AvisoIlustrativo } from "./AvisoIlustrativo";
+export { default as AvisoLimitacion } from "./AvisoLimitacion";
