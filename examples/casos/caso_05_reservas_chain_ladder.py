@@ -38,7 +38,11 @@ from decimal import Decimal
 
 import pandas as pd
 
-from suite_actuarial.core.validators import ConfiguracionChainLadder, MetodoPromedio
+from suite_actuarial.core.validators import (
+    ConfiguracionChainLadder,
+    MetodoPromedio,
+    TipoTriangulo,
+)
 from suite_actuarial.reservas import ChainLadder, calcular_mack
 
 # ----------------------------------------------------------------------------
@@ -67,7 +71,7 @@ print(triangulo.to_string())
 # 2. Chain Ladder
 # ----------------------------------------------------------------------------
 cl = ChainLadder(ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.PONDERADO))
-resultado = cl.calcular(triangulo)
+resultado = cl.calcular(triangulo, TipoTriangulo.ACUMULADO)
 
 print("\nFactores de desarrollo (promedio ponderado):")
 factores = resultado.factores_desarrollo or []
@@ -87,7 +91,7 @@ print(f"\n  Reserva total (IBNR + casos): {resultado.reserva_total:>12,.0f} mile
 # ----------------------------------------------------------------------------
 # 3. Error de prediccion segun Mack (1993)
 # ----------------------------------------------------------------------------
-mack = cl.calcular_mack(triangulo)
+mack = cl.calcular_mack(triangulo, TipoTriangulo.ACUMULADO)
 rango_inf, rango_sup = mack.reserve_range
 print("\nError de prediccion (Mack, 1993):")
 print(f"  Error estandar total:      {mack.standard_error:>12,.0f} miles MXN")

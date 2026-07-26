@@ -358,8 +358,8 @@ export default function PensionesPage() {
                 label={t("edad")}
                 name="edad_rv"
                 type="number"
-                min={0}
-                max={110}
+                min={18}
+                max={100}
                 value={rentaForm.edad}
                 onChange={(e) => updateRenta("edad", Number(e.target.value))}
               />

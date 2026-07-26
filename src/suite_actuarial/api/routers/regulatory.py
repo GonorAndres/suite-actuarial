@@ -9,6 +9,7 @@ from decimal import Decimal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.config.loader import config_vigente
 from suite_actuarial.core.models.regulatorio import ResultadoRCS
 from suite_actuarial.regulatorio.agregador_rcs import AgregadorRCS
@@ -57,7 +58,7 @@ class RCSInversionIn(BaseModel):
     calificacion_promedio_bonos: str = Field(default="AAA")
 
 
-class RCSRequest(BaseModel):
+class RCSRequest(SolicitudBase):
     """Full RCS calculation request."""
 
     config_vida: RCSVidaIn | None = None
@@ -111,7 +112,7 @@ class RCSResponse(BaseModel):
 # ── SAT request / response models ────────────────────────────────────────────
 
 
-class DeductibilityRequest(BaseModel):
+class DeductibilityRequest(SolicitudBase):
     """Request body for SAT premium deductibility check."""
 
     tipo_seguro: str = Field(
@@ -170,7 +171,7 @@ class DeductibilityResponse(BaseModel):
     )
 
 
-class WithholdingRequest(BaseModel):
+class WithholdingRequest(SolicitudBase):
     """Request body for ISR withholding calculation."""
 
     tipo_seguro: str = Field(
@@ -325,15 +326,19 @@ def check_deductibility(req: DeductibilityRequest) -> DeductibilityResponse:
     (persona fisica or moral).
     """
     try:
+        perfil = config_vigente()
         if req.uma_anual is not None:
             uma_anual = Decimal(str(req.uma_anual))
             anio_regulatorio = None
         else:
-            perfil = config_vigente()
             uma_anual = perfil.uma.uma_anual
             anio_regulatorio = perfil.anio
 
-        validador = ValidadorPrimasDeducibles(uma_anual=uma_anual)
+        # El tope en UMAs sale del perfil anual, igual que la UMA misma.
+        validador = ValidadorPrimasDeducibles(
+            uma_anual=uma_anual,
+            limite_deducciones_umas=perfil.tasas_sat.limite_deducciones_pf_umas,
+        )
         resultado = validador.validar_deducibilidad(
             tipo_seguro=TipoSeguroFiscal(req.tipo_seguro),
             monto_prima=Decimal(str(req.monto_prima)),
@@ -369,7 +374,8 @@ def calculate_withholding(req: WithholdingRequest) -> WithholdingResponse:
     per Ley del ISR.
     """
     try:
-        calculadora = CalculadoraRetencionesISR()
+        # Las tasas salen del perfil regulatorio vigente, no de la clase.
+        calculadora = CalculadoraRetencionesISR(tasas=config_vigente().tasas_sat)
         resultado = calculadora.calcular_retencion(
             tipo_seguro=TipoSeguroFiscal(req.tipo_seguro),
             monto_pago=Decimal(str(req.monto_pago)),

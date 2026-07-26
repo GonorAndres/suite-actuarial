@@ -27,6 +27,7 @@ CONFIG = ConfigAnual(
     tasas_sat=TasasSAT(
         tasa_retencion_rentas_vitalicias=Decimal("0.10"),
         tasa_retencion_retiros_ahorro=Decimal("0.20"),
+        tasa_retencion_otros_ingresos=Decimal("0.10"),
         tasa_isr_personas_morales=Decimal("0.30"),
         tasa_iva=Decimal("0.16"),
         limite_deducciones_pf_umas=5,

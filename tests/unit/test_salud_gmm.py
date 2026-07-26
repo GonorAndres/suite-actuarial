@@ -387,3 +387,91 @@ class TestValidaciones:
     def test_suma_asegurada_minima(self):
         with pytest.raises(ValueError, match="minima"):
             GMM(35, "M", Decimal("500000"), Decimal("50000"), Decimal("0.10"))
+
+
+class TestDeducibleMenorQueSumaAsegurada:
+    """Una poliza cuyo deducible alcanza la suma asegurada no puede pagar nunca.
+
+    `simular_gasto_medico` topa la reclamacion en la suma asegurada ANTES de
+    restar el deducible. Con deducible >= suma asegurada el pago de la
+    aseguradora es cero para cualquier siniestro, por grande que sea, mientras
+    la prima sale positiva: se cobraria por una cobertura inexistente.
+    """
+
+    def test_deducible_mayor_que_suma_asegurada_se_rechaza(self):
+        with pytest.raises(ValueError, match="debe ser menor que la suma"):
+            GMM(
+                edad=40,
+                sexo="M",
+                suma_asegurada=Decimal("1000000"),
+                deducible=Decimal("2000000"),
+                coaseguro_pct=Decimal("0.10"),
+            )
+
+    def test_deducible_igual_a_la_suma_asegurada_se_rechaza(self):
+        """El caso borde tambien deja el pago en cero."""
+        with pytest.raises(ValueError, match="debe ser menor que la suma"):
+            GMM(
+                edad=40,
+                sexo="M",
+                suma_asegurada=Decimal("1000000"),
+                deducible=Decimal("1000000"),
+                coaseguro_pct=Decimal("0.10"),
+            )
+
+    def test_un_deducible_normal_sigue_construyendo(self):
+        gmm = GMM(
+            edad=40,
+            sexo="M",
+            suma_asegurada=Decimal("1000000"),
+            deducible=Decimal("20000"),
+            coaseguro_pct=Decimal("0.10"),
+        )
+        assert gmm.calcular_prima_ajustada() > 0
+        resultado = gmm.simular_gasto_medico(Decimal("500000"))
+        assert resultado["pago_aseguradora"] > 0
+
+
+class TestFactorCoaseguroInterpola:
+    """El factor de coaseguro debe interpolar, como ya hacía el de deducible.
+
+    Tomaba "la llave mayor que no excediera el valor dado", sin interpolar ni
+    extrapolar, así que quedaba plano en tramos enteros del dominio admitido:
+    0.30, 0.50, 0.75 y 0.99 cobraban lo mismo, y 0.10 y 0.15 también. Fuera de
+    la tabla no se extrapola: no hay dato que respalde un factor ahí.
+    """
+
+    @staticmethod
+    def _gmm(coaseguro: str) -> GMM:
+        return GMM(
+            edad=40,
+            sexo="M",
+            suma_asegurada=Decimal("1000000"),
+            deducible=Decimal("20000"),
+            coaseguro_pct=Decimal(coaseguro),
+        )
+
+    def test_los_puntos_de_la_tabla_no_cambian(self):
+        assert self._gmm("0.10")._obtener_factor_coaseguro() == Decimal("1.00")
+        assert self._gmm("0.20")._obtener_factor_coaseguro() == Decimal("0.90")
+        assert self._gmm("0.30")._obtener_factor_coaseguro() == Decimal("0.82")
+
+    def test_interpola_a_medio_camino(self):
+        """0.15 está a mitad de 0.10 y 0.20: (1.00 + 0.90) / 2 = 0.95."""
+        assert self._gmm("0.15")._obtener_factor_coaseguro() == Decimal("0.9500")
+        # 0.25 esta a mitad de 0.20 y 0.30: (0.90 + 0.82) / 2 = 0.86
+        assert self._gmm("0.25")._obtener_factor_coaseguro() == Decimal("0.8600")
+
+    def test_la_prima_es_estrictamente_decreciente(self):
+        """Más coaseguro nunca debe costar lo mismo o más: antes sí pasaba."""
+        primas = [
+            self._gmm(c).calcular_prima_ajustada() for c in ("0.10", "0.15", "0.20", "0.25", "0.30")
+        ]
+        for anterior, siguiente in zip(primas, primas[1:], strict=False):
+            assert siguiente < anterior
+
+    @pytest.mark.parametrize("fuera", ["0.05", "0.31", "0.50", "0.75", "0.99"])
+    def test_fuera_de_la_tabla_se_rechaza(self, fuera):
+        """Antes devolvía en silencio el factor del extremo más cercano."""
+        with pytest.raises(ValueError, match="rango que la tabla de factores tarifa"):
+            self._gmm(fuera)

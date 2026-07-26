@@ -24,6 +24,7 @@ import type {
   BornhuetterFergusonRequest,
   BootstrapRequest,
   ReserveResponse,
+  TipoTriangulo,
 } from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
@@ -52,6 +53,7 @@ const SAMPLE_PRIMAS: Record<number, number> = {
 interface ChainLadderForm {
   triangle: string;
   origin_years: string;
+  tipo_triangulo: TipoTriangulo;
   metodo_promedio: "simple" | "weighted" | "geometric";
   tail_factor: string;
 }
@@ -59,6 +61,7 @@ interface ChainLadderForm {
 interface BornhuetterForm {
   triangle: string;
   origin_years: string;
+  tipo_triangulo: TipoTriangulo;
   primas_por_anio: string;
   loss_ratio_apriori: number;
   metodo_promedio: string;
@@ -67,6 +70,7 @@ interface BornhuetterForm {
 interface BootstrapForm {
   triangle: string;
   origin_years: string;
+  tipo_triangulo: TipoTriangulo;
   num_simulaciones: number;
   seed: string;
   percentiles: string;
@@ -75,6 +79,7 @@ interface BootstrapForm {
 const DEFAULT_CL: ChainLadderForm = {
   triangle: SAMPLE_TRIANGLE,
   origin_years: SAMPLE_ORIGIN_YEARS,
+  tipo_triangulo: "acumulado",
   metodo_promedio: "weighted",
   tail_factor: "",
 };
@@ -82,6 +87,7 @@ const DEFAULT_CL: ChainLadderForm = {
 const DEFAULT_BF: BornhuetterForm = {
   triangle: SAMPLE_TRIANGLE,
   origin_years: SAMPLE_ORIGIN_YEARS,
+  tipo_triangulo: "acumulado",
   primas_por_anio: JSON.stringify(SAMPLE_PRIMAS),
   loss_ratio_apriori: 0.65,
   metodo_promedio: "weighted",
@@ -90,6 +96,7 @@ const DEFAULT_BF: BornhuetterForm = {
 const DEFAULT_BS: BootstrapForm = {
   triangle: SAMPLE_TRIANGLE,
   origin_years: SAMPLE_ORIGIN_YEARS,
+  tipo_triangulo: "acumulado",
   num_simulaciones: 1000,
   seed: "42",
   percentiles: "50, 75, 90, 95, 99",
@@ -333,6 +340,7 @@ export default function ReservasPage() {
           const req: ChainLadderRequest = {
             triangle: parseTriangle(clForm.triangle),
             origin_years: parseOriginYears(clForm.origin_years),
+            tipo_triangulo: clForm.tipo_triangulo,
             metodo_promedio: clForm.metodo_promedio,
             tail_factor: clForm.tail_factor ? Number(clForm.tail_factor) : null,
             unidad_monetaria: "millones_mxn",
@@ -345,6 +353,7 @@ export default function ReservasPage() {
           const req: BornhuetterFergusonRequest = {
             triangle: parseTriangle(bfForm.triangle),
             origin_years: parseOriginYears(bfForm.origin_years),
+            tipo_triangulo: bfForm.tipo_triangulo,
             primas_por_anio: primasObj,
             loss_ratio_apriori: bfForm.loss_ratio_apriori,
             metodo_promedio: bfForm.metodo_promedio,
@@ -357,6 +366,7 @@ export default function ReservasPage() {
           const req: BootstrapRequest = {
             triangle: parseTriangle(bsForm.triangle),
             origin_years: parseOriginYears(bsForm.origin_years),
+            tipo_triangulo: bsForm.tipo_triangulo,
             num_simulaciones: bsForm.num_simulaciones,
             seed: bsForm.seed ? Number(bsForm.seed) : null,
             percentiles: bsForm.percentiles
@@ -391,6 +401,14 @@ export default function ReservasPage() {
       { value: "simple", label: t("reservas_promedio_simple") },
       { value: "weighted", label: t("reservas_promedio_ponderado") },
       { value: "geometric", label: t("reservas_promedio_geometrico") },
+    ],
+    [t],
+  );
+
+  const tipoTrianguloOptions = useMemo(
+    () => [
+      { value: "acumulado", label: t("tipo_triangulo_acumulado") },
+      { value: "incremental", label: t("tipo_triangulo_incremental") },
     ],
     [t],
   );
@@ -450,14 +468,29 @@ export default function ReservasPage() {
               <p className="text-xs text-navy/40 mt-1">
                 {t("reservas_triangulo_hint")}
               </p>
+              <p className="text-xs text-navy/40 mt-1">
+                {t("tipo_triangulo_aviso")}
+              </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Input
                 label={t("anios_origen")}
                 name="origin_years"
                 value={clForm.origin_years}
                 onChange={(e) =>
                   setClForm((prev) => ({ ...prev, origin_years: e.target.value }))
+                }
+              />
+              <Select
+                label={t("tipo_triangulo")}
+                name="tipo_triangulo"
+                options={tipoTrianguloOptions}
+                value={clForm.tipo_triangulo}
+                onChange={(e) =>
+                  setClForm((prev) => ({
+                    ...prev,
+                    tipo_triangulo: e.target.value as TipoTriangulo,
+                  }))
                 }
               />
               <Select
@@ -521,14 +554,29 @@ export default function ReservasPage() {
               <p className="text-xs text-navy/40 mt-1">
                 {t("reservas_triangulo_hint")}
               </p>
+              <p className="text-xs text-navy/40 mt-1">
+                {t("tipo_triangulo_aviso")}
+              </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input
                 label={t("anios_origen")}
                 name="origin_years"
                 value={bfForm.origin_years}
                 onChange={(e) =>
                   setBfForm((prev) => ({ ...prev, origin_years: e.target.value }))
+                }
+              />
+              <Select
+                label={t("tipo_triangulo")}
+                name="tipo_triangulo"
+                options={tipoTrianguloOptions}
+                value={bfForm.tipo_triangulo}
+                onChange={(e) =>
+                  setBfForm((prev) => ({
+                    ...prev,
+                    tipo_triangulo: e.target.value as TipoTriangulo,
+                  }))
                 }
               />
               <Input
@@ -597,6 +645,9 @@ export default function ReservasPage() {
               <p className="text-xs text-navy/40 mt-1">
                 {t("reservas_triangulo_hint")}
               </p>
+              <p className="text-xs text-navy/40 mt-1">
+                {t("tipo_triangulo_aviso")}
+              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Input
@@ -605,6 +656,18 @@ export default function ReservasPage() {
                 value={bsForm.origin_years}
                 onChange={(e) =>
                   setBsForm((prev) => ({ ...prev, origin_years: e.target.value }))
+                }
+              />
+              <Select
+                label={t("tipo_triangulo")}
+                name="tipo_triangulo"
+                options={tipoTrianguloOptions}
+                value={bsForm.tipo_triangulo}
+                onChange={(e) =>
+                  setBsForm((prev) => ({
+                    ...prev,
+                    tipo_triangulo: e.target.value as TipoTriangulo,
+                  }))
                 }
               />
               <Input

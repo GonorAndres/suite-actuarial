@@ -24,6 +24,7 @@ from suite_actuarial.core.validators import (
     ConfiguracionBornhuetterFerguson,
     ConfiguracionChainLadder,
     MetodoPromedio,
+    TipoTriangulo,
 )
 from suite_actuarial.reservas import Bootstrap, BornhuetterFerguson, ChainLadder
 
@@ -120,7 +121,7 @@ with tab_cl:
         )
         cl = ChainLadder(config)
         try:
-            resultado = cl.calcular(tri_cl)
+            resultado = cl.calcular(tri_cl, TipoTriangulo.ACUMULADO)
 
             # -- Metricas principales --
             m1, m2, m3 = st.columns(3)
@@ -245,7 +246,7 @@ config = ConfiguracionChainLadder(
     calcular_tail_factor=False,
 )
 cl = ChainLadder(config)
-resultado = cl.calcular(triangulo)
+resultado = cl.calcular(triangulo, TipoTriangulo.ACUMULADO)
 
 # 3. Resultados
 print(f"Reserva total IBNR: ${resultado.reserva_total:,.2f}")
@@ -297,7 +298,7 @@ with tab_bf:
                 metodo_promedio=MetodoPromedio.SIMPLE,
             )
             bf = BornhuetterFerguson(config_bf)
-            resultado_bf = bf.calcular(tri_bf, primas_por_anio)
+            resultado_bf = bf.calcular(tri_bf, primas_por_anio, TipoTriangulo.ACUMULADO)
 
             m1, m2, m3 = st.columns(3)
             m1.metric("Reserva Total IBNR (B-F)", f"${float(resultado_bf.reserva_total):,.0f}")
@@ -308,7 +309,9 @@ with tab_bf:
 
             # Comparación con Chain Ladder
             st.subheader("Comparación B-F vs Chain Ladder")
-            comparacion = bf.comparar_con_chain_ladder(tri_bf, primas_por_anio)
+            comparacion = bf.comparar_con_chain_ladder(
+                tri_bf, primas_por_anio, TipoTriangulo.ACUMULADO
+            )
             comparacion_fmt = comparacion.copy()
             for col in ["Ultimate_CL", "Ultimate_BF", "Reserva_CL", "Reserva_BF"]:
                 comparacion_fmt[col] = comparacion_fmt[col].apply(lambda x: f"${float(x):,.0f}")
@@ -330,7 +333,7 @@ with tab_bf:
             )
             config_cl2 = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
             cl2 = ChainLadder(config_cl2)
-            res_cl2 = cl2.calcular(tri_bf)
+            res_cl2 = cl2.calcular(tri_bf, TipoTriangulo.ACUMULADO)
             fig2.add_trace(
                 go.Bar(
                     name="Reserva Chain Ladder",
@@ -390,13 +393,13 @@ config = ConfiguracionBornhuetterFerguson(
     metodo_promedio=MetodoPromedio.SIMPLE,
 )
 bf = BornhuetterFerguson(config)
-resultado = bf.calcular(triangulo, primas)
+resultado = bf.calcular(triangulo, primas, TipoTriangulo.ACUMULADO)
 
 print(f"Reserva total IBNR (B-F): ${resultado.reserva_total:,.2f}")
 print(f"Loss ratio implicito: {resultado.detalles['loss_ratio_implicito']}")
 
 # Comparar con Chain Ladder
-comparacion = bf.comparar_con_chain_ladder(triangulo, primas)
+comparacion = bf.comparar_con_chain_ladder(triangulo, primas, TipoTriangulo.ACUMULADO)
 print(comparacion)
 """,
             language="python",
@@ -443,7 +446,7 @@ with tab_bs:
                     percentiles=[50, 75, 90, 95, 99],
                 )
                 bs = Bootstrap(config_bs)
-                resultado_bs = bs.calcular(tri_bs)
+                resultado_bs = bs.calcular(tri_bs, TipoTriangulo.ACUMULADO)
 
                 # El modelo declara `percentiles` opcional porque otros metodos
                 # no los producen; el bootstrap siempre los trae. Se fija aqui
@@ -560,7 +563,7 @@ config = ConfiguracionBootstrap(
     percentiles=[50, 75, 90, 95, 99],
 )
 bs = Bootstrap(config)
-resultado = bs.calcular(triangulo)
+resultado = bs.calcular(triangulo, TipoTriangulo.ACUMULADO)
 
 # Percentiles
 for p, valor in resultado.percentiles.items():

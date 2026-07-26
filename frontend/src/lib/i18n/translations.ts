@@ -123,6 +123,11 @@ export const translations = {
     triangulo: "Triángulo de desarrollo",
     anios_origen: "Años de origen",
     metodo_promedio: "Método de promedio",
+    tipo_triangulo: "Tipo de triángulo",
+    tipo_triangulo_acumulado: "Acumulado",
+    tipo_triangulo_incremental: "Incremental",
+    tipo_triangulo_aviso:
+      "Declara la forma en que vienen los valores del triángulo. No se deduce: un triángulo incremental leído como acumulado produce una reserva menor a la correcta, sin error ni advertencia.",
     tail_factor: "Factor de cola",
     tail_factor_aviso:
       "El factor de cola representa el desarrollo posterior al último periodo observado. Decláralo con su justificación, o deja que el paquete lo estime ajustando la curva de potencia inversa de Sherman (1984) a los factores observados. En cualquier caso es extrapolación: ningún dato del triángulo respalda ese tramo.",
@@ -678,6 +683,11 @@ export const translations = {
     triangulo: "Development triangle",
     anios_origen: "Origin years",
     metodo_promedio: "Averaging method",
+    tipo_triangulo: "Triangle type",
+    tipo_triangulo_acumulado: "Cumulative",
+    tipo_triangulo_incremental: "Incremental",
+    tipo_triangulo_aviso:
+      "State the shape the triangle values come in. It is not inferred: an incremental triangle read as cumulative produces a reserve lower than the correct one, with no error and no warning.",
     tail_factor: "Tail factor",
     tail_factor_aviso:
       "The tail factor stands for development beyond the last observed period. State it with its justification, or let the package estimate it by fitting Sherman's (1984) inverse power curve to the observed factors. Either way it is extrapolation: no data in the triangle backs that stretch.",

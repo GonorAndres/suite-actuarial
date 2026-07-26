@@ -9,6 +9,7 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from pydantic import ValidationError
 
 from suite_actuarial.reportes import (
     DatosInversionActivo,
@@ -791,3 +792,48 @@ class TestExportadoresIO:
         assert resultado.suffix == ".xlsx"
         # File should have actual content
         assert resultado.stat().st_size > 0
+
+
+class TestPrimasDevengadasNetas:
+    """La comprobación de devengadas vs emitidas netas debe correr de verdad.
+
+    Estaba escrita como validador de campo sobre `primas_devengadas`, y en
+    Pydantic v2 `info.data` solo trae los campos ya validados: los declarados
+    antes. Como `primas_canceladas` se declara después, la condición que exigía
+    ambos nunca se cumplía y la comprobación no corría con ninguna entrada.
+    """
+
+    def test_devengadas_por_encima_de_emitidas_netas_se_rechaza(self):
+        """100,000 emitidas - 50,000 canceladas = 50,000 netas; 90,000 las excede."""
+        with pytest.raises(ValidationError, match="exceden significativamente"):
+            DatosSuscripcionRamo(
+                ramo=TipoRamo.AUTOS,
+                primas_emitidas=Decimal("100000"),
+                primas_canceladas=Decimal("50000"),
+                primas_devengadas=Decimal("90000"),
+                numero_polizas=10,
+                suma_asegurada_total=Decimal("1000000"),
+            )
+
+    def test_devengadas_dentro_de_la_tolerancia_se_acepta(self):
+        """La tolerancia del 5% sobre 50,000 netas admite hasta 52,500."""
+        datos = DatosSuscripcionRamo(
+            ramo=TipoRamo.AUTOS,
+            primas_emitidas=Decimal("100000"),
+            primas_canceladas=Decimal("50000"),
+            primas_devengadas=Decimal("52500"),
+            numero_polizas=10,
+            suma_asegurada_total=Decimal("1000000"),
+        )
+        assert datos.primas_devengadas == Decimal("52500")
+
+    def test_sin_cancelaciones_compara_contra_las_emitidas(self):
+        """Sin cancelaciones, netas = emitidas: 106,000 sobre 100,000 excede el 5%."""
+        with pytest.raises(ValidationError, match="exceden significativamente"):
+            DatosSuscripcionRamo(
+                ramo=TipoRamo.AUTOS,
+                primas_emitidas=Decimal("100000"),
+                primas_devengadas=Decimal("106000"),
+                numero_polizas=10,
+                suma_asegurada_total=Decimal("1000000"),
+            )

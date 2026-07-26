@@ -9,8 +9,9 @@ from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.salud.accidentes import AccidentesEnfermedades
 from suite_actuarial.salud.gmm import GMM, NivelHospitalario, ZonaGeografica
 
@@ -38,7 +39,7 @@ def _decimal_to_float(obj: Any) -> Any:
 # ── GMM Request / Response models ──────────────────────────────────────────
 
 
-class GMMRequest(BaseModel):
+class GMMRequest(SolicitudBase):
     """Request body for GMM premium calculation."""
 
     edad: int = Field(..., ge=0, le=110, description="Edad del asegurado (0-110)")
@@ -48,13 +49,35 @@ class GMMRequest(BaseModel):
     )
     deducible: float = Field(..., ge=0, description="Monto del deducible en MXN")
     coaseguro_pct: float = Field(
-        ..., gt=0, le=1, description="Porcentaje de coaseguro (ej: 0.10 = 10%)"
+        ...,
+        ge=0.10,
+        le=0.30,
+        description=(
+            "Porcentaje de coaseguro (ej: 0.10 = 10%). El rango es el que la "
+            "tabla de factores tarifa; fuera de el no hay dato que respalde un precio"
+        ),
     )
     tope_coaseguro: float | None = Field(
         default=None, ge=0, description="Tope maximo de coaseguro en MXN (None = sin tope)"
     )
     zona: str = Field(default="urbano", description="Zona geografica: metro, urbano, foraneo")
     nivel: str = Field(default="medio", description="Nivel hospitalario: estandar, medio, alto")
+
+    @model_validator(mode="after")
+    def _deducible_menor_que_suma_asegurada(self) -> "GMMRequest":
+        """Una poliza cuyo deducible alcanza la suma asegurada no paga nunca.
+
+        La reclamacion se topa en la suma asegurada antes de restar el
+        deducible, asi que el pago de la aseguradora seria cero para cualquier
+        siniestro mientras la prima sale positiva.
+        """
+        if self.deducible >= self.suma_asegurada:
+            raise ValueError(
+                f"El deducible ({self.deducible:,.2f}) debe ser menor que la suma "
+                f"asegurada ({self.suma_asegurada:,.2f}); de lo contrario la poliza "
+                "no puede pagar siniestro alguno."
+            )
+        return self
 
 
 class GMMResponse(BaseModel):
@@ -69,7 +92,7 @@ class GMMResponse(BaseModel):
 # ── Accidentes Request / Response models ───────────────────────────────────
 
 
-class AccidentesRequest(BaseModel):
+class AccidentesRequest(SolicitudBase):
     """Request body for Accidentes y Enfermedades premium calculation."""
 
     edad: int = Field(..., ge=18, le=70, description="Edad del asegurado (18-70)")

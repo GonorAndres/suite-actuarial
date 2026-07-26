@@ -10,6 +10,7 @@ from decimal import Decimal
 import pytest
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.core.validators import Sexo
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 from suite_actuarial.pensiones.plan_retiro import PensionLey97
 from suite_actuarial.pensiones.renta_vitalicia import RentaVitalicia
@@ -489,3 +490,73 @@ class TestCorreccionFraccionamiento:
 
         assert correcta > defectuosa
         assert float(correcta / defectuosa - 1) == pytest.approx(0.04, abs=0.015)
+
+
+class TestTasaInteresAcotada:
+    """La tasa de interés debe estar acotada también en la capa de pensiones.
+
+    `ConfiguracionProducto.tasa_interes_tecnico` ya la acotaba a [0, 0.15] en la
+    rama de vida. Aquí no había cota alguna y `v` se calculaba directo como
+    1/(1+i): con i = -1 reventaba con ZeroDivisionError, y con i < -1 el factor
+    de descuento se volvía negativo y `ax` devolvía una anualidad negativa, que
+    es actuarialmente imposible. No era alcanzable por HTTP -los routers sí
+    acotaban-, pero el paquete se usa directo.
+    """
+
+    @pytest.mark.parametrize("tasa", ["-1.5", "-1", "-0.5", "-0.0001"])
+    def test_una_tasa_negativa_se_rechaza(self, tabla_emssa09, tasa):
+        with pytest.raises(ValueError, match="no puede ser negativa"):
+            TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal(tasa))
+
+    @pytest.mark.parametrize("tasa", ["0.16", "1.0", "10"])
+    def test_una_tasa_desmedida_se_rechaza(self, tabla_emssa09, tasa):
+        with pytest.raises(ValueError, match="muy alta"):
+            TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal(tasa))
+
+    def test_la_anualidad_nunca_sale_negativa(self, tabla_emssa09):
+        """Con i = -1.5 devolvía ax(65) = -154,115,564."""
+        for tasa in ("0", "0.03", "0.055", "0.15"):
+            tc = TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal(tasa))
+            assert tc.ax(65) > 0
+
+    def test_renta_vitalicia_hereda_la_cota(self, tabla_emssa09):
+        """Construye una TablaConmutacion, así que la validación la alcanza."""
+        with pytest.raises(ValueError, match="no puede ser negativa"):
+            RentaVitalicia(
+                edad=65,
+                sexo=Sexo.HOMBRE,
+                monto_mensual=Decimal("10000"),
+                tasa_interes=Decimal("-1.5"),
+                tabla_mortalidad=tabla_emssa09,
+            )
+
+    def test_una_tasa_normal_sigue_funcionando(self, tabla_emssa09):
+        tc = TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal("0.055"))
+        assert float(tc.ax(65)) == pytest.approx(11.198, abs=1e-3)
+
+
+class TestEdadMinimaDeclarada:
+    """La cota inferior de edad faltaba: solo existía la superior."""
+
+    def test_por_debajo_del_minimo_se_dice_la_edad(self, tabla_emssa09):
+        """Antes el fallo venía de `_idx`, hablando de índices y no de la edad."""
+        rv = RentaVitalicia(
+            edad=18,
+            sexo=Sexo.HOMBRE,
+            monto_mensual=Decimal("10000"),
+            tasa_interes=Decimal("0.055"),
+            tabla_mortalidad=tabla_emssa09,
+        )
+        with pytest.raises(ValueError, match="por debajo del minimo de la tabla"):
+            rv._factor_en_inicio_de_pagos(edad_pago=10, anos_garantia=0)
+
+    def test_por_encima_del_maximo_sigue_devolviendo_cero(self, tabla_emssa09):
+        """La rama superior no cambia: más allá de la tabla no queda renta."""
+        rv = RentaVitalicia(
+            edad=65,
+            sexo=Sexo.HOMBRE,
+            monto_mensual=Decimal("10000"),
+            tasa_interes=Decimal("0.055"),
+            tabla_mortalidad=tabla_emssa09,
+        )
+        assert rv._factor_en_inicio_de_pagos(edad_pago=200, anos_garantia=0) == Decimal("0")

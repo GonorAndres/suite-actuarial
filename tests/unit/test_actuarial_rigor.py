@@ -27,6 +27,7 @@ from suite_actuarial.core.validators import (
     ConfiguracionChainLadder,
     ConfiguracionProducto,
     MetodoPromedio,
+    TipoTriangulo,
 )
 from suite_actuarial.danos.frecuencia_severidad import ModeloColectivo
 from suite_actuarial.danos.tarifas import (
@@ -980,7 +981,7 @@ class TestChainLadder:
         """Ultimate must be >= paid for each origin year (development only adds)."""
         config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
         cl = ChainLadder(config)
-        resultado = cl.calcular(triangulo_acumulado)
+        resultado = cl.calcular(triangulo_acumulado, TipoTriangulo.ACUMULADO)
 
         for anio in resultado.ultimates_por_anio:
             ult = resultado.ultimates_por_anio[anio]
@@ -992,7 +993,7 @@ class TestChainLadder:
         """Total reserve = sum of individual year reserves."""
         config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
         cl = ChainLadder(config)
-        resultado = cl.calcular(triangulo_acumulado)
+        resultado = cl.calcular(triangulo_acumulado, TipoTriangulo.ACUMULADO)
 
         sum_reserves = sum(resultado.reservas_por_anio.values())
         assert abs(float(sum_reserves) - float(resultado.reserva_total)) < 0.01
@@ -1001,7 +1002,7 @@ class TestChainLadder:
         """The oldest origin year (fully developed) should have reserve = 0."""
         config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
         cl = ChainLadder(config)
-        resultado = cl.calcular(triangulo_acumulado)
+        resultado = cl.calcular(triangulo_acumulado, TipoTriangulo.ACUMULADO)
         # Year 2020 is fully developed in a 4x4 triangle
         assert resultado.reservas_por_anio[2020] == Decimal("0")
 
@@ -1026,7 +1027,7 @@ class TestBornhuetterFerguson:
             metodo_promedio=MetodoPromedio.SIMPLE,
         )
         bf = BornhuetterFerguson(config)
-        resultado = bf.calcular(triangulo_acumulado, primas)
+        resultado = bf.calcular(triangulo_acumulado, primas, TipoTriangulo.ACUMULADO)
 
         for anio in resultado.ultimates_por_anio:
             ult = resultado.ultimates_por_anio[anio]
@@ -1048,7 +1049,7 @@ class TestBornhuetterFerguson:
             metodo_promedio=MetodoPromedio.SIMPLE,
         )
         bf = BornhuetterFerguson(config)
-        resultado = bf.calcular(triangulo_acumulado, primas)
+        resultado = bf.calcular(triangulo_acumulado, primas, TipoTriangulo.ACUMULADO)
 
         for anio, reserva in resultado.reservas_por_anio.items():
             assert reserva >= Decimal("0"), f"BF reserve for year {anio} is negative: {reserva}"
@@ -1077,8 +1078,8 @@ class TestBootstrapDeterminism:
         bs1 = Bootstrap(config1)
         bs2 = Bootstrap(config2)
 
-        r1 = bs1.calcular(triangulo_acumulado)
-        r2 = bs2.calcular(triangulo_acumulado)
+        r1 = bs1.calcular(triangulo_acumulado, TipoTriangulo.ACUMULADO)
+        r2 = bs2.calcular(triangulo_acumulado, TipoTriangulo.ACUMULADO)
 
         assert r1.reserva_total == r2.reserva_total, (
             f"Run 1: {r1.reserva_total} != Run 2: {r2.reserva_total}"
@@ -1092,7 +1093,7 @@ class TestBootstrapDeterminism:
             percentiles=[50, 75, 90, 95, 99],
         )
         bs = Bootstrap(config)
-        bs.calcular(triangulo_acumulado)
+        bs.calcular(triangulo_acumulado, TipoTriangulo.ACUMULADO)
 
         var_95 = float(bs.calcular_var(0.95))
         tvar_95 = float(bs.calcular_tvar(0.95))

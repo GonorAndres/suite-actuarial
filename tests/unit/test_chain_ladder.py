@@ -10,10 +10,14 @@ from decimal import Decimal
 
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
 from suite_actuarial.core.validators import (
     ConfiguracionChainLadder,
     MetodoPromedio,
+    MetodoReserva,
+    ResultadoReserva,
+    TipoTriangulo,
 )
 from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.reservas.chain_ladder import ChainLadder
@@ -223,7 +227,7 @@ class TestChainLadderCalculoCompleto:
     def test_calcular_completo_exitoso(self, triangulo_simple, config_simple):
         """Debe ejecutar cálculo completo sin errores"""
         cl = ChainLadder(config_simple)
-        resultado = cl.calcular(triangulo_simple)
+        resultado = cl.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         assert resultado is not None
         assert resultado.reserva_total >= Decimal("0")
@@ -233,7 +237,7 @@ class TestChainLadderCalculoCompleto:
     def test_resultado_tiene_todos_anios(self, triangulo_simple, config_simple):
         """Resultado debe tener datos para todos los años"""
         cl = ChainLadder(config_simple)
-        resultado = cl.calcular(triangulo_simple)
+        resultado = cl.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         assert len(resultado.reservas_por_anio) == len(triangulo_simple)
         assert len(resultado.ultimates_por_anio) == len(triangulo_simple)
@@ -241,7 +245,7 @@ class TestChainLadderCalculoCompleto:
     def test_resultado_tiene_factores(self, triangulo_simple, config_simple):
         """Resultado debe incluir factores de desarrollo"""
         cl = ChainLadder(config_simple)
-        resultado = cl.calcular(triangulo_simple)
+        resultado = cl.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         assert resultado.factores_desarrollo is not None
         assert len(resultado.factores_desarrollo) == 4
@@ -249,7 +253,7 @@ class TestChainLadderCalculoCompleto:
     def test_validacion_consistencia(self, triangulo_simple, config_simple):
         """Ultimate = Pagado + Reserva debe cumplirse"""
         cl = ChainLadder(config_simple)
-        resultado = cl.calcular(triangulo_simple)
+        resultado = cl.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         # Validar que el resultado es consistente
         assert abs(
@@ -259,7 +263,7 @@ class TestChainLadderCalculoCompleto:
     def test_detalles_en_resultado(self, triangulo_simple, config_simple):
         """Resultado debe incluir detalles completos"""
         cl = ChainLadder(config_simple)
-        resultado = cl.calcular(triangulo_simple)
+        resultado = cl.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         assert "metodo_promedio" in resultado.detalles
         assert "numero_anios" in resultado.detalles
@@ -272,12 +276,12 @@ class TestChainLadderTailFactor:
 
     def test_tail_factor_manual_incrementa_ultimates(self, triangulo_simple, config_simple):
         """Un tail manual de 1.05 debe escalar cada ultimate en 5%"""
-        base = ChainLadder(config_simple).calcular(triangulo_simple)
+        base = ChainLadder(config_simple).calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
         config_tail = ConfiguracionChainLadder(
             metodo_promedio=MetodoPromedio.SIMPLE,
             tail_factor=Decimal("1.05"),
         )
-        con_tail = ChainLadder(config_tail).calcular(triangulo_simple)
+        con_tail = ChainLadder(config_tail).calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         for anio, ultimate_base in base.ultimates_por_anio.items():
             esperado = ultimate_base * Decimal("1.05")
@@ -293,8 +297,8 @@ class TestChainLadderTailFactor:
         que el valor de la cola sea correcto — no lo es (hallazgo A10). Debe
         reemplazarse en la fase 2 por una prueba contra una cola estimada.
         """
-        base = ChainLadder(config_simple).calcular(triangulo_simple)
-        con_tail = ChainLadder(config_con_tail).calcular(triangulo_simple)
+        base = ChainLadder(config_simple).calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
+        con_tail = ChainLadder(config_con_tail).calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         assert con_tail.reserva_total > base.reserva_total
         # El ultimate nunca puede quedar por debajo de lo pagado
@@ -313,14 +317,14 @@ class TestChainLadderTrianguloEjemplo:
         """Debe procesar triángulo de ejemplo sin errores"""
         triangulo = crear_triangulo_ejemplo()
         cl = ChainLadder(config_simple)
-        resultado = cl.calcular(triangulo)
+        resultado = cl.calcular(triangulo, TipoTriangulo.ACUMULADO)
 
         assert resultado.reserva_total > Decimal("0")
 
     def test_obtener_triangulo_completo(self, triangulo_simple, config_simple):
         """Debe poder obtener triángulo completo después de calcular"""
         cl = ChainLadder(config_simple)
-        cl.calcular(triangulo_simple)
+        cl.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         triangulo_completo = cl.obtener_triangulo_completo()
         assert triangulo_completo is not None
@@ -329,7 +333,7 @@ class TestChainLadderTrianguloEjemplo:
     def test_obtener_factores_age_to_age(self, triangulo_simple, config_simple):
         """Debe poder obtener factores age-to-age"""
         cl = ChainLadder(config_simple)
-        cl.calcular(triangulo_simple)
+        cl.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         factores_ata = cl.obtener_factores_age_to_age()
         assert factores_ata is not None
@@ -346,8 +350,8 @@ class TestChainLadderComparacionMetodos:
         cl_simple = ChainLadder(config_simple)
         cl_ponderado = ChainLadder(config_ponderado)
 
-        resultado_simple = cl_simple.calcular(triangulo_simple)
-        resultado_ponderado = cl_ponderado.calcular(triangulo_simple)
+        resultado_simple = cl_simple.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
+        resultado_ponderado = cl_ponderado.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
 
         # Los resultados pueden ser diferentes (no siempre, depende del triángulo)
         # Pero ambos deben ser válidos
@@ -366,7 +370,7 @@ class TestChainLadderComparacionMetodos:
         for metodo in metodos:
             config = ConfiguracionChainLadder(metodo_promedio=metodo)
             cl = ChainLadder(config)
-            resultado = cl.calcular(triangulo_simple)
+            resultado = cl.calcular(triangulo_simple, TipoTriangulo.ACUMULADO)
             resultados.append(float(resultado.reserva_total))
 
         # Todos deben estar en un rango razonable (diferencia < 50%)
@@ -426,7 +430,7 @@ class TestColaEstimada:
         """
         config = ConfiguracionChainLadder(calcular_tail_factor=True)
         with pytest.warns(ExperimentalModelWarning, match="EXTRAPOLACION"):
-            resultado = ChainLadder(config).calcular(triangulo_decreciente)
+            resultado = ChainLadder(config).calcular(triangulo_decreciente, TipoTriangulo.ACUMULADO)
 
         a, b = 0.5689, 2.0126
         esperado = math.prod(1 + a * k**-b for k in range(4, 104))
@@ -440,7 +444,7 @@ class TestColaEstimada:
         """Sin r², horizonte y parámetros la cola no sería auditable."""
         config = ConfiguracionChainLadder(calcular_tail_factor=True)
         with pytest.warns(ExperimentalModelWarning):
-            resultado = ChainLadder(config).calcular(triangulo_decreciente)
+            resultado = ChainLadder(config).calcular(triangulo_decreciente, TipoTriangulo.ACUMULADO)
 
         detalles = resultado.detalles
         assert Decimal(detalles["tail_ajuste_r2"]) > Decimal("0.9")
@@ -455,7 +459,7 @@ class TestColaEstimada:
             (ConfiguracionChainLadder(), "ninguno"),
             (ConfiguracionChainLadder(tail_factor=Decimal("1.02")), "manual"),
         ]:
-            resultado = ChainLadder(config).calcular(triangulo_decreciente)
+            resultado = ChainLadder(config).calcular(triangulo_decreciente, TipoTriangulo.ACUMULADO)
             assert resultado.calculation_metadata.validation_tier == "supported"
             assert resultado.detalles["tail_factor_metodo"] == metodo
             assert "tail_ajuste_r2" not in resultado.detalles
@@ -474,8 +478,186 @@ class TestColaEstimada:
 
         config = ConfiguracionChainLadder(calcular_tail_factor=True)
         with pytest.warns(ExperimentalModelWarning):
-            resultado = ChainLadder(config).calcular(triangulo)
+            resultado = ChainLadder(config).calcular(triangulo, TipoTriangulo.ACUMULADO)
 
         assert float(resultado.factores_desarrollo[-1]) == pytest.approx(1.0)
         assert resultado.detalles["tail_factor_metodo"] == "sin_desarrollo_residual"
         assert resultado.detalles["tail_periodos_ajustados"] == 0
+
+
+class TestTipoTrianguloDeclarado:
+    """El tipo de triángulo se declara; no se infiere de los valores.
+
+    Antes se deducía comparando la monotonía del primer renglón: si crecía, se
+    asumía acumulado. Un triángulo incremental cuyo primer año de origen crece
+    -patrón normal en ramos de reporte lento- caía en esa trampa y se usaba sin
+    acumular, con lo que la reserva salía menor a la correcta sin error ni
+    advertencia.
+    """
+
+    @staticmethod
+    def _incremental_con_primer_renglon_creciente() -> pd.DataFrame:
+        """Incremental cuyo renglón 2020 es [100, 150, 200]: monótono creciente."""
+        return pd.DataFrame(
+            {0: [100.0, 90.0, 80.0], 1: [150.0, 140.0, None], 2: [200.0, None, None]},
+            index=[2020, 2021, 2022],
+        )
+
+    def test_declarar_incremental_acumula_antes_de_los_factores(self):
+        """Reserva a mano: acumulado = 100,250,450 / 90,230 / 80.
+
+        f1 = promedio(250/100, 230/90) = promedio(2.5, 2.5556) = 2.527778
+        f2 = 450/250 = 1.8
+        ultimates = 450, 230*1.8 = 414, 80*2.527778*1.8 = 364
+        reservas  =   0,       184,                       284  -> total 468
+        """
+        triangulo = self._incremental_con_primer_renglon_creciente()
+        config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
+
+        resultado = ChainLadder(config).calcular(triangulo, TipoTriangulo.INCREMENTAL)
+
+        assert float(resultado.reserva_total) == pytest.approx(468.0)
+        assert float(resultado.reservas_por_anio[2020]) == pytest.approx(0.0)
+        assert float(resultado.reservas_por_anio[2021]) == pytest.approx(184.0)
+        assert float(resultado.reservas_por_anio[2022]) == pytest.approx(284.0)
+        assert float(resultado.factores_desarrollo[0]) == pytest.approx(2.527778, abs=1e-6)
+        assert float(resultado.factores_desarrollo[1]) == pytest.approx(1.8)
+
+    def test_declararlo_acumulado_da_un_resultado_distinto(self):
+        """El mismo triángulo leído como acumulado da 129.63, no 468.
+
+        Es la cifra que producía la heurística. Se fija aquí para que la
+        diferencia entre declarar bien y declarar mal quede medida, no supuesta.
+        """
+        triangulo = self._incremental_con_primer_renglon_creciente()
+        config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
+
+        como_acumulado = ChainLadder(config).calcular(triangulo, TipoTriangulo.ACUMULADO)
+        como_incremental = ChainLadder(config).calcular(triangulo, TipoTriangulo.INCREMENTAL)
+
+        assert float(como_acumulado.reserva_total) == pytest.approx(129.6296, abs=1e-4)
+        assert como_incremental.reserva_total > como_acumulado.reserva_total * 3
+
+    def test_el_tipo_es_obligatorio(self):
+        """Omitirlo es un TypeError, no una suposición silenciosa."""
+        config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
+        with pytest.raises(TypeError):
+            ChainLadder(config).calcular(  # type: ignore[call-arg]
+                self._incremental_con_primer_renglon_creciente()
+            )
+
+
+class TestDesarrolloNegativo:
+    """Un triángulo puede bajar por razones reales, y hay que poder valuarlo.
+
+    Un triángulo de pagados baja con salvamento o subrogación; uno de incurridos
+    baja al liberar reserva de un siniestro menos grave de lo estimado. El caso
+    corriente sigue siendo el creciente, así que el permiso se declara: aceptar
+    todo en silencio dejaría pasar un triángulo mal capturado.
+    """
+
+    @staticmethod
+    def _acumulado_con_recuperacion() -> pd.DataFrame:
+        """La fila 2020 baja de 1200 a 1150: hubo una recuperación en el periodo 3."""
+        return pd.DataFrame(
+            {0: [1000.0, 1100.0, 1200.0], 1: [1200.0, 1300.0, None], 2: [1150.0, None, None]},
+            index=[2020, 2021, 2022],
+        )
+
+    def test_por_omision_se_rechaza_y_se_dice_como_permitirlo(self):
+        config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
+        with pytest.raises(ValueError, match="permitir_desarrollo_negativo"):
+            ChainLadder(config).calcular(
+                self._acumulado_con_recuperacion(), TipoTriangulo.ACUMULADO
+            )
+
+    def test_declarandolo_se_valua(self):
+        config = ConfiguracionChainLadder(
+            metodo_promedio=MetodoPromedio.SIMPLE,
+            permitir_desarrollo_negativo=True,
+        )
+        resultado = ChainLadder(config).calcular(
+            self._acumulado_con_recuperacion(), TipoTriangulo.ACUMULADO
+        )
+        assert resultado.reserva_total >= 0
+        # El factor 1->2 es 1150/1200 < 1: el periodo devuelve dinero.
+        assert float(resultado.factores_desarrollo[1]) == pytest.approx(1150 / 1200)
+
+    def test_un_incremental_con_recuperacion_se_acumula(self):
+        """Incremental [1000, 200, -50] acumula a [1000, 1200, 1150]."""
+        incremental = pd.DataFrame(
+            {0: [1000.0, 1100.0, 1200.0], 1: [200.0, 200.0, None], 2: [-50.0, None, None]},
+            index=[2020, 2021, 2022],
+        )
+        config = ConfiguracionChainLadder(
+            metodo_promedio=MetodoPromedio.SIMPLE,
+            permitir_desarrollo_negativo=True,
+        )
+        resultado = ChainLadder(config).calcular(incremental, TipoTriangulo.INCREMENTAL)
+        assert float(resultado.factores_desarrollo[1]) == pytest.approx(1150 / 1200)
+
+    def test_el_triangulo_creciente_normal_no_cambia(self):
+        """Activar el permiso no altera un triángulo que ya era monótono."""
+        triangulo = crear_triangulo_ejemplo(TipoTriangulo.ACUMULADO)
+        estricto = ChainLadder(
+            ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
+        ).calcular(triangulo, TipoTriangulo.ACUMULADO)
+        permisivo = ChainLadder(
+            ConfiguracionChainLadder(
+                metodo_promedio=MetodoPromedio.SIMPLE, permitir_desarrollo_negativo=True
+            )
+        ).calcular(triangulo, TipoTriangulo.ACUMULADO)
+        assert estricto.reserva_total == permisivo.reserva_total
+
+
+class TestReservaAgregadaNegativa:
+    """El caso que motiva el permiso: la reserva NETA del ramo sale negativa.
+
+    Los totales estaban declarados con `ge=0` en `ResultadoReserva`, así que el
+    escenario más propio del permiso -una cartera con salvamento o subrogación
+    fuertes cuya reserva agregada resulta negativa- era irrepresentable: el
+    cálculo llegaba a la cifra correcta y el modelo se negaba a envolverla. El
+    router traducía ese fallo a un 400, como si el triángulo fuera inválido.
+    """
+
+    @staticmethod
+    def _con_recuperacion_fuerte() -> pd.DataFrame:
+        """La última diagonal se desploma de 1100 a 50: recuperación mayor que lo pagado."""
+        return pd.DataFrame(
+            {0: [1000.0, 1000.0, 1000.0], 1: [1100.0, 1100.0, None], 2: [50.0, None, None]},
+            index=[2020, 2021, 2022],
+        )
+
+    def test_la_reserva_agregada_puede_ser_negativa(self):
+        config = ConfiguracionChainLadder(permitir_desarrollo_negativo=True)
+        resultado = ChainLadder(config).calcular(
+            self._con_recuperacion_fuerte(), TipoTriangulo.ACUMULADO
+        )
+        assert resultado.reserva_total < 0
+        assert resultado.permite_desarrollo_negativo is True
+
+    def test_la_identidad_contable_se_mantiene(self):
+        """ultimate = pagado + reserva, también cuando la reserva es negativa."""
+        config = ConfiguracionChainLadder(permitir_desarrollo_negativo=True)
+        r = ChainLadder(config).calcular(self._con_recuperacion_fuerte(), TipoTriangulo.ACUMULADO)
+        assert r.ultimate_total == r.pagado_total + r.reserva_total
+
+    def test_sin_declararlo_un_total_negativo_se_rechaza(self):
+        """El piso sigue protegiendo los caminos normales."""
+        with pytest.raises(ValidationError, match="sin haber declarado"):
+            ResultadoReserva(
+                metodo=MetodoReserva.CHAIN_LADDER,
+                reserva_total=Decimal("-100"),
+                ultimate_total=Decimal("900"),
+                pagado_total=Decimal("1000"),
+            )
+
+    def test_declarandolo_el_mismo_total_se_acepta(self):
+        r = ResultadoReserva(
+            metodo=MetodoReserva.CHAIN_LADDER,
+            permite_desarrollo_negativo=True,
+            reserva_total=Decimal("-100"),
+            ultimate_total=Decimal("900"),
+            pagado_total=Decimal("1000"),
+        )
+        assert r.reserva_total == Decimal("-100")

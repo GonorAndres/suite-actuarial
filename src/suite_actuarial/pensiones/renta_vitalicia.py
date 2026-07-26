@@ -128,6 +128,14 @@ class RentaVitalicia:
         tc = self._tabla_conm
         if edad_pago > tc.edad_max:
             return Decimal("0")
+        if edad_pago < tc.edad_min:
+            # Solo existia la cota superior. Por abajo el fallo llegaba desde
+            # dentro de `TablaConmutacion._idx`, con un mensaje sobre indices en
+            # vez de sobre la edad pedida.
+            raise ValueError(
+                f"Edad {edad_pago} por debajo del minimo de la tabla "
+                f"{tc.edad_min}: no hay mortalidad tarifada para esa edad."
+            )
 
         ajuste = tc.ajuste_fraccionamiento(self.PAGOS_POR_ANIO)
 

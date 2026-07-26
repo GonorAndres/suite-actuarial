@@ -59,6 +59,21 @@ class TablaConmutacion:
             sexo = Sexo(sexo)
         self.sexo = sexo
 
+        # Mismo rango que `ConfiguracionProducto.tasa_interes_tecnico`, que ya
+        # lo acotaba en la rama de vida. Aqui no habia cota alguna y `v` se
+        # calculaba directo como 1/(1+i): con i = -1 reventaba con
+        # ZeroDivisionError, y con i < -1 el factor de descuento se volvia
+        # negativo y `ax` devolvia una anualidad negativa, que es
+        # actuarialmente imposible. Como `RentaVitalicia` y `PensionLey97`
+        # construyen esta clase, validar aqui cubre las tres.
+        tasa = Decimal(str(tasa_interes))
+        if tasa < 0:
+            raise ValueError(f"La tasa de interes no puede ser negativa; se recibio {tasa}.")
+        if tasa > Decimal("0.15"):
+            raise ValueError(
+                f"Tasa de interes muy alta (tipicamente max 15% anual); se recibio {tasa}."
+            )
+
         self.tasa_interes = float(tasa_interes)
         self.raiz = raiz
         self.tabla_mortalidad = tabla_mortalidad

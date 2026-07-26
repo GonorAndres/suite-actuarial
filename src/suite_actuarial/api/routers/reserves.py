@@ -12,6 +12,7 @@ import pandas as pd
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.core.models.common import CalculationMetadata
 from suite_actuarial.core.models.reservas import ResultadoReserva
 from suite_actuarial.core.validators import (
@@ -19,6 +20,7 @@ from suite_actuarial.core.validators import (
     ConfiguracionBornhuetterFerguson,
     ConfiguracionChainLadder,
     MetodoPromedio,
+    TipoTriangulo,
 )
 from suite_actuarial.reservas.bootstrap import Bootstrap
 from suite_actuarial.reservas.bornhuetter_ferguson import BornhuetterFerguson
@@ -26,17 +28,44 @@ from suite_actuarial.reservas.chain_ladder import ChainLadder
 
 router = APIRouter(prefix="/reserves", tags=["reserves"])
 
+# Cota explicita del tamano del triangulo. Antes solo lo limitaban los valores
+# por omision de Cloud Run (cuerpo de ~32 MB, timeout de 60 s), que son de la
+# infraestructura y no del servicio: un triangulo enorme agotaba el tiempo de
+# una de las 2 instancias en lugar de recibir un rechazo inmediato. 60x60 cubre
+# con holgura cualquier triangulo real (60 anios de origen).
+MAX_ANIOS_ORIGEN = 60
+MAX_PERIODOS_DESARROLLO = 60
+
 
 # ── Request / Response models ────────────────────────────────────────────────
 
 
-class ChainLadderRequest(BaseModel):
+class ChainLadderRequest(SolicitudBase):
     """Request body for Chain Ladder reserve calculation."""
 
     triangle: list[list[float | None]] = Field(
-        ..., description="Cumulative triangle as list of rows (None for missing cells)"
+        ...,
+        max_length=MAX_ANIOS_ORIGEN,
+        description="Development triangle as list of rows (None for missing cells)",
     )
     origin_years: list[int] = Field(..., description="Origin year labels (one per row)")
+    tipo_triangulo: Literal["acumulado", "incremental"] = Field(
+        ...,
+        description=(
+            "Shape of the submitted triangle. Required and declared, never "
+            "inferred: an incremental triangle read as cumulative understates "
+            "the reserve"
+        ),
+    )
+    permitir_desarrollo_negativo: bool = Field(
+        default=False,
+        description=(
+            "Allow negative development: negative increments, or cumulative rows "
+            "that decrease. Real in paid triangles with salvage/subrogation and in "
+            "incurred triangles with reserve releases. Off by default so a "
+            "mis-keyed triangle does not pass silently"
+        ),
+    )
     metodo_promedio: str = Field(
         default="simple", description="Averaging method: simple, weighted, geometric"
     )
@@ -57,11 +86,28 @@ class ChainLadderRequest(BaseModel):
     )
 
 
-class BornhuetterFergusonRequest(BaseModel):
+class BornhuetterFergusonRequest(SolicitudBase):
     """Request body for Bornhuetter-Ferguson reserve calculation."""
 
-    triangle: list[list[float | None]] = Field(...)
+    triangle: list[list[float | None]] = Field(..., max_length=MAX_ANIOS_ORIGEN)
     origin_years: list[int] = Field(...)
+    tipo_triangulo: Literal["acumulado", "incremental"] = Field(
+        ...,
+        description=(
+            "Shape of the submitted triangle. Required and declared, never "
+            "inferred: an incremental triangle read as cumulative understates "
+            "the reserve"
+        ),
+    )
+    permitir_desarrollo_negativo: bool = Field(
+        default=False,
+        description=(
+            "Allow negative development: negative increments, or cumulative rows "
+            "that decrease. Real in paid triangles with salvage/subrogation and in "
+            "incurred triangles with reserve releases. Off by default so a "
+            "mis-keyed triangle does not pass silently"
+        ),
+    )
     primas_por_anio: dict[int, float] = Field(..., description="Earned premiums by origin year")
     loss_ratio_apriori: float = Field(
         ..., gt=0, le=2.0, description="A-priori expected loss ratio (e.g. 0.65)"
@@ -70,14 +116,31 @@ class BornhuetterFergusonRequest(BaseModel):
     unidad_monetaria: Literal["millones_mxn"] = "millones_mxn"
 
 
-class BootstrapRequest(BaseModel):
+class BootstrapRequest(SolicitudBase):
     """Request body for the residual re-sampling band (illustrative).
 
     Not an ODP bootstrap — see `calculate_bootstrap` and `docs/AUDIT.md` (A2).
     """
 
-    triangle: list[list[float | None]] = Field(...)
+    triangle: list[list[float | None]] = Field(..., max_length=MAX_ANIOS_ORIGEN)
     origin_years: list[int] = Field(...)
+    tipo_triangulo: Literal["acumulado", "incremental"] = Field(
+        ...,
+        description=(
+            "Shape of the submitted triangle. Required and declared, never "
+            "inferred: an incremental triangle read as cumulative understates "
+            "the reserve"
+        ),
+    )
+    permitir_desarrollo_negativo: bool = Field(
+        default=False,
+        description=(
+            "Allow negative development: negative increments, or cumulative rows "
+            "that decrease. Real in paid triangles with salvage/subrogation and in "
+            "incurred triangles with reserve releases. Off by default so a "
+            "mis-keyed triangle does not pass silently"
+        ),
+    )
     num_simulaciones: int = Field(default=1000, ge=100, le=10000)
     seed: int | None = Field(default=None)
     percentiles: list[int] = Field(default=[50, 75, 90, 95, 99])
@@ -110,6 +173,11 @@ def _build_triangle(rows: list[list[float | None]], years: list[int]) -> pd.Data
             f"Number of rows ({len(rows)}) must match number of origin years ({len(years)})"
         )
     n_cols = max(len(r) for r in rows)
+    if n_cols > MAX_PERIODOS_DESARROLLO:
+        raise ValueError(
+            f"El triangulo tiene {n_cols} periodos de desarrollo, por encima del "
+            f"limite de {MAX_PERIODOS_DESARROLLO}."
+        )
     col_labels = list(range(1, n_cols + 1))
     df = pd.DataFrame(rows, index=years, columns=col_labels, dtype=float)
     return df
@@ -156,9 +224,10 @@ def calculate_chain_ladder(req: ChainLadderRequest) -> ReserveResponse:
             metodo_promedio=MetodoPromedio(req.metodo_promedio),
             calcular_tail_factor=req.calcular_tail_factor,
             tail_factor=Decimal(str(req.tail_factor)) if req.tail_factor is not None else None,
+            permitir_desarrollo_negativo=req.permitir_desarrollo_negativo,
         )
         cl = ChainLadder(config)
-        resultado = cl.calcular(triangulo)
+        resultado = cl.calcular(triangulo, TipoTriangulo(req.tipo_triangulo))
         return _resultado_to_response(resultado)
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -176,10 +245,11 @@ def calculate_bornhuetter_ferguson(req: BornhuetterFergusonRequest) -> ReserveRe
         config = ConfiguracionBornhuetterFerguson(
             loss_ratio_apriori=Decimal(str(req.loss_ratio_apriori)),
             metodo_promedio=MetodoPromedio(req.metodo_promedio),
+            permitir_desarrollo_negativo=req.permitir_desarrollo_negativo,
         )
         primas = {k: Decimal(str(v)) for k, v in req.primas_por_anio.items()}
         bf = BornhuetterFerguson(config)
-        resultado = bf.calcular(triangulo, primas)
+        resultado = bf.calcular(triangulo, primas, TipoTriangulo(req.tipo_triangulo))
         return _resultado_to_response(resultado)
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -213,9 +283,10 @@ def calculate_bootstrap(req: BootstrapRequest) -> ReserveResponse:
             num_simulaciones=req.num_simulaciones,
             seed=req.seed,
             percentiles=req.percentiles,
+            permitir_desarrollo_negativo=req.permitir_desarrollo_negativo,
         )
         bs = Bootstrap(config)
-        resultado = bs.calcular(triangulo)
+        resultado = bs.calcular(triangulo, TipoTriangulo(req.tipo_triangulo))
         return _resultado_to_response(resultado)
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

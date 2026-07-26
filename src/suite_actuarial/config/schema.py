@@ -107,6 +107,9 @@ class TasasSAT(BaseModel):
     tasa_retencion_retiros_ahorro: Decimal = Field(
         ..., ge=0, le=1, description="Retencion ISR sobre retiros de ahorro"
     )
+    tasa_retencion_otros_ingresos: Decimal = Field(
+        ..., ge=0, le=1, description="Retencion ISR sobre otros ingresos gravables"
+    )
     tasa_isr_personas_morales: Decimal = Field(
         ..., ge=0, le=1, description="Tasa ISR personas morales"
     )

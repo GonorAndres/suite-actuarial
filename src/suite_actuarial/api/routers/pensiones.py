@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.core.models.common import Sexo
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 from suite_actuarial.pensiones.plan_retiro import PensionLey73, PensionLey97
@@ -36,7 +37,7 @@ def _get_tabla() -> TablaMortalidad:
 # -- Request / Response models -------------------------------------------------
 
 
-class Ley73Request(BaseModel):
+class Ley73Request(SolicitudBase):
     """Request body for Ley 73 pension calculation."""
 
     semanas_cotizadas: int = Field(
@@ -62,7 +63,7 @@ class Ley73Response(BaseModel):
     pension_anual_total: float
 
 
-class Ley97Request(BaseModel):
+class Ley97Request(SolicitudBase):
     """Request body for Ley 97 pension calculation."""
 
     saldo_afore: float = Field(..., gt=0, description="Current AFORE account balance in MXN")
@@ -99,10 +100,18 @@ class Ley97Response(BaseModel):
     pension_garantizada: float
 
 
-class RentaVitaliciaRequest(BaseModel):
+class RentaVitaliciaRequest(SolicitudBase):
     """Request body for life annuity calculation."""
 
-    edad: int = Field(..., ge=0, le=110, description="Age of the annuitant")
+    edad: int = Field(
+        ...,
+        ge=18,
+        le=100,
+        description=(
+            "Age of the annuitant. Bounded by the EMSSA-09 mortality table "
+            "(18-100); outside it there is no tabulated mortality"
+        ),
+    )
     sexo: str = Field(..., pattern="^[HM]$", description="Sex: H (male) or M (female)")
     monto_mensual: float = Field(..., gt=0, description="Monthly annuity payment in MXN")
     tasa_interes: float = Field(..., ge=0, le=0.15, description="Technical interest rate")

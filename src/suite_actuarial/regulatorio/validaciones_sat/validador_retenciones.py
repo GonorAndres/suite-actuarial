@@ -8,6 +8,8 @@ sujetos a retención conforme a la Ley del ISR.
 from decimal import Decimal
 from typing import Any
 
+from suite_actuarial.config.loader import config_vigente
+from suite_actuarial.config.schema import TasasSAT
 from suite_actuarial.regulatorio.validaciones_sat.models import (
     ResultadoRetencion,
     TipoSeguroFiscal,
@@ -47,10 +49,23 @@ class CalculadoraRetencionesISR:
         Retención: $2,500.00
     """
 
-    # Tasas de retención según tipo de pago
-    TASA_RETENCION_RENTAS_VITALICIAS = Decimal("0.10")  # 10%
-    TASA_RETENCION_RETIROS_AHORRO = Decimal("0.20")  # 20%
-    TASA_RETENCION_OTROS_INGRESOS = Decimal("0.10")  # 10%
+    def __init__(self, tasas: TasasSAT | None = None):
+        """
+        Inicializa la calculadora con las tasas de retención a aplicar.
+
+        Las tasas vienen del perfil regulatorio anual
+        (`config/config_<anio>.py`), no de constantes de esta clase. Antes eran
+        constantes de clase y la clase no recibía configuración alguna, así que
+        `TasasSAT` quedaba versionada por año pero nadie la leía para calcular:
+        cambiar el perfil de un año no cambiaba ninguna retención. Los valores
+        coincidían entre 2024 y 2026, de modo que la divergencia no se veía
+        todavía; habría aparecido, sin aviso, en cuanto un año trajera otra tasa.
+
+        Args:
+            tasas: Tasas SAT a aplicar. Si se omite, se toman del perfil
+                regulatorio vigente a la fecha de hoy.
+        """
+        self.tasas = tasas if tasas is not None else config_vigente().tasas_sat
 
     def calcular_retencion(
         self,
@@ -107,13 +122,13 @@ class CalculadoraRetencionesISR:
         # Rentas vitalicias: REQUIEREN RETENCIÓN
         if es_renta_vitalicia and tipo_seguro == TipoSeguroFiscal.PENSIONES:
             requiere_retencion = True
-            tasa_retencion = self.TASA_RETENCION_RENTAS_VITALICIAS
+            tasa_retencion = self.tasas.tasa_retencion_rentas_vitalicias
             regla = "Pensiones + renta vitalicia: se aplica la tasa de rentas vitalicias."
 
         # Retiros de ahorro: REQUIEREN RETENCIÓN
         elif es_retiro_ahorro and tipo_seguro == TipoSeguroFiscal.VIDA:
             requiere_retencion = True
-            tasa_retencion = self.TASA_RETENCION_RETIROS_AHORRO
+            tasa_retencion = self.tasas.tasa_retencion_retiros_ahorro
             regla = "Vida + retiro de ahorro: se aplica la tasa de retiros de ahorro."
 
         # Indemnizaciones por muerte: NO RETENCIÓN (exentas)
@@ -152,7 +167,7 @@ class CalculadoraRetencionesISR:
         # ya retornaron para vida, gastos medicos, danos e invalidez.
         elif requiere_retencion_forzosa:
             requiere_retencion = True
-            tasa_retencion = self.TASA_RETENCION_OTROS_INGRESOS
+            tasa_retencion = self.tasas.tasa_retencion_otros_ingresos
             regla = "Retencion forzosa declarada: se aplica la tasa de otros ingresos."
 
         if not requiere_retencion and not regla:

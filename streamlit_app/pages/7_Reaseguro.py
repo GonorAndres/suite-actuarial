@@ -327,7 +327,7 @@ with tab_xl:
                         monto = float(s.monto_bruto)
                         if monto <= xl_retencion:
                             retenido = monto
-                            recuperado = 0
+                            recuperado = 0.0
                         else:
                             exceso = monto - xl_retencion
                             recuperado = min(exceso, xl_limite)

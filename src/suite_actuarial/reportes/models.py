@@ -9,7 +9,7 @@ from datetime import date
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from suite_actuarial.core.models.regulatorio import calcular_ratio_solvencia
 
@@ -112,19 +112,24 @@ class DatosSuscripcionRamo(BaseModel):
     numero_polizas: int = Field(..., ge=0)
     suma_asegurada_total: Decimal = Field(..., ge=0)
 
-    @field_validator("primas_devengadas")
-    @classmethod
-    def validar_devengadas(cls, v: Decimal, info: ValidationInfo) -> Decimal:
-        """Primas devengadas no pueden exceder emitidas netas"""
-        if "primas_emitidas" in info.data and "primas_canceladas" in info.data:
-            emitidas_netas = info.data["primas_emitidas"] - info.data.get(
-                "primas_canceladas", Decimal("0")
+    @model_validator(mode="after")
+    def validar_devengadas(self) -> "DatosSuscripcionRamo":
+        """Primas devengadas no pueden exceder emitidas netas.
+
+        Va en un validador de modelo, no de campo: en Pydantic v2 `info.data`
+        de un validador de campo solo trae los campos ya validados, es decir
+        los declarados *antes*. Como `primas_canceladas` se declara despues de
+        `primas_devengadas`, la condicion que buscaba ambos nunca se cumplia y
+        la comprobacion no corria nunca, cualquiera que fuera la entrada.
+        """
+        emitidas_netas = self.primas_emitidas - self.primas_canceladas
+        if self.primas_devengadas > emitidas_netas * Decimal("1.05"):  # Tolerancia 5%
+            raise ValueError(
+                f"Primas devengadas ({self.primas_devengadas}) exceden "
+                f"significativamente primas emitidas netas ({emitidas_netas} = "
+                f"{self.primas_emitidas} emitidas - {self.primas_canceladas} canceladas)."
             )
-            if v > emitidas_netas * Decimal("1.05"):  # Tolerancia 5%
-                raise ValueError(
-                    "Primas devengadas exceden significativamente primas emitidas netas"
-                )
-        return v
+        return self
 
 
 class DatosSiniestrosRamo(BaseModel):

@@ -14,9 +14,11 @@ from suite_actuarial.core.validators import (
     ConfiguracionBornhuetterFerguson,
     MetodoReserva,
     ResultadoReserva,
+    TipoTriangulo,
 )
 from suite_actuarial.reservas.chain_ladder import ChainLadder
 from suite_actuarial.reservas.triangulo import (
+    asegurar_acumulado,
     obtener_ultima_diagonal,
     validar_triangulo,
 )
@@ -47,7 +49,7 @@ class BornhuetterFerguson:
         ...     metodo_promedio=MetodoPromedio.SIMPLE
         ... )
         >>> bf = BornhuetterFerguson(config)
-        >>> resultado = bf.calcular(triangulo, primas_por_anio)
+        >>> resultado = bf.calcular(triangulo, primas_por_anio, TipoTriangulo.ACUMULADO)
         >>> print(f"Reserva total: ${resultado.reserva_total:,.2f}")
     """
 
@@ -195,14 +197,17 @@ class BornhuetterFerguson:
         self,
         triangulo: pd.DataFrame,
         primas_por_anio: dict[int, Decimal],
+        tipo: TipoTriangulo,
     ) -> ResultadoReserva:
         """
         Ejecuta el método Bornhuetter-Ferguson completo.
 
         Args:
-            triangulo: Triángulo de desarrollo (acumulado)
+            triangulo: Triángulo de desarrollo
             primas_por_anio: Primas ganadas por año de origen
                             Ej: {2020: Decimal("1000000"), 2021: ...}
+            tipo: Forma en la que viene el triángulo (acumulada o incremental).
+                Es obligatorio: se declara, no se infiere.
 
         Returns:
             ResultadoReserva con análisis completo
@@ -211,7 +216,10 @@ class BornhuetterFerguson:
             ValueError: Si faltan primas para algún año del triángulo
         """
         # Validar triángulo
-        validar_triangulo(triangulo)
+        validar_triangulo(
+            triangulo, permitir_desarrollo_negativo=self.config.permitir_desarrollo_negativo
+        )
+        triangulo = asegurar_acumulado(triangulo, tipo, self.config.permitir_desarrollo_negativo)
 
         # Validar que haya primas para todos los años
         for idx in triangulo.index:
@@ -229,6 +237,7 @@ class BornhuetterFerguson:
         config_cl = ConfiguracionChainLadder(
             metodo_promedio=self.config.metodo_promedio,
             calcular_tail_factor=False,
+            permitir_desarrollo_negativo=self.config.permitir_desarrollo_negativo,
         )
 
         self.chain_ladder = ChainLadder(config_cl)
@@ -274,6 +283,7 @@ class BornhuetterFerguson:
         # 9. Construir resultado
         resultado = ResultadoReserva(
             metodo=MetodoReserva.BORNHUETTER_FERGUSON,
+            permite_desarrollo_negativo=self.config.permitir_desarrollo_negativo,
             reserva_total=reserva_total,
             ultimate_total=ultimate_total,
             pagado_total=pagado_total,
@@ -296,7 +306,10 @@ class BornhuetterFerguson:
         return self.porcentajes_reportados
 
     def comparar_con_chain_ladder(
-        self, triangulo: pd.DataFrame, primas_por_anio: dict[int, Decimal]
+        self,
+        triangulo: pd.DataFrame,
+        primas_por_anio: dict[int, Decimal],
+        tipo: TipoTriangulo,
     ) -> pd.DataFrame:
         """
         Compara resultados de B-F vs Chain Ladder.
@@ -304,19 +317,23 @@ class BornhuetterFerguson:
         Args:
             triangulo: Triángulo de desarrollo
             primas_por_anio: Primas por año
+            tipo: Forma en la que viene el triángulo (acumulada o incremental)
 
         Returns:
             DataFrame con comparación lado a lado
         """
         # Calcular B-F
-        resultado_bf = self.calcular(triangulo, primas_por_anio)
+        resultado_bf = self.calcular(triangulo, primas_por_anio, tipo)
 
         # Calcular Chain Ladder
         from suite_actuarial.core.validators import ConfiguracionChainLadder
 
-        config_cl = ConfiguracionChainLadder(metodo_promedio=self.config.metodo_promedio)
+        config_cl = ConfiguracionChainLadder(
+            metodo_promedio=self.config.metodo_promedio,
+            permitir_desarrollo_negativo=self.config.permitir_desarrollo_negativo,
+        )
         cl = ChainLadder(config_cl)
-        resultado_cl = cl.calcular(triangulo)
+        resultado_cl = cl.calcular(triangulo, tipo)
 
         # Construir DataFrame comparativo
         comparacion = pd.DataFrame(

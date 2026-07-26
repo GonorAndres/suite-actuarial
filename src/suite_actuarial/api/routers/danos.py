@@ -5,12 +5,14 @@ Wraps SeguroAuto, SeguroIncendio, SeguroRC, CalculadoraBonusMalus,
 and ModeloColectivo domain classes.
 """
 
+import math
 from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.danos.auto import SeguroAuto
 from suite_actuarial.danos.frecuencia_severidad import ModeloColectivo
 from suite_actuarial.danos.incendio import SeguroIncendio
@@ -18,6 +20,10 @@ from suite_actuarial.danos.rc import SeguroRC
 from suite_actuarial.danos.tarifas import CalculadoraBonusMalus
 
 router = APIRouter(prefix="/danos", tags=["danos"])
+
+# Techo por parametro de distribucion aceptado en el borde HTTP. No es una cota
+# actuarial: acota el trabajo que un cuerpo de peticion arbitrario puede pedir.
+MAX_PARAMETRO = 1e6
 
 
 # ── Helper ──────────────────────────────────────────────────────────────────
@@ -41,7 +47,7 @@ def _decimal_to_float(obj: Any) -> Any:
 # ── 1. Auto insurance quotation ────────────────────────────────────────────
 
 
-class AutoRequest(BaseModel):
+class AutoRequest(SolicitudBase):
     """Request body for auto insurance quotation."""
 
     valor_vehiculo: float = Field(
@@ -106,7 +112,7 @@ def calcular_auto(req: AutoRequest) -> dict[str, Any]:
 # ── 2. Fire insurance premium ──────────────────────────────────────────────
 
 
-class IncendioRequest(BaseModel):
+class IncendioRequest(SolicitudBase):
     """Request body for fire insurance quotation."""
 
     valor_inmueble: float = Field(
@@ -162,7 +168,7 @@ def calcular_incendio(req: IncendioRequest) -> dict[str, Any]:
 # ── 3. Liability insurance premium ─────────────────────────────────────────
 
 
-class RCRequest(BaseModel):
+class RCRequest(SolicitudBase):
     """Request body for liability insurance quotation."""
 
     limite_responsabilidad: float = Field(
@@ -211,7 +217,7 @@ def calcular_rc(req: RCRequest) -> dict[str, Any]:
 # ── 4. Bonus-Malus calculation ─────────────────────────────────────────────
 
 
-class BonusMalusRequest(BaseModel):
+class BonusMalusRequest(SolicitudBase):
     """Request body for Bonus-Malus calculation."""
 
     nivel_actual: int = Field(
@@ -254,7 +260,7 @@ def calcular_bonus_malus(req: BonusMalusRequest) -> BonusMalusResponse:
 # ── 5. Collective risk model (frequency-severity) ─────────────────────────
 
 
-class FrecuenciaSeveridadRequest(BaseModel):
+class FrecuenciaSeveridadRequest(SolicitudBase):
     """Request body for the collective risk model simulation."""
 
     dist_frecuencia: str = Field(
@@ -279,6 +285,26 @@ class FrecuenciaSeveridadRequest(BaseModel):
         default=100_000, ge=1_000, le=1_000_000, description="Numero de simulaciones Monte Carlo"
     )
     seed: int | None = Field(default=None, description="Semilla para reproducibilidad")
+
+    @field_validator("params_frecuencia", "params_severidad")
+    @classmethod
+    def _parametros_finitos_y_acotados(cls, v: dict[str, float]) -> dict[str, float]:
+        """Rechaza parametros no finitos o desmedidos antes de construir el modelo.
+
+        El costo de la simulacion escala con la frecuencia media, no con el
+        tamano de la peticion: sin este limite un cuerpo de pocos bytes puede
+        pedir una asignacion de memoria arbitraria. El techo es de defensa, no
+        actuarial.
+        """
+        for nombre, valor in v.items():
+            if not math.isfinite(valor):
+                raise ValueError(f"El parametro '{nombre}' debe ser finito, se recibio {valor}.")
+            if abs(valor) > MAX_PARAMETRO:
+                raise ValueError(
+                    f"El parametro '{nombre}' = {valor:.3g} excede el limite de "
+                    f"{MAX_PARAMETRO:,.0f} admitido por este servicio."
+                )
+        return v
 
 
 class FrecuenciaSeveridadResponse(BaseModel):

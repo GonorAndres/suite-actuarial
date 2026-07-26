@@ -136,8 +136,29 @@ class GMM:
             raise ValueError("La suma asegurada minima para GMM es 1,000,000 MXN.")
         if deducible < 0:
             raise ValueError("El deducible no puede ser negativo.")
-        if not (Decimal("0") < coaseguro_pct <= Decimal("1")):
-            raise ValueError("El porcentaje de coaseguro debe estar entre 0 (exclusivo) y 1.")
+        if deducible >= suma_asegurada:
+            # `simular_gasto_medico` topa la reclamacion en la suma asegurada
+            # ANTES de restar el deducible, asi que con deducible >= suma
+            # asegurada el pago de la aseguradora es cero para cualquier
+            # siniestro, por grande que sea. La prima, en cambio, sale positiva:
+            # seria cobrar por una cobertura que no puede pagar nunca.
+            raise ValueError(
+                f"El deducible ({deducible:,.2f}) debe ser menor que la suma "
+                f"asegurada ({suma_asegurada:,.2f}); de lo contrario la poliza "
+                "no puede pagar siniestro alguno."
+            )
+        coaseguro_min = min(self.FACTORES_COASEGURO)
+        coaseguro_max = max(self.FACTORES_COASEGURO)
+        if not (coaseguro_min <= coaseguro_pct <= coaseguro_max):
+            # El rango sale de la tabla de factores, no de un literal. Fuera de
+            # ella no hay dato que respalde un precio, y antes se devolvia en
+            # silencio el factor del extremo mas cercano: 0.99 de coaseguro
+            # costaba lo mismo que 0.30.
+            raise ValueError(
+                f"El porcentaje de coaseguro debe estar entre {coaseguro_min} y "
+                f"{coaseguro_max}: es el rango que la tabla de factores tarifa. "
+                f"Se recibio {coaseguro_pct}."
+            )
         if tope_coaseguro is not None and tope_coaseguro < 0:
             raise ValueError("El tope de coaseguro no puede ser negativo.")
         if not isinstance(zona, ZonaGeografica):
@@ -202,17 +223,38 @@ class GMM:
         return Decimal("1.00")
 
     def _obtener_factor_coaseguro(self) -> Decimal:
-        """Get coinsurance factor; use exact match or closest lower."""
+        """
+        Devuelve el factor de coaseguro, interpolando linealmente entre los
+        puntos de la tabla igual que `_obtener_factor_deducible`.
+
+        Antes tomaba "la llave mayor que no excediera el valor dado", sin
+        interpolar ni extrapolar, así que el factor quedaba plano en tramos
+        enteros del dominio admitido: 0.30, 0.50, 0.75 y 0.99 cobraban lo mismo,
+        y 0.10 y 0.15 también. Un asegurado que absorbe 75% del gasto por encima
+        del deducible pagaba lo mismo que uno que absorbe 30%.
+
+        Fuera del rango de la tabla no se extrapola: no hay dato que respalde un
+        factor ahí, y fabricarlo sería inventar precio. El constructor rechaza
+        esos valores antes de llegar aquí.
+        """
         if self.coaseguro_pct in self.FACTORES_COASEGURO:
             return self.FACTORES_COASEGURO[self.coaseguro_pct]
 
-        # Find closest key that does not exceed the given coinsurance
         niveles = sorted(self.FACTORES_COASEGURO.keys())
-        factor = self.FACTORES_COASEGURO[niveles[0]]  # default
-        for n in niveles:
-            if n <= self.coaseguro_pct:
-                factor = self.FACTORES_COASEGURO[n]
-        return factor
+        for i in range(len(niveles) - 1):
+            bajo, alto = niveles[i], niveles[i + 1]
+            if bajo <= self.coaseguro_pct <= alto:
+                f_bajo = self.FACTORES_COASEGURO[bajo]
+                f_alto = self.FACTORES_COASEGURO[alto]
+                proporcion = (self.coaseguro_pct - bajo) / (alto - bajo)
+                factor = f_bajo + proporcion * (f_alto - f_bajo)
+                return factor.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+
+        # Inalcanzable: el constructor acota coaseguro_pct al rango de la tabla.
+        raise ValueError(
+            f"Coaseguro {self.coaseguro_pct} fuera del rango tarifado "
+            f"[{niveles[0]}, {niveles[-1]}]."
+        )
 
     def calcular_prima_base(self) -> Decimal:
         """

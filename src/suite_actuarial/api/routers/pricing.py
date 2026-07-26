@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.core.models.common import CalculationMetadata
 from suite_actuarial.core.models.producto import ResultadoCalculo
 from suite_actuarial.core.validators import (
@@ -40,7 +41,7 @@ def _get_tabla() -> TablaMortalidad:
 # ── Request / Response models ────────────────────────────────────────────────
 
 
-class PricingRequest(BaseModel):
+class PricingRequest(SolicitudBase):
     """Shared request body for all life-pricing endpoints."""
 
     edad: int = Field(..., ge=0, le=120, description="Age of the insured (completed years)")

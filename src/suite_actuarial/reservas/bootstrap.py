@@ -68,9 +68,11 @@ from suite_actuarial.core.validators import (
     ConfiguracionBootstrap,
     MetodoReserva,
     ResultadoReserva,
+    TipoTriangulo,
 )
 from suite_actuarial.reservas.chain_ladder import ChainLadder
 from suite_actuarial.reservas.triangulo import (
+    asegurar_acumulado,
     factores_volumen_ponderado,
     obtener_ultima_diagonal,
     validar_triangulo,
@@ -101,7 +103,7 @@ class Bootstrap:
     Ejemplo:
         >>> config = ConfiguracionBootstrap(num_simulaciones=1000, seed=42)
         >>> bs = Bootstrap(config)
-        >>> resultado = bs.calcular(triangulo)
+        >>> resultado = bs.calcular(triangulo, TipoTriangulo.ACUMULADO)
         >>> print(f"Reserva (media): ${resultado.reserva_total:,.2f}")
         >>> print(f"Error de prediccion: {resultado.detalles['error_prediccion']}")
         >>> print(f"Percentil 99: ${resultado.percentiles[99]:,.2f}")
@@ -125,6 +127,7 @@ class Bootstrap:
         self.parametros_modelo: int = 0
         self.grados_libertad: int = 0
         self.celdas_sin_proceso: int = 0
+        self.celdas_con_proceso: int = 0
         self._mascara_observada: np.ndarray | None = None
         self._ultima_columna: dict[int, int] = {}
 
@@ -318,6 +321,7 @@ class Bootstrap:
                     # Gamma con forma media/phi y escala phi tiene exactamente
                     # esa media y esa varianza.
                     simulado = float(rng.gamma(shape=media_celda / phi, scale=phi))
+                    self.celdas_con_proceso += 1
                 else:
                     # Celda no positiva: la Gamma no esta definida. Se proyecta
                     # sin simular y se cuenta.
@@ -330,16 +334,21 @@ class Bootstrap:
 
     # ── Calculo completo ─────────────────────────────────────────────────────
 
-    def calcular(self, triangulo: pd.DataFrame) -> ResultadoReserva:
+    def calcular(self, triangulo: pd.DataFrame, tipo: TipoTriangulo) -> ResultadoReserva:
         """Ejecuta el bootstrap ODP completo.
 
         Args:
-            triangulo: Triangulo de desarrollo acumulado
+            triangulo: Triangulo de desarrollo
+            tipo: Forma en la que viene el triangulo (acumulada o incremental).
+                Es obligatorio: se declara, no se infiere.
 
         Returns:
             ResultadoReserva con la distribucion predictiva de la reserva
         """
-        validar_triangulo(triangulo)
+        validar_triangulo(
+            triangulo, permitir_desarrollo_negativo=self.config.permitir_desarrollo_negativo
+        )
+        triangulo = asegurar_acumulado(triangulo, tipo, self.config.permitir_desarrollo_negativo)
 
         rng = np.random.default_rng(self.config.seed)
 
@@ -351,14 +360,19 @@ class Bootstrap:
         # Chain Ladder ponderado por volumen: es el estimador que el modelo ODP
         # reproduce, asi que es la referencia con la que debe conciliar.
         self.chain_ladder = ChainLadder(
-            ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.PONDERADO)
+            ConfiguracionChainLadder(
+                metodo_promedio=MetodoPromedio.PONDERADO,
+                permitir_desarrollo_negativo=self.config.permitir_desarrollo_negativo,
+            )
         )
-        resultado_base = self.chain_ladder.calcular(triangulo)
+        # `triangulo` ya viene acumulado por `asegurar_acumulado`.
+        resultado_base = self.chain_ladder.calcular(triangulo, TipoTriangulo.ACUMULADO)
 
         observados, ajustados = self.ajustar_incrementales(triangulo)
         self.calcular_residuales_pearson(observados, ajustados)
 
         self.celdas_sin_proceso = 0
+        self.celdas_con_proceso = 0
         self.simulaciones_reservas = [
             self.ejecutar_replica(rng) for _ in range(self.config.num_simulaciones)
         ]
@@ -411,8 +425,28 @@ class Bootstrap:
             "conciliacion_cl_relativa": str(conciliacion_relativa),
         }
 
+        # Las celdas con media ajustada no positiva no admiten varianza de
+        # proceso Gamma y se proyectan sin simularla. Con desarrollo negativo
+        # dejan de ser un residuo y pasan a ser una fraccion material: la banda
+        # predictiva sale mas estrecha de lo que corresponde. Estaba reportado
+        # solo como un conteo crudo en `detalles`, donde nada obliga a mirarlo;
+        # aqui se convierte en advertencia adjunta al numero.
+        celdas_futuras = self.celdas_sin_proceso + self.celdas_con_proceso
+        avisos = [ALCANCE]
+        if celdas_futuras > 0:
+            fraccion_sin_proceso = self.celdas_sin_proceso / celdas_futuras
+            if fraccion_sin_proceso > 0:
+                avisos.append(
+                    f"{fraccion_sin_proceso:.1%} de las celdas futuras "
+                    f"({self.celdas_sin_proceso} de {celdas_futuras}) se proyectaron "
+                    "SIN varianza de proceso: su media ajustada no es positiva y la "
+                    "Gamma del modelo ODP no admite ese caso. El error de prediccion "
+                    "y los percentiles subestiman la dispersion en esa medida."
+                )
+
         return ResultadoReserva(
             metodo=MetodoReserva.BOOTSTRAP,
+            permite_desarrollo_negativo=self.config.permitir_desarrollo_negativo,
             reserva_total=reserva_total,
             ultimate_total=ultimate_total,
             pagado_total=pagado_total,
@@ -423,7 +457,7 @@ class Bootstrap:
             detalles=detalles,
             calculation_metadata=CalculationMetadata(
                 validation_tier="supported",
-                warnings=[ALCANCE],
+                warnings=avisos,
                 assumptions_snapshot={
                     "metodo": "bootstrap-odp-england-verrall",
                     "phi_dispersion": str(self.phi),

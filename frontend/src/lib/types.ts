@@ -280,9 +280,15 @@ export interface RentaVitaliciaResponse {
 
 // ── Reserves ────────────────────────────────────────────────────────────────
 
+/** Shape of a submitted triangle. Declared, never inferred: an incremental
+ *  triangle read as cumulative understates the reserve. */
+export type TipoTriangulo = "acumulado" | "incremental";
+
 export interface ChainLadderRequest {
   triangle: (number | null)[][];
   origin_years: number[];
+  tipo_triangulo: TipoTriangulo;
+  permitir_desarrollo_negativo?: boolean;
   metodo_promedio?: "simple" | "weighted" | "geometric";
   calcular_tail_factor?: boolean;
   tail_factor?: number | null;
@@ -292,6 +298,8 @@ export interface ChainLadderRequest {
 export interface BornhuetterFergusonRequest {
   triangle: (number | null)[][];
   origin_years: number[];
+  tipo_triangulo: TipoTriangulo;
+  permitir_desarrollo_negativo?: boolean;
   primas_por_anio: Record<number, number>;
   loss_ratio_apriori: number;
   metodo_promedio?: string;
@@ -301,6 +309,8 @@ export interface BornhuetterFergusonRequest {
 export interface BootstrapRequest {
   triangle: (number | null)[][];
   origin_years: number[];
+  tipo_triangulo: TipoTriangulo;
+  permitir_desarrollo_negativo?: boolean;
   num_simulaciones?: number;
   seed?: number | null;
   percentiles?: number[];
@@ -492,6 +502,7 @@ export interface UMAResponse {
 export interface TasasSATResponse {
   tasa_retencion_rentas_vitalicias: number;
   tasa_retencion_retiros_ahorro: number;
+  tasa_retencion_otros_ingresos: number;
   tasa_isr_personas_morales: number;
   tasa_iva: number;
   limite_deducciones_pf_umas: number;

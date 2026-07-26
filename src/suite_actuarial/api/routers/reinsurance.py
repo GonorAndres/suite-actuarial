@@ -11,6 +11,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from suite_actuarial.api.schemas import SolicitudBase
 from suite_actuarial.core.models.reaseguro import ResultadoReaseguro
 from suite_actuarial.core.validators import (
     ExcessOfLossConfig,
@@ -42,7 +43,7 @@ class SiniestroIn(BaseModel):
     descripcion: str | None = None
 
 
-class QuotaShareRequest(BaseModel):
+class QuotaShareRequest(SolicitudBase):
     """Request body for quota share calculation."""
 
     porcentaje_cesion: float = Field(..., gt=0, le=100)
@@ -55,7 +56,7 @@ class QuotaShareRequest(BaseModel):
     siniestros: list[SiniestroIn]
 
 
-class ExcessOfLossRequest(BaseModel):
+class ExcessOfLossRequest(SolicitudBase):
     """Request body for excess of loss calculation."""
 
     retencion: float = Field(..., gt=0)
@@ -70,7 +71,7 @@ class ExcessOfLossRequest(BaseModel):
     siniestros: list[SiniestroIn]
 
 
-class StopLossRequest(BaseModel):
+class StopLossRequest(SolicitudBase):
     """Request body for stop loss calculation."""
 
     attachment_point: float = Field(..., gt=0, le=200)

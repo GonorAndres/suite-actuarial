@@ -256,10 +256,17 @@ class ExcessOfLoss(ContratoReaseguro):
         # Siniestros retenidos = siniestros totales - recuperación
         siniestros_retenidos = siniestros_totales - recuperacion
 
-        # Resultado neto para cedente:
-        # - Paga: prima de reaseguro + siniestros retenidos
+        # Resultado neto del contrato de reaseguro para la cedente:
         # + Recibe: recuperación
-        # Neto = recuperación - prima_reaseguro - siniestros_retenidos
+        # - Paga:   prima de reaseguro
+        #
+        # Neto = recuperación - prima_reaseguro
+        #
+        # Mide el contrato, no el resultado técnico: los siniestros retenidos
+        # NO se restan aquí, porque la cedente los pagaría igual sin reaseguro.
+        # Ojo: en Quota Share este mismo campo tiene otra semántica, límite ya
+        # inventariado en docs/AUDIT.md (Clase B). El comentario anterior
+        # enunciaba `- siniestros_retenidos`, término que el código nunca aplicó.
         resultado_neto = recuperacion - prima_reaseguro_cobrada
 
         # Construir detalles

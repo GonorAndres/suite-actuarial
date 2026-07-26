@@ -471,6 +471,8 @@ export function ReservasStory() {
     () => ({
       triangle: TRIANGLE,
       origin_years: ORIGIN_YEARS,
+      // TRIANGLE viene acumulado; se declara, no se deduce.
+      tipo_triangulo: "acumulado" as const,
       metodo_promedio: "weighted" as const,
       calcular_tail_factor: false,
       tail_factor: tailPct > 0 ? 1 + tailPct / 100 : null,

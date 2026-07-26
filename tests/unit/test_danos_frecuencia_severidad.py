@@ -15,7 +15,10 @@ from decimal import Decimal
 import numpy as np
 import pytest
 
-from suite_actuarial.danos.frecuencia_severidad import ModeloColectivo
+from suite_actuarial.danos.frecuencia_severidad import (
+    MAX_SINIESTROS_SIMULADOS,
+    ModeloColectivo,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -406,3 +409,47 @@ class TestCasosBorde:
         assert stats["var_99"] >= stats["var_95"]
         assert stats["tvar_99"] >= stats["tvar_95"]
         assert stats["minimo"] >= Decimal("0")
+
+
+class TestLimiteDeMuestreo:
+    """El costo escala con E[N] x n_simulaciones, no con el tamano de la peticion.
+
+    La severidad se muestrea una vez por siniestro, no una vez por simulacion,
+    asi que una frecuencia media alta convierte una peticion pequena en una
+    asignacion de memoria arbitraria. El limite es de defensa, no actuarial.
+    """
+
+    def test_frecuencia_media_desmedida_se_rechaza_sin_asignar(self):
+        """lambda=1e12 pediria ~1e15 muestras: debe fallar rapido y explicando."""
+        modelo = ModeloColectivo(
+            dist_frecuencia="poisson",
+            params_frecuencia={"lambda_": 1e12},
+            dist_severidad="exponencial",
+            params_severidad={"lambda_": 1.0},
+        )
+        with pytest.raises(ValueError, match="por encima del limite"):
+            modelo.simular_perdidas(n_simulaciones=1_000)
+
+    def test_el_limite_se_expresa_en_siniestros_no_en_simulaciones(self):
+        """Pocas simulaciones no bastan para autorizar cualquier frecuencia."""
+        modelo = ModeloColectivo(
+            dist_frecuencia="poisson",
+            params_frecuencia={"lambda_": float(MAX_SINIESTROS_SIMULADOS)},
+            dist_severidad="exponencial",
+            params_severidad={"lambda_": 1.0},
+        )
+        # Una sola simulacion ya alcanza el techo por si misma.
+        with pytest.raises(ValueError, match="por encima del limite"):
+            modelo.simular_perdidas(n_simulaciones=2)
+
+    def test_una_corrida_normal_sigue_pasando(self):
+        """El limite no debe estorbar el uso legitimo: 1e5 sims x frecuencia 5."""
+        modelo = ModeloColectivo(
+            dist_frecuencia="poisson",
+            params_frecuencia={"lambda_": 5.0},
+            dist_severidad="exponencial",
+            params_severidad={"lambda_": 1.0},
+        )
+        perdidas = modelo.simular_perdidas(n_simulaciones=100_000, seed=1)
+        assert len(perdidas) == 100_000
+        assert perdidas.mean() > 0

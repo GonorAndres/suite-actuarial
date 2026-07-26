@@ -42,6 +42,9 @@ class TasasSATResponse(BaseModel):
     tasa_retencion_retiros_ahorro: float = Field(
         ..., description="Retencion ISR sobre retiros de ahorro"
     )
+    tasa_retencion_otros_ingresos: float = Field(
+        ..., description="Retencion ISR sobre otros ingresos gravables"
+    )
     tasa_isr_personas_morales: float = Field(..., description="Tasa ISR personas morales")
     tasa_iva: float = Field(..., description="Tasa IVA general")
     limite_deducciones_pf_umas: int = Field(
@@ -123,6 +126,7 @@ def _config_to_response(config: ConfigAnual) -> ConfigAnualResponse:
                 config.tasas_sat.tasa_retencion_rentas_vitalicias
             ),
             tasa_retencion_retiros_ahorro=float(config.tasas_sat.tasa_retencion_retiros_ahorro),
+            tasa_retencion_otros_ingresos=float(config.tasas_sat.tasa_retencion_otros_ingresos),
             tasa_isr_personas_morales=float(config.tasas_sat.tasa_isr_personas_morales),
             tasa_iva=float(config.tasas_sat.tasa_iva),
             limite_deducciones_pf_umas=config.tasas_sat.limite_deducciones_pf_umas,
@@ -210,6 +214,7 @@ def get_tasas_sat(anio: int) -> TasasSATResponse:
     return TasasSATResponse(
         tasa_retencion_rentas_vitalicias=float(config.tasas_sat.tasa_retencion_rentas_vitalicias),
         tasa_retencion_retiros_ahorro=float(config.tasas_sat.tasa_retencion_retiros_ahorro),
+        tasa_retencion_otros_ingresos=float(config.tasas_sat.tasa_retencion_otros_ingresos),
         tasa_isr_personas_morales=float(config.tasas_sat.tasa_isr_personas_morales),
         tasa_iva=float(config.tasas_sat.tasa_iva),
         limite_deducciones_pf_umas=config.tasas_sat.limite_deducciones_pf_umas,

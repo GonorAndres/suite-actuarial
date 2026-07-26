@@ -16,6 +16,7 @@ from suite_actuarial.core.validators import (
     MetodoPromedio,
     MetodoReserva,
     ResultadoReserva,
+    TipoTriangulo,
 )
 from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.reservas.cola import (
@@ -31,7 +32,7 @@ from suite_actuarial.reservas.diagnosticos import (
 )
 from suite_actuarial.reservas.mack import ResultadoMack, calcular_mack
 from suite_actuarial.reservas.triangulo import (
-    acumular_triangulo,
+    asegurar_acumulado,
     calcular_age_to_age,
     obtener_ultima_diagonal,
     promedio_geometrico,
@@ -60,7 +61,7 @@ class ChainLadder:
         ...     calcular_tail_factor=False
         ... )
         >>> cl = ChainLadder(config)
-        >>> resultado = cl.calcular(triangulo_acumulado)
+        >>> resultado = cl.calcular(triangulo_acumulado, TipoTriangulo.ACUMULADO)
         >>> print(f"Reserva total: ${resultado.reserva_total:,.2f}")
     """
 
@@ -89,7 +90,9 @@ class ChainLadder:
             Lista de factores de desarrollo (uno por período)
         """
         # Calcular factores age-to-age
-        self.factores_age_to_age = calcular_age_to_age(triangulo)
+        self.factores_age_to_age = calcular_age_to_age(
+            triangulo, self.config.permitir_desarrollo_negativo
+        )
 
         factores = []
         n_cols = self.factores_age_to_age.shape[1]
@@ -213,6 +216,14 @@ class ChainLadder:
 
         Reserva = Ultimate - Pagado hasta la fecha
 
+        El piso en cero solo aplica cuando el desarrollo negativo no está
+        permitido. Con desarrollo negativo la reserva de un año puede ser
+        legítimamente negativa -se esperan más recuperaciones que pagos-, y
+        recortarla rompería la identidad `ultimate = pagado + reserva` que
+        `ResultadoReserva` verifica: el total de ultimates no se recorta. Con
+        triángulos crecientes el piso nunca se activa, así que este cambio no
+        altera ningún resultado previo.
+
         Args:
             triangulo_original: Triángulo original con valores conocidos
             ultimates: Valores ultimate calculados
@@ -230,32 +241,34 @@ class ChainLadder:
             # Reserva = Ultimate - Pagado
             reserva = ultimate - pagado
 
-            # No puede ser negativa (mínimo 0)
-            reservas[int(idx)] = max(reserva, Decimal("0"))
+            if not self.config.permitir_desarrollo_negativo:
+                reserva = max(reserva, Decimal("0"))
+            reservas[int(idx)] = reserva
 
         return reservas
 
-    def calcular(self, triangulo: pd.DataFrame) -> ResultadoReserva:
+    def calcular(self, triangulo: pd.DataFrame, tipo: TipoTriangulo) -> ResultadoReserva:
         """
         Ejecuta el método Chain Ladder completo.
 
         Args:
-            triangulo: Triángulo de desarrollo (acumulado o incremental)
+            triangulo: Triángulo de desarrollo
+            tipo: Forma en la que viene el triángulo (acumulada o incremental).
+                Es obligatorio: se declara, no se infiere. Ver
+                `asegurar_acumulado`.
 
         Returns:
             ResultadoReserva con análisis completo
         """
         # Validar triángulo
-        validar_triangulo(triangulo)
+        validar_triangulo(
+            triangulo, permitir_desarrollo_negativo=self.config.permitir_desarrollo_negativo
+        )
 
-        # Asegurar que sea acumulado
-        self.triangulo_original = triangulo.copy()
-
-        # Si es incremental, acumular
-        # (asumimos acumulado si los valores son monótonos)
-        primer_row = triangulo.iloc[0].dropna()
-        if not primer_row.is_monotonic_increasing:
-            self.triangulo_original = acumular_triangulo(triangulo)
+        # Los factores de desarrollo se calculan sobre valores acumulados
+        self.triangulo_original = asegurar_acumulado(
+            triangulo, tipo, self.config.permitir_desarrollo_negativo
+        )
 
         # 1. Calcular factores de desarrollo
         self.factores_desarrollo = self.calcular_factores_desarrollo(self.triangulo_original)
@@ -327,6 +340,7 @@ class ChainLadder:
         # 7. Construir resultado
         resultado = ResultadoReserva(
             metodo=MetodoReserva.CHAIN_LADDER,
+            permite_desarrollo_negativo=self.config.permitir_desarrollo_negativo,
             reserva_total=reserva_total,
             ultimate_total=ultimate_total,
             pagado_total=pagado_total,
@@ -369,15 +383,18 @@ class ChainLadder:
         """
         return self.factores_age_to_age
 
-    def calcular_banda_dispersion(self, triangulo: pd.DataFrame) -> BandaDispersion:
+    def calcular_banda_dispersion(
+        self, triangulo: pd.DataFrame, tipo: TipoTriangulo
+    ) -> BandaDispersion:
         """Devuelve la dispersion agrupada de los link ratios tras el calculo.
 
         No es Mack (1993): ver `diagnosticos.banda_dispersion_link_ratios`.
         """
-        resultado = self.calcular(triangulo)
-        return banda_dispersion_link_ratios(triangulo, resultado.reserva_total)
+        resultado = self.calcular(triangulo, tipo)
+        acumulado = asegurar_acumulado(triangulo, tipo, self.config.permitir_desarrollo_negativo)
+        return banda_dispersion_link_ratios(acumulado, resultado.reserva_total)
 
-    def calcular_mack(self, triangulo: pd.DataFrame) -> ResultadoMack:
+    def calcular_mack(self, triangulo: pd.DataFrame, tipo: TipoTriangulo) -> ResultadoMack:
         """Error de prediccion del Chain Ladder segun Mack (1993).
 
         El modelo de Mack exige factores **ponderados por volumen**: son los
@@ -387,7 +404,8 @@ class ChainLadder:
         devuelve `calcular()`, y se avisa.
 
         Args:
-            triangulo: Triangulo acumulado
+            triangulo: Triangulo de desarrollo
+            tipo: Forma en la que viene el triangulo (acumulada o incremental)
 
         Returns:
             ResultadoMack con reserva ponderada, error estandar y detalle por ano
@@ -401,14 +419,19 @@ class ChainLadder:
                 ExperimentalModelWarning,
                 stacklevel=2,
             )
-        return calcular_mack(triangulo)
+        return calcular_mack(
+            asegurar_acumulado(triangulo, tipo, self.config.permitir_desarrollo_negativo),
+            permitir_desarrollo_negativo=self.config.permitir_desarrollo_negativo,
+        )
 
-    def reporte_validacion(self, triangulo: pd.DataFrame) -> ReserveValidationReport:
+    def reporte_validacion(
+        self, triangulo: pd.DataFrame, tipo: TipoTriangulo
+    ) -> ReserveValidationReport:
         """Devuelve diagnosticos de calidad y supuestos materiales."""
-        resultado = self.calcular(triangulo)
+        resultado = self.calcular(triangulo, tipo)
         tail = self.factores_desarrollo[-1] if self.factores_desarrollo else None
         return validar_reserva(
-            triangulo,
+            asegurar_acumulado(triangulo, tipo, self.config.permitir_desarrollo_negativo),
             resultado.reserva_total,
             metodo=MetodoReserva.CHAIN_LADDER.value,
             tail_factor=tail,

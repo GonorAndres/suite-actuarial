@@ -25,6 +25,7 @@ from suite_actuarial.core.validators import (
     Sexo,
     Siniestro,
     TipoContrato,
+    TipoTriangulo,
 )
 from suite_actuarial.danos.auto import SeguroAuto
 from suite_actuarial.danos.incendio import SeguroIncendio
@@ -325,7 +326,7 @@ class TestReservasBoundary:
         df = self._make_triangle(data, [2022, 2023])
         config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
         cl = ChainLadder(config)
-        resultado = cl.calcular(df)
+        resultado = cl.calcular(df, TipoTriangulo.ACUMULADO)
         assert resultado.reserva_total >= 0
         assert resultado.ultimate_total > 0
         assert len(resultado.factores_desarrollo) >= 1
@@ -340,7 +341,7 @@ class TestReservasBoundary:
         df = self._make_triangle(data, [2021, 2022, 2023])
         config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
         cl = ChainLadder(config)
-        resultado = cl.calcular(df)
+        resultado = cl.calcular(df, TipoTriangulo.ACUMULADO)
         # With no development, all factors should be 1.0
         for factor in resultado.factores_desarrollo:
             assert abs(factor - Decimal("1.0")) < Decimal("0.01")
@@ -358,7 +359,7 @@ class TestReservasBoundary:
         cl = ChainLadder(config)
         # Single row with single column: no development data -> factors empty
         # but it still has a valid triangle structure (1 row, 1 col)
-        resultado = cl.calcular(df)
+        resultado = cl.calcular(df, TipoTriangulo.ACUMULADO)
         # With only one development period, no age-to-age factors exist
         # so factores_desarrollo should be empty or trivial
         assert resultado.reserva_total == Decimal("0")
@@ -376,7 +377,7 @@ class TestReservasBoundary:
         df = self._make_triangle(data, [2019, 2020, 2021, 2022, 2023])
         config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
         cl = ChainLadder(config)
-        resultado = cl.calcular(df)
+        resultado = cl.calcular(df, TipoTriangulo.ACUMULADO)
         assert resultado.reserva_total > 0
         assert resultado.ultimate_total > 0
         # Factors should be the same regardless of scale
@@ -392,7 +393,7 @@ class TestReservasBoundary:
         df = df.where(df.notna())
         config = ConfiguracionChainLadder(metodo_promedio=MetodoPromedio.SIMPLE)
         cl = ChainLadder(config)
-        resultado = cl.calcular(df)
+        resultado = cl.calcular(df, TipoTriangulo.ACUMULADO)
         assert resultado.reserva_total > 0
         assert len(resultado.reservas_por_anio) == 5
 

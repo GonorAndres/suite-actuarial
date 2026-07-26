@@ -159,12 +159,25 @@ def calcular_mack(
     triangulo: pd.DataFrame,
     *,
     confidence_z: Decimal = Decimal("1.96"),
+    permitir_desarrollo_negativo: bool = False,
 ) -> ResultadoMack:
     """Calcula la reserva Chain Ladder y su error de prediccion segun Mack (1993).
 
     Args:
         triangulo: Triangulo acumulado de siniestros
         confidence_z: Multiplicador para `reserve_range` (no es una cobertura)
+        permitir_desarrollo_negativo: Admite celdas acumuladas negativas
+            (recuperaciones). Debe coincidir con lo declarado en la
+            configuracion del metodo: sin este parametro la validacion de aqui
+            rechazaba un triangulo que `ChainLadder.calcular` si aceptaba, y el
+            mensaje pedia activar una bandera que esta funcion no recibia.
+
+            Advertencia: el estimador se mantiene finito y con error estandar
+            no negativo bajo desarrollo negativo moderado (comprobado hasta
+            f_k del orden de 1e-3), pero `sigma_k^2` se estima solo sobre las
+            filas con `C(i,k) > 0`; las celdas acumuladas no positivas quedan
+            fuera de esa estimacion sin aviso, asi que el error estandar puede
+            apoyarse en menos observaciones de las que aparenta.
 
     Returns:
         ResultadoMack con factores, sigmas, reservas y errores por ano y total
@@ -173,7 +186,7 @@ def calcular_mack(
         ValueError: si el triangulo esta vacio o tiene menos de dos periodos de
             desarrollo, en cuyo caso no hay ningun factor que estimar
     """
-    validar_triangulo(triangulo)
+    validar_triangulo(triangulo, permitir_desarrollo_negativo=permitir_desarrollo_negativo)
 
     if triangulo.shape[1] < 2:
         raise ValueError("Mack requiere al menos dos periodos de desarrollo")

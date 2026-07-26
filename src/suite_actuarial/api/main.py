@@ -1,11 +1,14 @@
 """Application server for the suite_actuarial open laboratory."""
 
+import math
 import os
 import secrets
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -86,6 +89,30 @@ async def require_proxy_secret(
             # 404 rather than 403: a walled deployment should not confirm it exists.
             return JSONResponse({"detail": "Not Found"}, status_code=404)
     return await call_next(request)
+
+
+def _json_seguro(valor: object) -> object:
+    """Reemplaza los flotantes no finitos por su forma en texto.
+
+    `json.dumps` rechaza `inf` y `nan`. FastAPI devuelve el valor recibido
+    dentro del cuerpo del error de validacion, asi que una peticion con
+    `Infinity` hacia fallar al *serializador del error*: el rechazo correcto
+    (422) se convertia en un 500 sin cuerpo util.
+    """
+    if isinstance(valor, float) and not math.isfinite(valor):
+        return str(valor)
+    if isinstance(valor, dict):
+        return {k: _json_seguro(v) for k, v in valor.items()}
+    if isinstance(valor, (list, tuple)):
+        return [_json_seguro(v) for v in valor]
+    return valor
+
+
+@app.exception_handler(RequestValidationError)
+async def validacion_no_finita(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """Devuelve 422 con detalle utilizable aunque la entrada traiga inf o nan."""
+    detalle = jsonable_encoder(exc.errors(), custom_encoder={float: _json_seguro})
+    return JSONResponse({"detail": _json_seguro(detalle)}, status_code=422)
 
 
 app.include_router(config.router, prefix="/api/v1")
