@@ -10,6 +10,8 @@ import math
 from decimal import Decimal
 from typing import Any
 
+from suite_actuarial.config.loader import config_vigente
+from suite_actuarial.config.schema import FactoresCNSF
 from suite_actuarial.core.validators import (
     ConfiguracionRCSDanos,
     ConfiguracionRCSInversion,
@@ -39,12 +41,11 @@ class AgregadorRCS:
     - Vida y Daños: correlación 0 (riesgos independientes)
     - Vida e Inversión: correlación 0.25 (inversiones respaldan reservas vida)
     - Daños e Inversión: correlación 0.25 (inversiones respaldan reservas daños)
-    """
 
-    # Matriz de correlación
-    CORRELACION_VIDA_DANOS = Decimal("0.00")
-    CORRELACION_VIDA_INVERSION = Decimal("0.25")
-    CORRELACION_DANOS_INVERSION = Decimal("0.25")
+    Los valores mostrados son los del perfil regulatorio vigente y son
+    ilustrativos: ningun archivo del repositorio cita una fuente CUSF/CNSF para
+    ellos. Ver docs/AUDIT.md.
+    """
 
     def __init__(
         self,
@@ -52,20 +53,27 @@ class AgregadorRCS:
         config_danos: ConfiguracionRCSDanos | None = None,
         config_inversion: ConfiguracionRCSInversion | None = None,
         capital_minimo_pagado: Decimal = Decimal("0"),
+        factores: FactoresCNSF | None = None,
     ):
         """
         Inicializa el agregador de RCS.
+
+        La matriz de correlación proviene del perfil regulatorio anual
+        (`config/config_<anio>.py`), no de constantes de esta clase.
 
         Args:
             config_vida: Configuración para RCS vida (opcional)
             config_danos: Configuración para RCS daños (opcional)
             config_inversion: Configuración para RCS inversión (opcional)
             capital_minimo_pagado: Capital social mínimo pagado de la aseguradora
+            factores: Factores CNSF a aplicar. Si se omite, se toman del perfil
+                regulatorio vigente a la fecha de hoy.
         """
         self.config_vida = config_vida
         self.config_danos = config_danos
         self.config_inversion = config_inversion
         self.capital_minimo_pagado = capital_minimo_pagado
+        self.factores = factores if factores is not None else config_vigente().factores_cnsf
 
         # Calculadores
         self.rcs_vida: RCSVida | None = None
@@ -78,7 +86,7 @@ class AgregadorRCS:
         if config_danos:
             self.rcs_danos = RCSDanos(config_danos)
         if config_inversion:
-            self.rcs_inversion = RCSInversion(config_inversion)
+            self.rcs_inversion = RCSInversion(config_inversion, factores=self.factores)
 
     def calcular_rcs_completo(self) -> ResultadoRCS:
         """
@@ -86,7 +94,19 @@ class AgregadorRCS:
 
         Returns:
             ResultadoRCS con todos los componentes y agregación final
+
+        Raises:
+            ValueError: Si no se configuró ningún riesgo. Sin ninguno el RCS
+                agregado seria cero y el ratio de solvencia reportaria
+                cumplimiento sin haber medido nada.
         """
+        if self.rcs_vida is None and self.rcs_danos is None and self.rcs_inversion is None:
+            raise ValueError(
+                "Configura al menos un riesgo (vida, danos o inversion): sin "
+                "ninguno el RCS agregado seria cero y el ratio de solvencia no "
+                "significaria nada."
+            )
+
         # Calcular RCS individuales
         rcs_vida_total = Decimal("0")
         desglose_vida: dict[str, Decimal] = {}
@@ -186,9 +206,9 @@ class AgregadorRCS:
         termino_inversion = rcs_inversion**2
 
         # Términos de correlación
-        corr_vida_danos = 2 * self.CORRELACION_VIDA_DANOS * rcs_vida * rcs_danos
-        corr_vida_inv = 2 * self.CORRELACION_VIDA_INVERSION * rcs_vida * rcs_inversion
-        corr_danos_inv = 2 * self.CORRELACION_DANOS_INVERSION * rcs_danos * rcs_inversion
+        corr_vida_danos = 2 * self.factores.correlacion_vida_danos * rcs_vida * rcs_danos
+        corr_vida_inv = 2 * self.factores.correlacion_vida_inversion * rcs_vida * rcs_inversion
+        corr_danos_inv = 2 * self.factores.correlacion_danos_inversion * rcs_danos * rcs_inversion
 
         # Suma total
         suma_total = (
@@ -213,9 +233,9 @@ class AgregadorRCS:
             Diccionario con correlaciones
         """
         return {
-            "vida_danos": float(self.CORRELACION_VIDA_DANOS),
-            "vida_inversion": float(self.CORRELACION_VIDA_INVERSION),
-            "danos_inversion": float(self.CORRELACION_DANOS_INVERSION),
+            "vida_danos": float(self.factores.correlacion_vida_danos),
+            "vida_inversion": float(self.factores.correlacion_vida_inversion),
+            "danos_inversion": float(self.factores.correlacion_danos_inversion),
         }
 
     def obtener_composicion_rcs(self, resultado: ResultadoRCS) -> dict[str, Any]:

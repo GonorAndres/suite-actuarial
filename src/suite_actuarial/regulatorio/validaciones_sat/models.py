@@ -93,6 +93,14 @@ class ResultadoRetencion(BaseModel):
     monto_retencion: Decimal = Field(..., ge=0)
     monto_neto_pagar: Decimal = Field(..., ge=0)
     requiere_retencion: bool
+    regla_aplicada: str | None = Field(
+        default=None,
+        description=(
+            "Rama del calculo que determino el resultado. Describe que condicion "
+            "se cumplio, no su fundamento legal: las citas de articulos de este "
+            "modulo estan sin verificar (ver docs/AUDIT.md)."
+        ),
+    )
 
 
 class ResultadoIVA(BaseModel):

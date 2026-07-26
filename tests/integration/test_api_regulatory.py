@@ -122,6 +122,34 @@ class TestRCS:
         assert response.status_code == 422
 
 
+class TestRCSProcedencia:
+    """El RCS debe viajar con la advertencia de su alcance y su procedencia."""
+
+    def test_respuesta_incluye_el_aviso_y_el_perfil(self, api_client):
+        """El aviso existia solo como UserWarning de Python; nunca cruzaba HTTP."""
+        from suite_actuarial.config.loader import config_vigente
+
+        response = api_client.post("/api/v1/regulatory/rcs", json=VALID_RCS_PAYLOAD)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "aproximaciones pedagogicas" in data["disclaimer"]
+        assert data["anio_regulatorio"] == config_vigente().anio
+        assert data["validation_tier"]
+        assert set(data["correlaciones_aplicadas"]) == {
+            "vida_danos",
+            "vida_inversion",
+            "danos_inversion",
+        }
+
+    def test_sin_ningun_riesgo_configurado_se_rechaza(self, api_client):
+        """Antes devolvia rcs_total=0 con cumple_regulacion=True."""
+        payload = {"capital_minimo_pagado": 100_000_000}
+        response = api_client.post("/api/v1/regulatory/rcs", json=payload)
+
+        assert response.status_code == 400
+
+
 class TestSATDeductibility:
     def test_success(self, api_client):
         payload = {
@@ -145,6 +173,42 @@ class TestSATDeductibility:
         }
         response = api_client.post("/api/v1/regulatory/sat/deductibility", json=payload)
         assert response.status_code == 422
+
+    def test_uma_omitida_toma_la_del_perfil_vigente(self, api_client):
+        """Sin `uma_anual` el endpoint usa el perfil versionado, no una constante.
+
+        El valor esperado se lee del propio perfil regulatorio, que es la unica
+        fuente de verdad del año; antes el router llevaba un literal fijo que no
+        correspondia a ningun año publicado.
+        """
+        from suite_actuarial.config.loader import config_vigente
+
+        perfil = config_vigente()
+        payload = {
+            "tipo_seguro": "pensiones",
+            "monto_prima": 50_000,
+            "es_persona_fisica": True,
+        }
+        response = api_client.post("/api/v1/regulatory/sat/deductibility", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["uma_anual_aplicada"] == pytest.approx(float(perfil.uma.uma_anual))
+        assert data["anio_regulatorio"] == perfil.anio
+
+    def test_estado_indeterminado_se_expone(self, api_client):
+        """Faltando insumos, la respuesta lo dice en vez de fingir certeza."""
+        payload = {
+            "tipo_seguro": "gastos_medicos",
+            "monto_prima": 50_000,
+            "es_persona_fisica": True,
+        }
+        response = api_client.post("/api/v1/regulatory/sat/deductibility", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["estado"] == "indeterminate"
+        assert "metodo_pago" in data["factores_faltantes"]
 
 
 class TestSATWithholding:
@@ -171,3 +235,30 @@ class TestSATWithholding:
         }
         response = api_client.post("/api/v1/regulatory/sat/withholding", json=payload)
         assert response.status_code == 422
+
+    def test_renta_vitalicia_y_retiro_a_la_vez_se_rechaza(self, api_client):
+        """Un pago no puede ser las dos cosas; antes devolvia 20% en silencio."""
+        payload = {
+            "tipo_seguro": "vida",
+            "monto_pago": 500_000,
+            "monto_gravable": 350_000,
+            "es_renta_vitalicia": True,
+            "es_retiro_ahorro": True,
+        }
+        response = api_client.post("/api/v1/regulatory/sat/withholding", json=payload)
+
+        assert response.status_code == 400
+
+    def test_respuesta_declara_la_regla_y_su_limite(self, api_client):
+        payload = {
+            "tipo_seguro": "vida",
+            "monto_pago": 500_000,
+            "monto_gravable": 350_000,
+            "es_retiro_ahorro": True,
+        }
+        response = api_client.post("/api/v1/regulatory/sat/withholding", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["regla_aplicada"]
+        assert "no estan verificadas" in data["disclaimer"]

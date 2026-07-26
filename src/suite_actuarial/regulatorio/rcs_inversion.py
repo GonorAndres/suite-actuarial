@@ -8,6 +8,8 @@ para riesgos de inversión conforme a la normativa de la CNSF.
 import warnings
 from decimal import Decimal
 
+from suite_actuarial.config.loader import config_vigente
+from suite_actuarial.config.schema import FactoresCNSF
 from suite_actuarial.core.validators import ConfiguracionRCSInversion
 from suite_actuarial.core.warnings import ExperimentalModelWarning
 
@@ -31,33 +33,29 @@ class RCSInversion:
     carteras de inversión para respaldar sus pasivos.
     """
 
-    # Shocks de mercado según tipo de activo (basados en Solvencia II)
-    SHOCK_ACCIONES = Decimal("0.35")  # 35% caída
-    SHOCK_BONOS_GUBERNAMENTALES = Decimal("0.05")  # 5% caída
-    SHOCK_BONOS_CORPORATIVOS = Decimal("0.15")  # 15% caída base
-    SHOCK_INMUEBLES = Decimal("0.25")  # 25% caída
+    # Shock de credito aplicado cuando la calificacion no esta en la tabla.
+    SHOCK_CREDITO_NO_RECONOCIDO = Decimal("0.100")
 
-    # Shocks de crédito según calificación
-    SHOCKS_CREDITO = {
-        "AAA": Decimal("0.002"),  # 0.2%
-        "AA": Decimal("0.005"),  # 0.5%
-        "A": Decimal("0.010"),  # 1.0%
-        "BBB": Decimal("0.020"),  # 2.0%
-        "BB": Decimal("0.050"),  # 5.0%
-        "B": Decimal("0.100"),  # 10.0%
-        "CCC": Decimal("0.200"),  # 20.0%
-        "CC": Decimal("0.350"),  # 35.0%
-        "C": Decimal("0.500"),  # 50.0%
-    }
-
-    def __init__(self, config: ConfiguracionRCSInversion):
+    def __init__(
+        self,
+        config: ConfiguracionRCSInversion,
+        factores: FactoresCNSF | None = None,
+    ):
         """
         Inicializa el calculador de RCS inversión.
 
+        Los shocks de mercado y crédito provienen del perfil regulatorio anual
+        (`config/config_<anio>.py`), no de constantes de esta clase: mantenerlos
+        aquí duplicaba las mismas cifras en dos lugares que podían divergir en
+        silencio.
+
         Args:
             config: Configuración con cartera de inversiones
+            factores: Factores CNSF a aplicar. Si se omite, se toman del perfil
+                regulatorio vigente a la fecha de hoy.
         """
         self.config = config
+        self.factores = factores if factores is not None else config_vigente().factores_cnsf
         warnings.warn(
             "El RCS de inversion implementado es un escenario simplificado experimental.",
             ExperimentalModelWarning,
@@ -76,7 +74,7 @@ class RCSInversion:
         Returns:
             RCS de mercado acciones
         """
-        return (self.config.valor_acciones * self.SHOCK_ACCIONES).quantize(Decimal("0.01"))
+        return (self.config.valor_acciones * self.factores.shock_acciones).quantize(Decimal("0.01"))
 
     def calcular_rcs_mercado_bonos_gubernamentales(self) -> Decimal:
         """
@@ -104,7 +102,7 @@ class RCSInversion:
         ajuste_duracion = max(ajuste_duracion, Decimal("0.5"))
         ajuste_duracion = min(ajuste_duracion, Decimal("2.5"))
 
-        shock_ajustado = self.SHOCK_BONOS_GUBERNAMENTALES * ajuste_duracion
+        shock_ajustado = self.factores.shock_bonos_gubernamentales * ajuste_duracion
 
         return (valor * shock_ajustado).quantize(Decimal("0.01"))
 
@@ -142,7 +140,7 @@ class RCSInversion:
         else:
             ajuste_calif = Decimal("2.0")
 
-        shock_ajustado = self.SHOCK_BONOS_CORPORATIVOS * ajuste_duracion * ajuste_calif
+        shock_ajustado = self.factores.shock_bonos_corporativos * ajuste_duracion * ajuste_calif
 
         return (valor * shock_ajustado).quantize(Decimal("0.01"))
 
@@ -161,7 +159,9 @@ class RCSInversion:
         Returns:
             RCS de mercado inmuebles
         """
-        return (self.config.valor_inmuebles * self.SHOCK_INMUEBLES).quantize(Decimal("0.01"))
+        return (self.config.valor_inmuebles * self.factores.shock_inmuebles).quantize(
+            Decimal("0.01")
+        )
 
     def calcular_rcs_credito(self) -> Decimal:
         """
@@ -182,9 +182,9 @@ class RCSInversion:
         calificacion = self.config.calificacion_promedio_bonos
 
         # Obtener shock de crédito según calificación
-        shock_credito = self.SHOCKS_CREDITO.get(
+        shock_credito = self.factores.shocks_credito.get(
             calificacion,
-            Decimal("0.100"),  # Default 10%
+            self.SHOCK_CREDITO_NO_RECONOCIDO,
         )
 
         return (valor * shock_credito).quantize(Decimal("0.01"))
@@ -304,7 +304,7 @@ class RCSInversion:
         ajuste_duracion = max(ajuste_duracion, Decimal("0.5"))
         ajuste_duracion = min(ajuste_duracion, Decimal("2.5"))
 
-        shock_bonos_gub = self.SHOCK_BONOS_GUBERNAMENTALES * ajuste_duracion
+        shock_bonos_gub = self.factores.shock_bonos_gubernamentales * ajuste_duracion
 
         if calificacion in ["AAA", "AA"]:
             ajuste_calif = Decimal("1.0")
@@ -315,16 +315,16 @@ class RCSInversion:
         else:
             ajuste_calif = Decimal("2.0")
 
-        shock_bonos_corp = self.SHOCK_BONOS_CORPORATIVOS * ajuste_duracion * ajuste_calif
+        shock_bonos_corp = self.factores.shock_bonos_corporativos * ajuste_duracion * ajuste_calif
 
         return {
-            "shock_acciones": self.SHOCK_ACCIONES.quantize(Decimal("0.01")),
+            "shock_acciones": self.factores.shock_acciones.quantize(Decimal("0.01")),
             "shock_bonos_gubernamentales": shock_bonos_gub.quantize(Decimal("0.01")),
             "shock_bonos_corporativos": shock_bonos_corp.quantize(Decimal("0.01")),
-            "shock_inmuebles": self.SHOCK_INMUEBLES.quantize(Decimal("0.01")),
-            "shock_credito": self.SHOCKS_CREDITO.get(calificacion, Decimal("0.100")).quantize(
-                Decimal("0.01")
-            ),
+            "shock_inmuebles": self.factores.shock_inmuebles.quantize(Decimal("0.01")),
+            "shock_credito": self.factores.shocks_credito.get(
+                calificacion, self.SHOCK_CREDITO_NO_RECONOCIDO
+            ).quantize(Decimal("0.01")),
             "duracion_bonos": duracion.quantize(Decimal("0.01")),
             "ajuste_duracion": ajuste_duracion.quantize(Decimal("0.01")),
             "calificacion": calificacion,

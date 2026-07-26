@@ -9,8 +9,10 @@ from decimal import Decimal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from suite_actuarial.config.loader import config_vigente
 from suite_actuarial.core.models.regulatorio import ResultadoRCS
 from suite_actuarial.regulatorio.agregador_rcs import AgregadorRCS
+from suite_actuarial.regulatorio.rcs_vida import DISCLAIMER as RCS_DISCLAIMER
 from suite_actuarial.regulatorio.validaciones_sat.models import TipoSeguroFiscal
 from suite_actuarial.regulatorio.validaciones_sat.validador_primas import (
     ValidadorPrimasDeducibles,
@@ -88,6 +90,22 @@ class RCSResponse(BaseModel):
     )
     cumple_regulacion: bool
     desglose_por_riesgo: dict[str, float]
+    anio_regulatorio: int = Field(
+        ...,
+        description="Year of the regulatory profile whose CNSF factors were applied",
+    )
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the regulatory profile behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
+    correlaciones_aplicadas: dict[str, float] = Field(
+        ...,
+        description="Correlation matrix actually used in the aggregation",
+    )
 
 
 # ── SAT request / response models ────────────────────────────────────────────
@@ -102,10 +120,26 @@ class DeductibilityRequest(BaseModel):
     )
     monto_prima: float = Field(..., gt=0)
     es_persona_fisica: bool = Field(default=True)
-    uma_anual: float = Field(
-        default=39960.60,
+    uma_anual: float | None = Field(
+        default=None,
         gt=0,
-        description="Annual UMA value (UMA diaria x 365)",
+        description=(
+            "Annual UMA value (UMA diaria x 365). Omit to use the UMA of the "
+            "regulatory profile in force today."
+        ),
+    )
+    ingreso_anual: float | None = Field(
+        default=None,
+        gt=0,
+        description="Taxpayer's annual income; required to apply income-based caps",
+    )
+    metodo_pago: str | None = Field(
+        default=None,
+        description="Payment method; deductibility requires a traceable one",
+    )
+    relacion_beneficiario: str | None = Field(
+        default=None,
+        description="Beneficiary's relationship to the policyholder (persona moral)",
     )
 
 
@@ -118,6 +152,22 @@ class DeductibilityResponse(BaseModel):
     porcentaje_deducible: float
     limite_aplicado: str | None = None
     fundamento_legal: str
+    estado: str = Field(
+        ...,
+        description="eligible | not_eligible | indeterminate",
+    )
+    factores_faltantes: list[str] = Field(
+        default_factory=list,
+        description="Inputs missing to reach a determinate answer",
+    )
+    uma_anual_aplicada: float = Field(
+        ...,
+        description="UMA value actually used in the calculation",
+    )
+    anio_regulatorio: int | None = Field(
+        default=None,
+        description="Regulatory profile year the UMA came from; null if caller supplied it",
+    )
 
 
 class WithholdingRequest(BaseModel):
@@ -131,7 +181,13 @@ class WithholdingRequest(BaseModel):
     monto_gravable: float = Field(..., ge=0)
     es_renta_vitalicia: bool = Field(default=False)
     es_retiro_ahorro: bool = Field(default=False)
-    requiere_retencion_forzosa: bool = Field(default=False)
+    requiere_retencion_forzosa: bool = Field(
+        default=False,
+        description=(
+            "Force withholding. Only observable for pensiones without renta "
+            "vitalicia: the exemption branches return first for every other type."
+        ),
+    )
 
 
 class WithholdingResponse(BaseModel):
@@ -143,12 +199,28 @@ class WithholdingResponse(BaseModel):
     tasa_retencion: float
     monto_retencion: float
     monto_neto_pagar: float
+    regla_aplicada: str | None = Field(
+        default=None,
+        description="Which branch of the calculation produced this result",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit; the withholding rates here are unverified",
+    )
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
-def _rcs_resultado_to_response(resultado: ResultadoRCS) -> RCSResponse:
+RETENCIONES_DISCLAIMER = (
+    "AVISO: las tasas de retencion y las citas de articulos de este modulo no "
+    "estan verificadas contra el texto vigente de la LISR. Son ilustrativas. "
+    "Ver docs/AUDIT.md."
+)
+
+
+def _rcs_resultado_to_response(resultado: ResultadoRCS, agregador: AgregadorRCS) -> RCSResponse:
+    perfil = config_vigente()
     return RCSResponse(
         rcs_mortalidad=float(resultado.rcs_mortalidad),
         rcs_longevidad=float(resultado.rcs_longevidad),
@@ -168,6 +240,14 @@ def _rcs_resultado_to_response(resultado: ResultadoRCS) -> RCSResponse:
         ratio_solvencia=float(resultado.ratio_solvencia),
         cumple_regulacion=resultado.cumple_regulacion,
         desglose_por_riesgo={k: float(v) for k, v in resultado.desglose_por_riesgo.items()},
+        anio_regulatorio=perfil.anio,
+        validation_tier=str(perfil.validation_tier),
+        disclaimer=RCS_DISCLAIMER,
+        correlaciones_aplicadas={
+            "vida_danos": float(agregador.factores.correlacion_vida_danos),
+            "vida_inversion": float(agregador.factores.correlacion_vida_inversion),
+            "danos_inversion": float(agregador.factores.correlacion_danos_inversion),
+        },
     )
 
 
@@ -231,7 +311,7 @@ def calculate_rcs(req: RCSRequest) -> RCSResponse:
         )
 
         resultado = agregador.calcular_rcs_completo()
-        return _rcs_resultado_to_response(resultado)
+        return _rcs_resultado_to_response(resultado, agregador)
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -245,11 +325,24 @@ def check_deductibility(req: DeductibilityRequest) -> DeductibilityResponse:
     (persona fisica or moral).
     """
     try:
-        validador = ValidadorPrimasDeducibles(uma_anual=Decimal(str(req.uma_anual)))
+        if req.uma_anual is not None:
+            uma_anual = Decimal(str(req.uma_anual))
+            anio_regulatorio = None
+        else:
+            perfil = config_vigente()
+            uma_anual = perfil.uma.uma_anual
+            anio_regulatorio = perfil.anio
+
+        validador = ValidadorPrimasDeducibles(uma_anual=uma_anual)
         resultado = validador.validar_deducibilidad(
             tipo_seguro=TipoSeguroFiscal(req.tipo_seguro),
             monto_prima=Decimal(str(req.monto_prima)),
             es_persona_fisica=req.es_persona_fisica,
+            ingreso_anual=(
+                Decimal(str(req.ingreso_anual)) if req.ingreso_anual is not None else None
+            ),
+            metodo_pago=req.metodo_pago,
+            relacion_beneficiario=req.relacion_beneficiario,
         )
         return DeductibilityResponse(
             es_deducible=resultado.es_deducible,
@@ -258,6 +351,10 @@ def check_deductibility(req: DeductibilityRequest) -> DeductibilityResponse:
             porcentaje_deducible=float(resultado.porcentaje_deducible),
             limite_aplicado=resultado.limite_aplicado,
             fundamento_legal=resultado.fundamento_legal,
+            estado=str(resultado.estado),
+            factores_faltantes=resultado.factores_faltantes,
+            uma_anual_aplicada=float(uma_anual),
+            anio_regulatorio=anio_regulatorio,
         )
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -288,6 +385,8 @@ def calculate_withholding(req: WithholdingRequest) -> WithholdingResponse:
             tasa_retencion=float(resultado.tasa_retencion),
             monto_retencion=float(resultado.monto_retencion),
             monto_neto_pagar=float(resultado.monto_neto_pagar),
+            regla_aplicada=resultado.regla_aplicada,
+            disclaimer=RETENCIONES_DISCLAIMER,
         )
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

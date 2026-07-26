@@ -373,13 +373,20 @@ export interface RCSResponse {
   ratio_solvencia: number;
   cumple_regulacion: boolean;
   desglose_por_riesgo: Record<string, number>;
+  anio_regulatorio: number;
+  validation_tier: string;
+  disclaimer: string;
+  correlaciones_aplicadas: Record<string, number>;
 }
 
 export interface DeductibilityRequest {
   tipo_seguro: string;
   monto_prima: number;
   es_persona_fisica?: boolean;
-  uma_anual?: number;
+  uma_anual?: number | null;
+  ingreso_anual?: number | null;
+  metodo_pago?: string | null;
+  relacion_beneficiario?: string | null;
 }
 
 export interface DeductibilityResponse {
@@ -389,6 +396,10 @@ export interface DeductibilityResponse {
   porcentaje_deducible: number;
   limite_aplicado: string | null;
   fundamento_legal: string;
+  estado: string;
+  factores_faltantes: string[];
+  uma_anual_aplicada: number;
+  anio_regulatorio: number | null;
 }
 
 export interface WithholdingRequest {
@@ -407,6 +418,8 @@ export interface WithholdingResponse {
   tasa_retencion: number;
   monto_retencion: number;
   monto_neto_pagar: number;
+  regla_aplicada: string | null;
+  disclaimer: string;
 }
 
 // ── Reinsurance ─────────────────────────────────────────────────────────────

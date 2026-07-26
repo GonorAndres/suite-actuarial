@@ -13,6 +13,7 @@ import {
   Table,
   Badge,
   MetricCard,
+  AvisoLimitacion,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -65,6 +66,8 @@ interface DeducibilidadFormState {
   tipo_seguro: string;
   monto_prima: number;
   es_persona_fisica: boolean;
+  ingreso_anual: number;
+  metodo_pago: string;
 }
 
 interface RetencionesFormState {
@@ -101,6 +104,8 @@ const DEFAULT_DED: DeducibilidadFormState = {
   tipo_seguro: "vida",
   monto_prima: 35000,
   es_persona_fisica: true,
+  ingreso_anual: 0,
+  metodo_pago: "",
 };
 
 const DEFAULT_RET: RetencionesFormState = {
@@ -172,6 +177,17 @@ function RCSResultCard({
         </div>
       </div>
 
+      <AvisoLimitacion titulo={t("reg_aviso_alcance")}>
+        <p>{t("reg_aviso_rcs")}</p>
+        <p className="text-navy/70">
+          {t("reg_perfil_regulatorio")}: {result.anio_regulatorio} (
+          {result.validation_tier}) &middot; {t("reg_correlaciones_aplicadas")}:{" "}
+          {Object.entries(result.correlaciones_aplicadas)
+            .map(([par, rho]) => `${par} ${rho}`)
+            .join(", ")}
+        </p>
+      </AvisoLimitacion>
+
       {/* RCS breakdown */}
       <Card title={t("reg_desglose_rcs")}>
         <Table
@@ -221,7 +237,19 @@ function DeductibilityResultCard({
     ],
     [t("reg_limite_aplicado"), result.limite_aplicado ?? "-"],
     [t("reg_fundamento_legal"), result.fundamento_legal],
+    [
+      t("reg_uma_aplicada"),
+      result.anio_regulatorio
+        ? `${formatCurrency(result.uma_anual_aplicada)} (${result.anio_regulatorio})`
+        : formatCurrency(result.uma_anual_aplicada),
+    ],
   ];
+
+  const estadoLabel: Record<string, TranslationKey> = {
+    eligible: "reg_estado_eligible",
+    not_eligible: "reg_estado_not_eligible",
+    indeterminate: "reg_estado_indeterminate",
+  };
 
   const csvData = {
     es_deducible: result.es_deducible,
@@ -230,14 +258,26 @@ function DeductibilityResultCard({
     porcentaje_deducible: result.porcentaje_deducible,
     limite_aplicado: result.limite_aplicado,
     fundamento_legal: result.fundamento_legal,
+    estado: result.estado,
+    factores_faltantes: result.factores_faltantes.join("; "),
+    uma_anual_aplicada: result.uma_anual_aplicada,
+    anio_regulatorio: result.anio_regulatorio,
   } as Record<string, unknown>;
 
   return (
     <div className="space-y-4 animate-fade-in">
       <Card className="result-accent">
         <div className="flex items-center gap-4 mb-4">
-          <Badge variant={result.es_deducible ? "success" : "warning"}>
-            {result.es_deducible ? t("reg_deducible") : t("reg_no_deducible")}
+          <Badge
+            variant={
+              result.estado === "indeterminate"
+                ? "warning"
+                : result.es_deducible
+                  ? "success"
+                  : "error"
+            }
+          >
+            {t(estadoLabel[result.estado] ?? "reg_estado_indeterminate")}
           </Badge>
           <span className="text-lg font-heading font-bold text-navy">
             {formatCurrency(result.monto_deducible)}
@@ -245,6 +285,14 @@ function DeductibilityResultCard({
         </div>
         <Table headers={[t("reg_concepto"), t("reg_valor")]} rows={rows} />
       </Card>
+
+      {result.factores_faltantes.length > 0 && (
+        <AvisoLimitacion titulo={t("reg_estado_indeterminate")}>
+          <p>
+            {t("reg_factores_faltantes")}: {result.factores_faltantes.join(", ")}
+          </p>
+        </AvisoLimitacion>
+      )}
 
       <DownloadButton
         data={csvData}
@@ -274,6 +322,7 @@ function WithholdingResultCard({
     [t("reg_tasa_retencion"), formatPercent(result.tasa_retencion)],
     [t("reg_monto_retencion"), formatCurrency(result.monto_retencion)],
     [t("reg_monto_neto"), formatCurrency(result.monto_neto_pagar)],
+    [t("reg_regla_aplicada"), result.regla_aplicada ?? "-"],
   ];
 
   const csvData = {
@@ -283,6 +332,7 @@ function WithholdingResultCard({
     tasa_retencion: result.tasa_retencion,
     monto_retencion: result.monto_retencion,
     monto_neto_pagar: result.monto_neto_pagar,
+    regla_aplicada: result.regla_aplicada,
   } as Record<string, unknown>;
 
   return (
@@ -300,6 +350,10 @@ function WithholdingResultCard({
         </div>
         <Table headers={[t("reg_concepto"), t("reg_valor")]} rows={rows} />
       </Card>
+
+      <AvisoLimitacion titulo={t("reg_aviso_alcance")}>
+        <p>{t("reg_aviso_retenciones")}</p>
+      </AvisoLimitacion>
 
       <DownloadButton
         data={csvData}
@@ -416,6 +470,10 @@ export default function RegulatorioPage() {
           tipo_seguro: dedForm.tipo_seguro,
           monto_prima: dedForm.monto_prima,
           es_persona_fisica: dedForm.es_persona_fisica,
+          // Left out on purpose when unset: the API answers "indeterminate"
+          // rather than guessing, and the result card says what is missing.
+          ingreso_anual: dedForm.ingreso_anual > 0 ? dedForm.ingreso_anual : null,
+          metodo_pago: dedForm.metodo_pago || null,
         };
         await deductibility.calculate(req);
         break;
@@ -454,6 +512,17 @@ export default function RegulatorioPage() {
       { value: "danos", label: t("reg_tipo_danos") },
       { value: "pensiones", label: t("reg_tipo_pensiones") },
       { value: "invalidez", label: t("reg_tipo_invalidez") },
+    ],
+    [t],
+  );
+
+  const metodoPagoOptions = useMemo(
+    () => [
+      { value: "", label: t("reg_metodo_pago_no_declarado") },
+      { value: "transferencia", label: t("reg_metodo_transferencia") },
+      { value: "cheque", label: t("reg_metodo_cheque") },
+      { value: "tarjeta", label: t("reg_metodo_tarjeta") },
+      { value: "efectivo", label: t("reg_metodo_efectivo") },
     ],
     [t],
   );
@@ -812,6 +881,31 @@ export default function RegulatorioPage() {
                   </span>
                 </label>
               </div>
+              <Input
+                label={t("reg_ingreso_anual")}
+                name="ingreso_anual"
+                type="number"
+                min={0}
+                value={dedForm.ingreso_anual}
+                onChange={(e) =>
+                  setDedForm((prev) => ({
+                    ...prev,
+                    ingreso_anual: Number(e.target.value),
+                  }))
+                }
+              />
+              <Select
+                label={t("reg_metodo_pago")}
+                name="metodo_pago"
+                options={metodoPagoOptions}
+                value={dedForm.metodo_pago}
+                onChange={(e) =>
+                  setDedForm((prev) => ({
+                    ...prev,
+                    metodo_pago: e.target.value,
+                  }))
+                }
+              />
             </div>
             <div className="flex items-center gap-4">
               <Button
@@ -881,6 +975,11 @@ export default function RegulatorioPage() {
                     setRetForm((prev) => ({
                       ...prev,
                       es_renta_vitalicia: e.target.checked,
+                      // A payment is one or the other; ticking both would make
+                      // the rate an artifact of branch order, not of a rule.
+                      es_retiro_ahorro: e.target.checked
+                        ? false
+                        : prev.es_retiro_ahorro,
                     }))
                   }
                   className="w-4 h-4 rounded border-navy/30 text-terracotta focus:ring-terracotta"
@@ -897,6 +996,9 @@ export default function RegulatorioPage() {
                     setRetForm((prev) => ({
                       ...prev,
                       es_retiro_ahorro: e.target.checked,
+                      es_renta_vitalicia: e.target.checked
+                        ? false
+                        : prev.es_renta_vitalicia,
                     }))
                   }
                   className="w-4 h-4 rounded border-navy/30 text-terracotta focus:ring-terracotta"
