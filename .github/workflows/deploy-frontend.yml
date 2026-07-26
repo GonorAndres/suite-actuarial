@@ -1,0 +1,66 @@
+name: Deploy dashboard to Cloudflare Pages
+
+# main -> despliegue de produccion  (suite.gonor.me)
+# dev  -> despliegue de rama        (dev-suite.gonor.me, detras de Cloudflare Access)
+#
+# Igual que el backend, espera a que CI pase. El sitio estatico y el API se
+# publican por separado; si uno falla, el otro no queda a medias.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main, dev]
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the commit that passed CI
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Resolve environment
+        id: env
+        run: |
+          if [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+            # Produccion: el dashboard vive en Cloudflare y el API en Cloud Run,
+            # dominios distintos, asi que la URL tiene que ser absoluta.
+            echo "api=https://api-suite.gonor.me/api/v1" >> "$GITHUB_OUTPUT"
+          else
+            # Dev: el proxy de Cloudflare sirve /api/* desde el mismo origen.
+            echo "api=/api/v1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build static export
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ steps.env.outputs.api }}
+        run: npm run build
+
+      - name: Add the same-origin API proxy (dev only)
+        if: github.event.workflow_run.head_branch == 'dev'
+        run: cp frontend/cloudflare/_worker.js frontend/out/_worker.js
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy frontend/out
+            --project-name=suite-actuarial
+            --branch=${{ github.event.workflow_run.head_branch }}
