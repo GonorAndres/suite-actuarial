@@ -10,13 +10,19 @@ Cloud Run. Cada rama publica su propio par.
 
 ## Como se dispara
 
-`.github/workflows/ci.yml` corre en cada push de cualquier rama. Los dos flujos
-de despliegue (`deploy.yml` para el backend, `deploy-frontend.yml` para el
-sitio) escuchan `workflow_run` de CI y solo actuan si termino en verde y la rama
-es `main` o `dev`.
+`.github/workflows/ci.yml` corre en cada push de cualquier rama.
 
-Esto cierra un hueco anterior: `deploy.yml` se disparaba con `push` en paralelo
-a CI, asi que una compuerta en rojo no impedia publicar.
+El backend usa `deploy.yml`: escucha `workflow_run` de CI y solo actua si
+termino en verde y la rama es `main` o `dev`. Esto cierra un hueco anterior:
+antes se disparaba con `push` en paralelo a CI, asi que una compuerta en rojo
+no impedia publicar.
+
+El dashboard no usa GitHub Actions. El proyecto `suite-actuarial` en Cloudflare
+Pages esta conectado directamente al repositorio: Cloudflare clona, corre
+`npm run build` y publica el resultado el solo, en cuanto detecta un push a
+`main` o `dev`. No hay compuerta de CI de por medio en ese camino — si hace
+falta bloquear un build roto, es configuracion de Cloudflare Pages, no de este
+repositorio.
 
 ## Por que dev usa un proxy y no una llamada directa
 
@@ -56,23 +62,35 @@ mismo limite aplica a cualquier API futura: `api-loquesea.gonor.me` es gratis,
 defecto cubre solo `localhost:3000`. `allow_credentials` esta apagado: el API no
 usa cookies ni sesion.
 
-## Configuracion pendiente en las cuentas
+## Configuracion en las cuentas (ya realizada, 2026-07-26)
 
-Lo que sigue no esta en el repositorio y hay que crearlo una vez:
+Nada de esto vive en el repositorio; queda anotado aqui por si hay que
+recrearlo.
 
-**GitHub -> Settings -> Secrets**
-- `CLOUDFLARE_API_TOKEN`
+**GitHub -> Settings -> Secrets** (usados solo por `deploy.yml`, el backend)
+- `CLOUDFLARE_API_TOKEN` — ya no lo usa ningun workflow tras retirar
+  `deploy-frontend.yml`, pero se deja creado por si un despliegue manual con
+  `wrangler` lo necesita.
 - `CLOUDFLARE_ACCOUNT_ID` (`9e88860c389c87f4ec09baa1e9675a61`)
-- `PROXY_SHARED_SECRET` (cadena aleatoria; la misma que en Pages)
+- `PROXY_SHARED_SECRET` — inyectado por `deploy.yml` en el servicio
+  `suite-actuarial-dev` como `SUITE_PROXY_SHARED_SECRET`.
 
-**Cloudflare Pages** — proyecto `suite-actuarial`, dominios `suite.gonor.me`
-(produccion) y `dev-suite.gonor.me` (rama `dev`). Variables de entorno del
-despliegue de rama:
-- `API_ORIGIN` = URL de Cloud Run de `suite-actuarial-dev`
-- `PROXY_SHARED_SECRET` = el mismo secreto
+**Cloudflare Pages** — proyecto `suite-actuarial`, conectado por Git a
+`GonorAndres/suite-actuarial` (rama de produccion `main`, previews solo para
+`dev`). Dominios: `suite.gonor.me` (produccion) y `dev-suite.gonor.me`
+(alias de la rama `dev`). Variables de entorno por entorno:
+- Produccion: `NEXT_PUBLIC_API_URL=https://api-suite.gonor.me/api/v1`
+- Preview (`dev`): `NEXT_PUBLIC_API_URL=/api/v1`, `API_ORIGIN` = URL de Cloud
+  Run de `suite-actuarial-dev`, `PROXY_SHARED_SECRET` = el mismo secreto que
+  arriba.
+
+El comando de build (`npm run build && ...`) copia `cloudflare/_worker.js` a
+la salida solo cuando `$CF_PAGES_BRANCH` es `dev`, para que produccion no
+cargue el proxy.
 
 **Cloudflare Access** — aplicacion sobre `dev-suite.gonor.me`, politica de
-permitir por correo con PIN de un solo uso.
+permitir por correo (sin PIN adicional: el IdP ya es One-time PIN a nivel de
+cuenta).
 
 **Cloud Run** — el servicio `suite-actuarial-dev` lo crea el primer despliegue
 de la rama `dev`.
