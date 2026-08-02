@@ -140,6 +140,16 @@ with tab_auto:
     )
     st.plotly_chart(fig_cob, use_container_width=True)
 
+    st.caption(
+        "Cotización ilustrativa. Las tasas por grupo de vehículo y los factores "
+        "de zona, edad y deducible reproducen la estructura de una tarifa de "
+        "auto, no los valores de ninguna tarifa vigente: no proceden de la AMIS "
+        "ni de la experiencia de aseguradora alguna. Además, la prima de "
+        "responsabilidad civil a terceros se calcula sobre el valor del propio "
+        "vehículo, no sobre el límite de responsabilidad contratado, y la prima "
+        "se redondea después de cada factor. No es una cotización de mercado."
+    )
+
     with st.expander("Ver código Python"):
         st.code(
             f'''from decimal import Decimal
@@ -308,6 +318,16 @@ with tab_colectivo:
     fig_hist.update_layout(showlegend=False)
     st.plotly_chart(fig_hist, use_container_width=True)
 
+    st.caption(
+        "La dispersión que ves es la del modelo que elegiste, no la del riesgo "
+        "real: la familia de frecuencia, la de severidad y sus parámetros los "
+        "fijas tú, sin ajustarlos a ninguna experiencia. VaR y TVaR heredan ese "
+        "supuesto y además cargan error de simulación: con "
+        f"{n_sim:,} simulaciones las colas son las menos estables de la muestra. "
+        "El modelo colectivo tampoco reconoce dependencia entre siniestros, "
+        "inflación ni deducibles y límites por póliza."
+    )
+
     with st.expander("Estadísticas completas"):
         stats_display = {k: str(v) for k, v in stats_mc.items()}
         st.json(stats_display)
@@ -414,6 +434,13 @@ with tab_bms:
         yaxis={"range": [0.6, 1.6]},
     )
     st.plotly_chart(fig_bms, use_container_width=True)
+
+    st.caption(
+        "Escala ilustrativa: los nueve niveles y sus factores (−30% a +50%) son "
+        "los del módulo, no los de un sistema bonus-malus registrado ante la "
+        "CNSF. Cada aseguradora define la suya. La trayectoria tampoco es una "
+        "predicción: aplica la regla de transición al historial que capturaste."
+    )
 
     with st.expander("Ver código Python"):
         st.code(

@@ -164,3 +164,68 @@ class TestFrecuenciaSeveridad:
         r1 = api_client.post("/api/v1/danos/frecuencia-severidad", json=payload)
         r2 = api_client.post("/api/v1/danos/frecuencia-severidad", json=payload)
         assert r1.json()["prima_pura"] == r2.json()["prima_pura"]
+
+
+class TestDanosProcedencia:
+    """Las cotizaciones de daños deben viajar con su alcance y su respaldo.
+
+    El aviso de `tablas_amis` existia como constante y no lo importaba nadie, e
+    incendio y RC no tenian ninguno: una prima calculada con tasas ilustrativas
+    cruzaba HTTP sin señal de serlo.
+    """
+
+    def test_auto_incluye_aviso_y_nivel_de_respaldo(self, api_client):
+        from suite_actuarial.danos.auto import DISCLAIMER, VALIDATION_TIER
+
+        payload = {
+            "valor_vehiculo": 350_000,
+            "tipo_vehiculo": "sedan_compacto",
+            "antiguedad_anos": 3,
+            "zona": "guadalajara",
+            "edad_conductor": 35,
+        }
+        response = api_client.post("/api/v1/danos/auto/calcular", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["disclaimer"] == DISCLAIMER
+        assert data["disclaimer"].strip()
+        assert "ILUSTRATIVOS" in data["disclaimer"]
+        # El limite propio del producto, no solo el de las tablas.
+        assert "responsabilidad civil" in data["disclaimer"]
+        assert data["validation_tier"] == VALIDATION_TIER == "experimental"
+
+    def test_incendio_incluye_aviso_y_nivel_de_respaldo(self, api_client):
+        from suite_actuarial.danos.incendio import DISCLAIMER, VALIDATION_TIER
+
+        payload = {
+            "valor_inmueble": 5_000_000,
+            "tipo_construccion": "concreto",
+            "zona": "urbana_media",
+            "uso": "habitacional",
+        }
+        response = api_client.post("/api/v1/danos/incendio/calcular", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["disclaimer"] == DISCLAIMER
+        assert data["disclaimer"].strip()
+        assert "ILUSTRATIVOS" in data["disclaimer"]
+        assert data["validation_tier"] == VALIDATION_TIER == "experimental"
+
+    def test_rc_incluye_aviso_y_nivel_de_respaldo(self, api_client):
+        from suite_actuarial.danos.rc import DISCLAIMER, VALIDATION_TIER
+
+        payload = {
+            "limite_responsabilidad": 10_000_000,
+            "deducible": 100_000,
+            "clase_actividad": "oficinas",
+        }
+        response = api_client.post("/api/v1/danos/rc/calcular", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["disclaimer"] == DISCLAIMER
+        assert data["disclaimer"].strip()
+        assert "ILUSTRATIVOS" in data["disclaimer"]
+        assert data["validation_tier"] == VALIDATION_TIER == "experimental"

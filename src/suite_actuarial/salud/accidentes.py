@@ -10,8 +10,27 @@ Cobertura mas simple que GMM, orientada a eventos de accidente:
 Referencia: CUSF Titulo 5, Capitulo de Accidentes y Enfermedades
 """
 
+import warnings
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
+
+from suite_actuarial.config.schema import ValidationTier
+from suite_actuarial.core.models.common import Sexo, normalizar_sexo
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+
+DISCLAIMER = (
+    "AVISO: las tasas base por banda de edad, los factores de ocupacion y los "
+    "porcentajes de la tabla de perdidas organicas de este modulo son "
+    "ILUSTRATIVOS: no proceden de experiencia siniestral ni de una nota tecnica "
+    "registrada. La prima es (SA/1000) x tasa x factor de ocupacion, sin "
+    "frecuencia ni severidad, sin gastos ni margen explicitos, y el sexo se "
+    "registra pero no altera la prima. Para uso profesional, sustituya tasas y "
+    "porcentajes por los de su experiencia y su condicionado. Ver docs/AUDIT.md."
+)
+
+#: Nivel de respaldo de las cifras de este modulo. Los datos son ilustrativos,
+#: asi que ninguna salida puede presentarse como respaldada.
+VALIDATION_TIER = ValidationTier.EXPERIMENTAL.value
 
 
 class AccidentesEnfermedades:
@@ -23,8 +42,11 @@ class AccidentesEnfermedades:
     - Factor de ocupacion (riesgo laboral)
     - Suma asegurada
 
-    Genera tabla de indemnizaciones con porcentajes estandar
-    del mercado mexicano.
+    Genera tabla de indemnizaciones con porcentajes ilustrativos del mercado
+    mexicano.
+
+    Al construirse emite `ExperimentalModelWarning` con `DISCLAIMER`, que viaja
+    tambien en la respuesta del API: la cifra no debe circular sin su limite.
     """
 
     # Base rates by age group (per mille of sum insured, annual)
@@ -70,7 +92,7 @@ class AccidentesEnfermedades:
     def __init__(
         self,
         edad: int,
-        sexo: str,
+        sexo: Sexo | str,
         suma_asegurada: Decimal,
         ocupacion: str = "oficina",
         indemnizacion_diaria: Decimal | None = None,
@@ -78,7 +100,7 @@ class AccidentesEnfermedades:
         """
         Args:
             edad: Edad del asegurado (18-70).
-            sexo: 'M' (masculino) o 'F' (femenino).
+            sexo: 'masculino' o 'femenino' (o el miembro de `Sexo`).
             suma_asegurada: Suma asegurada en MXN.
             ocupacion: Clase de riesgo ocupacional.
             indemnizacion_diaria: Monto diario por hospitalizacion.
@@ -86,8 +108,7 @@ class AccidentesEnfermedades:
         """
         if not (18 <= edad <= 70):
             raise ValueError("La edad debe estar entre 18 y 70 anos para A&E.")
-        if sexo not in ("M", "F"):
-            raise ValueError("El sexo debe ser 'M' o 'F'.")
+        sexo = normalizar_sexo(sexo)
         if suma_asegurada <= 0:
             raise ValueError("La suma asegurada debe ser positiva.")
         if ocupacion not in self.FACTORES_OCUPACION:
@@ -106,6 +127,7 @@ class AccidentesEnfermedades:
                 Decimal("0.01"), rounding=ROUND_HALF_UP
             )
         )
+        warnings.warn(DISCLAIMER, ExperimentalModelWarning, stacklevel=2)
 
     def _obtener_banda_edad(self) -> str:
         """Map age to the corresponding rate band."""

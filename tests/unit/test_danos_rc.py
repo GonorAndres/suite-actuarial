@@ -10,12 +10,16 @@ Tests para el producto de responsabilidad civil general.
 - Valores frontera (limite minimo, limite muy grande)
 """
 
+import warnings
 from decimal import ROUND_HALF_UP, Decimal
 
 import pytest
 
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.danos.rc import (
+    DISCLAIMER,
     TASAS_ACTIVIDAD,
+    VALIDATION_TIER,
     SeguroRC,
 )
 
@@ -293,3 +297,42 @@ class TestValoresFrontera:
         prima = seguro.calcular_prima()
         assert prima == Decimal("315000.00")
         assert prima > Decimal("0")
+
+
+class TestAvisoDeAlcance:
+    """RC no tenia aviso alguno: ni constante, ni warning, ni campo HTTP.
+
+    El aviso nombra dos limites verificables aqui mismo: el factor de deducible
+    es escalonado (toma el tramo inmediato inferior, sin interpolar) y la prima
+    es proporcional al limite de responsabilidad, sin medir exposicion real.
+    """
+
+    def test_construir_emite_experimental_model_warning(self):
+        with pytest.warns(ExperimentalModelWarning, match="ILUSTRATIVOS"):
+            SeguroRC(
+                limite_responsabilidad=Decimal("10000000"),
+                deducible=Decimal("25000"),
+                clase_actividad="oficinas",
+            )
+
+    def test_el_factor_de_deducible_escalonado_que_declara_el_aviso(self):
+        """Deducibles distintos dentro del mismo tramo dan la misma prima."""
+        base = SeguroRC(Decimal("10000000"), Decimal("50000"), "oficinas")
+        dentro_del_tramo = SeguroRC(Decimal("10000000"), Decimal("99999"), "oficinas")
+        assert base.factor_deducible == dentro_del_tramo.factor_deducible
+        assert base.calcular_prima() == dentro_del_tramo.calcular_prima()
+        assert "escalonado" in DISCLAIMER
+
+    def test_una_entrada_invalida_no_emite_el_aviso(self):
+        with warnings.catch_warnings(record=True) as capturadas:
+            warnings.simplefilter("always")
+            with pytest.raises(ValueError):
+                SeguroRC(
+                    limite_responsabilidad=Decimal("-1"),
+                    deducible=Decimal("25000"),
+                    clase_actividad="oficinas",
+                )
+        assert not [c for c in capturadas if issubclass(c.category, ExperimentalModelWarning)]
+
+    def test_el_nivel_de_respaldo_es_experimental(self):
+        assert VALIDATION_TIER == "experimental"

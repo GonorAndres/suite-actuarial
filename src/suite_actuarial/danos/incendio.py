@@ -4,8 +4,27 @@ Seguro de incendio y danos a propiedad.
 Producto basico para inmuebles residenciales, comerciales e industriales.
 """
 
+import warnings
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
+
+from suite_actuarial.config.schema import ValidationTier
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+
+DISCLAIMER = (
+    "AVISO: las tasas por tipo de construccion y los factores de zona y uso de "
+    "este modulo son ILUSTRATIVOS: no proceden de experiencia siniestral ni de "
+    "una tarifa registrada. La prima es un producto de factores sobre el valor "
+    "declarado: no reconoce deducible, infraseguro ni regla proporcional, no "
+    "distingue contenidos de edificio, no premia medidas de proteccion contra "
+    "incendio y no cubre riesgos catastroficos (sismo, hidrometeorologicos), que "
+    "exigen modelo de catastrofe aparte. Para uso profesional, sustituya tasas y "
+    "factores por los de su experiencia. Ver docs/AUDIT.md."
+)
+
+#: Nivel de respaldo de las cifras de este modulo. Los datos son ilustrativos,
+#: asi que ninguna cotizacion puede presentarse como respaldada.
+VALIDATION_TIER = ValidationTier.EXPERIMENTAL.value
 
 # Tasas base por millar segun tipo de construccion
 TASAS_CONSTRUCCION: dict[str, Decimal] = {
@@ -47,6 +66,9 @@ class SeguroIncendio:
     - Tipo de construccion
     - Zona de riesgo
     - Uso del inmueble
+
+    Al construirse emite `ExperimentalModelWarning` con `DISCLAIMER`, que viaja
+    tambien en la respuesta del API: la prima no debe circular sin su limite.
     """
 
     def __init__(
@@ -83,6 +105,8 @@ class SeguroIncendio:
         self.tasa_base = TASAS_CONSTRUCCION[tipo_construccion]
         self.factor_zona = ZONAS_INCENDIO[zona]
         self.factor_uso = FACTOR_USO[uso]
+
+        warnings.warn(DISCLAIMER, ExperimentalModelWarning, stacklevel=2)
 
     def calcular_prima(self) -> Decimal:
         """

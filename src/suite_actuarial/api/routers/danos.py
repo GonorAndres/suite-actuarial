@@ -13,9 +13,27 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from suite_actuarial.api.schemas import SolicitudBase
+from suite_actuarial.danos.auto import (
+    DISCLAIMER as AUTO_DISCLAIMER,
+)
+from suite_actuarial.danos.auto import (
+    VALIDATION_TIER as AUTO_VALIDATION_TIER,
+)
 from suite_actuarial.danos.auto import SeguroAuto
 from suite_actuarial.danos.frecuencia_severidad import ModeloColectivo
+from suite_actuarial.danos.incendio import (
+    DISCLAIMER as INCENDIO_DISCLAIMER,
+)
+from suite_actuarial.danos.incendio import (
+    VALIDATION_TIER as INCENDIO_VALIDATION_TIER,
+)
 from suite_actuarial.danos.incendio import SeguroIncendio
+from suite_actuarial.danos.rc import (
+    DISCLAIMER as RC_DISCLAIMER,
+)
+from suite_actuarial.danos.rc import (
+    VALIDATION_TIER as RC_VALIDATION_TIER,
+)
 from suite_actuarial.danos.rc import SeguroRC
 from suite_actuarial.danos.tarifas import CalculadoraBonusMalus
 
@@ -77,6 +95,14 @@ class AutoResponse(BaseModel):
     subtotal: float
     bonus_malus: dict[str, Any]
     prima_total: float
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 @router.post("/auto/calcular", response_model=AutoResponse)
@@ -104,6 +130,10 @@ def calcular_auto(req: AutoRequest) -> dict[str, Any]:
             historial_siniestros=req.historial_siniestros,
         )
         respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        # El aviso viaja con la cifra: quien consume el JSON no ve el
+        # ExperimentalModelWarning que emite el dominio al construirse.
+        respuesta["validation_tier"] = AUTO_VALIDATION_TIER
+        respuesta["disclaimer"] = AUTO_DISCLAIMER
         return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -142,6 +172,14 @@ class IncendioResponse(BaseModel):
     uso: str
     factor_uso: float
     prima_anual: float
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 @router.post("/incendio/calcular", response_model=IncendioResponse)
@@ -160,6 +198,8 @@ def calcular_incendio(req: IncendioRequest) -> dict[str, Any]:
         )
         cotizacion = seguro.generar_cotizacion()
         respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        respuesta["validation_tier"] = INCENDIO_VALIDATION_TIER
+        respuesta["disclaimer"] = INCENDIO_DISCLAIMER
         return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -192,6 +232,14 @@ class RCResponse(BaseModel):
     tasa_base: float
     factor_deducible: float
     prima_anual: float
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 @router.post("/rc/calcular", response_model=RCResponse)
@@ -209,6 +257,8 @@ def calcular_rc(req: RCRequest) -> dict[str, Any]:
         )
         cotizacion = seguro.generar_cotizacion()
         respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        respuesta["validation_tier"] = RC_VALIDATION_TIER
+        respuesta["disclaimer"] = RC_DISCLAIMER
         return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

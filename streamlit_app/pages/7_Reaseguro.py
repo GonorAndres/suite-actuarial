@@ -220,6 +220,17 @@ with tab_qs:
                     )
                     st.plotly_chart(fig_sin2, use_container_width=True)
 
+                st.caption(
+                    f"Ejercicio ilustrativo sobre {len(SAMPLE_CLAIMS)} siniestros "
+                    "inventados para la demostración: es una sola realización, no "
+                    "un valor esperado, y no hay experiencia ni distribución "
+                    "agregada detrás. La comisión de reaseguro es la que tú fijas, "
+                    "no una negociada. El resultado neto de la cedente se calcula "
+                    "aquí como prima retenida + comisión − siniestros retenidos; "
+                    "en Excess of Loss la misma etiqueta significa otra cosa, así "
+                    "que las cifras de las dos pestañas no son comparables."
+                )
+
             except Exception as e:
                 st.error(f"Error: {e}")
 
@@ -388,6 +399,18 @@ with tab_xl:
                     )
                     st.plotly_chart(fig_xl, use_container_width=True)
 
+                    st.caption(
+                        "La prima del contrato es un burning cost simplificado: "
+                        "límite × tasa / 100, con la tasa que tú eliges. No sale "
+                        "de la experiencia siniestral ni de una distribución de "
+                        "severidad. El ejercicio corre sobre "
+                        f"{len(SAMPLE_CLAIMS)} siniestros inventados de un solo "
+                        "periodo y el contrato no configura reinstalaciones. El "
+                        "resultado neto que se muestra es recuperación − prima de "
+                        "reaseguro: definición distinta de la que usa la pestaña "
+                        "de Quota Share."
+                    )
+
             except Exception as e:
                 st.error(f"Error: {e}")
 
@@ -552,6 +575,17 @@ with tab_sl:
                     },
                 )
                 st.plotly_chart(fig_sl, use_container_width=True)
+
+                st.caption(
+                    "La prima del Stop Loss no se calcula a partir de esta "
+                    "cartera: el módulo la fija en 3% de las primas sujetas, una "
+                    "tasa típica sin fuente en el repositorio. La siniestralidad "
+                    f"proviene de {len(SAMPLE_CLAIMS)} siniestros inventados de un "
+                    "solo periodo, así que el gráfico muestra si el contrato se "
+                    "activa en ESE escenario; sin distribución de la "
+                    "siniestralidad agregada no dice con qué probabilidad se "
+                    "activaría."
+                )
 
             except Exception as e:
                 st.error(f"Error: {e}")
@@ -776,6 +810,17 @@ with tab_comp:
                     },
                 )
                 st.plotly_chart(fig_comp2, use_container_width=True)
+
+            st.caption(
+                "Lee la columna de resultado neto con cuidado: no está definida "
+                "igual en los tres contratos (en Quota Share es prima retenida + "
+                "comisión − siniestros retenidos; en Excess of Loss y Stop Loss es "
+                "recuperación − prima de reaseguro), y el costo del reaseguro sale "
+                "de tres reglas distintas: prima cedida, límite × tasa y 3% de las "
+                "primas sujetas. La comparación es sobre un solo escenario de "
+                f"{len(SAMPLE_CLAIMS)} siniestros inventados: no ordena estrategias "
+                "por eficiencia ni sustituye un estudio de retención óptima."
+            )
 
         except Exception as e:
             st.error(f"Error: {e}")
