@@ -65,6 +65,9 @@ docs/_build/
 site/
 docs/knowledge/
 
+# Temporary agent/session handoffs (keep permanent project docs under docs/)
+handoff/
+
 # Environment variables
 .env
 .env.local
