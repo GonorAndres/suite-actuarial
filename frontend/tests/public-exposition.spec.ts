@@ -70,6 +70,28 @@ test("domain tabs hide on downward scroll and return on upward scroll", async ({
   await expect(switcher).toHaveClass(/translate-y-0/);
 });
 
+test("domain tabs do not tuck away before the switcher is pinned", async ({ page }) => {
+  await page.goto("/vida/");
+  const workspace = page.locator('[data-domain="vida"]');
+  const switcher = workspace.locator(":scope > div").first();
+  // Stop short of the sticky offset: the switcher is still in normal flow, so
+  // hiding it here would drag it up over the text above instead of tucking it
+  // under the masthead, leaving a gap where the bar used to sit.
+  const stillInFlow = await switcher.evaluate((el) => {
+    let top = 0;
+    let node: HTMLElement | null = el as HTMLElement;
+    while (node) {
+      top += node.offsetTop;
+      node = node.offsetParent as HTMLElement | null;
+    }
+    return Math.round(top / 2);
+  });
+  await page.evaluate((y) => window.scrollTo(0, y), stillInFlow);
+  await expect(switcher).toHaveClass(/translate-y-0/);
+  const box = await switcher.boundingBox();
+  expect(box!.y).toBeGreaterThan(64);
+});
+
 test("evidence distinguishes implementation from professional validity", async ({ page }) => {
   await page.goto("/evidencia/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("explorar modelos");
