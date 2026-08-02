@@ -26,6 +26,7 @@ import type {
   GMMResponse,
   AccidentesRequest,
   AccidentesResponse,
+  Sexo,
 } from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
@@ -35,7 +36,7 @@ type SaludTab = "gmm" | "accidentes";
 
 interface GMMFormState {
   edad: number;
-  sexo: "M" | "F";
+  sexo: Sexo;
   suma_asegurada: number;
   deducible: number;
   coaseguro_pct: number;
@@ -46,7 +47,7 @@ interface GMMFormState {
 
 interface AccidentesFormState {
   edad: number;
-  sexo: "M" | "F";
+  sexo: Sexo;
   suma_asegurada: number;
   ocupacion: string;
   indemnizacion_diaria: string;
@@ -56,7 +57,7 @@ interface AccidentesFormState {
 
 const DEFAULT_GMM: GMMFormState = {
   edad: 35,
-  sexo: "M",
+  sexo: "masculino",
   suma_asegurada: 5_000_000,
   deducible: 50_000,
   coaseguro_pct: 0.10,
@@ -67,7 +68,7 @@ const DEFAULT_GMM: GMMFormState = {
 
 const DEFAULT_ACCIDENTES: AccidentesFormState = {
   edad: 35,
-  sexo: "M",
+  sexo: "masculino",
   suma_asegurada: 500_000,
   ocupacion: "oficina",
   indemnizacion_diaria: "",
@@ -103,8 +104,8 @@ export default function SaludPage() {
 
   const sexoGMMOptions = useMemo(
     () => [
-      { value: "M", label: t("masculino") },
-      { value: "F", label: t("femenino") },
+      { value: "masculino", label: t("masculino") },
+      { value: "femenino", label: t("femenino") },
     ],
     [t],
   );
@@ -243,7 +244,7 @@ export default function SaludPage() {
                 name="sexo"
                 options={sexoGMMOptions}
                 value={gmmForm.sexo}
-                onChange={(e) => updateGMM("sexo", e.target.value as "M" | "F")}
+                onChange={(e) => updateGMM("sexo", e.target.value as Sexo)}
               />
               <Input
                 label={t("suma_asegurada")}
@@ -313,7 +314,7 @@ export default function SaludPage() {
                 name="sexo_acc"
                 options={sexoGMMOptions}
                 value={accForm.sexo}
-                onChange={(e) => updateAcc("sexo", e.target.value as "M" | "F")}
+                onChange={(e) => updateAcc("sexo", e.target.value as Sexo)}
               />
               <Input
                 label={t("suma_asegurada")}

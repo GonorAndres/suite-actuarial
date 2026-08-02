@@ -40,6 +40,7 @@ import type {
   RentaVitaliciaRequest,
   RentaVitaliciaResponse,
   ReserveResponse,
+  Sexo,
   StopLossRequest,
   UMAResponse,
   WithholdingRequest,
@@ -175,7 +176,7 @@ export const pensionesApi = {
     ),
 
   conmutacion: (params: {
-    sexo: string;
+    sexo: Sexo;
     tasa_interes: string;
     edad_min?: string;
     edad_max?: string;

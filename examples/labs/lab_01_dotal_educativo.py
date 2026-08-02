@@ -27,7 +27,7 @@ config = ConfiguracionProducto(
 )
 asegurado = Asegurado(
     edad=35,
-    sexo=Sexo.HOMBRE,
+    sexo=Sexo.MASCULINO,
     suma_asegurada=Decimal("1000000"),
 )
 producto = VidaDotal(config, tabla, plazo_pago=10)

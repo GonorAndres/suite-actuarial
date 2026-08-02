@@ -153,7 +153,7 @@ class VidaDotal(ProductoSeguro):
         >>> # Asegurado: padre de 30 años, ahorra para hijo
         >>> asegurado = Asegurado(
         ...     edad=30,
-        ...     sexo=Sexo.HOMBRE,
+        ...     sexo=Sexo.MASCULINO,
         ...     suma_asegurada=Decimal("500000")  # 500K para universidad
         ... )
         >>>

@@ -364,7 +364,7 @@ with tab_reservas:
                 producto = VidaTemporal(config_prod, tabla)
                 asegurado = Asegurado(
                     edad=rm_edad,
-                    sexo=Sexo.HOMBRE,
+                    sexo=Sexo.MASCULINO,
                     suma_asegurada=Decimal(str(rm_sa)),
                 )
 
@@ -438,7 +438,7 @@ config = ConfiguracionProducto(
     tasa_interes_tecnico=Decimal("0.055"),
 )
 producto = VidaTemporal(config, tabla)
-asegurado = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+asegurado = Asegurado(edad=35, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
 reserva = producto.calcular_reserva(asegurado, anio=5)
 print(f"Reserva Matematica (anio 5): ${reserva:,.2f}")
 

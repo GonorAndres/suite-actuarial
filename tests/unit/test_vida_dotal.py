@@ -26,8 +26,8 @@ def tabla_simple():
     for edad in edades:
         qx_h = 0.001 + (edad - 18) * 0.0002
         qx_m = 0.0005 + (edad - 18) * 0.0001
-        datos.append({"edad": edad, "sexo": "H", "qx": min(qx_h, 0.99)})
-        datos.append({"edad": edad, "sexo": "M", "qx": min(qx_m, 0.99)})
+        datos.append({"edad": edad, "sexo": "masculino", "qx": min(qx_h, 0.99)})
+        datos.append({"edad": edad, "sexo": "femenino", "qx": min(qx_m, 0.99)})
 
     df = pd.DataFrame(datos)
     return TablaMortalidad(nombre="Simple", datos=df)
@@ -51,7 +51,7 @@ def asegurado_basico():
     """Asegurado con datos básicos"""
     return Asegurado(
         edad=30,
-        sexo=Sexo.HOMBRE,
+        sexo=Sexo.MASCULINO,
         suma_asegurada=Decimal("500000"),
     )
 
@@ -141,7 +141,7 @@ class TestVidaDotal:
 
         producto = VidaDotal(config_corto, tabla_simple)
 
-        asegurado = Asegurado(edad=30, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("100000"))
+        asegurado = Asegurado(edad=30, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("100000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado)
 
@@ -153,7 +153,7 @@ class TestVidaDotal:
         producto = VidaDotal(config_dotal_20, tabla_simple)
 
         # Edad 75 > 70 so base class rejects first
-        asegurado_mayor = Asegurado(edad=75, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("500000"))
+        asegurado_mayor = Asegurado(edad=75, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("500000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado_mayor)
 

@@ -35,7 +35,7 @@ config = ConfiguracionProducto(
 )
 asegurado = Asegurado(
     edad=35,
-    sexo=Sexo.HOMBRE,
+    sexo=Sexo.MASCULINO,
     suma_asegurada=Decimal("1000000"),
 )
 producto = VidaDotal(config, tabla, plazo_pago=10)
@@ -101,7 +101,7 @@ export default function LaboratoryPage() {
   const request = useMemo<DotalLabRequest>(
     () => ({
       edad: age,
-      sexo: "H",
+      sexo: "masculino",
       suma_asegurada: sumAssured,
       plazo_years: term,
       plazo_pago: Math.min(payTerm, term),

@@ -15,7 +15,7 @@ Referencia: Bowers et al., Ley del Seguro Social, CONSAR
 from decimal import Decimal
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
-from suite_actuarial.core.models.common import Sexo
+from suite_actuarial.core.models.common import Sexo, normalizar_sexo
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 
 
@@ -57,8 +57,7 @@ class RentaVitalicia:
             periodo_diferimiento: Anos de diferimiento (0 = inmediata)
             periodo_garantizado: Anos de pago garantizado minimo (0 = sin garantia)
         """
-        if isinstance(sexo, str):
-            sexo = Sexo(sexo)
+        sexo = normalizar_sexo(sexo)
 
         self.edad = edad
         self.sexo = sexo

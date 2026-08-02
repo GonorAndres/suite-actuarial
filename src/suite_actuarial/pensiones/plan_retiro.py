@@ -20,7 +20,7 @@ from typing import Any
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.config import cargar_config
 from suite_actuarial.config.schema import ConfigAnual
-from suite_actuarial.core.models.common import Sexo
+from suite_actuarial.core.models.common import Sexo, normalizar_sexo
 from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 from suite_actuarial.pensiones.tablas_imss import (
@@ -183,8 +183,7 @@ class PensionLey97:
             tasa_interes: Tasa de interes tecnico (default: config)
             config: ConfigAnual opcional
         """
-        if isinstance(sexo, str):
-            sexo = Sexo(sexo)
+        sexo = normalizar_sexo(sexo)
 
         self.saldo_afore = Decimal(str(saldo_afore))
         self.edad = edad
@@ -458,7 +457,7 @@ class CalculadoraIMSS:
         edad_retiro: int,
         salario_promedio_diario: Decimal | float | None = None,
         saldo_afore: Decimal | float | None = None,
-        sexo: Sexo | str = "H",
+        sexo: Sexo | str = Sexo.MASCULINO,
         tabla_mortalidad: TablaMortalidad | None = None,
         config: ConfigAnual | None = None,
     ) -> dict[str, Any]:

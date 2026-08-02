@@ -58,7 +58,7 @@ class VidaTemporal(ProductoSeguro):
         >>> # Calcular prima para un asegurado
         >>> asegurado = Asegurado(
         ...     edad=35,
-        ...     sexo=Sexo.HOMBRE,
+        ...     sexo=Sexo.MASCULINO,
         ...     suma_asegurada=Decimal("1000000")
         ... )
         >>>

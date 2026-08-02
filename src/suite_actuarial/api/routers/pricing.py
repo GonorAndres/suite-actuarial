@@ -45,7 +45,10 @@ class PricingRequest(SolicitudBase):
     """Shared request body for all life-pricing endpoints."""
 
     edad: int = Field(..., ge=0, le=120, description="Age of the insured (completed years)")
-    sexo: str = Field(..., pattern="^[HM]$", description="Sex: H (male) or M (female)")
+    sexo: Sexo = Field(
+        ...,
+        description="Sex of the insured: masculino or femenino",
+    )
     suma_asegurada: float = Field(..., gt=0, description="Sum insured")
     plazo_years: int = Field(..., ge=1, le=99, description="Policy term in years")
     tasa_interes: float = Field(default=0.055, ge=0, le=0.15, description="Technical interest rate")
@@ -148,7 +151,7 @@ def _build_config(req: PricingRequest, nombre: str) -> ConfiguracionProducto:
 def _build_asegurado(req: PricingRequest) -> Asegurado:
     return Asegurado(
         edad=req.edad,
-        sexo=Sexo(req.sexo),
+        sexo=req.sexo,
         suma_asegurada=Decimal(str(req.suma_asegurada)),
     )
 

@@ -183,7 +183,7 @@ config = ConfiguracionProducto(
     tasa_interes_tecnico=Decimal("0.05"),
 )
 producto = VidaTemporal(config, tabla)
-asegurado = Asegurado(edad=35, sexo="H", suma_asegurada=Decimal("1000000"))
+asegurado = Asegurado(edad=35, sexo="masculino", suma_asegurada=Decimal("1000000"))
 resultado = producto.calcular_prima(asegurado, frecuencia_pago="mensual")
 print(f"Prima mensual: ${resultado.prima_total:,.2f}")
 
@@ -201,7 +201,7 @@ print(f"Prima total auto: ${cotizacion['prima_total']:,.2f}")
 # --- Salud: prima GMM ---
 from suite_actuarial.salud import GMM, ZonaGeografica, NivelHospitalario
 gmm = GMM(
-    edad=40, sexo="M",
+    edad=40, sexo="masculino",
     suma_asegurada=Decimal("5000000"),
     deducible=Decimal("50000"),
     coaseguro_pct=Decimal("0.10"),

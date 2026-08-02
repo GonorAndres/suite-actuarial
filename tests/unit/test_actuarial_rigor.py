@@ -74,7 +74,7 @@ def tabla_simple():
     datos = pd.DataFrame(
         {
             "edad": list(range(0, 6)) + list(range(0, 6)),
-            "sexo": ["H"] * 6 + ["M"] * 6,
+            "sexo": ["masculino"] * 6 + ["femenino"] * 6,
             "qx": [
                 0.01,
                 0.02,
@@ -97,7 +97,7 @@ def tabla_simple():
 @pytest.fixture
 def tc_simple(tabla_simple):
     """Commutation table: simple mortality, male, 5% interest, raiz=100000."""
-    return TablaConmutacion(tabla_simple, sexo="H", tasa_interes=0.05, raiz=100_000)
+    return TablaConmutacion(tabla_simple, sexo="masculino", tasa_interes=0.05, raiz=100_000)
 
 
 @pytest.fixture
@@ -112,13 +112,13 @@ def tabla_emssa09():
 @pytest.fixture
 def tc_emssa_h(tabla_emssa09):
     """EMSSA-09 commutation table, male, 5.5% interest."""
-    return TablaConmutacion(tabla_emssa09, sexo="H", tasa_interes=0.055)
+    return TablaConmutacion(tabla_emssa09, sexo="masculino", tasa_interes=0.055)
 
 
 @pytest.fixture
 def tc_emssa_m(tabla_emssa09):
     """EMSSA-09 commutation table, female, 5.5% interest."""
-    return TablaConmutacion(tabla_emssa09, sexo="M", tasa_interes=0.055)
+    return TablaConmutacion(tabla_emssa09, sexo="femenino", tasa_interes=0.055)
 
 
 @pytest.fixture
@@ -151,7 +151,7 @@ def asegurado_35_h():
     """Standard male insured, age 35, SA=1M MXN."""
     return Asegurado(
         edad=35,
-        sexo=Sexo.HOMBRE,
+        sexo=Sexo.MASCULINO,
         suma_asegurada=Decimal("1000000"),
     )
 
@@ -394,7 +394,7 @@ class TestVidaProductOrdering:
         dotal = VidaDotal(config, tabla_emssa09)
         asegurado = Asegurado(
             edad=30,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             suma_asegurada=Decimal("500000"),
         )
         reserva_final = dotal.calcular_reserva(asegurado, anio=10)
@@ -412,7 +412,7 @@ class TestVidaProductOrdering:
         temporal = VidaTemporal(config, tabla_emssa09)
         asegurado = Asegurado(
             edad=30,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             suma_asegurada=Decimal("500000"),
         )
         reserva_final = temporal.calcular_reserva(asegurado, anio=10)
@@ -861,7 +861,7 @@ class TestGMMMonotonicity:
         for edad in [17, 22, 27, 32, 37, 42, 47, 52, 57, 62, 67]:
             gmm = GMM(
                 edad=edad,
-                sexo="M",
+                sexo="masculino",
                 suma_asegurada=Decimal("5000000"),
                 deducible=Decimal("50000"),
                 coaseguro_pct=Decimal("0.10"),
@@ -885,7 +885,7 @@ class TestGMMMonotonicity:
         """
         gmm = GMM(
             edad=40,
-            sexo="M",
+            sexo="masculino",
             suma_asegurada=Decimal("10000000"),
             deducible=Decimal("50000"),
             coaseguro_pct=Decimal("0.10"),
@@ -913,7 +913,7 @@ class TestGMMMonotonicity:
         """If claim <= deductible, insurer pays nothing."""
         gmm = GMM(
             edad=30,
-            sexo="F",
+            sexo="femenino",
             suma_asegurada=Decimal("5000000"),
             deducible=Decimal("50000"),
             coaseguro_pct=Decimal("0.10"),
@@ -1176,7 +1176,7 @@ class TestMortalityConstraints:
 
     def test_qx_between_0_and_1(self, tabla_emssa09):
         """Every qx must be in [0, 1] -- fundamental probability constraint."""
-        for sexo_str in ["H", "M"]:
+        for sexo_str in ["masculino", "femenino"]:
             df = tabla_emssa09.obtener_tabla_completa(sexo_str)
             for _, row in df.iterrows():
                 qx = row["qx"]
@@ -1191,7 +1191,7 @@ class TestMortalityConstraints:
         the table simply stops rather than forcing certain death.
         We verify qx is a valid probability at the terminal age.
         """
-        for sexo_str in ["H", "M"]:
+        for sexo_str in ["masculino", "femenino"]:
             df = tabla_emssa09.obtener_tabla_completa(sexo_str)
             max_age = df["edad"].max()
             qx_omega = float(df[df["edad"] == max_age]["qx"].values[0])
@@ -1201,7 +1201,7 @@ class TestMortalityConstraints:
 
     def test_lx_non_increasing(self, tabla_emssa09):
         """lx (survivors) must be non-increasing with age."""
-        for sexo_str in ["H", "M"]:
+        for sexo_str in ["masculino", "femenino"]:
             sexo = Sexo(sexo_str)
             df = tabla_emssa09.calcular_lx(sexo)
             df = df.sort_values("edad")
@@ -1224,7 +1224,7 @@ class TestRentaVitalicia:
         """Immediate annuity factor must be positive for a living rentist."""
         rv = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
@@ -1238,14 +1238,14 @@ class TestRentaVitalicia:
         """
         rv_imm = RentaVitalicia(
             edad=60,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
         )
         rv_def = RentaVitalicia(
             edad=60,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
@@ -1263,7 +1263,7 @@ class TestRentaVitalicia:
         """
         rv = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
@@ -1297,7 +1297,7 @@ class TestNumericalStability:
         temporal = VidaTemporal(config, tabla_emssa09)
         asegurado = Asegurado(
             edad=30,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             suma_asegurada=Decimal("40000000"),  # 40 million
         )
         resultado = temporal.calcular_prima(asegurado)
@@ -1307,7 +1307,7 @@ class TestNumericalStability:
         # Verify linearity: premium at 40M should be 40x premium at 1M
         asegurado_1m = Asegurado(
             edad=30,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             suma_asegurada=Decimal("1000000"),
         )
         resultado_1m = temporal.calcular_prima(asegurado_1m)
@@ -1408,7 +1408,7 @@ class TestDotalVerificacionesSonIndependientes:
 
     @pytest.fixture
     def asegurado_dotal(self):
-        return Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        return Asegurado(edad=35, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
 
     def test_decomposicion_contra_conmutacion(self, producto_dotal, asegurado_dotal, tabla_emssa09):
         """VP total = SA * (A^1_{x:n} + nEx), vía funciones de conmutación.
@@ -1420,7 +1420,7 @@ class TestDotalVerificacionesSonIndependientes:
         """
         analisis = producto_dotal.analizar_producto(asegurado_dotal)
 
-        tc = TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal("0.055"))
+        tc = TablaConmutacion(tabla_emssa09, Sexo.MASCULINO, Decimal("0.055"))
         esperado = asegurado_dotal.suma_asegurada * (
             tc.Ax(asegurado_dotal.edad, 20) + tc.nEx(asegurado_dotal.edad, 20)
         )
@@ -1507,7 +1507,7 @@ class TestDotalVerificacionesSonIndependientes:
         reservas = [p.reserva for p in analisis.reservas]
 
         for t in range(len(reservas) - 1):
-            qx = tabla_emssa09.obtener_qx(asegurado_dotal.edad + t, Sexo.HOMBRE)
+            qx = tabla_emssa09.obtener_qx(asegurado_dotal.edad + t, Sexo.MASCULINO)
             pago = prima if t < analisis.plazo_pago else Decimal("0")
             izquierda = (reservas[t] + pago) * (Decimal("1") + i)
             derecha = qx * sa + (Decimal("1") - qx) * reservas[t + 1]
@@ -1580,7 +1580,7 @@ class TestPensionLey97:
         p1 = PensionLey97(
             saldo_afore=Decimal("1000000"),
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1000,
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
@@ -1588,7 +1588,7 @@ class TestPensionLey97:
         p2 = PensionLey97(
             saldo_afore=Decimal("2000000"),
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1000,
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
@@ -1606,7 +1606,7 @@ class TestPensionLey97:
         p = PensionLey97(
             saldo_afore=Decimal("100"),  # Very small balance
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1000,
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),

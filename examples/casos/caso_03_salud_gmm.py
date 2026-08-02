@@ -33,7 +33,7 @@ from suite_actuarial.salud import GMM, NivelHospitalario, ZonaGeografica
 # ----------------------------------------------------------------------------
 plan = GMM(
     edad=45,
-    sexo="F",
+    sexo="femenino",
     suma_asegurada=Decimal("5000000"),
     deducible=Decimal("40000"),
     coaseguro_pct=Decimal("0.10"),
@@ -69,7 +69,7 @@ for concepto, monto in reparto.items():
 def prima_a_edad(edad: int) -> Decimal:
     return GMM(
         edad=edad,
-        sexo="F",
+        sexo="femenino",
         suma_asegurada=Decimal("5000000"),
         deducible=Decimal("40000"),
         coaseguro_pct=Decimal("0.10"),

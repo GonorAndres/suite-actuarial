@@ -58,7 +58,7 @@ class TestVidaBoundary:
             recargo_gastos_adq=Decimal("0.10"),
             recargo_utilidad=Decimal("0.03"),
         )
-        asegurado = Asegurado(edad=25, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado = Asegurado(edad=25, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
         producto = VidaTemporal(config, tabla_emssa09)
         resultado = producto.calcular_prima(asegurado)
         assert resultado.prima_neta > 0
@@ -73,7 +73,7 @@ class TestVidaBoundary:
         axn = calcular_seguro_vida(
             tabla=tabla_emssa09,
             edad=99,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             plazo=1,
             tasa_interes=Decimal("0.055"),
             suma_asegurada=Decimal("1000000"),
@@ -97,7 +97,7 @@ class TestVidaBoundary:
             recargo_gastos_adq=Decimal("0.10"),
             recargo_utilidad=Decimal("0.03"),
         )
-        asegurado = Asegurado(edad=95, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado = Asegurado(edad=95, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
         producto = VidaTemporal(config, tabla_emssa09)
         with pytest.raises(ValueError, match="no es asegurable"):
             producto.calcular_prima(asegurado)
@@ -112,7 +112,7 @@ class TestVidaBoundary:
         axn = calcular_seguro_vida(
             tabla=tabla_emssa09,
             edad=35,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             plazo=20,
             tasa_interes=Decimal("0"),
             suma_asegurada=Decimal("1000000"),
@@ -122,7 +122,7 @@ class TestVidaBoundary:
         axn_discounted = calcular_seguro_vida(
             tabla=tabla_emssa09,
             edad=35,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             plazo=20,
             tasa_interes=Decimal("0.055"),
             suma_asegurada=Decimal("1000000"),
@@ -131,7 +131,7 @@ class TestVidaBoundary:
 
     def test_minimum_suma_asegurada(self, tabla_emssa09, config_vida_20):
         """suma_asegurada = 0.01 -- minimum possible value."""
-        asegurado = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("0.01"))
+        asegurado = Asegurado(edad=35, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("0.01"))
         producto = VidaTemporal(config_vida_20, tabla_emssa09)
         resultado = producto.calcular_prima(asegurado)
         assert resultado.prima_neta > 0
@@ -151,7 +151,7 @@ class TestVidaBoundary:
             recargo_gastos_adq=Decimal("0.10"),
             recargo_utilidad=Decimal("0.03"),
         )
-        asegurado = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("50000000"))
+        asegurado = Asegurado(edad=35, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("50000000"))
         producto = VidaTemporal(config, tabla_emssa09)
         resultado = producto.calcular_prima(asegurado)
         assert resultado.prima_neta > 0

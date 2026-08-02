@@ -73,7 +73,7 @@ def ley97_basica(tabla_emssa09):
     return PensionLey97(
         saldo_afore=Decimal("1_500_000"),
         edad=65,
-        sexo="H",
+        sexo="masculino",
         semanas_cotizadas=1000,
         tabla_mortalidad=tabla_emssa09,
         tasa_interes=Decimal("0.035"),
@@ -264,7 +264,7 @@ class TestPensionLey97:
         rv1 = PensionLey97(
             saldo_afore=Decimal("1_000_000"),
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1000,
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
@@ -272,7 +272,7 @@ class TestPensionLey97:
         rv2 = PensionLey97(
             saldo_afore=Decimal("2_000_000"),
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1000,
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
@@ -284,7 +284,7 @@ class TestPensionLey97:
         rv = PensionLey97(
             saldo_afore=Decimal("10_000"),
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1000,
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
@@ -319,7 +319,7 @@ class TestPensionLey97:
         rv = PensionLey97(
             saldo_afore=Decimal("1_500_000"),
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1500,
             tabla_mortalidad=tabla_emssa09,
         )
@@ -344,7 +344,7 @@ class TestPensionLey97:
         rv = PensionLey97(
             saldo_afore=Decimal("1_500_000"),
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1500,
             tabla_mortalidad=tabla_emssa09,
         )
@@ -394,7 +394,7 @@ class TestPensionLey97:
         rv = PensionLey97(
             saldo_afore=Decimal("3_000_000"),
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1000,
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.035"),
@@ -436,7 +436,7 @@ class TestCalculadoraIMSS:
             edad_retiro=65,
             salario_promedio_diario=Decimal("600"),
             saldo_afore=Decimal("1_000_000"),
-            sexo="H",
+            sexo="masculino",
             tabla_mortalidad=tabla_emssa09,
         )
         assert "pension_optima" in resultado
@@ -450,7 +450,7 @@ class TestCalculadoraIMSS:
             semanas_cotizadas=1200,
             edad_retiro=65,
             saldo_afore=Decimal("2_000_000"),
-            sexo="H",
+            sexo="masculino",
             tabla_mortalidad=tabla_emssa09,
         )
         assert resultado["regimen_aplicable"] == "Ley 97"
@@ -473,7 +473,7 @@ class TestCalculadoraIMSS:
             edad_retiro=65,
             salario_promedio_diario=Decimal("600"),
             saldo_afore=Decimal("1_000_000"),
-            sexo="H",
+            sexo="masculino",
             tabla_mortalidad=tabla_emssa09,
         )
         assert resultado["regimen_recomendado"] in ("Ley 73", "Ley 97")

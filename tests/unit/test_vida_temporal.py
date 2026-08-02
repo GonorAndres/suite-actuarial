@@ -28,8 +28,8 @@ def tabla_simple():
         # Mortalidad que aumenta gradualmente con la edad
         qx_h = 0.001 + (edad - 18) * 0.0002
         qx_m = 0.0005 + (edad - 18) * 0.0001
-        datos.append({"edad": edad, "sexo": "H", "qx": qx_h})
-        datos.append({"edad": edad, "sexo": "M", "qx": qx_m})
+        datos.append({"edad": edad, "sexo": "masculino", "qx": qx_h})
+        datos.append({"edad": edad, "sexo": "femenino", "qx": qx_m})
 
     df = pd.DataFrame(datos)
     return TablaMortalidad(nombre="Simple", datos=df)
@@ -53,7 +53,7 @@ def asegurado_basico():
     """Asegurado con datos básicos"""
     return Asegurado(
         edad=35,
-        sexo=Sexo.HOMBRE,
+        sexo=Sexo.MASCULINO,
         suma_asegurada=Decimal("1000000"),
     )
 
@@ -91,8 +91,8 @@ class TestVidaTemporal:
         """La prima debe aumentar con la edad del asegurado"""
         producto = VidaTemporal(config_basica, tabla_simple)
 
-        asegurado_joven = Asegurado(edad=25, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
-        asegurado_mayor = Asegurado(edad=50, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado_joven = Asegurado(edad=25, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
+        asegurado_mayor = Asegurado(edad=50, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
 
         prima_joven = producto.calcular_prima(asegurado_joven).prima_total
         prima_mayor = producto.calcular_prima(asegurado_mayor).prima_total
@@ -103,8 +103,8 @@ class TestVidaTemporal:
         """La prima debe ser proporcional a la suma asegurada"""
         producto = VidaTemporal(config_basica, tabla_simple)
 
-        asegurado_1m = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
-        asegurado_2m = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("2000000"))
+        asegurado_1m = Asegurado(edad=35, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
+        asegurado_2m = Asegurado(edad=35, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("2000000"))
 
         prima_1m = producto.calcular_prima(asegurado_1m).prima_total
         prima_2m = producto.calcular_prima(asegurado_2m).prima_total
@@ -131,7 +131,7 @@ class TestVidaTemporal:
         """Asegurado con edad válida debe ser aceptado"""
         producto = VidaTemporal(config_basica, tabla_simple)
 
-        asegurado = Asegurado(edad=35, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado = Asegurado(edad=35, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado)
 
@@ -145,7 +145,7 @@ class TestVidaTemporal:
         # Edad 65 + plazo 20 = 85 años -- within base class age limit but exceeds temporal limit
         # Use edad within base class limit (<=70) but edad+plazo > 100
         # Actually edad 85 > 70 so base class rejects first
-        asegurado = Asegurado(edad=85, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado = Asegurado(edad=85, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado)
 
@@ -157,7 +157,7 @@ class TestVidaTemporal:
         producto = VidaTemporal(config_basica, tabla_simple)
 
         # Edad menor válida según tabla pero menor de edad legal
-        asegurado = Asegurado(edad=17, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado = Asegurado(edad=17, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado)
 

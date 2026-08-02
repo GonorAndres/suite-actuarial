@@ -17,7 +17,7 @@ from suite_actuarial.actuarial.pricing.vida_pricing import (
 from suite_actuarial.core.validators import Sexo
 
 TASA = Decimal("0.055")
-SEXO = Sexo.HOMBRE
+SEXO = Sexo.MASCULINO
 REL_TOL = Decimal("1e-6")
 
 

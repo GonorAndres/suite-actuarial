@@ -34,7 +34,7 @@ def renta_inmediata(tabla_emssa09):
     """Immediate annuity: male age 65, $10,000/month, 5.5%."""
     return RentaVitalicia(
         edad=65,
-        sexo="H",
+        sexo="masculino",
         monto_mensual=Decimal("10000"),
         tabla_mortalidad=tabla_emssa09,
         tasa_interes=Decimal("0.055"),
@@ -46,7 +46,7 @@ def renta_diferida(tabla_emssa09):
     """Deferred annuity: male age 55, deferred 10 years."""
     return RentaVitalicia(
         edad=55,
-        sexo="H",
+        sexo="masculino",
         monto_mensual=Decimal("10000"),
         tabla_mortalidad=tabla_emssa09,
         tasa_interes=Decimal("0.055"),
@@ -59,7 +59,7 @@ def renta_garantizada(tabla_emssa09):
     """Annuity with 10-year guaranteed period."""
     return RentaVitalicia(
         edad=65,
-        sexo="H",
+        sexo="masculino",
         monto_mensual=Decimal("10000"),
         tabla_mortalidad=tabla_emssa09,
         tasa_interes=Decimal("0.055"),
@@ -72,7 +72,7 @@ def renta_mujer(tabla_emssa09):
     """Immediate annuity for a woman."""
     return RentaVitalicia(
         edad=65,
-        sexo="M",
+        sexo="femenino",
         monto_mensual=Decimal("10000"),
         tabla_mortalidad=tabla_emssa09,
         tasa_interes=Decimal("0.055"),
@@ -107,14 +107,14 @@ class TestImmediateAnnuity:
         """Doubling monthly amount should double the premium."""
         rv1 = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("5000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
         )
         rv2 = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
@@ -134,14 +134,14 @@ class TestImmediateAnnuity:
         """Older person = fewer expected payments = lower premium."""
         rv60 = RentaVitalicia(
             edad=60,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
         )
         rv70 = RentaVitalicia(
             edad=70,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
@@ -152,14 +152,14 @@ class TestImmediateAnnuity:
         """Lower interest rate = less discounting = higher premium."""
         rv_low = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.03"),
         )
         rv_high = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.07"),
@@ -179,14 +179,14 @@ class TestDeferredAnnuity:
         """Deferred annuity should cost less (probability of not reaching payment)."""
         rv_imm = RentaVitalicia(
             edad=55,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
         )
         rv_def = RentaVitalicia(
             edad=55,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
@@ -203,7 +203,7 @@ class TestDeferredAnnuity:
         """Longer deferral = lower premium."""
         rv5 = RentaVitalicia(
             edad=55,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
@@ -211,7 +211,7 @@ class TestDeferredAnnuity:
         )
         rv10 = RentaVitalicia(
             edad=55,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
@@ -232,14 +232,14 @@ class TestGuaranteedAnnuity:
         """Guaranteed period should increase premium (more certain payments)."""
         rv_no_gar = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
         )
         rv_gar = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
@@ -251,7 +251,7 @@ class TestGuaranteedAnnuity:
         """Longer guaranteed period = higher premium."""
         rv5 = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
@@ -259,7 +259,7 @@ class TestGuaranteedAnnuity:
         )
         rv15 = RentaVitalicia(
             edad=65,
-            sexo="H",
+            sexo="masculino",
             monto_mensual=Decimal("10000"),
             tabla_mortalidad=tabla_emssa09,
             tasa_interes=Decimal("0.055"),
@@ -397,7 +397,7 @@ class TestCorreccionFraccionamiento:
         Se contrasta contra la fracción exacta, no contra un decimal
         redondeado: el ajuste es un número cerrado, no una calibración.
         """
-        tc = TablaConmutacion(tabla_emssa09, sexo="H", tasa_interes=Decimal("0.055"))
+        tc = TablaConmutacion(tabla_emssa09, sexo="masculino", tasa_interes=Decimal("0.055"))
 
         assert tc.ajuste_fraccionamiento(12) == Decimal("11") / Decimal("24")
         assert tc.ajuste_fraccionamiento(1) == Decimal("0")
@@ -405,7 +405,7 @@ class TestCorreccionFraccionamiento:
 
     def test_pago_anual_no_lleva_ajuste(self, tabla_emssa09):
         """Con m = 1 la anualidad fraccionada es la anual: no hay qué corregir."""
-        tc = TablaConmutacion(tabla_emssa09, sexo="H", tasa_interes=Decimal("0.055"))
+        tc = TablaConmutacion(tabla_emssa09, sexo="masculino", tasa_interes=Decimal("0.055"))
 
         assert tc.ax_m(65, m=1) == tc.ax(65)
 
@@ -415,7 +415,7 @@ class TestCorreccionFraccionamiento:
         Es la magnitud que reporta el hallazgo A6: usar el factor anual para
         pagos mensuales desplaza el resultado ~3.9%.
         """
-        tc = TablaConmutacion(tabla_emssa09, sexo="H", tasa_interes=Decimal("0.055"))
+        tc = TablaConmutacion(tabla_emssa09, sexo="masculino", tasa_interes=Decimal("0.055"))
         anual = float(tc.ax(65))
         mensual = float(tc.ax_m(65, m=12))
 
@@ -428,7 +428,7 @@ class TestCorreccionFraccionamiento:
         El contraste se construye aquí con el factor anual, que es la ruta
         defectuosa, para fijar la dirección del sesgo.
         """
-        tc = TablaConmutacion(tabla_emssa09, sexo="H", tasa_interes=Decimal("0.055"))
+        tc = TablaConmutacion(tabla_emssa09, sexo="masculino", tasa_interes=Decimal("0.055"))
         prima_correcta = renta_inmediata.calcular_prima_unica()
         prima_defectuosa = renta_inmediata.monto_anual * tc.ax(65)
 
@@ -457,7 +457,7 @@ class TestCorreccionFraccionamiento:
         la edad de inicio, descontada por supervivencia. Si la corrección se
         aplicara en un solo tramo, la identidad fallaría.
         """
-        tc = TablaConmutacion(tabla_emssa09, sexo="H", tasa_interes=Decimal("0.055"))
+        tc = TablaConmutacion(tabla_emssa09, sexo="masculino", tasa_interes=Decimal("0.055"))
         inmediata_a_65 = tc.ax_m(65, m=12)
         esperado = inmediata_a_65 * tc.nEx(55, 10)
 
@@ -479,7 +479,7 @@ class TestCorreccionFraccionamiento:
         pension = PensionLey97(
             saldo_afore=Decimal("1_500_000"),
             edad=65,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=1500,
             tabla_mortalidad=tabla_emssa09,
         )
@@ -506,17 +506,17 @@ class TestTasaInteresAcotada:
     @pytest.mark.parametrize("tasa", ["-1.5", "-1", "-0.5", "-0.0001"])
     def test_una_tasa_negativa_se_rechaza(self, tabla_emssa09, tasa):
         with pytest.raises(ValueError, match="no puede ser negativa"):
-            TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal(tasa))
+            TablaConmutacion(tabla_emssa09, Sexo.MASCULINO, Decimal(tasa))
 
     @pytest.mark.parametrize("tasa", ["0.16", "1.0", "10"])
     def test_una_tasa_desmedida_se_rechaza(self, tabla_emssa09, tasa):
         with pytest.raises(ValueError, match="muy alta"):
-            TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal(tasa))
+            TablaConmutacion(tabla_emssa09, Sexo.MASCULINO, Decimal(tasa))
 
     def test_la_anualidad_nunca_sale_negativa(self, tabla_emssa09):
         """Con i = -1.5 devolvía ax(65) = -154,115,564."""
         for tasa in ("0", "0.03", "0.055", "0.15"):
-            tc = TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal(tasa))
+            tc = TablaConmutacion(tabla_emssa09, Sexo.MASCULINO, Decimal(tasa))
             assert tc.ax(65) > 0
 
     def test_renta_vitalicia_hereda_la_cota(self, tabla_emssa09):
@@ -524,14 +524,14 @@ class TestTasaInteresAcotada:
         with pytest.raises(ValueError, match="no puede ser negativa"):
             RentaVitalicia(
                 edad=65,
-                sexo=Sexo.HOMBRE,
+                sexo=Sexo.MASCULINO,
                 monto_mensual=Decimal("10000"),
                 tasa_interes=Decimal("-1.5"),
                 tabla_mortalidad=tabla_emssa09,
             )
 
     def test_una_tasa_normal_sigue_funcionando(self, tabla_emssa09):
-        tc = TablaConmutacion(tabla_emssa09, Sexo.HOMBRE, Decimal("0.055"))
+        tc = TablaConmutacion(tabla_emssa09, Sexo.MASCULINO, Decimal("0.055"))
         assert float(tc.ax(65)) == pytest.approx(11.198, abs=1e-3)
 
 
@@ -542,7 +542,7 @@ class TestEdadMinimaDeclarada:
         """Antes el fallo venía de `_idx`, hablando de índices y no de la edad."""
         rv = RentaVitalicia(
             edad=18,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             monto_mensual=Decimal("10000"),
             tasa_interes=Decimal("0.055"),
             tabla_mortalidad=tabla_emssa09,
@@ -554,7 +554,7 @@ class TestEdadMinimaDeclarada:
         """La rama superior no cambia: más allá de la tabla no queda renta."""
         rv = RentaVitalicia(
             edad=65,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             monto_mensual=Decimal("10000"),
             tasa_interes=Decimal("0.055"),
             tabla_mortalidad=tabla_emssa09,

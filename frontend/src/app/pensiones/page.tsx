@@ -28,6 +28,7 @@ import type {
   Ley97Response,
   RentaVitaliciaRequest,
   RentaVitaliciaResponse,
+  Sexo,
 } from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
 
@@ -44,14 +45,14 @@ interface Ley73FormState {
 interface Ley97FormState {
   saldo_afore: number;
   edad: number;
-  sexo: "H" | "M";
+  sexo: Sexo;
   semanas_cotizadas: number;
   tasa_interes: string;
 }
 
 interface RentaVitaliciaFormState {
   edad: number;
-  sexo: "H" | "M";
+  sexo: Sexo;
   monto_mensual: number;
   tasa_interes: number;
   periodo_diferimiento: string;
@@ -61,7 +62,7 @@ interface RentaVitaliciaFormState {
 interface ConmutacionFormState {
   edad_min: number;
   edad_max: number;
-  sexo: "H" | "M";
+  sexo: Sexo;
   tasa_interes: number;
 }
 
@@ -79,14 +80,14 @@ const DEFAULT_LEY73: Ley73FormState = {
 const DEFAULT_LEY97: Ley97FormState = {
   saldo_afore: 1_500_000,
   edad: 65,
-  sexo: "H",
+  sexo: "masculino",
   semanas_cotizadas: 1500,
   tasa_interes: "",
 };
 
 const DEFAULT_RENTA: RentaVitaliciaFormState = {
   edad: 65,
-  sexo: "H",
+  sexo: "masculino",
   monto_mensual: 15_000,
   tasa_interes: 0.035,
   periodo_diferimiento: "",
@@ -96,7 +97,7 @@ const DEFAULT_RENTA: RentaVitaliciaFormState = {
 const DEFAULT_CONMUTACION: ConmutacionFormState = {
   edad_min: 0,
   edad_max: 110,
-  sexo: "H",
+  sexo: "masculino",
   tasa_interes: 0.05,
 };
 
@@ -145,8 +146,8 @@ export default function PensionesPage() {
 
   const sexoOptions = useMemo(
     () => [
-      { value: "H", label: t("masculino") },
-      { value: "M", label: t("femenino") },
+      { value: "masculino", label: t("masculino") },
+      { value: "femenino", label: t("femenino") },
     ],
     [t],
   );
@@ -341,7 +342,7 @@ export default function PensionesPage() {
                 name="sexo_97"
                 options={sexoOptions}
                 value={ley97Form.sexo}
-                onChange={(e) => updateLey97("sexo", e.target.value as "H" | "M")}
+                onChange={(e) => updateLey97("sexo", e.target.value as Sexo)}
               />
               <Input
                 label={t("semanas_cotizadas")}
@@ -382,7 +383,7 @@ export default function PensionesPage() {
                 name="sexo_rv"
                 options={sexoOptions}
                 value={rentaForm.sexo}
-                onChange={(e) => updateRenta("sexo", e.target.value as "H" | "M")}
+                onChange={(e) => updateRenta("sexo", e.target.value as Sexo)}
               />
               <Input
                 label={t("monto_mensual")}
@@ -447,7 +448,7 @@ export default function PensionesPage() {
                 name="sexo_conm"
                 options={sexoOptions}
                 value={conmForm.sexo}
-                onChange={(e) => updateConm("sexo", e.target.value as "H" | "M")}
+                onChange={(e) => updateConm("sexo", e.target.value as Sexo)}
               />
               <Input
                 label={t("tasa_interes")}

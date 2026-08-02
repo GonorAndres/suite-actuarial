@@ -88,7 +88,7 @@ tabla = TablaMortalidad.cargar_emssa09()
 pension97 = PensionLey97(
     saldo_afore=SALDO_AFORE,
     edad=65,
-    sexo="M",  # mujer
+    sexo="femenino",
     semanas_cotizadas=1300,
     tabla_mortalidad=tabla,
     tasa_interes=TASA_TECNICA_PENSIONES,
@@ -101,7 +101,7 @@ print(f"  Renta vitalicia mensual: ${pension_mensual_97:>12,.2f}")
 # Verificacion actuarial: reconstruir la anualidad con RentaVitalicia.
 renta = RentaVitalicia(
     edad=65,
-    sexo="M",
+    sexo="femenino",
     monto_mensual=pension_mensual_97,
     tabla_mortalidad=tabla,
     tasa_interes=TASA_TECNICA_PENSIONES,

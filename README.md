@@ -109,7 +109,7 @@ config = ConfiguracionProducto(
 producto = VidaDotal(config, TablaMortalidad.cargar_emssa09(), plazo_pago=10)
 asegurado = Asegurado(
     edad=35,
-    sexo=Sexo.HOMBRE,
+    sexo=Sexo.MASCULINO,
     suma_asegurada=Decimal("1000000"),
 )
 analisis = producto.analizar_producto(asegurado)
@@ -154,7 +154,7 @@ propia, calibración y gobierno del modelo. Consulta:
 
 - [Validación, evidencia y limitaciones](docs/VALIDATION.md)
 - [Referencia regulatoria](docs/REGULATORY.md)
-- [Configuración y datos de mortalidad](data/mortality_tables/README.md)
+- [Configuración y datos de mortalidad](src/suite_actuarial/data/mortality_tables/README.md)
 
 Este proyecto no sustituye notas técnicas registradas, sistemas de la CNSF, asesoría
 fiscal, determinaciones del IMSS ni el juicio de un actuario responsable.

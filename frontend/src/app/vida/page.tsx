@@ -22,7 +22,12 @@ import { useCalculation } from "@/hooks/useCalculation";
 import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { pricingApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-import type { PricingRequest, PricingResponse, CompareResponse } from "@/lib/types";
+import type {
+  PricingRequest,
+  PricingResponse,
+  CompareResponse,
+  Sexo,
+} from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import {
   BarChart,
@@ -42,7 +47,7 @@ type ProductTab = "temporal" | "ordinario" | "dotal" | "comparar";
 
 interface FormState {
   edad: number;
-  sexo: "H" | "M";
+  sexo: Sexo;
   suma_asegurada: number;
   plazo_years: number;
   tasa_interes: number;
@@ -56,7 +61,7 @@ interface FormState {
 
 const DEFAULT_FORM: FormState = {
   edad: 35,
-  sexo: "H",
+  sexo: "masculino",
   suma_asegurada: 1_000_000,
   plazo_years: 20,
   tasa_interes: 0.055,
@@ -358,8 +363,8 @@ export default function VidaPage() {
 
   const sexOptions = useMemo(
     () => [
-      { value: "H", label: t("masculino") },
-      { value: "M", label: t("femenino") },
+      { value: "masculino", label: t("masculino") },
+      { value: "femenino", label: t("femenino") },
     ],
     [t],
   );
@@ -431,7 +436,7 @@ export default function VidaPage() {
               options={sexOptions}
               value={form.sexo}
               onChange={(e) =>
-                updateField("sexo", e.target.value as "H" | "M")
+                updateField("sexo", e.target.value as Sexo)
               }
             />
             <Input

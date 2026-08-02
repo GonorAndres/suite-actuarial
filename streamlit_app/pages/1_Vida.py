@@ -92,7 +92,7 @@ with tab_lab:
         "supervivencia al vencimiento. Las primas se concentran en un periodo menor."
     )
     plazo_pago = st.slider("Años de pago de prima", 1, plazo, min(10, plazo))
-    sexo_modelo = Sexo.HOMBRE if sexo == "Hombre" else Sexo.MUJER
+    sexo_modelo = Sexo.MASCULINO if sexo == "Hombre" else Sexo.FEMENINO
     try:
         config_lab = ConfiguracionProducto(
             nombre_producto=f"Dotal educativo {plazo}/{plazo_pago}",
@@ -205,7 +205,7 @@ tabla = TablaMortalidad.cargar_emssa09()
 
 asegurado = Asegurado(
     edad={edad},
-    sexo=Sexo.{"HOMBRE" if sexo == "Hombre" else "MUJER"},
+    sexo=Sexo.{"MASCULINO" if sexo == "Hombre" else "FEMENINO"},
     suma_asegurada=Decimal("{suma_asegurada}"),
 )
 
@@ -291,7 +291,7 @@ tabla = TablaMortalidad.cargar_emssa09()
 
 asegurado = Asegurado(
     edad={edad},
-    sexo=Sexo.{"HOMBRE" if sexo == "Hombre" else "MUJER"},
+    sexo=Sexo.{"MASCULINO" if sexo == "Hombre" else "FEMENINO"},
     suma_asegurada=Decimal("{suma_asegurada}"),
 )
 tasa = Decimal("{tasa_decimal}")
@@ -363,7 +363,7 @@ with tab_reservas:
         )
 
     with st.expander("Ver código Python"):
-        sexo_enum = "HOMBRE" if sexo == "Hombre" else "MUJER"
+        sexo_enum = "MASCULINO" if sexo == "Hombre" else "FEMENINO"
         st.code(
             f'''from decimal import Decimal
 from suite_actuarial import (

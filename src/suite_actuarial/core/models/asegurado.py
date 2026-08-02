@@ -66,7 +66,7 @@ class Asegurado(BaseModel):
             "examples": [
                 {
                     "edad": 35,
-                    "sexo": "H",
+                    "sexo": "masculino",
                     "fumador": "no_fumador",
                     "suma_asegurada": "1000000.00",
                 }
@@ -109,7 +109,7 @@ class RegistroMortalidad(BaseModel):
             "examples": [
                 {
                     "edad": 35,
-                    "sexo": "H",
+                    "sexo": "masculino",
                     "qx": "0.001234",
                     "lx": 98765,
                 }
