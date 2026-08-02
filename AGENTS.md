@@ -272,6 +272,13 @@ npm test
 Both run in CI. The tests execute inside workerd, the same runtime that serves
 production, so a behavioral difference shows up here rather than after deployment.
 
+CI also builds the Docker image, loads the packaged mortality table inside it, and
+checks that the container answers `/health` and `/api/info`. That gate exists because
+its absence cost a deployment: `COPY data/ data/` outlived the directory it copied,
+so the image failed to build while all four Python gates stayed green. The deploy
+workflow was the only place the image was ever built. If you change the `Dockerfile`
+or move packaged data, this is the check that will tell you.
+
 ## Working practices
 
 - Make focused changes. Do not edit generated artifacts (`frontend/.next/`, coverage
