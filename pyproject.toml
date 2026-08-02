@@ -37,6 +37,9 @@ dev = [
     "pytest-cov>=4.1.0",
     "hypothesis>=6.92.0",
     "httpx>=0.25.0",
+    # Starlette 1.x usa httpx2 para TestClient; httpx se conserva para
+    # compatibilidad con las versiones de FastAPI/Starlette aun soportadas.
+    "httpx2>=2.0.0",
     "ruff>=0.1.0",
     "mypy>=1.7.0",
     "pre-commit>=3.5.0",

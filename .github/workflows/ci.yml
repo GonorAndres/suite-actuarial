@@ -102,3 +102,9 @@ jobs:
       run: npm run build
       env:
         NEXT_PUBLIC_API_URL: /api/v1
+
+    - name: Install browser
+      run: npx playwright install --with-deps chromium
+
+    - name: Frontend smoke tests
+      run: npm run test:e2e

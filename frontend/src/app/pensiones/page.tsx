@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { PensionesStory } from "@/components/stories";
+import { DomainGuide } from "@/components/guides/DomainGuide";
+import { DomainWorkspace } from "@/components/guides/DomainWorkspace";
+import { WorkbenchContext } from "@/components/guides/WorkbenchContext";
 import {
   Card,
   Button,
@@ -15,6 +18,7 @@ import {
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
+import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { pensionesApi } from "@/lib/api";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import type {
@@ -99,8 +103,11 @@ const DEFAULT_CONMUTACION: ConmutacionFormState = {
 /* ── Page component ────────────────────────────────────────────────────── */
 
 export default function PensionesPage() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<PensionesTab>("ley73");
+  const { t, lang } = useLanguage();
+  const [activeTab, setActiveTab] = useLinkedWorkbenchTab<PensionesTab>(
+    ["ley73", "ley97", "renta_vitalicia", "conmutacion"],
+    "ley73",
+  );
 
   /* ── Form state ──────────────────────────────────────────────────────── */
 
@@ -256,7 +263,12 @@ export default function PensionesPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("pensiones_contexto")}</p>
       </div>
 
-      <PensionesStory />
+      <DomainWorkspace domain="pensiones" caseView={<DomainGuide domain="pensiones"><PensionesStory /></DomainGuide>}>
+
+      <section id="workbench" className="scroll-mt-28 pt-3">
+        <p className="kicker mb-2">Workbench</p>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Compare beneficios y rentas" : "Compare benefits and annuities"}</h2>
+      </section>
 
       {/* Tabs */}
       <Tabs
@@ -264,6 +276,8 @@ export default function PensionesPage() {
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as PensionesTab)}
       />
+
+      <WorkbenchContext domain="pensiones" model={activeTab} />
 
       {/* Calculator form */}
       <Card className="form-depth">
@@ -497,6 +511,7 @@ export default function PensionesPage() {
         <ConmutacionResults data={conmData} t={t} />
       )}
 
+      </DomainWorkspace>
     </div>
   );
 }

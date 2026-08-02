@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { VidaStory } from "@/components/stories";
+import { DomainGuide } from "@/components/guides/DomainGuide";
+import { DomainWorkspace } from "@/components/guides/DomainWorkspace";
+import { WorkbenchContext } from "@/components/guides/WorkbenchContext";
 import {
   Card,
   Button,
@@ -16,6 +19,7 @@ import {
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
+import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { pricingApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import type { PricingRequest, PricingResponse, CompareResponse } from "@/lib/types";
@@ -249,8 +253,11 @@ function ResultCard({
 /* ── Page component ────────────────────────────────────────────────────── */
 
 export default function VidaPage() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<ProductTab>("temporal");
+  const { t, lang } = useLanguage();
+  const [activeTab, setActiveTab] = useLinkedWorkbenchTab<ProductTab>(
+    ["temporal", "ordinario", "dotal", "comparar"],
+    "temporal",
+  );
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [showRecargos, setShowRecargos] = useState(false);
 
@@ -314,7 +321,7 @@ export default function VidaPage() {
       if (tab === "dotal") void dotal.calculate(req);
       if (tab === "comparar") void compare.calculate(req);
     },
-    [buildRequest, temporal, ordinario, dotal, compare],
+    [buildRequest, temporal, ordinario, dotal, compare, setActiveTab],
   );
 
   const handleCalculate = useCallback(async () => {
@@ -380,7 +387,14 @@ export default function VidaPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("vida_contexto")}</p>
       </div>
 
-      <VidaStory />
+      <DomainWorkspace domain="vida" caseView={<DomainGuide domain="vida"><VidaStory /></DomainGuide>}>
+
+      <section id="workbench" className="scroll-mt-28 pt-3">
+        <p className="kicker mb-2">Workbench</p>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">
+          {lang === "es" ? "Calcule con sus propios supuestos" : "Calculate with your own assumptions"}
+        </h2>
+      </section>
 
       {/* Tabs */}
       <Tabs
@@ -388,6 +402,8 @@ export default function VidaPage() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
       />
+
+      <WorkbenchContext domain="vida" model={activeTab} />
 
       <p className="text-sm text-navy/55 -mt-5" aria-live="polite">
         {activeTab === "comparar"
@@ -580,6 +596,7 @@ export default function VidaPage() {
         <CompareResults data={compare.data} t={t} />
       )}
 
+      </DomainWorkspace>
     </div>
   );
 }

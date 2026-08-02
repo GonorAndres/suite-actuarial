@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { ReaseguroStory } from "@/components/stories";
+import { DomainGuide } from "@/components/guides/DomainGuide";
+import { DomainWorkspace } from "@/components/guides/DomainWorkspace";
+import { WorkbenchContext } from "@/components/guides/WorkbenchContext";
 import {
   Card,
   Button,
@@ -15,6 +18,7 @@ import {
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
+import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { reinsuranceApi } from "@/lib/api";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import type {
@@ -233,8 +237,11 @@ function ReinsuranceResultCard({
 /* ── Page component ────────────────────────────────────────────────────── */
 
 export default function ReaseguroPage() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<ReinsuranceTab>("quotashare");
+  const { t, lang } = useLanguage();
+  const [activeTab, setActiveTab] = useLinkedWorkbenchTab<ReinsuranceTab>(
+    ["quotashare", "xl", "stoploss"],
+    "quotashare",
+  );
   const [qsForm, setQsForm] = useState<QuotaShareForm>(DEFAULT_QS);
   const [xlForm, setXlForm] = useState<ExcessOfLossForm>(DEFAULT_XL);
   const [slForm, setSlForm] = useState<StopLossForm>(DEFAULT_SL);
@@ -338,7 +345,12 @@ export default function ReaseguroPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("reaseguro_contexto")}</p>
       </div>
 
-      <ReaseguroStory />
+      <DomainWorkspace domain="reaseguro" caseView={<DomainGuide domain="reaseguro"><ReaseguroStory /></DomainGuide>}>
+
+      <section id="workbench" className="scroll-mt-28 pt-3">
+        <p className="kicker mb-2">Workbench</p>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Diseñe y compare contratos" : "Design and compare treaties"}</h2>
+      </section>
 
       {/* Tabs */}
       <Tabs
@@ -346,6 +358,8 @@ export default function ReaseguroPage() {
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as ReinsuranceTab)}
       />
+
+      <WorkbenchContext domain="reaseguro" model={activeTab} />
 
       {/* ── Quota Share Form ──────────────────────────────────────── */}
       {activeTab === "quotashare" && (
@@ -715,6 +729,7 @@ export default function ReaseguroPage() {
         <ReinsuranceResultCard result={stopLoss.data} t={t} />
       )}
 
+      </DomainWorkspace>
     </div>
   );
 }

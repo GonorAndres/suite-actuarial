@@ -528,7 +528,7 @@ export const translations = {
     hist3_narrativa: "Laura, de 45 años, renueva un plan de gastos médicos mayores con suma asegurada de $5,000,000, deducible de $40,000 y coaseguro de 10%. La prima aumenta cada año aunque no haya presentado reclamaciones.",
     hist3_edad: "Edad de la asegurada",
     hist3_prima: "Prima anual",
-    hist3_leccion: "La prima de gastos médicos crece con la edad porque la frecuencia y el costo de las hospitalizaciones aumentan (curva de morbilidad). A esto se suma la inflación médica, que en México supera a la inflación general; por ello las renovaciones se proyectan con una tendencia médica cercana al 10% anual y no con el INPC.",
+    hist3_leccion: "La tarifa ilustrativa aumenta con la edad mediante bandas de morbilidad. No es una proyección de renovación: este motor no incorpora experiencia propia, inflación médica ni tendencia, por lo que esos supuestos deben modelarse y validarse por separado.",
 
     hist4_title: "Roberto y Sofía: dos regímenes del IMSS",
     hist4_narrativa: "Roberto se afilió al IMSS en 1990 y se pensiona bajo la Ley de 1973: el monto se determina por las semanas cotizadas y el salario promedio, con tope de 25 UMA. Su hija Sofía, afiliada en 2005, se pensionará bajo la Ley de 1997: su saldo de AFORE se convierte en una renta vitalicia.",
@@ -1088,7 +1088,7 @@ export const translations = {
     hist3_narrativa: "Laura, age 45, renews a major medical plan with a $5,000,000 sum assured, a $40,000 deductible, and 10% coinsurance. The premium increases every year even without claims.",
     hist3_edad: "Insured's age",
     hist3_prima: "Annual premium",
-    hist3_leccion: "Major medical premiums grow with age because both the frequency and the cost of hospitalizations increase (the morbidity curve). Medical inflation compounds this effect and in Mexico exceeds general inflation, so renewals are projected with a medical trend near 10% per year rather than the CPI.",
+    hist3_leccion: "The illustrative tariff increases with age through morbidity bands. It is not a renewal projection: this engine includes neither experience data, medical inflation, nor trend, so those assumptions must be modeled and validated separately.",
 
     hist4_title: "Roberto and Sofia: two IMSS regimes",
     hist4_narrativa: "Roberto joined IMSS in 1990 and retires under the 1973 law: the benefit is determined by weeks of contributions and average wage, capped at 25 UMA. His daughter Sofia, enrolled in 2005, will retire under the 1997 law: her AFORE balance is converted into a life annuity.",

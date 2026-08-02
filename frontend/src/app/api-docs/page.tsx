@@ -1107,7 +1107,7 @@ export default function ApiDocsPage() {
           <div>
             <h3 className="text-sm font-bold text-navy mb-2">{t("api_docs_base_url")}</h3>
             <code className="text-sm font-mono bg-navy/5 px-3 py-1.5 rounded-lg text-terracotta">
-              http://localhost:8000/api/v1
+              https://api-suite.gonor.me/api/v1
             </code>
           </div>
           <div>
@@ -1127,7 +1127,7 @@ export default function ApiDocsPage() {
             <p className="text-sm text-navy/60">
               {t("api_docs_swagger")}{" "}
               <a
-                href="http://localhost:8000/docs"
+                href="https://api-suite.gonor.me/docs"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-terracotta hover:underline font-mono"

@@ -20,8 +20,6 @@ const COPY = {
     videoTitle: "Dotal educativo 20/10, paso a paso",
     videoText:
       "El recorrido documenta la promesa contractual, la base de mortalidad, el descuento, la prima, la reserva, la sensibilidad y las verificaciones del mismo ejemplo disponible en código.",
-    videoPending: "Grabación pendiente",
-    videoFallback: "El ejemplo escrito e interactivo ya está disponible.",
     featuredKicker: "Ejemplo guiado · Vida",
     featuredTitle: "Seguro dotal a 20 años con primas durante 10",
     featuredText:
@@ -58,8 +56,6 @@ const COPY = {
     videoTitle: "20/10 education endowment, step by step",
     videoText:
       "The walkthrough documents the contractual promise, mortality basis, discounting, premium, reserve, sensitivity, and checks for the same example available in code.",
-    videoPending: "Recording pending",
-    videoFallback: "The written and interactive example is already available.",
     featuredKicker: "Guided example · Life",
     featuredTitle: "20-year endowment with premiums paid for 10 years",
     featuredText:
@@ -110,26 +106,17 @@ const MODELS = {
   ],
 } as const;
 
-function DemoVideo({ lang }: { lang: "es" | "en" }) {
+function DemoVideo({ lang, videoId }: { lang: "es" | "en"; videoId: string }) {
   const copy = COPY[lang];
-  const videoId = process.env.NEXT_PUBLIC_DEMO_VIDEO_ID;
 
   return (
     <div className="video-frame">
-      {videoId ? (
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-          title={copy.videoTitle}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      ) : (
-        <div className="video-pending">
-          <span>20/10</span>
-          <div><strong>{copy.videoPending}</strong><p>{copy.videoFallback}</p></div>
-          <Link href="/lab">{copy.featuredCta} →</Link>
-        </div>
-      )}
+      <iframe
+        src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+        title={copy.videoTitle}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
     </div>
   );
 }
@@ -137,6 +124,7 @@ function DemoVideo({ lang }: { lang: "es" | "en" }) {
 export default function Home() {
   const { lang } = useLanguage();
   const copy = COPY[lang];
+  const videoId = process.env.NEXT_PUBLIC_DEMO_VIDEO_ID;
 
   return (
     <div className="studio-home">
@@ -146,8 +134,8 @@ export default function Home() {
           <h1>{copy.title}</h1>
           <p className="hero-intro">{copy.intro}</p>
           <div className="hero-actions">
-            <Link href="/lab" className="primary-action">{copy.primary}</Link>
-            <a href="#models" className="secondary-action">{copy.secondary}</a>
+            <Link href="/biblioteca" className="primary-action">{copy.secondary}</Link>
+            <Link href="/lab" className="secondary-action">{copy.primary}</Link>
           </div>
           <p className="hero-note">{copy.note}</p>
         </div>
@@ -170,18 +158,20 @@ export default function Home() {
         <div className="contract-diagram"><span>{copy.coverageLabel}</span><div className="timeline"><i /><i /></div><span>{copy.premiumLabel}</span></div>
       </section>
 
-      <section className="video-section">
-        <div><p className="eyebrow">{copy.videoKicker}</p><h2>{copy.videoTitle}</h2><p>{copy.videoText}</p></div>
-        <DemoVideo lang={lang} />
-      </section>
+      {videoId && (
+        <section className="video-section">
+          <div><p className="eyebrow">{copy.videoKicker}</p><h2>{copy.videoTitle}</h2><p>{copy.videoText}</p></div>
+          <DemoVideo lang={lang} videoId={videoId} />
+        </section>
+      )}
 
       <section id="models" className="models-section">
-        <p className="eyebrow">{copy.modelsKicker}</p><h2>{copy.modelsTitle}</h2>
+        <p className="eyebrow">{copy.modelsKicker}</p><h2>{copy.modelsTitle}</h2><Link href="/biblioteca" className="inline-block mt-3 text-terracotta font-semibold">{lang === "es" ? "Ver biblioteca completa" : "View complete library"} →</Link>
         <div className="model-index">{MODELS[lang].map(([question, domain, detail, href], index) => <Link href={href} key={href}><span>{String(index + 1).padStart(2, "0")}</span><div><p>{domain}</p><h3>{question}</h3><small>{detail}</small></div><b>↗</b></Link>)}</div>
       </section>
 
       <section id="evidence" className="evidence-section">
-        <div><p className="eyebrow">{copy.evidenceKicker}</p><h2>{copy.evidenceTitle}</h2><p>{copy.evidenceText}</p></div>
+        <div><p className="eyebrow">{copy.evidenceKicker}</p><h2>{copy.evidenceTitle}</h2><p>{copy.evidenceText}</p><Link href="/evidencia" className="inline-block mt-4 text-terracotta font-semibold">{lang === "es" ? "Examinar evidencia y límites" : "Examine evidence and limits"} →</Link></div>
         <ol><li><span>01</span>{copy.validation}</li><li><span>02</span>{copy.provenance}</li><li><span>03</span>{copy.limitations}</li></ol>
       </section>
 

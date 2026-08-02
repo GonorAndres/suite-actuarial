@@ -88,7 +88,7 @@ async function apiGet<TRes>(
   path: string,
   params?: Record<string, string>,
 ): Promise<TRes> {
-  const url = new URL(`${API_BASE}${path}`);
+  const url = new URL(`${API_BASE}${path}`, window.location.origin);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, value);

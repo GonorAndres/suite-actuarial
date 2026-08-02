@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { RegulatorioStory } from "@/components/stories";
+import { DomainGuide } from "@/components/guides/DomainGuide";
+import { DomainWorkspace } from "@/components/guides/DomainWorkspace";
+import { WorkbenchContext } from "@/components/guides/WorkbenchContext";
 import {
   Card,
   Button,
@@ -17,6 +20,7 @@ import {
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
+import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { regulatoryApi } from "@/lib/api";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import type {
@@ -400,8 +404,11 @@ function SectionToggle({
 }
 
 export default function RegulatorioPage() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<RegTab>("rcs");
+  const { t, lang } = useLanguage();
+  const [activeTab, setActiveTab] = useLinkedWorkbenchTab<RegTab>(
+    ["rcs", "deducibilidad", "retenciones"],
+    "rcs",
+  );
   const [rcsForm, setRcsForm] = useState<RCSFormState>(DEFAULT_RCS);
   const [dedForm, setDedForm] = useState<DeducibilidadFormState>(DEFAULT_DED);
   const [retForm, setRetForm] = useState<RetencionesFormState>(DEFAULT_RET);
@@ -552,7 +559,12 @@ export default function RegulatorioPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("regulatorio_contexto")}</p>
       </div>
 
-      <RegulatorioStory />
+      <DomainWorkspace domain="regulatorio" caseView={<DomainGuide domain="regulatorio"><RegulatorioStory /></DomainGuide>}>
+
+      <section id="workbench" className="scroll-mt-28 pt-3">
+        <p className="kicker mb-2">Workbench</p>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Examine escenarios de referencia" : "Examine reference scenarios"}</h2>
+      </section>
 
       {/* Tabs */}
       <Tabs
@@ -560,6 +572,8 @@ export default function RegulatorioPage() {
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as RegTab)}
       />
+
+      <WorkbenchContext domain="regulatorio" model={activeTab} />
 
       {/* ── RCS Form ──────────────────────────────────────────────── */}
       {activeTab === "rcs" && (
@@ -1048,6 +1062,7 @@ export default function RegulatorioPage() {
         <WithholdingResultCard result={withholding.data} t={t} />
       )}
 
+      </DomainWorkspace>
     </div>
   );
 }

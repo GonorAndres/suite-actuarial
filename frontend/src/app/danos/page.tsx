@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { DanosStory } from "@/components/stories";
+import { DomainGuide } from "@/components/guides/DomainGuide";
+import { DomainWorkspace } from "@/components/guides/DomainWorkspace";
+import { WorkbenchContext } from "@/components/guides/WorkbenchContext";
 import {
   Card,
   Button,
@@ -14,6 +17,7 @@ import {
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
+import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { danosApi } from "@/lib/api";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import type {
@@ -136,8 +140,11 @@ const DEFAULT_FS: FreqSevFormState = {
 /* ── Page component ────────────────────────────────────────────────────── */
 
 export default function DanosPage() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<DanosTab>("auto");
+  const { t, lang } = useLanguage();
+  const [activeTab, setActiveTab] = useLinkedWorkbenchTab<DanosTab>(
+    ["auto", "incendio", "rc", "bonus_malus", "freq_sev"],
+    "auto",
+  );
 
   /* ── Form state ──────────────────────────────────────────────────────── */
 
@@ -421,7 +428,12 @@ export default function DanosPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("danos_contexto")}</p>
       </div>
 
-      <DanosStory />
+      <DomainWorkspace domain="danos" caseView={<DomainGuide domain="danos"><DanosStory /></DomainGuide>}>
+
+      <section id="workbench" className="scroll-mt-28 pt-3">
+        <p className="kicker mb-2">Workbench</p>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Explore tarifas y modelos de pérdidas" : "Explore rating and loss models"}</h2>
+      </section>
 
       {/* Tabs */}
       <Tabs
@@ -429,6 +441,8 @@ export default function DanosPage() {
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as DanosTab)}
       />
+
+      <WorkbenchContext domain="danos" model={activeTab} />
 
       {/* Calculator form */}
       <Card className="form-depth">
@@ -693,6 +707,7 @@ export default function DanosPage() {
         <FreqSevResults result={freqSev.data} t={t} />
       )}
 
+      </DomainWorkspace>
     </div>
   );
 }

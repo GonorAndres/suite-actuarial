@@ -1,25 +1,56 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const NAV_ITEMS = [
   { label: { es: "Ejemplo guiado", en: "Guided example" }, href: "/lab" },
-  { label: { es: "Biblioteca", en: "Library" }, href: "/#models" },
-  { label: { es: "Trazabilidad", en: "Traceability" }, href: "/#evidence" },
+  { label: { es: "Biblioteca", en: "Library" }, href: "/biblioteca" },
+  { label: { es: "Evidencia", en: "Evidence" }, href: "/evidencia" },
 ];
 
 export function Header() {
   const { lang, setLang } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [headerHidden, setHeaderHidden] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    let previousY = window.scrollY;
+    let frame = 0;
+
+    const updateVisibility = () => {
+      frame = 0;
+      const currentY = window.scrollY;
+      if (currentY <= 24) {
+        setHeaderHidden(false);
+      } else if (currentY > previousY + 4 && currentY > 72) {
+        setHeaderHidden(true);
+      } else if (currentY < previousY - 4) {
+        setHeaderHidden(false);
+      }
+      previousY = currentY;
+    };
+
+    const onScroll = () => {
+      if (frame === 0) frame = window.requestAnimationFrame(updateVisibility);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame !== 0) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   return (
     <>
       {/* Masthead: paper surface with a classic double rule underneath */}
-      <header className="sticky top-0 z-50 bg-offwhite/95 backdrop-blur-sm">
+      <header
+        className={`sticky top-0 z-50 bg-offwhite/95 backdrop-blur-sm transition-transform duration-300 motion-reduce:transition-none ${headerHidden && !mobileOpen ? "-translate-y-full" : "translate-y-0"}`}
+      >
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-16">
           {/* Wordmark */}
           <Link

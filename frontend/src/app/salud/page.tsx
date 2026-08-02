@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { SaludStory } from "@/components/stories";
+import { DomainGuide } from "@/components/guides/DomainGuide";
+import { DomainWorkspace } from "@/components/guides/DomainWorkspace";
+import { WorkbenchContext } from "@/components/guides/WorkbenchContext";
 import {
   Card,
   Button,
@@ -15,6 +18,7 @@ import {
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
+import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { saludApi } from "@/lib/api";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import type {
@@ -72,8 +76,8 @@ const DEFAULT_ACCIDENTES: AccidentesFormState = {
 /* ── Page component ────────────────────────────────────────────────────── */
 
 export default function SaludPage() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<SaludTab>("gmm");
+  const { t, lang } = useLanguage();
+  const [activeTab, setActiveTab] = useLinkedWorkbenchTab<SaludTab>(["gmm", "accidentes"], "gmm");
 
   /* ── Form state ──────────────────────────────────────────────────────── */
 
@@ -203,7 +207,12 @@ export default function SaludPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("salud_contexto")}</p>
       </div>
 
-      <SaludStory />
+      <DomainWorkspace domain="salud" caseView={<DomainGuide domain="salud"><SaludStory /></DomainGuide>}>
+
+      <section id="workbench" className="scroll-mt-28 pt-3">
+        <p className="kicker mb-2">Workbench</p>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Examine costo compartido y tarifa" : "Examine cost sharing and pricing"}</h2>
+      </section>
 
       {/* Tabs */}
       <Tabs
@@ -211,6 +220,8 @@ export default function SaludPage() {
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as SaludTab)}
       />
+
+      <WorkbenchContext domain="salud" model={activeTab} />
 
       {/* Calculator form */}
       <Card className="form-depth">
@@ -369,6 +380,7 @@ export default function SaludPage() {
         <AccidentesResults result={accidentes.data} t={t} />
       )}
 
+      </DomainWorkspace>
     </div>
   );
 }

@@ -24,6 +24,12 @@ export function Footer() {
 
           {/* Center: links */}
           <div className="flex items-center gap-8 text-xs font-semibold uppercase tracking-wider">
+            <Link href="/biblioteca" className="text-offwhite/60 hover:text-offwhite transition-colors">
+              {lang === "es" ? "Biblioteca" : "Library"}
+            </Link>
+            <Link href="/evidencia" className="text-offwhite/60 hover:text-offwhite transition-colors">
+              {lang === "es" ? "Evidencia" : "Evidence"}
+            </Link>
             <a
               href="https://github.com/GonorAndres/suite-actuarial"
               target="_blank"

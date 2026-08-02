@@ -3,6 +3,7 @@
 import math
 import os
 import secrets
+import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from suite_actuarial.api.routers import (
     reserves,
     salud,
 )
+from suite_actuarial.api.telemetry import schedule_api_event
 
 app = FastAPI(
     title="suite_actuarial developer interface",
@@ -64,6 +66,41 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type"],
 )
+
+
+@app.middleware("http")
+async def capture_api_request_metrics(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """Capture aggregate API health metrics when PostHog is configured.
+
+    The event contains only route, method, status, outcome, and duration. No
+    actuarial request data, response values, identity, IP, or query string is
+    sent. The network call is queued after the response path and cannot change
+    the API result.
+    """
+    tracked = request.url.path.startswith("/api/v1/") or request.url.path in {"/api/info"}
+    if not tracked:
+        return await call_next(request)
+    started_at = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        schedule_api_event(
+            route=request.url.path,
+            method=request.method,
+            status_code=500,
+            started_at=started_at,
+        )
+        raise
+    schedule_api_event(
+        route=request.url.path,
+        method=request.method,
+        status_code=response.status_code,
+        started_at=started_at,
+    )
+    return response
 
 
 @app.middleware("http")
