@@ -1,3 +1,19 @@
-import type { Metadata } from "next";
-export const metadata: Metadata = { title: "Reservas: Chain Ladder, Mack y bootstrap ODP | suite_actuarial", description: "Desarrollo de siniestros, cola e incertidumbre explicados con pruebas y límites del modelo.", alternates: { canonical: "/reservas/" } };
-export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) { return children; }
+import { StructuredData } from "@/components/StructuredData";
+import { routeMetadata } from "@/lib/site-metadata";
+import { domainGraph } from "@/lib/structured-data";
+
+const name = "Reservas: Chain Ladder, Mack y bootstrap ODP";
+const description =
+  "Desarrollo de siniestros, cola e incertidumbre explicados con pruebas y límites del modelo.";
+const path = "/reservas/";
+
+export const metadata = routeMetadata({ name, description, path });
+
+export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <>
+      <StructuredData graph={domainGraph("reservas", name, description)} />
+      {children}
+    </>
+  );
+}

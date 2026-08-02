@@ -5,6 +5,10 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import { DocumentLanguage } from "@/components/layout/DocumentLanguage";
+import { LANG_BOOTSTRAP_SCRIPT } from "@/lib/i18n/langBootstrap";
+import { StructuredData } from "@/components/StructuredData";
+import { SITE_NAME, SITE_URL, SOCIAL_IMAGE } from "@/lib/site-metadata";
+import { siteGraph } from "@/lib/structured-data";
 
 const plexSans = IBM_Plex_Sans({
   variable: "--font-sans",
@@ -25,7 +29,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://suite.gonor.me"),
+  metadataBase: new URL(SITE_URL),
   title: "suite_actuarial · Laboratorio actuarial abierto",
   description:
     "Modelos actuariales explicados y calculadoras reproducibles, con sus fuentes y sus límites, desde el mercado asegurador mexicano.",
@@ -34,12 +38,18 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_MX",
     alternateLocale: "en_US",
-    siteName: "suite_actuarial",
+    siteName: SITE_NAME,
     title: "suite_actuarial · Laboratorio actuarial abierto",
     description: "Entiende el modelo, revisa sus supuestos y calcula escenarios reproducibles.",
     url: "/",
+    images: [SOCIAL_IMAGE],
   },
-  twitter: { card: "summary", title: "suite_actuarial", description: "Modelos actuariales explicados y reproducibles, hechos desde México." },
+  twitter: {
+    card: "summary_large_image",
+    title: "suite_actuarial",
+    description: "Modelos actuariales explicados y reproducibles, hechos desde México.",
+    images: [SOCIAL_IMAGE],
+  },
 };
 
 export default function RootLayout({
@@ -53,6 +63,9 @@ export default function RootLayout({
       className={`${plexSans.variable} ${plexSerif.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* Applies the stored language to <html lang> before hydration. */}
+        <script dangerouslySetInnerHTML={{ __html: LANG_BOOTSTRAP_SCRIPT }} />
+        <StructuredData graph={siteGraph} />
         <LanguageProvider>
           <DocumentLanguage />
           <Header />

@@ -102,6 +102,8 @@ frontend/out/
 # Screenshots
 screenshots/
 *.png
+# Exception: the social card is a shipped asset, not a screenshot.
+!frontend/public/og.png
 
 # Project specific
 data/raw/
