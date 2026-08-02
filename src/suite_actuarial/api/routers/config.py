@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from suite_actuarial.config.loader import (
+    ConfiguracionNoDisponibleError,
     cargar_config,
     cargar_config_fecha,
     validar_configuraciones,
@@ -161,9 +162,16 @@ def _config_to_response(config: ConfigAnual) -> ConfigAnualResponse:
 
 @router.get("/fecha/{fecha}", response_model=ConfigAnualResponse)
 def get_config_fecha(fecha: date) -> ConfigAnualResponse:
-    """Return the reviewed profile effective on an ISO date."""
+    """Return the reviewed profile effective on an ISO date.
+
+    A date outside the bundled coverage is a rejected input, not a missing
+    resource: it returns 422 with the covered range in the detail. Nothing is
+    extrapolated past the last published profile.
+    """
     try:
         return _config_to_response(cargar_config_fecha(fecha))
+    except ConfiguracionNoDisponibleError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except (ModuleNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

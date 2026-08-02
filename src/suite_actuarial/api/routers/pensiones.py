@@ -7,19 +7,38 @@ commutation table lookups.
 """
 
 from decimal import Decimal
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
 from suite_actuarial.api.schemas import SolicitudBase
+from suite_actuarial.config.loader import ConfiguracionNoDisponibleError
 from suite_actuarial.core.models.common import Sexo
 from suite_actuarial.pensiones.conmutacion import TablaConmutacion
 from suite_actuarial.pensiones.plan_retiro import PensionLey73, PensionLey97
 from suite_actuarial.pensiones.renta_vitalicia import RentaVitalicia
 
 router = APIRouter(prefix="/pensiones", tags=["pensiones"])
+
+
+def _sin_perfil_vigente(exc: ConfiguracionNoDisponibleError) -> HTTPException:
+    """Traduce la falta de perfil vigente en un 503 que nombra la cobertura.
+
+    Ley 73 y Ley 97 leen el perfil regulatorio vigente a la fecha del servidor
+    (UMA, pension garantizada). Si esa fecha ya no esta cubierta, el fallo es
+    del servidor, no de la peticion; no se reutiliza el ultimo perfil publicado
+    como si siguiera vigente. Mismo criterio que el router regulatorio.
+    """
+    return HTTPException(
+        status_code=503,
+        detail=(
+            "No hay perfil regulatorio vigente para la fecha del servidor; "
+            "este endpoint no puede responder sin uno. " + str(exc)
+        ),
+    )
+
 
 # -- Mortality table cache -----------------------------------------------------
 
@@ -68,7 +87,7 @@ class Ley97Request(SolicitudBase):
 
     saldo_afore: float = Field(..., gt=0, description="Current AFORE account balance in MXN")
     edad: int = Field(..., ge=60, le=70, description="Current age of the worker")
-    sexo: str = Field(..., pattern="^[HM]$", description="Sex: H (male) or M (female)")
+    sexo: Sexo = Field(..., description="Sex of the worker: masculino or femenino")
     semanas_cotizadas: int = Field(..., ge=0, description="Total weeks contributed to IMSS")
     tasa_interes: float = Field(
         default=0.035,
@@ -91,7 +110,7 @@ class Ley97Response(BaseModel):
 
     saldo_afore: float
     edad: int
-    sexo: str
+    sexo: Sexo
     semanas_cotizadas: int
     renta_vitalicia: ModalidadDetalle
     retiro_programado: ModalidadDetalle
@@ -112,7 +131,7 @@ class RentaVitaliciaRequest(SolicitudBase):
             "(18-100); outside it there is no tabulated mortality"
         ),
     )
-    sexo: str = Field(..., pattern="^[HM]$", description="Sex: H (male) or M (female)")
+    sexo: Sexo = Field(..., description="Sex of the annuitant: masculino or femenino")
     monto_mensual: float = Field(..., gt=0, description="Monthly annuity payment in MXN")
     tasa_interes: float = Field(..., ge=0, le=0.15, description="Technical interest rate")
     periodo_diferimiento: int = Field(
@@ -127,7 +146,7 @@ class RentaVitaliciaResponse(BaseModel):
     """Response for life annuity calculation."""
 
     edad: int
-    sexo: str
+    sexo: Sexo
     monto_mensual: float
     tasa_interes: float
     periodo_diferimiento: int
@@ -150,7 +169,7 @@ class ConmutacionRow(BaseModel):
 class ConmutacionResponse(BaseModel):
     """Response for commutation table lookup."""
 
-    sexo: str
+    sexo: Sexo
     tasa_interes: float
     edad_min: int
     edad_max: int
@@ -203,6 +222,8 @@ def calcular_ley73(req: Ley73Request) -> Ley73Response:
             aguinaldo_anual=float(resumen["aguinaldo_anual"]),
             pension_anual_total=float(resumen["pension_anual_total"]),
         )
+    except ConfiguracionNoDisponibleError as exc:
+        raise _sin_perfil_vigente(exc) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -220,7 +241,7 @@ def calcular_ley97(req: Ley97Request) -> Ley97Response:
         calc = PensionLey97(
             saldo_afore=req.saldo_afore,
             edad=req.edad,
-            sexo=Sexo(req.sexo),
+            sexo=req.sexo,
             semanas_cotizadas=req.semanas_cotizadas,
             tabla_mortalidad=tabla,
             tasa_interes=req.tasa_interes,
@@ -246,6 +267,8 @@ def calcular_ley97(req: Ley97Request) -> Ley97Response:
             recomendacion=comparacion["recomendacion"],
             pension_garantizada=float(comparacion["pension_garantizada"]),
         )
+    except ConfiguracionNoDisponibleError as exc:
+        raise _sin_perfil_vigente(exc) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -262,7 +285,7 @@ def calcular_renta_vitalicia(req: RentaVitaliciaRequest) -> RentaVitaliciaRespon
         tabla = _get_tabla()
         rv = RentaVitalicia(
             edad=req.edad,
-            sexo=Sexo(req.sexo),
+            sexo=req.sexo,
             monto_mensual=req.monto_mensual,
             tabla_mortalidad=tabla,
             tasa_interes=req.tasa_interes,
@@ -289,7 +312,7 @@ def calcular_renta_vitalicia(req: RentaVitaliciaRequest) -> RentaVitaliciaRespon
 
 @router.get("/conmutacion/tabla", response_model=ConmutacionResponse)
 def tabla_conmutacion(
-    sexo: str = Query(..., pattern="^[HM]$", description="Sex: H (male) or M (female)"),
+    sexo: Annotated[Sexo, Query(description="Sex: masculino or femenino")],
     tasa_interes: float = Query(..., ge=0, le=0.15, description="Technical interest rate"),
     edad_min: int = Query(default=0, ge=0, description="Minimum age to include"),
     edad_max: int = Query(default=110, ge=0, description="Maximum age to include"),
@@ -304,7 +327,7 @@ def tabla_conmutacion(
         tabla = _get_tabla()
         tc = TablaConmutacion(
             tabla_mortalidad=tabla,
-            sexo=Sexo(sexo),
+            sexo=sexo,
             tasa_interes=tasa_interes,
         )
 

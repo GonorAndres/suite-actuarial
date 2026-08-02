@@ -19,6 +19,34 @@ class EstadoFiscal(StrEnum):
     INDETERMINATE = "indeterminate"
 
 
+class EstadoTopeGlobal(StrEnum):
+    """Como se aplico el tope global del ultimo parrafo del Art. 151 LISR.
+
+    El ultimo parrafo limita el **total** de deducciones personales del
+    articulo a la menor de dos cantidades: cinco veces el valor anual de la UMA
+    o el 15% del total de los ingresos del contribuyente. Con solo una de las
+    dos cifras el tope no queda determinado, y decirlo es parte del resultado.
+    """
+
+    APLICADO = "aplicado"
+    """Se evaluaron las dos ramas del tope: 5 UMA anuales y 15% de ingresos."""
+
+    PARCIAL_SIN_INGRESOS = "parcial_sin_ingresos"
+    """Solo se aplico la rama de 5 UMA: falto el ingreso total del contribuyente.
+
+    El monto deducible resultante es una **cota superior**: la rama del 15% solo
+    puede bajarlo.
+    """
+
+    NO_APLICABLE = "no_aplicable"
+    """La deduccion queda fuera del tope global, o no hay deduccion que topar.
+
+    Cubre la fraccion V (el ultimo parrafo la excluye expresamente), las primas
+    no deducibles para persona fisica y el regimen de persona moral, que no usa
+    deducciones personales.
+    """
+
+
 class TipoSeguroFiscal(StrEnum):
     """Tipos de seguro para efectos fiscales SAT"""
 
@@ -44,6 +72,21 @@ class ResultadoDeducibilidadPrima(BaseModel):
     fundamento_legal: str
     estado: EstadoFiscal | None = None
     factores_faltantes: list[str] = Field(default_factory=list)
+    tope_global: EstadoTopeGlobal = Field(
+        default=EstadoTopeGlobal.NO_APLICABLE,
+        description=(
+            "Como se aplico el tope global del ultimo parrafo del Art. 151 "
+            "LISR. Nunca se omite: un 100% deducible sin decir que paso con el "
+            "tope es el defecto que este campo existe para evitar."
+        ),
+    )
+    nota_tope_global: str | None = Field(
+        default=None,
+        description=(
+            "Explicacion en prosa del estado del tope global: que rama se "
+            "aplico, que falto y que alcance tiene la cifra resultante."
+        ),
+    )
 
     @model_validator(mode="after")
     def derive_status(self) -> "ResultadoDeducibilidadPrima":

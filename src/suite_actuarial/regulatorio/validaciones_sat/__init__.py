@@ -33,6 +33,7 @@ Ejemplo:
 
 from suite_actuarial.regulatorio.validaciones_sat.models import (
     EstadoFiscal,
+    EstadoTopeGlobal,
     ResultadoDeducibilidadPrima,
     ResultadoGravabilidadSiniestro,
     ResultadoIVA,
@@ -53,6 +54,7 @@ __all__ = [
     # Modelos
     "TipoSeguroFiscal",
     "EstadoFiscal",
+    "EstadoTopeGlobal",
     "ResultadoDeducibilidadPrima",
     "ResultadoGravabilidadSiniestro",
     "ResultadoRetencion",

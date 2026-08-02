@@ -40,6 +40,35 @@ class TestConfigTasasSAT:
         assert "limite_deducciones_pf_umas" in data
 
 
+class TestConfigFechaFueraDeCobertura:
+    """Una fecha sin perfil publicado se rechaza nombrando la cobertura.
+
+    Antes de esta pantalla, salir de la cobertura era un `ModuleNotFoundError`
+    genérico. Ahora la fecha la pone el cliente, así que es un input rechazado
+    (422), y el detalle tiene que decir hasta dónde llegan los perfiles para
+    que quien la envió sepa qué pedir.
+    """
+
+    def test_ultimo_dia_cubierto_responde_200(self, api_client):
+        response = api_client.get("/api/v1/config/fecha/2027-01-31")
+        assert response.status_code == 200
+        assert response.json()["anio"] == 2026
+
+    def test_dia_siguiente_devuelve_422_con_el_rango(self, api_client):
+        response = api_client.get("/api/v1/config/fecha/2027-02-01")
+
+        assert response.status_code == 422
+        detalle = response.json()["detail"]
+        assert "2027-02-01" in detalle
+        assert "2024-02-01 a 2027-01-31" in detalle
+
+    def test_fecha_anterior_al_primer_perfil_devuelve_422(self, api_client):
+        response = api_client.get("/api/v1/config/fecha/2024-01-31")
+
+        assert response.status_code == 422
+        assert "2024-02-01 a 2027-01-31" in response.json()["detail"]
+
+
 class TestConfigFactoresCNSF:
     def test_success(self, api_client):
         response = api_client.get("/api/v1/config/2026/factores-cnsf")
