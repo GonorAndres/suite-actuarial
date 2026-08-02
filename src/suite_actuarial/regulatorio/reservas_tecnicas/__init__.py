@@ -1,12 +1,15 @@
 """
-Módulo de reservas técnicas según Circular S-11.4 CNSF.
+Módulo de reservas técnicas, orientado a la Circular S-11.4 CNSF.
 
-Proporciona cálculo y validación de reservas técnicas que las aseguradoras
-deben constituir conforme a la normativa mexicana.
+Reproduce, de forma simplificada y con fines didácticos, el tipo de reservas
+técnicas que las aseguradoras deben constituir bajo la normativa mexicana. No
+certifica conformidad regulatoria: los métodos aquí implementados no son la
+nota técnica registrada ni el método institucional de valuación.
 
 Componentes principales:
 - CalculadoraRRC: Reserva de Riesgos en Curso (seguros corto plazo)
-- CalculadoraRM: Reserva Matemática (seguros largo plazo/vida)
+- CalculadoraRM: Reserva Matemática prospectiva de primas netas (vida). Emite
+  `ExperimentalModelWarning` y publica `DISCLAIMER_RM` dentro del resultado.
 - ValidadorSuficiencia: Validación de suficiencia de reservas
 
 Ejemplo de uso:
@@ -28,6 +31,7 @@ Ejemplo de uso:
 """
 
 from suite_actuarial.regulatorio.reservas_tecnicas.models import (
+    DISCLAIMER_RM,
     ConfiguracionRM,
     ConfiguracionRRC,
     MetodoCalculoRRC,
@@ -58,4 +62,6 @@ __all__ = [
     "CalculadoraRM",
     # Validadores
     "ValidadorSuficiencia",
+    # Avisos
+    "DISCLAIMER_RM",
 ]
