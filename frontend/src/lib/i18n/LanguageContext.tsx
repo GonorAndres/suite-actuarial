@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { DEFAULT_LANG as EXPORTED_LANG, LANG_STORAGE_KEY } from "./langBootstrap";
 import { translations, type Lang, type TranslationKey } from "./translations";
 
 interface LanguageContextValue {
@@ -17,11 +18,11 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-const STORAGE_KEY = "suite_actuarial_lang";
+const STORAGE_KEY = LANG_STORAGE_KEY;
 
 /** Language of the statically exported HTML. The first client render must
  *  agree with it or React discards the whole tree as a hydration mismatch. */
-const DEFAULT_LANG: Lang = "es";
+const DEFAULT_LANG: Lang = EXPORTED_LANG;
 
 /* ── The stored preference as an external store ──────────────────────────────
  *

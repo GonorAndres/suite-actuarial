@@ -29,6 +29,44 @@ Pages esta conectado directamente al repositorio: Cloudflare clona, corre
 falta bloquear un build roto, es configuracion de Cloudflare Pages, no de este
 repositorio.
 
+### Los dos caminos son independientes, y eso ya rompio produccion
+
+El 2026-08-02, al publicar 2.2.0, el backend se desplego y el dashboard no. El
+resultado: la interfaz seguia enviando `sexo: "H"` y el backend nuevo lo
+rechazaba con 422. Las calculadoras del sitio publico quedaron rotas sin que
+nada fallara en rojo, porque cada camino se creia exitoso por separado.
+
+Dos causas, ambas anotadas aqui para que no se repitan:
+
+1. **Pages fallaba en silencio desde antes.** El proyecto tenia
+   `root_dir = frontend` y `destination_dir = frontend/out`. Cloudflare resuelve
+   el segundo *relativo* al primero, asi que buscaba `frontend/frontend/out` y
+   terminaba con `Error: Output directory not found`. El `next build` en si
+   pasaba entero — las 17 paginas se generaban — y solo fallaba la validacion
+   final. Ya esta corregido a `destination_dir = out`.
+
+2. **Un cambio de contrato rompe si los dos lados no viajan juntos.** El backend
+   llega por `deploy.yml` (tras CI) y el dashboard por Pages (sin CI). No hay
+   nada que los sincronice. Con un cambio compatible da igual; con uno
+   incompatible, como el de `sexo` en 2.2.0, la ventana entre ambos es una
+   interfaz rota.
+
+**Al publicar un cambio de contrato, comprueba los dos lados antes de darlo por
+hecho.** Que `suite.gonor.me` responda 200 no dice nada: la portada es estatica
+y carga igual con el bundle viejo. Lo que hay que comprobar es una llamada real:
+
+```bash
+# El estado del despliegue de Pages, que es donde se escondia el fallo
+curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  "https://api.cloudflare.com/client/v4/accounts/<cuenta>/pages/projects/suite-actuarial/deployments?per_page=3" \
+  | python3 -c "import sys,json;[print(x['created_on'][:19], x['environment'], (x.get('latest_stage') or {}).get('status')) for x in json.load(sys.stdin)['result']]"
+```
+
+Nunca se resuelve poniendo un traductor en el borde. Traducir `"H"` en silencio
+es exactamente lo que 2.2.0 prohibe: la misma letra significaba sexos opuestos
+segun el realm, asi que cualquier traduccion automatica acierta en uno y falla
+en el otro. El borde proxia; no interpreta.
+
 ## El borde publico (`edge/`)
 
 El worker vive en [`edge/`](../edge/) y su documentacion propia esta en
