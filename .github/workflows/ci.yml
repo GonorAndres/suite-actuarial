@@ -109,6 +109,44 @@ jobs:
     - name: Frontend smoke tests
       run: npm run test:e2e
 
+  # La imagen que se despliega. Sin esta compuerta, el `docker build` de
+  # `deploy.yml` era el unico lugar donde se construia la imagen, asi que un
+  # Dockerfile roto pasaba las cuatro compuertas en verde y fallaba al
+  # desplegar. Fue exactamente lo que ocurrio: `COPY data/ data/` sobrevivio a
+  # la eliminacion de ese directorio y rompio el despliegue de `main` mientras
+  # CI seguia en verde.
+  #
+  # No basta con que la imagen construya: tiene que arrancar y responder. La
+  # tabla de mortalidad viaja como package-data, y un error de empaquetado solo
+  # se ve al cargarla.
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build the deployment image
+      run: docker build -t suite-actuarial:ci .
+
+    - name: The packaged mortality table has to load
+      run: |
+        docker run --rm suite-actuarial:ci python -c "
+        from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
+        TablaMortalidad.cargar_emssa09()
+        print('mortality table loaded')
+        "
+
+    - name: The container has to serve
+      run: |
+        docker run -d --rm --name sa-ci -p 8080:8080 suite-actuarial:ci
+        for i in $(seq 1 30); do
+          curl -sf http://127.0.0.1:8080/health && break
+          sleep 2
+        done
+        curl -sf http://127.0.0.1:8080/health
+        curl -sf http://127.0.0.1:8080/api/info
+        docker stop sa-ci
+
   # El borde publico del API. Sus pruebas corren dentro de workerd, el mismo
   # runtime que sirve produccion, asi que una diferencia de comportamiento
   # aparece aqui y no despues del despliegue.

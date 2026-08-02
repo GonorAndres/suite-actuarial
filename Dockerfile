@@ -14,7 +14,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY pyproject.toml .
 COPY src/ src/
-COPY data/ data/
+
+# No se copia ningun `data/` de la raiz: no existe. La tabla de mortalidad vive
+# dentro del paquete (`src/suite_actuarial/data/mortality_tables/`), la trae la
+# linea de arriba y `pyproject.toml` la declara como package-data. La copia de
+# la raiz era un duplicado que se elimino al dejar una sola ruta de carga; la
+# instruccion se quedo atras y rompia la imagen con "/data: not found".
 
 RUN pip install --no-cache-dir -e ".[api]"
 
