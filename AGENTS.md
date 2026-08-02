@@ -23,9 +23,10 @@ simplification, where it is disclosed, and what replacing it would take. Synthet
 mortality and heuristic RCS factors sit under most life, pension, and capital figures,
 so a verified result is still not a professionally valid one. Keep those disclosures
 attached to the numbers, and extend the inventory when a change adds a new ceiling.
-One Class A item remains open inside that table: the LISR Art. 151 row is marked
-"pendiente Clase A de deducibilidad" — `validador_primas.py` returns GMM as 100%
-deducible without the global cap, and the current test pins that unverified behavior.
+The last open Class A item (LISR Art. 151 deductibility) closed on 2026-08-02:
+the global cap is applied against the statute's consolidated text, with the source
+and consultation date recorded in `validador_primas.py` and the residual limits
+(single-premium cap, income-absent branch) declared in the inventory.
 
 ## Central idea
 
@@ -118,10 +119,14 @@ recorded in [`CHANGELOG.md`](CHANGELOG.md); telemetry setup is in
 - **Shared validation stays in `core/`.** Do not duplicate domain rules in routers,
   frontend code, or Streamlit pages. Reuse `core/validators.py`, `core/models/`, and
   `core/base_product.py`. This is the target, not the current state: `danos/` and
-  `salud/` do not yet use `core/` at all, and they encode sex as `M`/`F` while
-  `core/models/common.py` uses `H`/`M` — so `"M"` means male in `/api/v1/salud/*`
-  but female in `/api/v1/pricing/*`. Do not spread either divergence further; new
-  code follows `core/`.
+  `salud/` still do not use `core/` for most of their models. One divergence is
+  closed: sex used to be `M`/`F` in `salud/` and `H`/`M` in `core/`, so `"M"` meant
+  male in `/api/v1/salud/*` and female in `/api/v1/pricing/*`. There is now a single
+  `core.models.common.Sexo` with the full words `masculino`/`femenino`, and the three
+  legacy letters are rejected with a 422 everywhere. The EMSSA-09 CSV keeps its
+  published `H`/`M` column; `TablaMortalidad.desde_csv` is the one place that
+  translates it. Do not reintroduce a one-letter code, and do not spread the
+  remaining divergences; new code follows `core/`.
 
 - **Use `Decimal` for money, rates, reserves, and regulatory amounts.** Construct from
   strings (`Decimal("0.055")`). Convert to `float` only at explicit API/UI boundaries

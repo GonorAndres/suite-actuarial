@@ -7,6 +7,161 @@ cada uno con una prueba cuyo valor esperado procede de una fuente externa, una
 identidad actuarial o un cálculo a mano. Los techos Clase B siguen vigentes y ahora
 tienen inventario por modelo, con fuente, vigencia y ruta de sustitución.
 
+### Breaking — el campo `sexo` pasa a palabras completas
+
+El proyecto tenía dos codificaciones de sexo incompatibles y el mismo carácter
+significaba cosas opuestas según el endpoint:
+
+- `core/models/common.py`, y con él `vida/`, `pensiones/`, `/api/v1/pricing/*` y
+  `/api/v1/pensiones/*`, usaba `H` (hombre) / `M` (mujer).
+- `salud/gmm.py`, `salud/accidentes.py` y `/api/v1/salud/*` usaban `M` (masculino) /
+  `F` (femenino).
+
+Es decir: `"sexo": "M"` significaba **hombre** en `/api/v1/salud/gmm/calcular` y
+**mujer** en `/api/v1/pricing/temporal`. Un cliente que reutilizara el mismo valor
+entre dos realms cambiaba de sexo al asegurado sin ningún error, y con él la tabla de
+mortalidad que fija la prima.
+
+La convención única es ahora la palabra completa: `Sexo.MASCULINO = "masculino"` y
+`Sexo.FEMENINO = "femenino"`, en el paquete, la API, el dashboard, la app de Streamlit
+y los ejemplos. Los **nombres** de los miembros del enum también cambian
+(`Sexo.HOMBRE`/`Sexo.MUJER` dejan de existir), así que el código Python que los
+importaba rompe en el import, no en silencio.
+
+- **Las tres iniciales `"H"`, `"M"` y `"F"` son ahora inválidas en todos los endpoints
+  con campo `sexo`** (`/api/v1/pricing/{temporal,ordinario,dotal,compare}`,
+  `/api/v1/pricing/dotal/lab`, `/api/v1/salud/{gmm,accidentes}/calcular`,
+  `/api/v1/pensiones/{ley97,renta-vitalicia}/calcular` y el parámetro de query de
+  `/api/v1/pensiones/conmutacion/tabla`). Devuelven 422 con el conjunto válido en el
+  detalle (`Input should be 'masculino' or 'femenino'`). La ruptura es deliberada y
+  ruidosa: ninguna letra se reinterpreta en silencio, porque cualquier traducción
+  automática de `"M"` habría acertado en un realm y errado en el otro. Hay una prueba
+  de regresión por router que lo fija.
+- El campo `sexo` de las respuestas (`Ley97Response`, `RentaVitaliciaResponse`,
+  `ConmutacionResponse`, el bloque `asegurado` de GMM) devuelve las mismas palabras.
+- OpenAPI enumera los dos valores en vez de publicar un `pattern` de una letra;
+  `frontend/src/lib/types.ts` exporta el tipo `Sexo = "masculino" | "femenino"`.
+- El CSV de EMSSA-09 (`src/suite_actuarial/data/mortality_tables/emssa_09.csv`) **no
+  cambia**: es un
+  insumo controlado y conserva la columna `sexo` con las iniciales publicadas `H`/`M`.
+  La traducción ocurre una sola vez, en `TablaMortalidad.desde_csv`. La tabla en
+  memoria y todas las consultas públicas hablan ya la convención nueva, y construir
+  `TablaMortalidad` con un DataFrame en iniciales falla.
+- Las etiquetas visibles siguen siendo "Hombre"/"Mujer" y "Masculino"/"Femenino"
+  según la pantalla; lo que cambió es el valor transmitido.
+
+### Breaking — la Reserva Matemática se reescribió: el cálculo no era una reserva
+
+`regulatorio/reservas_tecnicas/reserva_matematica.py` usaba la probabilidad de
+supervivencia de **un** año como si cubriera todo el plazo remanente, consultaba
+siempre mortalidad masculina sin mirar el sexo del asegurado, fijaba ω = 85 y fin de
+pago de primas a los 65 sin fuente, y caía en una ley de supervivencia sin cita,
+`exp(-0.00008·x²)`, cuando no se le pasaba tabla. El módulo se reescribió como
+reserva prospectiva de primas netas, ₜV = SA·A_{x+t:n−t} − P·ä_{x+t:m−t}, construida
+sobre la maquinaria auditada de `actuarial/pricing/vida_pricing.py`. Todas las
+cifras de RM cambian.
+
+- **`ConfiguracionRM` (cambio incompatible).** `sexo` y `plazo_seguro_anios` son
+  ahora obligatorios; `plazo_pago_anios` toma por omisión el plazo de cobertura;
+  `prima_nivelada_anual` es opcional y, si se omite, la prima neta se determina por
+  el principio de equivalencia a la edad de contratación.
+- **`CalculadoraRM` exige tabla de mortalidad.** No hay ley de supervivencia de
+  respaldo: una reserva calculada con una curva sin fuente no es una reserva. La
+  edad terminal ω se lee de la tabla cargada y se aplica la convención auditada
+  q_ω = 1 (hallazgo A7).
+- **`ResultadoRM` publica la reserva con signo.** Una reserva negativa significa que
+  las primas futuras valen más que los beneficios futuros; ocultarlo rompía la
+  recursión de Fackler. El importe a constituir en balance va aparte en
+  `reserva_a_constituir`, y el resultado trae además `prima_neta_anual`,
+  `probabilidad_supervivencia_plazo` (ahora ₙp_x, no 1−qx) y `disclaimer`.
+- El módulo dejó de declarar conformidad con la Circular S-11.4: declara estar
+  orientado a ella, sobre tabla ilustrativa y prima neta, sin gastos ni caducidad ni
+  margen de riesgo. Avisa con `ExperimentalModelWarning` al construirse. Las pruebas
+  fijan la identidad retrospectiva/prospectiva (Fackler) en cada duración y un valor
+  calculado a mano, y demuestran que la verificación falla ante el defecto que se
+  eliminó.
+
+### Corregido — deducibilidad Art. 151 LISR y cobertura de perfiles regulatorios
+
+- El tope global de deducciones personales del último párrafo del Art. 151 de la
+  LISR ya se aplica a las primas de gastos médicos mayores de persona física; antes
+  se devolvían 100% deducibles "sin límite". El tope es el menor entre cinco veces
+  el valor anual de la UMA y el 15% del total de los ingresos del contribuyente;
+  ambas cifras salen del perfil regulatorio del año y de un nuevo insumo opcional
+  `ingresos_totales_anuales`. Sin ese insumo solo puede aplicarse la rama de las
+  cinco UMA y la respuesta lo dice (`tope_global: "parcial_sin_ingresos"`, estado
+  `indeterminate`) en lugar de devolver un 100% en silencio. Fuente: Ley del ISR,
+  texto vigente consolidado por la Cámara de Diputados, última reforma DOF
+  01-04-2024, consultada el 2026-08-02.
+- La cita de la fracción de las primas de GMM pasa de la I a la **VI**. La fracción
+  I son honorarios médicos y gastos hospitalarios, no primas.
+- El tope propio de la fracción V (planes personales de retiro) se calculaba al 15%
+  de los ingresos; el estatuto dice **10%** de los ingresos acumulables, sin exceder
+  cinco UMA anuales. La fracción V está además excluida expresamente del tope
+  global, y el resultado ahora lo declara.
+- Agotada la cobertura de perfiles regulatorios empaquetados (2024-02-01 a
+  2027-01-31), los endpoints regulatorios devolvían 500 con traceback. Ahora el
+  cargador lanza `ConfiguracionNoDisponibleError` con el rango cubierto en el
+  mensaje, `/api/v1/regulatory/*` responde 503 y `/api/v1/config/fecha/{fecha}`
+  responde 422. No se inventan parámetros del año siguiente ni se reutiliza en
+  silencio el último perfil publicado.
+
+### Corregido — un solo camino de carga, verificado, para la tabla de mortalidad
+
+- `TablaMortalidad.cargar_emssa09()` tenía dos caminos de carga. El de respaldo
+  buscaba el CSV por rutas relativas al directorio de trabajo (incluida una copia
+  duplicada en la raíz del repositorio), lo cargaba sin metadatos y sin modo
+  estricto, y la tabla sintética terminaba reportando `validation_tier: supported`.
+  Ahora hay un solo camino, siempre estricto y siempre con metadatos: el paquete de
+  datos instalado. Si el archivo falta, la instalación está rota y se reporta como
+  tal en vez de degradar la carga.
+- El `content_hash` declarado en `metadata.json` se sobrescribía con un sha256
+  recalculado en cada carga, de modo que siempre coincidía consigo mismo y no
+  verificaba nada. Ahora se calcula el sha256 del CSV y se compara contra el
+  declarado; si difieren, la carga se detiene con ambos digests en el mensaje.
+- Eliminada la copia duplicada `data/mortality_tables/` de la raíz del repositorio;
+  la única copia de la tabla viaja dentro del paquete
+  (`src/suite_actuarial/data/mortality_tables/`), junto con su README.
+- CLI: el mensaje de error de `seguros demo` apuntaba a la ruta raíz eliminada
+  (ahora indica reinstalar el paquete) y `seguros api` sugería
+  `pip install mexican-insurance[api]`, nombre de paquete inexistente (ahora
+  `pip install 'suite-actuarial[api]'`).
+
+### Añadido — daños y salud declaran su alcance donde se lee la cifra
+
+- `GMM`, `AccidentesEnfermedades`, `SeguroAuto`, `SeguroIncendio` y `SeguroRC`
+  emiten `ExperimentalModelWarning` al construirse, y las respuestas de
+  `/api/v1/salud/{gmm,accidentes}/calcular` y
+  `/api/v1/danos/{auto,incendio,rc}/calcular` llevan `disclaimer` y
+  `validation_tier` (cambio aditivo del contrato; `frontend/src/lib/types.ts` los
+  declara opcionales). Antes las constantes `DISCLAIMER` de `salud/gmm.py` y
+  `danos/tablas_amis.py` existían sin que nadie las importara, e incendio, RC y
+  accidentes no tenían aviso alguno.
+- Dos avisos se corrigieron por exactitud: `danos/tablas_amis.py` ya no presenta sus
+  tasas como "la tarifa de referencia de mercado" ni remite a tablas publicadas por
+  la AMIS que el repositorio no puede evidenciar; `salud/gmm.py` añade que la
+  siniestralidad esperada se deriva de la propia prima (`prima/(1+margen)`, un
+  cálculo circular) y que el sexo no altera el precio.
+- Streamlit: las pestañas de Daños, Salud y Reaseguro muestran el límite junto al
+  resultado; en Pensiones, "Recomendación: X" pasa a "Modalidad con mayor pensión
+  mensual inicial: X" con la salvedad de que el modelo no recomienda una modalidad;
+  en Salud, el tope de coaseguro del simulador (10% de la suma asegurada) se declara
+  en la página como supuesto y se calcula en `Decimal` exacto.
+
+### Añadido — los ejemplos y los benchmarks publicados entran a la suite
+
+- Los ejemplos autoverificables de `examples/casos/` y `examples/labs/` se ejecutan
+  ahora dentro de la suite (`tests/unit/test_examples.py`): cada script corre con
+  `runpy` y sus 43 aserciones de identidad actuarial fallan la suite si dejan de
+  cumplirse. Hasta ahora ningún gate los ejecutaba, aunque el README de los casos
+  promete que "si una falla, el script truena". Una guarda exige que cada ejemplo
+  conserve al menos una sentencia `assert`.
+- `tests/unit/test_validation_benchmarks.py` fija los números publicados en
+  `docs/VALIDATION.md`: los spot checks de qx, las cuatro propiedades declaradas de
+  la tabla, los valores de conmutación a i = 5.5%, la identidad Ax + d·äx = 1 y
+  Nx = Σ Dx, Mx = Σ Cx. Todos los valores publicados coincidieron con el cálculo;
+  ninguno se modificó.
+
 ### Breaking — cambios numéricos silenciosos
 
 Ninguno cambia el esquema de la API. Cambian el **valor** que devuelve un campo

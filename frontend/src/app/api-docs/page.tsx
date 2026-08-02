@@ -48,7 +48,7 @@ const DOMAINS: DomainGroup[] = [
         desc_en: "Calculates the net and gross premium for a term life insurance product using the EMSSA-09 mortality table.",
         params: [
           { name: "edad", type: "int", required: true, default_val: "-", description_es: "Edad del asegurado (0-120)", description_en: "Age of the insured (0-120)" },
-          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: H (hombre) o M (mujer)", description_en: "Sex: H (male) or M (female)" },
+          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: masculino o femenino", description_en: "Sex: masculino or femenino" },
           { name: "suma_asegurada", type: "float", required: true, default_val: "-", description_es: "Suma asegurada (> 0)", description_en: "Sum insured (> 0)" },
           { name: "plazo_years", type: "int", required: true, default_val: "-", description_es: "Plazo de la poliza en anos (1-99)", description_en: "Policy term in years (1-99)" },
           { name: "tasa_interes", type: "float", required: false, default_val: "0.055", description_es: "Tasa de interes tecnico (0-0.15)", description_en: "Technical interest rate (0-0.15)" },
@@ -59,7 +59,7 @@ const DOMAINS: DomainGroup[] = [
         ],
         example_req: `{
   "edad": 35,
-  "sexo": "H",
+  "sexo": "masculino",
   "suma_asegurada": 1000000,
   "plazo_years": 20,
   "tasa_interes": 0.055,
@@ -87,7 +87,7 @@ const DOMAINS: DomainGroup[] = [
         params: [],
         example_req: `{
   "edad": 35,
-  "sexo": "H",
+  "sexo": "masculino",
   "suma_asegurada": 1000000,
   "plazo_years": 20,
   "tasa_interes": 0.055,
@@ -111,7 +111,7 @@ const DOMAINS: DomainGroup[] = [
         params: [],
         example_req: `{
   "edad": 35,
-  "sexo": "M",
+  "sexo": "femenino",
   "suma_asegurada": 500000,
   "plazo_years": 20,
   "tasa_interes": 0.055
@@ -134,7 +134,7 @@ const DOMAINS: DomainGroup[] = [
         params: [],
         example_req: `{
   "edad": 35,
-  "sexo": "H",
+  "sexo": "masculino",
   "suma_asegurada": 1000000,
   "plazo_years": 20
 }`,
@@ -180,7 +180,9 @@ const DOMAINS: DomainGroup[] = [
   "coberturas": { "danos_materiales": 4500.00, ... },
   "subtotal": 12350.00,
   "bonus_malus": { "factor": 1.0 },
-  "prima_total": 12350.00
+  "prima_total": 12350.00,
+  "disclaimer": "AVISO: tarifas ILUSTRATIVAS ...",
+  "validation_tier": "experimental"
 }`,
         try_link: "/danos",
       },
@@ -209,7 +211,9 @@ const DOMAINS: DomainGroup[] = [
   "factor_zona": 0.85,
   "uso": "habitacional",
   "factor_uso": 0.90,
-  "prima_anual": 3060.00
+  "prima_anual": 3060.00,
+  "disclaimer": "AVISO: tasas ILUSTRATIVAS ...",
+  "validation_tier": "experimental"
 }`,
         try_link: "/danos",
       },
@@ -234,7 +238,9 @@ const DOMAINS: DomainGroup[] = [
   "clase_actividad": "oficinas",
   "tasa_base": 0.002,
   "factor_deducible": 0.92,
-  "prima_anual": 18400.00
+  "prima_anual": 18400.00,
+  "disclaimer": "AVISO: tasas ILUSTRATIVAS ...",
+  "validation_tier": "experimental"
 }`,
         try_link: "/danos",
       },
@@ -308,7 +314,7 @@ const DOMAINS: DomainGroup[] = [
         desc_en: "Calculates the Major Medical Expenses (GMM) premium. Returns a detailed breakdown with base rate, adjustment factors, adjusted premium, and expected claims.",
         params: [
           { name: "edad", type: "int", required: true, default_val: "-", description_es: "Edad del asegurado (0-110)", description_en: "Insured age (0-110)" },
-          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: M (masculino) o F (femenino)", description_en: "Sex: M (male) or F (female)" },
+          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: masculino o femenino", description_en: "Sex: masculino or femenino" },
           { name: "suma_asegurada", type: "float", required: true, default_val: "-", description_es: "Suma asegurada en MXN (min 1,000,000)", description_en: "Sum insured in MXN (min 1,000,000)" },
           { name: "deducible", type: "float", required: true, default_val: "-", description_es: "Monto del deducible en MXN", description_en: "Deductible amount in MXN" },
           { name: "coaseguro_pct", type: "float", required: true, default_val: "-", description_es: "Porcentaje de coaseguro (ej: 0.10 = 10%)", description_en: "Coinsurance percentage (e.g.: 0.10 = 10%)" },
@@ -318,7 +324,7 @@ const DOMAINS: DomainGroup[] = [
         ],
         example_req: `{
   "edad": 35,
-  "sexo": "M",
+  "sexo": "masculino",
   "suma_asegurada": 5000000,
   "deducible": 20000,
   "coaseguro_pct": 0.10,
@@ -326,14 +332,16 @@ const DOMAINS: DomainGroup[] = [
   "nivel": "alto"
 }`,
         example_res: `{
-  "asegurado": { "edad": 35, "sexo": "M" },
+  "asegurado": { "edad": 35, "sexo": "masculino" },
   "producto": { "suma_asegurada": 5000000, ... },
   "tarificacion": {
     "tasa_base": 0.012,
     "prima_ajustada": 42000.00,
     ...
   },
-  "siniestralidad_esperada": 35000.00
+  "siniestralidad_esperada": 35000.00,
+  "disclaimer": "AVISO: tarifas ILUSTRATIVAS ...",
+  "validation_tier": "experimental"
 }`,
         try_link: "/salud",
       },
@@ -344,14 +352,14 @@ const DOMAINS: DomainGroup[] = [
         desc_en: "Calculates the Accident & Sickness premium. Returns annual premium, organic-loss indemnification table, daily hospitalization benefit, and funeral expenses.",
         params: [
           { name: "edad", type: "int", required: true, default_val: "-", description_es: "Edad del asegurado (18-70)", description_en: "Insured age (18-70)" },
-          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: M (masculino) o F (femenino)", description_en: "Sex: M (male) or F (female)" },
+          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: masculino o femenino", description_en: "Sex: masculino or femenino" },
           { name: "suma_asegurada", type: "float", required: true, default_val: "-", description_es: "Suma asegurada en MXN", description_en: "Sum insured in MXN" },
           { name: "ocupacion", type: "string", required: false, default_val: "oficina", description_es: "Clase de riesgo: oficina, comercio, industrial_ligero, industrial_pesado, alto_riesgo", description_en: "Risk class: oficina, comercio, industrial_ligero, industrial_pesado, alto_riesgo" },
           { name: "indemnizacion_diaria", type: "float | null", required: false, default_val: "null (0.1% SA)", description_es: "Monto diario por hospitalizacion", description_en: "Daily hospitalization amount" },
         ],
         example_req: `{
   "edad": 40,
-  "sexo": "M",
+  "sexo": "masculino",
   "suma_asegurada": 1000000,
   "ocupacion": "oficina"
 }`,
@@ -360,7 +368,9 @@ const DOMAINS: DomainGroup[] = [
   "prima_anual": 4500.00,
   "perdidas_organicas": { "muerte": 1000000, ... },
   "indemnizacion_diaria": { "monto": 1000, ... },
-  "gastos_funerarios": 50000
+  "gastos_funerarios": 50000,
+  "disclaimer": "AVISO: tasas ILUSTRATIVAS ...",
+  "validation_tier": "experimental"
 }`,
         try_link: "/salud",
       },
@@ -406,21 +416,21 @@ const DOMAINS: DomainGroup[] = [
         params: [
           { name: "saldo_afore", type: "float", required: true, default_val: "-", description_es: "Saldo actual de la cuenta AFORE en MXN", description_en: "Current AFORE account balance in MXN" },
           { name: "edad", type: "int", required: true, default_val: "-", description_es: "Edad actual del trabajador (60-70)", description_en: "Current worker age (60-70)" },
-          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: H (hombre) o M (mujer)", description_en: "Sex: H (male) or M (female)" },
+          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: masculino o femenino", description_en: "Sex: masculino or femenino" },
           { name: "semanas_cotizadas", type: "int", required: true, default_val: "-", description_es: "Total de semanas cotizadas al IMSS", description_en: "Total weeks contributed to IMSS" },
           { name: "tasa_interes", type: "float", required: false, default_val: "0.035", description_es: "Tasa de interes tecnico (0-0.15)", description_en: "Technical interest rate (0-0.15)" },
         ],
         example_req: `{
   "saldo_afore": 2000000,
   "edad": 65,
-  "sexo": "H",
+  "sexo": "masculino",
   "semanas_cotizadas": 1200,
   "tasa_interes": 0.035
 }`,
         example_res: `{
   "saldo_afore": 2000000,
   "edad": 65,
-  "sexo": "H",
+  "sexo": "masculino",
   "renta_vitalicia": {
     "pension_mensual": 12500.00,
     "pension_anual": 150000.00,
@@ -443,7 +453,7 @@ const DOMAINS: DomainGroup[] = [
         desc_en: "Calculates the annuity factor and single premium needed to fund a life annuity of the given monthly amount, using EMSSA-09 mortality.",
         params: [
           { name: "edad", type: "int", required: true, default_val: "-", description_es: "Edad del rentista (0-110)", description_en: "Age of annuitant (0-110)" },
-          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: H o M", description_en: "Sex: H or M" },
+          { name: "sexo", type: "string", required: true, default_val: "-", description_es: "Sexo: masculino o femenino", description_en: "Sex: masculino or femenino" },
           { name: "monto_mensual", type: "float", required: true, default_val: "-", description_es: "Pago mensual de la renta en MXN", description_en: "Monthly annuity payment in MXN" },
           { name: "tasa_interes", type: "float", required: true, default_val: "-", description_es: "Tasa de interes tecnico (0-0.15)", description_en: "Technical interest rate (0-0.15)" },
           { name: "periodo_diferimiento", type: "int", required: false, default_val: "0", description_es: "Periodo de diferimiento en anos (0 = inmediata)", description_en: "Deferral period in years (0 = immediate)" },
@@ -451,7 +461,7 @@ const DOMAINS: DomainGroup[] = [
         ],
         example_req: `{
   "edad": 65,
-  "sexo": "H",
+  "sexo": "masculino",
   "monto_mensual": 15000,
   "tasa_interes": 0.035,
   "periodo_diferimiento": 0,
@@ -459,7 +469,7 @@ const DOMAINS: DomainGroup[] = [
 }`,
         example_res: `{
   "edad": 65,
-  "sexo": "H",
+  "sexo": "masculino",
   "monto_mensual": 15000,
   "tasa_interes": 0.035,
   "periodo_diferimiento": 0,
@@ -475,14 +485,14 @@ const DOMAINS: DomainGroup[] = [
         desc_es: "Consulta la tabla de conmutacion (Dx, Nx, Mx, ax, Ax) para un rango de edades, usando mortalidad EMSSA-09 y la tasa de interes especificada.",
         desc_en: "Looks up commutation table values (Dx, Nx, Mx, ax, Ax) for a range of ages, using EMSSA-09 mortality and the specified interest rate.",
         params: [
-          { name: "sexo", type: "string (query)", required: true, default_val: "-", description_es: "Sexo: H o M", description_en: "Sex: H or M" },
+          { name: "sexo", type: "string (query)", required: true, default_val: "-", description_es: "Sexo: masculino o femenino", description_en: "Sex: masculino or femenino" },
           { name: "tasa_interes", type: "float (query)", required: true, default_val: "-", description_es: "Tasa de interes tecnico (0-0.15)", description_en: "Technical interest rate (0-0.15)" },
           { name: "edad_min", type: "int (query)", required: false, default_val: "0", description_es: "Edad minima a incluir", description_en: "Minimum age to include" },
           { name: "edad_max", type: "int (query)", required: false, default_val: "110", description_es: "Edad maxima a incluir", description_en: "Maximum age to include" },
         ],
-        example_req: `GET /api/v1/pensiones/conmutacion/tabla?sexo=H&tasa_interes=0.035&edad_min=60&edad_max=65`,
+        example_req: `GET /api/v1/pensiones/conmutacion/tabla?sexo=masculino&tasa_interes=0.035&edad_min=60&edad_max=65`,
         example_res: `{
-  "sexo": "H",
+  "sexo": "masculino",
   "tasa_interes": 0.035,
   "edad_min": 60,
   "edad_max": 65,
@@ -657,20 +667,31 @@ const DOMAINS: DomainGroup[] = [
           { name: "tipo_seguro", type: "string", required: true, default_val: "-", description_es: "Tipo de seguro: vida, gastos_medicos, danos, pensiones, invalidez", description_en: "Insurance type: vida, gastos_medicos, danos, pensiones, invalidez" },
           { name: "monto_prima", type: "float", required: true, default_val: "-", description_es: "Monto de la prima (> 0)", description_en: "Premium amount (> 0)" },
           { name: "es_persona_fisica", type: "bool", required: false, default_val: "true", description_es: "true = persona fisica, false = persona moral", description_en: "true = individual, false = legal entity" },
-          { name: "uma_anual", type: "float", required: false, default_val: "39960.60", description_es: "Valor UMA anual (UMA diaria x 365)", description_en: "Annual UMA value (daily UMA x 365)" },
+          { name: "uma_anual", type: "float", required: false, default_val: "perfil del anio", description_es: "Valor UMA anual (UMA mensual x 12, Ley UMA Art. 4); por omision, el del perfil regulatorio vigente", description_en: "Annual UMA value (monthly UMA x 12, Ley UMA Art. 4); defaults to the current regulatory profile" },
+          { name: "ingreso_anual", type: "float", required: false, default_val: "null", description_es: "Ingresos acumulables del ejercicio; base del tope propio de la fraccion V (planes de retiro)", description_en: "Taxable annual income; base for the fraction V own cap (retirement plans)" },
+          { name: "ingresos_totales_anuales", type: "float", required: false, default_val: "null", description_es: "Total de ingresos del contribuyente, incluidos exentos; base del 15% del tope global del Art. 151. Sin este dato solo se aplica la rama de 5 UMA y la respuesta lo declara", description_en: "Taxpayer's total income, including exempt income; base for the 15% leg of the Art. 151 global cap. Without it only the 5-UMA leg applies and the response says so" },
+          { name: "metodo_pago", type: "string", required: false, default_val: "null", description_es: "Metodo de pago (la deducibilidad exige medios distintos de efectivo)", description_en: "Payment method (deductibility requires non-cash means)" },
+          { name: "relacion_beneficiario", type: "string", required: false, default_val: "null", description_es: "Relacion del beneficiario con el contribuyente", description_en: "Beneficiary's relationship to the taxpayer" },
         ],
         example_req: `{
   "tipo_seguro": "gastos_medicos",
   "monto_prima": 25000,
-  "es_persona_fisica": true
+  "es_persona_fisica": true,
+  "ingresos_totales_anuales": 300000
 }`,
         example_res: `{
   "es_deducible": true,
-  "monto_prima": 25000,
-  "monto_deducible": 25000,
-  "porcentaje_deducible": 1.0,
-  "limite_aplicado": null,
-  "fundamento_legal": "Art. 151 fraccion VI LISR"
+  "monto_prima": 25000.0,
+  "monto_deducible": 25000.0,
+  "porcentaje_deducible": 100.0,
+  "limite_aplicado": "Menor de 5 UMA anuales ($213,973.20) y 15% del total de ingresos ($45,000.00): $45,000.00",
+  "fundamento_legal": "LISR Art. 151, fracc. VI - Primas por seguros de gastos medicos; tope del ultimo parrafo del mismo articulo",
+  "estado": "indeterminate",
+  "factores_faltantes": ["metodo_pago"],
+  "uma_anual_aplicada": 42794.64,
+  "anio_regulatorio": 2026,
+  "tope_global": "aplicado",
+  "nota_tope_global": "Tope global aplicado por la rama de 15% del total de ingresos. El tope del Art. 151 aplica al total de las deducciones personales del ejercicio; aqui se aplica a esta prima como si fuera la unica."
 }`,
         try_link: "/regulatorio",
       },
