@@ -1,5 +1,55 @@
 # Changelog
 
+## Sin publicar — borde público del API
+
+El API deja de estar expuesto directamente. `api-suite.gonor.me` pasa a servirse por
+un worker de Cloudflare (`edge/`) que proxia a Cloud Run. La dirección no cambia, así
+que ningún cliente existente se rompe.
+
+Qué gana el API con esto, y por qué cada pieza tiene que estar delante y no detrás:
+
+- **Límite de tasa**: 120 peticiones/minuto por IP, 1200 con clave. `docs/DEPLOYMENT.md`
+  señalaba esta como la capa que faltaba: el techo de gasto era `--max-instances`, y
+  todo lo demás sólo reducía la probabilidad de llegar a él. Ahora el abuso se rechaza
+  en Cloudflare, donde es gratis, antes de arrancar un contenedor.
+
+  El techo es aproximado y conviene no venderlo como más de lo que es. Medido contra
+  el despliegue real: 250 peticiones sobre una conexión reutilizada cortaron cerca de
+  la 108, pero 200 sobre 25 conexiones en paralelo no cortaron ninguna. El conteo es
+  por máquina del borde. Frena a un raspador ingenuo, no a uno distribuido, y
+  `--max-instances` sigue siendo el único límite duro de facturación.
+- **CORS público**: terceros pueden llamar desde un navegador. Antes la lista del
+  origen nombraba sólo `suite.gonor.me`, así que el API era público de nombre pero no
+  utilizable desde ninguna otra aplicación web.
+- **Caché del borde** para `/api/info` y `/api/v1/config/*`, que son idénticos para
+  cualquiera y cambian sólo con un despliegue. Ningún cálculo se cachea nunca: llevan
+  los supuestos de quien llama.
+- **Claves de API opcionales**: sin clave se atiende igual, con el límite bajo. Una
+  clave sólo sube el límite y etiqueta la analítica. KV guarda el SHA-256, nunca la
+  clave, y las cabeceras de autorización se eliminan antes de llamar al origen.
+
+### Analítica
+
+- Nuevo evento `api_edge_request` desde el borde, con `cache`, `auth_tier`, `country` y
+  `colo` además del contrato del backend. Es un evento distinto de `api_request`
+  porque el origen nunca ve una petición frenada por límite de tasa ni servida desde
+  caché. Contrato completo en `docs/ANALYTICS.md`.
+- **`api_request` empieza a enviarse de verdad.** El código de `api/telemetry.py`
+  existía desde que se escribió, pero `deploy.yml` nunca definió
+  `POSTHOG_PROJECT_API_KEY`, así que no había enviado un solo evento. Ahora la inyecta.
+
+### Operación
+
+- Producción pasa a definir `SUITE_PROXY_SHARED_SECRET`, que hasta ahora sólo usaba
+  dev. Reactivar la URL `run.app` del servicio —necesaria para que el worker tenga a
+  dónde llamar— crearía si no un rodeo sin límite de tasa alrededor del borde.
+- El worker se adjunta por **ruta**, no por dominio personalizado: `api-suite.gonor.me`
+  ya tiene CNAME al mapeo de dominio de Cloud Run, y tomarlo con un dominio
+  personalizado exigiría borrar el registro y dejar el API caído. Borrar la ruta es la
+  reversión.
+- Nueva compuerta en CI: `typecheck` y pruebas del worker, ejecutadas dentro de
+  workerd.
+
 ## 2.2.0 (2026-08-02) — remediación de la auditoría actuarial (`docs/AUDIT.md`)
 
 Las seis fases de la auditoría están cerradas: los diez hallazgos Clase A corregidos,

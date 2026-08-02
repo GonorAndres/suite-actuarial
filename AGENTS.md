@@ -94,8 +94,12 @@ not tweak them to make a test pass.
 
 Deployment is split (see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)): the dashboard
 static-exports to Cloudflare Pages, and the Docker image is API-only on Cloud Run —
-FastAPI no longer serves the frontend in production. Breaking numeric changes are
-recorded in [`CHANGELOG.md`](CHANGELOG.md); telemetry setup is in
+FastAPI no longer serves the frontend in production. In front of Cloud Run sits a
+Cloudflare Worker (`edge/`, covered by [`edge/AGENTS.md`](edge/AGENTS.md)) that is the
+only address the public reaches: it applies rate limiting, public CORS, caching of the
+annual configuration, and analytics of what the origin cannot see. It holds no
+actuarial logic and must not — every number still comes from the package. Breaking
+numeric changes are recorded in [`CHANGELOG.md`](CHANGELOG.md); telemetry setup is in
 [`docs/ANALYTICS.md`](docs/ANALYTICS.md).
 
 ## Structural conventions
@@ -257,6 +261,16 @@ npm run test:e2e
 All three run in CI. `test:e2e` is the only check on the Playwright specs in
 `frontend/tests/` (bilingual content integrity and public exposition); it serves the
 static export from `frontend/out/`, so it requires a prior `npm run build`.
+
+For the public API edge, run from `edge/`:
+
+```bash
+npm run typecheck
+npm test
+```
+
+Both run in CI. The tests execute inside workerd, the same runtime that serves
+production, so a behavioral difference shows up here rather than after deployment.
 
 ## Working practices
 

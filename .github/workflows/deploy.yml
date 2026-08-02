@@ -39,8 +39,20 @@ jobs:
           if [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
             echo "service=suite-actuarial" >> "$GITHUB_OUTPUT"
             echo "cors=https://suite.gonor.me" >> "$GITHUB_OUTPUT"
-            # Produccion es publica a proposito: sin secreto, sin muro.
-            echo "secret=" >> "$GITHUB_OUTPUT"
+            # El API sigue siendo publico, pero ya no directamente: lo publico
+            # es el worker de `edge/`, que anade la cabecera compartida. El
+            # secreto cierra la URL `run.app`, que de otro modo seria un rodeo
+            # sin limite de tasa alrededor del borde.
+            #
+            # Orden obligatorio: la ruta del worker tiene que estar viva antes
+            # de que este despliegue corra. Con el secreto puesto y sin worker
+            # delante, `api-suite.gonor.me` responde 404 a todo el mundo.
+            #
+            # Secreto propio, distinto del de dev: `PROXY_SHARED_SECRET` lo
+            # comparten el servicio de dev y el proxy de Pages, asi que
+            # reutilizarlo aqui obligaria a rotar los tres a la vez. Dos
+            # entornos, dos secretos.
+            echo "secret=${{ secrets.PROXY_SHARED_SECRET_PROD }}" >> "$GITHUB_OUTPUT"
             echo "max_instances=2" >> "$GITHUB_OUTPUT"
           else
             # El frontend de dev llama al API por su mismo origen, a traves del
@@ -89,4 +101,4 @@ jobs:
             --cpu-throttling \
             --service-account=suite-actuarial-run@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
             --allow-unauthenticated \
-            --set-env-vars="PYTHONPATH=/app/src,SUITE_CORS_ORIGINS=${{ steps.env.outputs.cors }},SUITE_PROXY_SHARED_SECRET=${{ steps.env.outputs.secret }}"
+            --set-env-vars="PYTHONPATH=/app/src,SUITE_CORS_ORIGINS=${{ steps.env.outputs.cors }},SUITE_PROXY_SHARED_SECRET=${{ steps.env.outputs.secret }},POSTHOG_PROJECT_API_KEY=${{ secrets.POSTHOG_PROJECT_API_KEY }},POSTHOG_HOST=https://us.i.posthog.com"

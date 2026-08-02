@@ -21,9 +21,11 @@ Production is a static export: `next.config.ts` sets `output: "export"` with
 `trailingSlash: true` into `frontend/out/`, deployed on Cloudflare Pages. No route
 handlers, middleware, ISR, or image optimization; `sitemap.ts` and `robots.ts` need
 `dynamic = "force-static"`. In dev, `/api/*` is rewritten to `API_PROXY_URL`
-(default `http://127.0.0.1:8000`); in production `NEXT_PUBLIC_API_URL` points at the
-Cloud Run API. The preview branch adds `cloudflare/_worker.js` as a same-origin
-proxy. See `docs/DEPLOYMENT.md`.
+(default `http://127.0.0.1:8000`); in production `NEXT_PUBLIC_API_URL` points at
+`api-suite.gonor.me`, which is now the Worker in `edge/` rather than Cloud Run
+directly — the address is unchanged, so no frontend code changes, but the dashboard's
+calls are counted against the same rate limit as everyone else's. The preview branch
+adds `cloudflare/_worker.js` as a same-origin proxy. See `docs/DEPLOYMENT.md`.
 
 ## Conventions
 

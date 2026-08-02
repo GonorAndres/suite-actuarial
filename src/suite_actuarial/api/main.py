@@ -110,13 +110,18 @@ async def require_proxy_secret(
 ) -> Response:
     """Reject traffic that did not arrive through the Cloudflare proxy.
 
-    Only active when `SUITE_PROXY_SHARED_SECRET` is set, which is how the dev
-    deployment is walled: the dev service is reachable on the open internet by
-    URL, so an unlisted address is not a boundary. The Cloudflare worker adds
-    the header server-side after Access has authenticated the visitor, so a
-    direct request to the Cloud Run URL gets 404 instead of a working API.
+    Only active when `SUITE_PROXY_SHARED_SECRET` is set. Both deployments set
+    it, for the same reason and to different ends.
 
-    Production leaves the variable unset and stays open, as intended.
+    In dev it is the wall: the service is reachable on the open internet by
+    URL, so an unlisted address is not a boundary. The Pages worker adds the
+    header server-side after Access has authenticated the visitor, so a direct
+    request to the Cloud Run URL gets 404 instead of a working API.
+
+    In production the API is public, but only through the edge worker in
+    `edge/`, which is what applies rate limiting. Without the secret the
+    `run.app` URL would be an unmetered way around that limit, so the header is
+    what makes the edge the only door rather than merely the front one.
 
     `/health` stays exempt so the container health check keeps working.
     """
