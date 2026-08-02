@@ -35,7 +35,7 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.markdown("**Versión:** 2.1.0")
+    st.markdown("**Versión:** 2.2.0")
     st.markdown("**Autor:** Andrés González Ortega")
     st.markdown("**Licencia:** MIT")
 
@@ -233,7 +233,7 @@ st.markdown(
     ilustrativos no sustituyen métodos registrados, asesoría fiscal ni determinaciones
     oficiales de CNSF, SAT o IMSS. Valida los resultados con un actuario certificado
     antes de usarlos en producción.</p>
-    <p>suite_actuarial v2.1.0 | MIT License</p>
+    <p>suite_actuarial v2.2.0 | MIT License</p>
 </div>
 """,
     unsafe_allow_html=True,

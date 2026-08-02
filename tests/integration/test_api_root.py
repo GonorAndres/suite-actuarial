@@ -28,7 +28,7 @@ class TestRoot:
         data = response.json()
         assert "name" in data
         assert "version" in data
-        assert data["version"] == "2.1.0"
+        assert data["version"] == "2.2.0"
 
 
 class TestHealth:

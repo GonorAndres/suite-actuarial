@@ -67,7 +67,7 @@ class Moneda(StrEnum):
 class CalculationMetadata(BaseModel):
     """Linaje minimo que acompaña resultados publicados por el workbench."""
 
-    model_version: str = "2.1.0"
+    model_version: str = "2.2.0"
     valuation_date: date | None = None
     assumption_id: str | None = None
     assumption_hash: str | None = None

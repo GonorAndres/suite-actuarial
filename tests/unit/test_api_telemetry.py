@@ -19,7 +19,7 @@ def test_payload_contains_only_api_health_fields() -> None:
         "distinct_id": "suite-actuarial-api",
         "$process_person_profile": False,
         "$lib": "suite_actuarial_api",
-        "$lib_version": "2.1.0",
+        "$lib_version": "2.2.0",
         "api_route": "/api/v1/pricing/ordinario",
         "http_method": "POST",
         "status_code": 200,

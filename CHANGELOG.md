@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — remediación de la auditoría actuarial (`docs/AUDIT.md`)
+## 2.2.0 (2026-08-02) — remediación de la auditoría actuarial (`docs/AUDIT.md`)
 
 Las seis fases de la auditoría están cerradas: los diez hallazgos Clase A corregidos,
 cada uno con una prueba cuyo valor esperado procede de una fuente externa, una

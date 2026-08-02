@@ -160,7 +160,7 @@ export const translations = {
     recuperacion: "Recuperación de reaseguro",
 
     // -- Footer --
-    footer_version: "v2.1.0",
+    footer_version: "v2.2.0",
     footer_derechos: "(c) 2026 Andrés González Ortega",
     footer_github: "GitHub",
     footer_api_docs: "API Docs",
@@ -800,7 +800,7 @@ export const translations = {
     recuperacion: "Reinsurance recovery",
 
     // -- Footer --
-    footer_version: "v2.1.0",
+    footer_version: "v2.2.0",
     footer_derechos: "(c) 2026 Andrés González Ortega",
     footer_github: "GitHub",
     footer_api_docs: "API Docs",

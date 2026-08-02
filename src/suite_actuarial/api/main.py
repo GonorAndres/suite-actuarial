@@ -28,7 +28,7 @@ from suite_actuarial.api.telemetry import schedule_api_event
 
 app = FastAPI(
     title="suite_actuarial developer interface",
-    version="2.1.0",
+    version="2.2.0",
     description=(
         "Developer interface behind the open actuarial laboratory. "
         "Includes life product pricing (temporal, ordinario, dotal), "
@@ -166,7 +166,7 @@ def api_information() -> dict[str, str | list[str]]:
     """Return machine-readable project and developer-interface metadata."""
     return {
         "name": "suite_actuarial open laboratory",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "modules": [
             "config",
             "danos",

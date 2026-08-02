@@ -18,7 +18,7 @@ export function Footer() {
               suite_actuarial · {lang === "es" ? "modelación actuarial en código abierto" : "open actuarial platform"}
             </span>
             <span className="text-sm text-offwhite/40 tabular-nums">
-              v2.1.0
+              v2.2.0
             </span>
           </div>
 

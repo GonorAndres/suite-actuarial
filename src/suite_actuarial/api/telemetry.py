@@ -42,7 +42,7 @@ def build_api_event_payload(
         "distinct_id": POSTHOG_DISTINCT_ID,
         "$process_person_profile": False,
         "$lib": "suite_actuarial_api",
-        "$lib_version": "2.1.0",
+        "$lib_version": "2.2.0",
         "api_route": route,
         "http_method": method,
         "status_code": int(status_code),

@@ -82,7 +82,7 @@ const DOMAINS: DomainGroup[] = [
     ...
   },
   "calculation_metadata": {
-    "model_version": "2.1.0",
+    "model_version": "2.2.0",
     "validation_tier": "experimental",
     "sources": ["CNSF / instantanea empaquetada (illustrative)"],
     ...
