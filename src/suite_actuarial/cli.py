@@ -133,7 +133,7 @@ def ejecutar_demo() -> None:
         print("\n3. Creando asegurado de ejemplo...")
         asegurado = Asegurado(
             edad=35,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             suma_asegurada=Decimal("1000000"),
         )
         print("   ✓ Asegurado: Hombre, 35 años, $1,000,000 MXN")
@@ -157,7 +157,8 @@ def ejecutar_demo() -> None:
 
     except FileNotFoundError:
         print("\nError: No se encontro la tabla de mortalidad EMSSA-09")
-        print("   Asegúrate de que el archivo data/mortality_tables/emssa_09.csv existe.")
+        print("   La tabla viaja dentro del paquete instalado, no en el arbol del repositorio.")
+        print("   Reinstala el paquete con: pip install -e '.[dev,api,viz]'")
     except Exception as e:
         print(f"\nError durante la demostracion: {e}")
 
@@ -167,7 +168,7 @@ def ejecutar_api() -> None:
     try:
         import uvicorn
     except ImportError:
-        print("Error: FastAPI no instalado. Ejecuta: pip install mexican-insurance[api]")
+        print("Error: FastAPI no instalado. Ejecuta: pip install 'suite-actuarial[api]'")
         return
 
     print("Iniciando interfaz tecnica en http://localhost:8000")

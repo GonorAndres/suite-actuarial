@@ -100,7 +100,7 @@ where = ["src"]
 # `py.typed` (PEP 561) publica las anotaciones del paquete. Sin el, mypy trata
 # `suite_actuarial` como sin tipos cuando lo importa codigo de fuera del arbol
 # comprobado -- que es lo que pasaba con `examples/` y `streamlit_app/`.
-suite_actuarial = ["py.typed", "data/mortality_tables/*.csv", "data/mortality_tables/*.json"]
+suite_actuarial = ["py.typed", "data/mortality_tables/*.csv", "data/mortality_tables/*.json", "data/mortality_tables/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
