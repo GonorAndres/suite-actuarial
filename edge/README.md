@@ -97,6 +97,23 @@ cachear uno sería un error de corrección, no una lectura vieja.
 `CACHE_TTL_SECONDS` (300 por omisión) fija la frescura. La cabecera `X-Edge-Cache`
 declara `hit`, `miss` o `bypass` en cada respuesta.
 
+### Después de un despliegue, el borde sirve viejo hasta cinco minutos
+
+Ocurrió al desplegar 2.2.0 y conviene esperarlo: `/api/info` siguió reportando
+`"version": "2.1.0"` durante minutos después de que la revisión nueva ya estaba
+sirviendo. No era un despliegue fallido, era la caché del borde entregando la entrada
+anterior hasta que expiró su TTL.
+
+Para comprobar una versión recién desplegada, salta la caché con un parámetro
+cualquiera:
+
+```bash
+curl "https://api-suite.gonor.me/api/info?cb=$(openssl rand -hex 6)"
+```
+
+Vale la pena tenerlo presente al verificar un despliegue: sin esto es fácil concluir
+que no subió cuando sí subió.
+
 ## Verificación
 
 ```bash
