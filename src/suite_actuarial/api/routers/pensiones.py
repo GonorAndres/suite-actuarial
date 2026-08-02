@@ -232,9 +232,13 @@ def calcular_ley73(req: Ley73Request) -> Ley73Response:
 def calcular_ley97(req: Ley97Request) -> Ley97Response:
     """Calculate an IMSS Ley 97 pension (defined-contribution regime).
 
-    Compares renta vitalicia (life annuity) vs retiro programado
-    (scheduled withdrawal) modalities and recommends the better option
-    based on the worker's AFORE balance, age, and weeks contributed.
+    Reports the first monthly payment under both modalities -- renta vitalicia
+    (life annuity) and retiro programado (scheduled withdrawal) -- from the
+    worker's AFORE balance, age, and sex, plus the guaranteed minimum pension
+    the weeks contributed give access to. The `recomendacion` field names the
+    modality with the higher first payment; it is not a suitability
+    recommendation and does not weigh that the annuity is guaranteed for life
+    while the scheduled withdrawal is recalculated each year and can run out.
     """
     try:
         tabla = _get_tabla()

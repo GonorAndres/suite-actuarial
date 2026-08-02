@@ -12,7 +12,10 @@ from decimal import Decimal
 
 import pytest
 
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.danos.tarifas import (
+    DISCLAIMER,
+    VALIDATION_TIER,
     CalculadoraBonusMalus,
     FactorCredibilidad,
     TablaTarifas,
@@ -338,3 +341,49 @@ class TestCredibilidadOraculosNumericos:
         z_grande = FactorCredibilidad.buhlmann_straub(grande, Decimal("1.10"))["Z"]
 
         assert z_grande > z_chico
+
+
+class TestAvisoBonusMalus:
+    """La escala BMS se describia como «estandar mexicana» sin fuente alguna.
+
+    Ni el modulo ni la respuesta del API declaraban que los nueve niveles, sus
+    factores y sus reglas de transicion se construyeron para el laboratorio.
+    """
+
+    def test_construir_emite_experimental_model_warning(self):
+        with pytest.warns(ExperimentalModelWarning, match="ILUSTRATIVA"):
+            CalculadoraBonusMalus(nivel_actual=0)
+
+    def test_un_nivel_invalido_no_emite_el_aviso(self):
+        """Sin factor no hay cifra que acompanar."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as capturadas:
+            warnings.simplefilter("always")
+            with pytest.raises(ValueError):
+                CalculadoraBonusMalus(nivel_actual=10)
+        assert not [c for c in capturadas if issubclass(c.category, ExperimentalModelWarning)]
+
+    def test_la_falta_de_calibracion_que_declara_el_aviso(self):
+        """Un siniestro sube dos niveles; un periodo limpio baja solo uno.
+
+        Con un siniestro cada dos periodos el asegurado deriva al recargo
+        maximo y se queda ahi. No es un defecto del codigo -- es la escala que
+        el modulo trae -- pero muestra que no esta calibrada para compensar
+        descuentos con recargos, que es justo lo que el aviso declara.
+        """
+        bms = CalculadoraBonusMalus(nivel_actual=0)
+        for _ in range(10):
+            bms.transicion(0)
+            bms.transicion(1)
+
+        assert bms.nivel_actual == CalculadoraBonusMalus.NIVEL_MAX
+        assert bms.factor_actual() == Decimal("1.50")
+        assert "calibrada" in DISCLAIMER
+
+    def test_el_aviso_no_atribuye_la_escala_a_ninguna_tarifa(self):
+        assert "no los valores de ninguna tarifa registrada" in DISCLAIMER
+        assert "ILUSTRATIVA" in DISCLAIMER
+
+    def test_el_nivel_de_respaldo_es_experimental(self):
+        assert VALIDATION_TIER == "experimental"

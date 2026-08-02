@@ -343,8 +343,8 @@ const DOMAINS: DomainGroup[] = [
       {
         method: "POST",
         path: "/api/v1/danos/bonus-malus",
-        desc_es: "Calcula la transición de nivel Bonus-Malus y el factor de prima asociado. Escala BMS mexicana: sin siniestros baja 1 nivel (descuento), 1 siniestro sube 2 niveles, 2 o más siniestros suben 3.",
-        desc_en: "Calculates the Bonus-Malus level transition and its premium factor. Mexican BMS scale: no claims moves down 1 level (discount), 1 claim moves up 2 levels, 2 or more claims move up 3.",
+        desc_es: "Calcula la transición de nivel Bonus-Malus y el factor de prima asociado. Escala ilustrativa: sin siniestros baja 1 nivel (descuento), 1 siniestro sube 2 niveles, 2 o más siniestros suben 3. Los niveles y sus factores no proceden de ninguna tarifa registrada; la respuesta lo declara en disclaimer.",
+        desc_en: "Calculates the Bonus-Malus level transition and its premium factor. Illustrative scale: no claims moves down 1 level (discount), 1 claim moves up 2 levels, 2 or more claims move up 3. The levels and their factors do not come from any filed tariff; the response states this in disclaimer.",
         params: [
           { name: "nivel_actual", type: "int", required: false, default_val: "0", description_es: "Nivel BMS actual (-5 a 3; 0 = base)", description_en: "Current BMS level (-5 to 3; 0 = base)" },
           { name: "numero_siniestros", type: "int", required: true, default_val: "-", description_es: "Número de siniestros en el periodo (>= 0)", description_en: "Number of claims in the period (>= 0)" },
@@ -357,7 +357,9 @@ const DOMAINS: DomainGroup[] = [
   "nivel_previo": 0,
   "siniestros": 1,
   "nivel_nuevo": 2,
-  "factor": 1.3
+  "factor": 1.3,
+  "validation_tier": "experimental",
+  "disclaimer": "AVISO: la escala de Bonus-Malus de este modulo es ILUSTRATIVA..."
 }`,
         try_link: "/danos",
       },
@@ -368,9 +370,9 @@ const DOMAINS: DomainGroup[] = [
         desc_en: "Runs a collective risk model (S = X1 + ... + XN) by Monte Carlo simulation. Returns the pure premium, moments of the aggregate, and VaR and TVaR risk measures at 95% and 99%. With a fixed seed the result is reproducible.",
         params: [
           { name: "dist_frecuencia", type: "string", required: true, default_val: "-", description_es: "Distribución de frecuencia: poisson, negbinom, binomial", description_en: "Frequency distribution: poisson, negbinom, binomial" },
-          { name: "params_frecuencia", type: "dict", required: true, default_val: "-", description_es: "Parámetros de frecuencia. poisson: {lambda_}; negbinom: {n, p}; binomial: {n, p}", description_en: "Frequency params. poisson: {lambda_}; negbinom: {n, p}; binomial: {n, p}" },
+          { name: "params_frecuencia", type: "dict", required: true, default_val: "-", description_es: "Parámetros de frecuencia, con estos nombres exactos. poisson: {lambda_}; negbinom: {n, p}; binomial: {n, p}. Un nombre ausente o no reconocido devuelve 422 nombrando el juego válido", description_en: "Frequency params, with these exact names. poisson: {lambda_}; negbinom: {n, p}; binomial: {n, p}. A missing or unrecognised name returns 422 naming the valid set" },
           { name: "dist_severidad", type: "string", required: true, default_val: "-", description_es: "Distribución de severidad: lognormal, pareto, gamma, weibull, exponencial", description_en: "Severity distribution: lognormal, pareto, gamma, weibull, exponencial" },
-          { name: "params_severidad", type: "dict", required: true, default_val: "-", description_es: "Parámetros de severidad. lognormal: {mu, sigma}; pareto: {alpha, scale}; gamma: {alpha, beta}; weibull: {c, scale}; exponencial: {lambda_}", description_en: "Severity params. lognormal: {mu, sigma}; pareto: {alpha, scale}; gamma: {alpha, beta}; weibull: {c, scale}; exponencial: {lambda_}" },
+          { name: "params_severidad", type: "dict", required: true, default_val: "-", description_es: "Parámetros de severidad, con estos nombres exactos. lognormal: {mu, sigma}; pareto: {alpha, scale}; gamma: {alpha, beta}; weibull: {c, scale}; exponencial: {lambda_}. Un nombre ausente o no reconocido devuelve 422 nombrando el juego válido", description_en: "Severity params, with these exact names. lognormal: {mu, sigma}; pareto: {alpha, scale}; gamma: {alpha, beta}; weibull: {c, scale}; exponencial: {lambda_}. A missing or unrecognised name returns 422 naming the valid set" },
           { name: "n_simulaciones", type: "int", required: false, default_val: "100000", description_es: "Número de simulaciones Monte Carlo (1,000-1,000,000)", description_en: "Monte Carlo simulations (1,000-1,000,000)" },
           { name: "seed", type: "int | null", required: false, default_val: "null", description_es: "Semilla para reproducibilidad", description_en: "Seed for reproducibility" },
         ],
@@ -393,7 +395,9 @@ const DOMAINS: DomainGroup[] = [
   "tvar_99": 3216552.16,
   "minimo": 0.0,
   "maximo": 16668524.70,
-  "simulaciones": 100000
+  "simulaciones": 100000,
+  "validation_tier": "experimental",
+  "disclaimer": "AVISO: este modulo implementa el modelo colectivo estandar, pero sus cifras son ILUSTRATIVAS..."
 }`,
         try_link: "/danos",
       },

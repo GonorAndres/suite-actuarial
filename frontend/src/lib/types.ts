@@ -171,6 +171,8 @@ export interface BonusMalusResponse {
   siniestros: number;
   nivel_nuevo: number;
   factor: number;
+  validation_tier: string;
+  disclaimer: string;
 }
 
 export interface FrecuenciaSeveridadRequest {
@@ -194,6 +196,8 @@ export interface FrecuenciaSeveridadResponse {
   minimo: number;
   maximo: number;
   simulaciones: number;
+  validation_tier: string;
+  disclaimer: string;
 }
 
 // ── Salud (Health) ──────────────────────────────────────────────────────────

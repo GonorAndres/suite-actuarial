@@ -229,3 +229,108 @@ class TestDanosProcedencia:
         assert data["disclaimer"].strip()
         assert "ILUSTRATIVOS" in data["disclaimer"]
         assert data["validation_tier"] == VALIDATION_TIER == "experimental"
+
+    def test_bonus_malus_incluye_aviso_y_nivel_de_respaldo(self, api_client):
+        """La escala BMS no procede de tarifa alguna y el factor lo declara."""
+        from suite_actuarial.danos.tarifas import DISCLAIMER, VALIDATION_TIER
+
+        payload = {"nivel_actual": 0, "numero_siniestros": 0}
+        response = api_client.post("/api/v1/danos/bonus-malus", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["disclaimer"] == DISCLAIMER
+        assert data["disclaimer"].strip()
+        assert "ILUSTRATIVA" in data["disclaimer"]
+        # El aviso nombra el limite que la respuesta no puede mostrar: la escala
+        # no esta calibrada para compensar descuentos con recargos.
+        assert "calibrada" in data["disclaimer"]
+        assert data["validation_tier"] == VALIDATION_TIER == "experimental"
+
+    def test_frecuencia_severidad_incluye_aviso_y_nivel_de_respaldo(self, api_client):
+        """El metodo es estandar; los parametros no se ajustan a dato alguno."""
+        from suite_actuarial.danos.frecuencia_severidad import DISCLAIMER, VALIDATION_TIER
+
+        payload = {
+            "dist_frecuencia": "poisson",
+            "params_frecuencia": {"lambda_": 5.0},
+            "dist_severidad": "lognormal",
+            "params_severidad": {"mu": 10.0, "sigma": 1.5},
+            "n_simulaciones": 1_000,
+            "seed": 42,
+        }
+        response = api_client.post("/api/v1/danos/frecuencia-severidad", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["disclaimer"] == DISCLAIMER
+        assert data["disclaimer"].strip()
+        assert "ILUSTRATIVAS" in data["disclaimer"]
+        # Los dos limites propios de esta respuesta: no ajusta a datos y sus
+        # medidas de cola son estimaciones Monte Carlo sin error reportado.
+        assert "no ajusta ninguna distribucion a datos" in data["disclaimer"]
+        assert "Monte Carlo" in data["disclaimer"]
+        assert data["validation_tier"] == VALIDATION_TIER == "experimental"
+
+
+class TestFrecuenciaSeveridadParametros:
+    """Un nombre de parametro equivocado devolvia 500 con traceback.
+
+    Las distribuciones se construyen indexando el diccionario recibido, asi que
+    `{"lambda": 5.0}` en vez de `{"lambda_": 5.0}` reventaba como `KeyError`
+    dentro del modelo y salia como error interno. El contrato dice justo lo
+    contrario: preservar el error util y no exponer el traceback.
+    """
+
+    BASE = {
+        "dist_frecuencia": "poisson",
+        "params_frecuencia": {"lambda_": 5.0},
+        "dist_severidad": "lognormal",
+        "params_severidad": {"mu": 10.0, "sigma": 1.5},
+        "n_simulaciones": 1_000,
+        "seed": 42,
+    }
+
+    def test_parametro_de_frecuencia_no_reconocido_es_422_que_nombra_el_valido(self, api_client):
+        payload = {**self.BASE, "params_frecuencia": {"lambda": 5.0}}
+        response = api_client.post("/api/v1/danos/frecuencia-severidad", json=payload)
+
+        assert response.status_code == 422
+        detalle = str(response.json()["detail"])
+        assert "lambda_" in detalle
+        assert "no se reconocen" in detalle
+        # Nada del interior del servicio viaja en la respuesta.
+        assert "Traceback" not in detalle
+        assert "KeyError" not in detalle
+
+    def test_parametro_de_severidad_ausente_es_422_que_nombra_el_juego(self, api_client):
+        payload = {
+            **self.BASE,
+            "dist_severidad": "pareto",
+            "params_severidad": {"alpha": 2.5},
+        }
+        response = api_client.post("/api/v1/danos/frecuencia-severidad", json=payload)
+
+        assert response.status_code == 422
+        detalle = str(response.json()["detail"])
+        assert "faltan" in detalle
+        assert "scale" in detalle
+        assert "alpha" in detalle
+
+    def test_la_distribucion_desconocida_sigue_siendo_400_del_dominio(self, api_client):
+        """Asimetria deliberada: el nombre de la distribucion lo valida el dominio.
+
+        Sin juego de parametros contra el cual comparar, el borde HTTP no puede
+        decir nada util; `ModeloColectivo` sí, y lista sus opciones.
+        """
+        payload = {**self.BASE, "dist_frecuencia": "cauchy"}
+        response = api_client.post("/api/v1/danos/frecuencia-severidad", json=payload)
+
+        assert response.status_code == 400
+        assert "no soportada" in response.json()["detail"]
+        assert "poisson" in response.json()["detail"]
+
+    def test_el_juego_correcto_de_parametros_sigue_pasando(self, api_client):
+        response = api_client.post("/api/v1/danos/frecuencia-severidad", json=self.BASE)
+        assert response.status_code == 200
+        assert response.json()["prima_pura"] > 0

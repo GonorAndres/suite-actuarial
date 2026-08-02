@@ -156,9 +156,9 @@ As a concrete educational example, using the values from the `ResultadoRCS` sche
 
 ### Circular S-11.4: Technical Reserves
 
-Circular S-11.4 from the CNSF defines how technical reserves must be calculated. The suite implements two key reserves:
+Circular S-11.4 from the CNSF defines how technical reserves must be calculated. The suite implements two reserves oriented towards it, which are not a compliant calculation: the institutional reserve is computed from the best estimate in the filed technical note, using the gross premium (not the net one), expenses, lapses, and a risk margin -- none of which are here.
 
-**Mathematical Reserve (RM, Reserva Matematica)** for long-term life insurance. The `CalculadoraRM` uses the prospective method: RM = PV(Future Benefits) - PV(Future Premiums). For a 45-year-old who purchased a life policy at age 40 with an annual premium of $25,000 and a sum assured of $1,000,000, the RM reflects that 5 years of exposure have already accumulated without a claim, so future obligations net of premiums yet to be collected are positive. The reserve grows over time until it reaches the sum assured (for whole life) or drops to zero at maturity (for term).
+**Mathematical Reserve (RM, Reserva Matematica)** for long-term life insurance. The `CalculadoraRM` uses the prospective net-premium method: ₜV = SA · A_{x+t:n-t} - P · ä_{x+t:m-t}, that is, the actuarial present value of the outstanding benefit minus that of the premiums still to be collected. Both terms come from the project's audited commutation machinery, reading mortality by sex and closing the table with the pricing module's terminal-age convention. For someone aged 45 who bought the policy at 40, the reserve measures what is left to pay net of what is left to collect; it grows with duration and ends at the sum assured when an endowment matures, or at zero when a term policy expires. The assumptions it does not include -- lapses, surrenders, expenses -- travel inside the result itself through `DISCLAIMER_RM`.
 
 **Reserva de Riesgos en Curso (RRC, roughly "unearned premium reserve")** for short-term insurance. It covers the unearned portion of the premium plus an inadequacy adjustment if expected claims experience exceeds what was anticipated.
 
@@ -168,13 +168,13 @@ Both modules include a sufficiency validator that checks whether the established
 
 No other open-source actuarial package implements Mexican tax rules for insurance. The suite includes a `ValidadorPrimasDeducibles` that determines, given an insurance type and the taxpayer's tax regime, what portion of the premium is deductible for income tax (ISR) purposes:
 
-- **Major medical insurance (individuals)**: 100% deductible with no limit (LISR Art. 151, Section I).
+- **Major medical insurance (individuals)**: deductible under Section VI, but subject to the global cap in the last paragraph of Art. 151: the lesser of five times the annual UMA and 15% of total income. Not "100% deductible with no limit".
 - **Life insurance (individuals)**: Not deductible.
-- **Pension plans (individuals)**: Deductible up to 5 annual UMAs (LISR Art. 151, Section V).
+- **Personal retirement plans (individuals)**: Section V, up to the lesser of 10% of accruable income and five annual UMAs; the statute itself excludes them from the global cap.
 - **Employee insurance (legal entities)**: 100% deductible -- major medical, life, and disability insurance for employees (LISR Art. 25, Section VI).
 - **Property insurance (legal entities)**: 100% deductible as strictly necessary business expenses.
 
-The validator receives the current annual UMA as a parameter, calculates limits in pesos, and returns a `ResultadoDeducibilidadPrima` with the deductible amount, percentage, and exact legal basis. This automates a lookup that typically requires an accountant to manually review the LISR.
+The validator receives the current annual UMA as a parameter, calculates limits in pesos, and returns a `ResultadoDeducibilidadPrima` with the deductible amount, percentage, legal basis, and the state of the global cap. When total income is not supplied it cannot resolve the 15% branch: rather than assume it, it returns the state `parcial_sin_ingresos` and says that only the five-UMA branch was applied. The rules were checked against the consolidated text of the LISR (DOF 2024-04-01, retrieved 2026-08-02); this is educational material, not tax advice.
 
 ### CNSF Reports
 
@@ -186,7 +186,7 @@ Some modules can be composed in analyst workflows, but the repository is not yet
 
 ## Engineering Decisions
 
-The current repository is organized as a Python package with domain modules, a FastAPI adapter, and a Next.js dashboard. The checkout currently collects 985 tests; run the suite locally for the current pass/fail and coverage result.
+The current repository is organized as a Python package with domain modules, a FastAPI adapter, and a Next.js dashboard. The checkout currently collects 1,380 tests; run the suite locally for the current pass/fail and coverage result.
 
 **Unidirectional dependencies.** The dependency flow goes in one direction: `core` imports from nobody; `products`, `reinsurance`, `reservas`, and `regulatorio` import from `core`; `reportes` imports from `regulatorio`. There are no cycles. This allows any module to be tested in isolation.
 

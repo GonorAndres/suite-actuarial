@@ -157,9 +157,9 @@ Como ejemplo educativo, usando los valores que aparecen en el schema del `Result
 
 ### Circular S-11.4: Reservas Tecnicas
 
-La Circular S-11.4 de la CNSF define como deben calcularse las reservas tecnicas. La suite implementa dos reservas clave:
+La Circular S-11.4 de la CNSF define como deben calcularse las reservas tecnicas. La suite implementa dos reservas orientadas a ella, que no son un calculo conforme: la reserva institucional se calcula con la mejor estimacion de la nota tecnica registrada, prima de tarifa (no neta), gastos, caducidad y margen de riesgo, y ninguno de esos elementos esta aqui.
 
-**Reserva Matematica (RM)** para seguros de vida de largo plazo. La `CalculadoraRM` usa el metodo prospectivo: RM = VP(Beneficios Futuros) - VP(Primas Futuras). Para un asegurado de 45 anos que contrato a los 40 un seguro de vida con prima anual de $25,000 y suma asegurada de $1,000,000, la RM refleja que ya se han acumulado 5 anos de exposicion sin siniestro, por lo que las obligaciones futuras netas de primas por cobrar son positivas. La reserva crece con el tiempo hasta alcanzar la suma asegurada (en el caso del ordinario) o cero al vencimiento (en el caso del temporal).
+**Reserva Matematica (RM)** para seguros de vida de largo plazo. La `CalculadoraRM` usa el metodo prospectivo de primas netas: ₜV = SA · A_{x+t:n-t} - P · ä_{x+t:m-t}, es decir el valor presente actuarial del beneficio pendiente menos el de las primas por cobrar. Ambos terminos se calculan con la maquinaria de conmutacion auditada del proyecto, leyendo la mortalidad por sexo y cerrando la tabla con la convencion de edad terminal del pricing. Para un asegurado de 45 anos que contrato a los 40, la reserva mide lo que falta por pagar neto de lo que falta por cobrar; crece con la duracion y termina en la suma asegurada al vencimiento del dotal o en cero al vencimiento del temporal. Los supuestos que no incluye -- caducidad, rescates, gastos -- viajan en el propio resultado a traves de `DISCLAIMER_RM`.
 
 **Reserva de Riesgos en Curso (RRC)** para seguros de corto plazo. Cubre la porcion de prima no devengada mas un ajuste por insuficiencia si la siniestralidad esperada excede lo previsto.
 
@@ -169,13 +169,13 @@ Ambos modulos incluyen un validador de suficiencia que verifica si las reservas 
 
 Ningun otro paquete actuarial de codigo abierto implementa las reglas fiscales mexicanas para seguros. La suite incluye un `ValidadorPrimasDeducibles` que determina, dado un tipo de seguro y el regimen fiscal del contribuyente, que porcion de la prima es deducible para ISR:
 
-- **Gastos Medicos Mayores (personas fisicas)**: 100% deducible sin limite (LISR Art. 151, fraccion I).
+- **Gastos Medicos Mayores (personas fisicas)**: deducibles por la fraccion VI, pero sujetos al tope global del ultimo parrafo del Art. 151: el menor entre cinco veces el valor anual de la UMA y el 15% del total de los ingresos. No son "100% deducibles sin limite".
 - **Seguros de vida (personas fisicas)**: No deducibles.
-- **Planes de pensiones (personas fisicas)**: Deducibles hasta 5 UMAs anuales (LISR Art. 151, fraccion V).
+- **Planes personales de retiro (personas fisicas)**: fraccion V, hasta el menor entre el 10% de los ingresos acumulables y cinco UMA anuales; la propia ley los excluye del tope global.
 - **Seguros de personal (personas morales)**: 100% deducibles -- GMM, vida e invalidez de empleados (LISR Art. 25, fraccion VI).
 - **Seguros sobre bienes (personas morales)**: 100% deducibles como gastos estrictamente indispensables.
 
-El validador recibe la UMA anual vigente como parametro, calcula limites en pesos, y devuelve un `ResultadoDeducibilidadPrima` con el monto deducible, porcentaje y fundamento legal exacto. Esto automatiza una consulta que tipicamente requiere que un contador revise manualmente la LISR.
+El validador recibe la UMA anual vigente como parametro, calcula limites en pesos, y devuelve un `ResultadoDeducibilidadPrima` con el monto deducible, porcentaje, fundamento legal y el estado del tope global. Cuando no se le dan los ingresos totales no puede resolver la rama del 15%: en vez de suponerla, devuelve el estado `parcial_sin_ingresos` y avisa que solo aplico la rama de las cinco UMA. Las reglas se cotejaron contra el texto consolidado de la LISR (DOF 01-04-2024, consultado el 2 de agosto de 2026); es material educativo, no asesoria fiscal.
 
 ### Reportes CNSF
 
@@ -187,7 +187,7 @@ Algunos modulos pueden componerse en flujos de analisis, pero el repositorio tod
 
 ## Decisiones de Ingenieria
 
-El repositorio actual está organizado como un paquete Python con módulos de dominio, un adaptador FastAPI y un dashboard Next.js. El checkout actual recopila 985 tests; ejecuta la suite localmente para conocer el resultado actual de aprobación y cobertura.
+El repositorio actual está organizado como un paquete Python con módulos de dominio, un adaptador FastAPI y un dashboard Next.js. El checkout actual recopila 1,380 tests; ejecuta la suite localmente para conocer el resultado actual de aprobación y cobertura.
 
 **Dependencias unidireccionales.** El flujo de dependencias sigue una sola direccion: `core` no importa de nadie; `products`, `reinsurance`, `reservas` y `regulatorio` importan de `core`; `reportes` importa de `regulatorio`. No hay ciclos. Esto permite que cualquier modulo se pruebe de forma aislada.
 

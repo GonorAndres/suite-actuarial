@@ -24,9 +24,13 @@ fuentes, supuestos y métodos aprobados por cada organización.
 ### Propiedades verificadas
 
 - qx aumenta con la edad (monotonia para adultos)
-- qx_H > qx_M para todas las edades (mortalidad masculina mayor)
+- qx(masculino) > qx(femenino) para todas las edades (mortalidad masculina mayor)
 - 0 <= qx <= 1 para todas las entradas
 - lx es no-creciente
+
+El sexo se identifica con la palabra completa `masculino` / `femenino` en todo el
+paquete y la API. El CSV publicado conserva sus iniciales `H`/`M`; la traduccion
+ocurre una sola vez, en `TablaMortalidad.desde_csv`.
 
 ## 2. Funciones de conmutacion
 
@@ -98,12 +102,35 @@ Desviacion maxima sobre todas las edades (18-100): 0.0000000000
 ## 6. Limitaciones conocidas
 
 Cada modulo con datos ilustrativos o simplificados expone una constante `DISCLAIMER`
-a nivel de modulo para facilitar su identificacion programatica.
+a nivel de modulo para facilitar su identificacion programatica. El inventario
+razonado de estos techos, con fuente, vigencia y ruta de sustitucion por modelo,
+esta en [`AUDIT.md`](AUDIT.md#inventario-clase-b-fase-5); esta seccion es el
+indice de las constantes.
 
-- **EMSSA-09**: No fuerza q_omega = 1 en edad terminal (qx_100_H = 0.442). Ver `src/suite_actuarial/data/mortality_tables/README.md`.
-- **GMM** (`salud/gmm.py`): Tasas base por banda de edad son ilustrativas, no datos reales del mercado.
-- **AMIS** (`danos/tablas_amis.py`): Tablas de tarificacion son representativas, no las tablas oficiales vigentes.
-- **Art. 142 LISR** (`regulatorio/validaciones_sat/validador_siniestros.py`): Simplificacion 50/50 para gravabilidad de rentas vitalicias.
-- **RCS Vida/Danos/Inversion** (`regulatorio/rcs_vida.py`, `rcs_danos.py`, `rcs_inversion.py`): Factores son aproximaciones pedagogicas simplificadas, no el modelo estocastico completo de la CNSF.
-- Tabla EMSSA-09 incluida es version simplificada para propositos demostrativos
-  (ver metadata.json); para produccion usar tablas oficiales de la CNSF.
+Daños:
+
+- **AMIS** (`danos/tablas_amis.py`): tasas, zonas y factores representativos, no las tablas oficiales vigentes.
+- **Auto** (`danos/auto.py`): ademas de lo anterior, tarifa la RC a terceros sobre el valor del propio vehiculo y redondea en pasos intermedios.
+- **Incendio** (`danos/incendio.py`): tasas por tipo de construccion y factores de zona y uso ilustrativos; sin deducible, infraseguro ni riesgo catastrofico.
+- **RC general** (`danos/rc.py`): prima por millar del limite, sin frecuencia ni severidad ni medida de exposicion; factor de deducible escalonado.
+- **Bonus-Malus** (`danos/tarifas.py`): niveles, factores y reglas de transicion ilustrativos, sin calibrar.
+- **Modelo colectivo** (`danos/frecuencia_severidad.py`): metodo estandar sobre parametros que fija quien llama; sin ajuste a datos ni error de simulacion reportado.
+
+Salud:
+
+- **GMM** (`salud/gmm.py`): tasas base por banda de edad ilustrativas; sin frecuencia-severidad ni tendencia medica.
+- **Accidentes** (`salud/accidentes.py`): tasas, factores de ocupacion y porcentajes de perdidas organicas construidos para el laboratorio.
+
+Regulatorio y reservas:
+
+- **RCS Vida/Danos/Inversion** (`regulatorio/rcs_vida.py`, `rcs_danos.py`, `rcs_inversion.py`): factores pedagogicos simplificados, no el modelo estocastico completo de la CNSF.
+- **Reserva Matematica** (`regulatorio/reservas_tecnicas/models.py`, `DISCLAIMER_RM`): prospectiva de primas netas; **no** es un calculo conforme a la Circular S-11.4.
+- **Art. 142 LISR** (`regulatorio/validaciones_sat/validador_siniestros.py`): simplificacion 50/50 para gravabilidad de rentas vitalicias.
+- **Chain Ladder, cola y diagnosticos** (`reservas/chain_ladder.py`, `cola.py`, `diagnosticos.py`): avisos sobre extrapolacion de la cola y sobre supuestos del metodo que los datos no verifican.
+
+Tabla de mortalidad:
+
+- **EMSSA-09**: no fuerza q_omega = 1 en edad terminal (qx a los 100, masculino = 0.442). Ver `src/suite_actuarial/data/mortality_tables/README.md`.
+- La tabla incluida es una version simplificada con fines demostrativos, declarada
+  `illustrative` en su `metadata.json` y verificada por sha256 al cargar; para
+  produccion, usar las tablas oficiales de la CNSF.

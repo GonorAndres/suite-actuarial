@@ -6,13 +6,40 @@ donde N ~ distribucion de frecuencia, Xi ~ distribucion de severidad
 
 Este modulo es el nucleo matematico de la tarificacion de seguros de
 propiedad y casualidad (P&C / danos).
+
+El metodo es estandar; las cifras no estan respaldadas mientras los parametros
+no procedan de experiencia propia. Ver `DISCLAIMER`.
 """
 
+import warnings
+from collections.abc import Mapping
 from decimal import Decimal
 from typing import Any
 
 import numpy as np
 from scipy import stats
+
+from suite_actuarial.config.schema import ValidationTier
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+
+DISCLAIMER = (
+    "AVISO: este modulo implementa el modelo colectivo estandar, pero sus "
+    "cifras son ILUSTRATIVAS mientras los parametros no procedan de experiencia "
+    "propia: no ajusta ninguna distribucion a datos, usa los parametros que se "
+    "le entreguen. Supone que N y las X son independientes y que las X son "
+    "identicamente distribuidas; no reconoce deducible, limite por siniestro, "
+    "reaseguro, inflacion ni descuento; y trata los parametros como conocidos, "
+    "de modo que sus medidas de riesgo no incorporan incertidumbre de parametro. "
+    "VaR y TVaR son estimaciones Monte Carlo con error de muestreo que la "
+    "respuesta no reporta: al 99% descansan sobre el 1% de las simulaciones. "
+    "Para uso profesional, ajuste las distribuciones a su experiencia y reporte "
+    "el error de estimacion."
+)
+
+#: Nivel de respaldo de las cifras de este modulo. Los parametros los fija quien
+#: llama y no se ajustan contra experiencia alguna, asi que ninguna medida de
+#: riesgo puede presentarse como respaldada.
+VALIDATION_TIER = ValidationTier.EXPERIMENTAL.value
 
 # ---------------------------------------------------------------------------
 # Mapeos de distribuciones
@@ -31,6 +58,70 @@ _DIST_SEVERIDAD = {
     "weibull": lambda p: stats.weibull_min(c=p["c"], scale=p["scale"]),
     "exponencial": lambda p: stats.expon(scale=1.0 / p["lambda_"]),
 }
+
+#: Nombres exactos de parametro que exige cada distribucion.
+#:
+#: Es la unica fuente de verdad de esos nombres: `ModeloColectivo` valida contra
+#: ella y el borde HTTP la nombra en su 422. Las distribuciones se construyen
+#: indexando el diccionario recibido (`p["lambda_"]`), asi que sin esta
+#: declaracion un nombre equivocado -- `lambda` en vez de `lambda_` -- o uno
+#: ausente reventaba como `KeyError` sin decir cual era el juego valido.
+PARAMS_FRECUENCIA: dict[str, frozenset[str]] = {
+    "poisson": frozenset({"lambda_"}),
+    "negbinom": frozenset({"n", "p"}),
+    "binomial": frozenset({"n", "p"}),
+}
+
+PARAMS_SEVERIDAD: dict[str, frozenset[str]] = {
+    "lognormal": frozenset({"mu", "sigma"}),
+    "pareto": frozenset({"alpha", "scale"}),
+    "gamma": frozenset({"alpha", "beta"}),
+    "weibull": frozenset({"c", "scale"}),
+    "exponencial": frozenset({"lambda_"}),
+}
+
+
+def verificar_parametros(
+    distribucion: str,
+    params: Mapping[str, Any],
+    requeridos: Mapping[str, frozenset[str]],
+    campo: str,
+) -> None:
+    """Exige de `params` los nombres exactos que pide `distribucion`.
+
+    No valida el nombre de la distribucion: si es desconocido no hay juego de
+    parametros contra el cual comparar, y quien llama ya lo rechaza aparte.
+
+    Args:
+        distribucion: nombre de la distribucion elegida.
+        params: parametros recibidos.
+        requeridos: `PARAMS_FRECUENCIA` o `PARAMS_SEVERIDAD`.
+        campo: nombre del campo que se esta validando, para el mensaje.
+
+    Raises:
+        ValueError: si falta un parametro requerido o sobra uno no reconocido.
+            El mensaje nombra el juego valido en ambos casos.
+    """
+    esperados = requeridos.get(distribucion)
+    if esperados is None:
+        return
+
+    recibidos = set(params)
+    faltantes = sorted(esperados - recibidos)
+    no_reconocidos = sorted(recibidos - esperados)
+    if not faltantes and not no_reconocidos:
+        return
+
+    detalle = []
+    if faltantes:
+        detalle.append(f"faltan {faltantes}")
+    if no_reconocidos:
+        detalle.append(f"no se reconocen {no_reconocidos}")
+    raise ValueError(
+        f"{campo} de '{distribucion}': {'; '.join(detalle)}. "
+        f"Los parametros de '{distribucion}' son {sorted(esperados)}."
+    )
+
 
 # Techo de siniestros individuales que una simulacion puede muestrear.
 #
@@ -53,6 +144,12 @@ class ModeloColectivo:
     Soporta:
         Frecuencia: poisson, negbinom, binomial
         Severidad: lognormal, pareto, gamma, weibull, exponencial
+
+    Los nombres de parametro que exige cada distribucion estan declarados en
+    `PARAMS_FRECUENCIA` y `PARAMS_SEVERIDAD`, y se validan al construir. Al
+    construirse emite ademas `ExperimentalModelWarning` con `DISCLAIMER`, que
+    viaja tambien en la respuesta del API: la prima pura y las medidas de riesgo
+    no deben circular sin su limite.
     """
 
     def __init__(
@@ -88,6 +185,11 @@ class ModeloColectivo:
                 f"Opciones: {list(_DIST_SEVERIDAD)}"
             )
 
+        verificar_parametros(
+            dist_frecuencia, params_frecuencia, PARAMS_FRECUENCIA, "params_frecuencia"
+        )
+        verificar_parametros(dist_severidad, params_severidad, PARAMS_SEVERIDAD, "params_severidad")
+
         self.dist_frecuencia_nombre = dist_frecuencia
         self.dist_severidad_nombre = dist_severidad
         self.params_frecuencia = params_frecuencia
@@ -100,6 +202,10 @@ class ModeloColectivo:
         self._cache_sim: np.ndarray | None = None
         self._cache_seed: int | None = None
         self._cache_n: int | None = None
+
+        # Despues de validar: una entrada invalida no produce cifra alguna, asi
+        # que no hay resultado que acompanar con el aviso.
+        warnings.warn(DISCLAIMER, ExperimentalModelWarning, stacklevel=2)
 
     # ------------------------------------------------------------------
     # Momentos analiticos

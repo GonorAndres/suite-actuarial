@@ -1036,6 +1036,13 @@ function BonusMalusResults({
         </div>
       </Card>
 
+      <AvisoModelo
+        tier={result.validation_tier}
+        disclaimer={result.disclaimer}
+        titulo={t("reg_aviso_alcance")}
+        etiquetaNivel={t("nivel_validacion")}
+      />
+
       <DownloadButton data={csvData} filename="danos_bonus_malus" label={t("descargar_csv")} />
     </div>
   );
@@ -1116,6 +1123,13 @@ function FreqSevResults({
           </div>
         </div>
       </Card>
+
+      <AvisoModelo
+        tier={result.validation_tier}
+        disclaimer={result.disclaimer}
+        titulo={t("reg_aviso_alcance")}
+        etiquetaNivel={t("nivel_validacion")}
+      />
 
       <DownloadButton data={csvData} filename="danos_frecuencia_severidad" label={t("descargar_csv")} />
     </div>

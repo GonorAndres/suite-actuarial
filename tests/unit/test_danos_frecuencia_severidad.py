@@ -15,8 +15,13 @@ from decimal import Decimal
 import numpy as np
 import pytest
 
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.danos.frecuencia_severidad import (
+    DISCLAIMER,
     MAX_SINIESTROS_SIMULADOS,
+    PARAMS_FRECUENCIA,
+    PARAMS_SEVERIDAD,
+    VALIDATION_TIER,
     ModeloColectivo,
 )
 
@@ -76,6 +81,94 @@ class TestConstruccion:
     def test_severidad_invalida(self):
         with pytest.raises(ValueError, match="severidad no soportada"):
             ModeloColectivo("poisson", {"lambda_": 5}, "normal", {"mu": 0, "sigma": 1})
+
+
+class TestNombresDeParametro:
+    """Un nombre de parametro equivocado reventaba como `KeyError`.
+
+    Las distribuciones se construyen indexando el diccionario recibido
+    (`p["lambda_"]`), asi que un nombre mal escrito o ausente no producia un
+    error de dominio sino una excepcion cruda, que en el API salia como 500.
+    """
+
+    def test_nombre_equivocado_es_valueerror_y_no_keyerror(self):
+        with pytest.raises(ValueError, match=r"params_frecuencia de 'poisson'"):
+            ModeloColectivo("poisson", {"lambda": 5.0}, "lognormal", {"mu": 1, "sigma": 1})
+
+    def test_el_mensaje_nombra_el_juego_valido(self):
+        with pytest.raises(ValueError) as exc:
+            ModeloColectivo("poisson", {"lambda": 5.0}, "lognormal", {"mu": 1, "sigma": 1})
+        mensaje = str(exc.value)
+        assert "lambda_" in mensaje
+        assert "no se reconocen" in mensaje
+
+    def test_parametro_ausente_se_nombra(self):
+        with pytest.raises(ValueError, match=r"faltan \['scale'\]"):
+            ModeloColectivo("poisson", {"lambda_": 5.0}, "pareto", {"alpha": 2.5})
+
+    def test_parametro_de_mas_se_rechaza(self):
+        """Un extra no es inocuo: senala que quien llama cree parametrizar algo."""
+        with pytest.raises(ValueError, match="no se reconocen"):
+            ModeloColectivo(
+                "poisson",
+                {"lambda_": 5.0},
+                "lognormal",
+                {"mu": 1, "sigma": 1, "theta": 3},
+            )
+
+    @pytest.mark.parametrize("dist", sorted(PARAMS_FRECUENCIA))
+    def test_cada_frecuencia_declarada_se_construye_con_sus_parametros(self, dist):
+        """La declaracion y lo que la distribucion indexa no pueden divergir."""
+        valores = {"lambda_": 5.0, "n": 10.0, "p": 0.5}
+        params = {nombre: valores[nombre] for nombre in PARAMS_FRECUENCIA[dist]}
+        modelo = ModeloColectivo(dist, params, "exponencial", {"lambda_": 1.0})
+        assert modelo.prima_pura() > 0
+
+    @pytest.mark.parametrize("dist", sorted(PARAMS_SEVERIDAD))
+    def test_cada_severidad_declarada_se_construye_con_sus_parametros(self, dist):
+        valores = {
+            "mu": 1.0,
+            "sigma": 1.0,
+            "alpha": 2.5,
+            "beta": 1.0,
+            "scale": 100.0,
+            "c": 1.5,
+            "lambda_": 1.0,
+        }
+        params = {nombre: valores[nombre] for nombre in PARAMS_SEVERIDAD[dist]}
+        modelo = ModeloColectivo("poisson", {"lambda_": 5.0}, dist, params)
+        assert modelo.prima_pura() > 0
+
+
+class TestAvisoDeAlcance:
+    """El metodo es estandar, pero sus cifras no estan respaldadas.
+
+    El modulo no ajusta ninguna distribucion a datos: usa los parametros que le
+    entreguen. Sin aviso, una prima pura salia del API indistinguible de una
+    calculada sobre experiencia propia.
+    """
+
+    def test_construir_emite_experimental_model_warning(self):
+        with pytest.warns(ExperimentalModelWarning, match="ILUSTRATIVAS"):
+            ModeloColectivo("poisson", {"lambda_": 5.0}, "lognormal", {"mu": 1, "sigma": 1})
+
+    def test_una_entrada_invalida_no_emite_el_aviso(self):
+        """Sin cifra no hay nada que acompanar."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as capturadas:
+            warnings.simplefilter("always")
+            with pytest.raises(ValueError):
+                ModeloColectivo("poisson", {"lambda": 5.0}, "lognormal", {"mu": 1, "sigma": 1})
+        assert not [c for c in capturadas if issubclass(c.category, ExperimentalModelWarning)]
+
+    def test_el_aviso_nombra_los_supuestos_que_no_se_ven_en_la_cifra(self):
+        assert "independientes" in DISCLAIMER
+        assert "incertidumbre de parametro" in DISCLAIMER
+        assert "Monte Carlo" in DISCLAIMER
+
+    def test_el_nivel_de_respaldo_es_experimental(self):
+        assert VALIDATION_TIER == "experimental"
 
 
 # ---------------------------------------------------------------------------

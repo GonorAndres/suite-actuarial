@@ -224,6 +224,86 @@ cifras de RM cambian.
   Nx = Σ Dx, Mx = Σ Cx. Todos los valores publicados coincidieron con el cálculo;
   ninguno se modificó.
 
+### Añadido — Bonus-Malus y modelo colectivo declaran su alcance
+
+Eran las dos únicas respuestas de daños que seguían sin `disclaimer` ni
+`validation_tier`, así que sus dos pestañas del dashboard no podían divulgar nada
+aunque el resto del realm ya lo hacía.
+
+- `danos/tarifas.py` expone `DISCLAIMER` y `VALIDATION_TIER`, y
+  `CalculadoraBonusMalus` emite `ExperimentalModelWarning` al construirse. La
+  escala se describía en el código como «escala estándar mexicana» y «escala
+  típica mexicana» sin fuente alguna: los nueve niveles, sus factores y las
+  reglas de transición se construyeron para el laboratorio. El aviso lo dice, y
+  añade el límite que la cifra no muestra — la escala no está calibrada. Una
+  prueba lo hace visible: con un siniestro cada dos periodos el asegurado deriva
+  al recargo máximo y se queda ahí.
+- `danos/frecuencia_severidad.py` expone `DISCLAIMER` y `VALIDATION_TIER`, y
+  `ModeloColectivo` emite el mismo aviso. Aquí el método es estándar; lo que no
+  está respaldado son los parámetros, que fija quien llama sin ajustarlos a dato
+  alguno. El aviso nombra además los supuestos invisibles en el resultado:
+  independencia entre N y X, ausencia de deducible, límite, reaseguro, inflación
+  y descuento, parámetros tratados como conocidos, y el error de muestreo Monte
+  Carlo que la respuesta no reporta.
+- `BonusMalusResponse` y `FrecuenciaSeveridadResponse` llevan los dos campos
+  nuevos (cambio aditivo del contrato), con prueba por realm; `types.ts` los
+  declara y los dos paneles del dashboard los renderizan con `AvisoModelo`.
+- Dos renglones nuevos en el [inventario Clase B](docs/AUDIT.md#inventario-clase-b-fase-5).
+
+Con esto, las cinco respuestas de daños divulgan su alcance.
+
+### Corregido — `POST /danos/frecuencia-severidad` devolvía 500 con traceback
+
+Las distribuciones se construyen indexando el diccionario recibido
+(`p["lambda_"]`), así que `params_frecuencia: {"lambda": 5.0}` —o un `pareto` sin
+`scale`— reventaba como `KeyError` dentro del modelo y salía como error interno.
+El contrato dice justo lo contrario: preservar el error útil y no exponer el
+traceback. La UI no podía provocarlo porque siempre envía `lambda_`; un cliente
+del API sí.
+
+- `PARAMS_FRECUENCIA` y `PARAMS_SEVERIDAD` declaran los nombres exactos que exige
+  cada distribución. Son la única fuente de verdad: `ModeloColectivo` valida
+  contra ellos al construir (`ValueError` en vez de `KeyError`, para quien use el
+  paquete) y el borde HTTP los nombra en un **422** con el juego válido.
+- Asimetría deliberada, con prueba que la fija: el nombre de la distribución
+  sigue validándose en el dominio y devolviendo 400. Sin juego de parámetros
+  contra el cual comparar, el borde no puede decir nada útil; `ModeloColectivo`
+  sí, y lista sus opciones.
+
+### Corregido — afirmaciones ya retiradas que sobrevivían en los docstrings
+
+El mismo texto falso que se quitó de `api-docs` y de Streamlit seguía en el
+backend, y desde ahí volvía a salir por `openapi.json`.
+
+- `routers/danos.py` decía que la cotización de auto usa «AMIS reference
+  tables». No las usa: las tasas y factores reproducen la estructura de una
+  tarifa, no los valores de ninguna, y no proceden de la AMIS.
+- `routers/pensiones.py` decía que Ley 97 «recommends the better option». No
+  recomienda: el campo `recomendacion` nombra la modalidad con el primer pago
+  mensual más alto, sin ponderar que la renta vitalicia está garantizada de por
+  vida mientras el retiro programado se recalcula cada año y puede agotarse.
+- `api-docs` describía la escala BMS como «escala BMS mexicana»; ahora dice
+  ilustrativa, y sus dos respuestas de ejemplo incluyen los campos nuevos.
+
+### Corregido — documentación que describía métodos ya corregidos
+
+- `docs/portfolio/blog-{es,en}.md` presentaba la Reserva Matemática bajo la
+  Circular S-11.4 como si fuera un cálculo conforme, y con la fórmula anterior.
+  Ahora declara el método prospectivo de primas netas y dice explícitamente qué
+  le falta para ser el cálculo institucional.
+- Los mismos dos archivos afirmaban que los GMM de personas físicas son «100%
+  deducibles sin límite (Art. 151, fracción I)». Es la afirmación que cerró la
+  auditoría: es la fracción **VI** y está sujeta al tope global del último
+  párrafo. También precisan la fracción V (menor entre 10% de ingresos
+  acumulables y cinco UMA, excluida del tope global) y actualizan el conteo de
+  pruebas (985 → 1,380).
+- `docs/VALIDATION.md` §6 listaba 6 de los 16 módulos con `DISCLAIMER`; ahora
+  están todos, agrupados por dominio y con enlace al inventario Clase B. Se
+  retiraron los rótulos `qx_H`/`qx_M`, que dejaron de existir con la migración
+  de `sexo` a palabras completas.
+- `docs/knowledge/{technical,intuitive}.tex` publicaban la fórmula vieja de la RM
+  y su ley de supervivencia `exp(-k·x²)`, ambas retiradas del código.
+
 ### Breaking — cambios numéricos silenciosos
 
 Ninguno cambia el esquema de la API. Cambian el **valor** que devuelve un campo
