@@ -17,11 +17,13 @@ import {
   Badge,
   MetricCard,
   AvisoIlustrativo,
+  ErrorPanel,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
 import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { reservesApi } from "@/lib/api";
+import { valorCampo } from "@/lib/field-display";
 import { formatNumber } from "@/lib/utils";
 import type {
   ChainLadderRequest,
@@ -198,7 +200,7 @@ function ReserveResultCard({
       <Card>
         <div className="flex items-center gap-3">
           <span className="text-sm text-navy/60">{t("reservas_metodo")}:</span>
-          <Badge variant="info">{result.metodo}</Badge>
+          <Badge variant="info">{valorCampo("metodo", result.metodo, t)}</Badge>
         </div>
       </Card>
 
@@ -437,7 +439,7 @@ export default function ReservasPage() {
 
       <section id="workbench" className="scroll-mt-28 pt-3">
         <p className="kicker mb-2">Workbench</p>
-        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Proyecte el triángulo y examine incertidumbre" : "Project the triangle and examine uncertainty"}</h2>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Proyecta el triángulo y mide su incertidumbre" : "Project the triangle and measure its uncertainty"}</h2>
       </section>
 
       {/* Tabs */}
@@ -733,11 +735,7 @@ export default function ReservasPage() {
 
       {/* Error display */}
       {errorMsg && (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-red-700 font-medium">
-            {t("error")}: {errorMsg}
-          </p>
-        </Card>
+        <ErrorPanel titulo={t("error_calculo_titulo")} mensaje={errorMsg} />
       )}
 
       {/* ── Results ──────────────────────────────────────────────── */}

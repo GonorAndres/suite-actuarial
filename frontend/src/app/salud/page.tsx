@@ -15,12 +15,15 @@ import {
   LoadingSpinner,
   Table,
   MetricCard,
+  AvisoModelo,
+  ErrorPanel,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
 import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { saludApi } from "@/lib/api";
-import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
+import { etiquetaCampo, valorCampo } from "@/lib/field-display";
+import { formatCurrency, formatPercent } from "@/lib/utils";
 import type {
   GMMRequest,
   GMMResponse,
@@ -212,7 +215,7 @@ export default function SaludPage() {
 
       <section id="workbench" className="scroll-mt-28 pt-3">
         <p className="kicker mb-2">Workbench</p>
-        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Examine costo compartido y tarifa" : "Examine cost sharing and pricing"}</h2>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Revisa el costo compartido y la tarifa" : "Examine cost sharing and pricing"}</h2>
       </section>
 
       {/* Tabs */}
@@ -359,11 +362,7 @@ export default function SaludPage() {
 
       {/* Error display */}
       {errorMsg && (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-red-700 font-medium">
-            {t("error")}: {errorMsg}
-          </p>
-        </Card>
+        <ErrorPanel titulo={t("error_calculo_titulo")} mensaje={errorMsg} />
       )}
 
       {/* ── Section divider ─────────────────────────────────────────── */}
@@ -395,29 +394,23 @@ function GMMResults({
   result: GMMResponse;
   t: (key: TranslationKey) => string;
 }) {
+  // Every open dictionary in this response goes through the shared field
+  // formatter: it names the key in the reader's language, applies the unit the
+  // key is quoted in (pesos, per mille, rating factor, fraction), and writes
+  // an absent value as an em dash instead of the literal string "null".
   const aseguradoRows = Object.entries(result.asegurado).map(([key, val]) => [
-    key,
-    String(val),
+    etiquetaCampo(key, t, "salud"),
+    valorCampo(key, val, t),
   ]);
 
   const productoRows = Object.entries(result.producto).map(([key, val]) => [
-    key,
-    String(val),
+    etiquetaCampo(key, t, "salud"),
+    valorCampo(key, val, t),
   ]);
 
-  const CURRENCY_KEYS = new Set(["prima_base", "prima_ajustada", "siniestralidad_esperada"]);
-  const RATE_KEYS = new Set(["tasa_banda_edad"]);
   const tarificacionRows = Object.entries(result.tarificacion).map(([key, val]) => [
-    key,
-    typeof val !== "number"
-      ? String(val)
-      : CURRENCY_KEYS.has(key)
-        ? formatCurrency(val)
-        : RATE_KEYS.has(key)
-          ? `${val.toFixed(2)} ‰`
-          : key.startsWith("factor_")
-            ? val.toFixed(4)
-            : formatNumber(val),
+    etiquetaCampo(key, t, "salud"),
+    valorCampo(key, val, t, key.startsWith("factor_") ? "factor" : undefined),
   ]);
 
   const csvData = {
@@ -445,10 +438,20 @@ function GMMResults({
         <MetricCard
           label={t("salud_siniestralidad_esperada")}
           value={formatCurrency(result.siniestralidad_esperada)}
-          sublabel={t("salud_descripcion")}
+          // The caption used to be the page tagline, which said nothing about
+          // the figure. This one states how the figure is built, and that the
+          // construction makes it circular.
+          sublabel={t("salud_siniestralidad_nota")}
           variant="default"
         />
       </div>
+
+      <AvisoModelo
+        tier={result.validation_tier}
+        disclaimer={result.disclaimer}
+        titulo={t("reg_aviso_alcance")}
+        etiquetaNivel={t("nivel_validacion")}
+      />
 
       {tarificacionRows.length > 0 && (
         <Card title={t("salud_tarificacion")}>
@@ -462,10 +465,10 @@ function GMMResults({
           {aseguradoRows.length > 0 && (
             <Card title={t("salud_datos_asegurado")}>
               <div className="space-y-2">
-                {aseguradoRows.map(([key, val]) => (
-                  <div key={String(key)} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5 last:border-0">
-                    <span className="text-sm text-navy/50">{key}</span>
-                    <span className="text-sm font-medium text-navy tabular-nums text-right">{val}</span>
+                {aseguradoRows.map(([etiqueta, valor]) => (
+                  <div key={String(etiqueta)} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5 last:border-0">
+                    <span className="text-sm text-navy/50">{etiqueta}</span>
+                    <span className="text-sm font-medium text-navy tabular-nums text-right">{valor}</span>
                   </div>
                 ))}
               </div>
@@ -474,10 +477,10 @@ function GMMResults({
           {productoRows.length > 0 && (
             <Card title={t("salud_datos_producto")}>
               <div className="space-y-2">
-                {productoRows.map(([key, val]) => (
-                  <div key={String(key)} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5 last:border-0">
-                    <span className="text-sm text-navy/50">{key}</span>
-                    <span className="text-sm font-medium text-navy tabular-nums text-right">{val}</span>
+                {productoRows.map(([etiqueta, valor]) => (
+                  <div key={String(etiqueta)} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5 last:border-0">
+                    <span className="text-sm text-navy/50">{etiqueta}</span>
+                    <span className="text-sm font-medium text-navy tabular-nums text-right">{valor}</span>
                   </div>
                 ))}
               </div>
@@ -500,15 +503,17 @@ function AccidentesResults({
 }) {
   const perdidasRows = Object.entries(result.perdidas_organicas).map(([key, val]) => {
     const entry = val as { porcentaje?: number; monto?: number } | number;
+    const etiqueta = etiquetaCampo(key, t, "salud");
     if (typeof entry === "object" && entry !== null && "monto" in entry) {
-      return [key, formatPercent(entry.porcentaje ?? 0), formatCurrency(entry.monto ?? 0)];
+      // `porcentaje` is a fraction of the sum insured: 0.6 is 60% of it.
+      return [etiqueta, formatPercent(entry.porcentaje ?? 0), formatCurrency(entry.monto ?? 0)];
     }
-    return [key, "", typeof entry === "number" ? formatCurrency(entry) : String(entry)];
+    return [etiqueta, "", valorCampo(key, entry, t, "moneda")];
   });
 
   const indemnizacionRows = Object.entries(result.indemnizacion_diaria).map(([key, val]) => [
-    key,
-    formatCurrency(val),
+    etiquetaCampo(key, t, "salud"),
+    valorCampo(key, val, t, "moneda"),
   ]);
 
   const csvData = {
@@ -541,6 +546,13 @@ function AccidentesResults({
           variant="primary"
         />
       </div>
+
+      <AvisoModelo
+        tier={result.validation_tier}
+        disclaimer={result.disclaimer}
+        titulo={t("reg_aviso_alcance")}
+        etiquetaNivel={t("nivel_validacion")}
+      />
 
       {perdidasRows.length > 0 && (
         <Card title={t("salud_perdidas_organicas")}>

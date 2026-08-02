@@ -16,11 +16,13 @@ import {
   MetricCard,
   ProgressBar,
   Badge,
+  ErrorPanel,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
 import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { pricingApi } from "@/lib/api";
+import { etiquetaCampo } from "@/lib/field-display";
 import { formatCurrency } from "@/lib/utils";
 import type {
   PricingRequest,
@@ -100,13 +102,13 @@ function ResultCard({
   const totalRecargos = recargosEntries.reduce((sum, [, val]) => sum + val, 0);
 
   const recargosSegments = recargosEntries.map(([key, val], i) => ({
-    label: key,
+    label: etiquetaCampo(key, t, "vida"),
     value: val,
     color: SERIES_COLORS[i % SERIES_COLORS.length],
   }));
 
   const pieData = recargosEntries.map(([key, val], i) => ({
-    name: key,
+    name: etiquetaCampo(key, t, "vida"),
     value: val,
     color: SERIES_COLORS[i % SERIES_COLORS.length],
   }));
@@ -397,7 +399,7 @@ export default function VidaPage() {
       <section id="workbench" className="scroll-mt-28 pt-3">
         <p className="kicker mb-2">Workbench</p>
         <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">
-          {lang === "es" ? "Calcule con sus propios supuestos" : "Calculate with your own assumptions"}
+          {lang === "es" ? "Calcula con tus propios supuestos" : "Calculate with your own assumptions"}
         </h2>
       </section>
 
@@ -573,11 +575,7 @@ export default function VidaPage() {
 
       {/* Error display */}
       {errorMsg && (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-red-700 font-medium">
-            {t("error")}: {errorMsg}
-          </p>
-        </Card>
+        <ErrorPanel titulo={t("error_calculo_titulo")} mensaje={errorMsg} />
       )}
 
       {/* ── Section divider ─────────────────────────────────────────── */}

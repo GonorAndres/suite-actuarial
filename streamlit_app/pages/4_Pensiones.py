@@ -1,5 +1,5 @@
 """
-Demo: Módulo de Pensiones -- suite_actuarial
+Demo del módulo de Pensiones de suite_actuarial.
 
 Calculadoras IMSS (Ley 73 / Ley 97), rentas vitalicias
 y funciones de conmutación.

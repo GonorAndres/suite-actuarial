@@ -15,6 +15,7 @@ import {
   LoadingSpinner,
   Table,
   MetricCard,
+  ErrorPanel,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
@@ -268,7 +269,7 @@ export default function PensionesPage() {
 
       <section id="workbench" className="scroll-mt-28 pt-3">
         <p className="kicker mb-2">Workbench</p>
-        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Compare beneficios y rentas" : "Compare benefits and annuities"}</h2>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Compara beneficios y rentas" : "Compare benefits and annuities"}</h2>
       </section>
 
       {/* Tabs */}
@@ -480,11 +481,7 @@ export default function PensionesPage() {
 
       {/* Error display */}
       {errorMsg && (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-red-700 font-medium">
-            {t("error")}: {errorMsg}
-          </p>
-        </Card>
+        <ErrorPanel titulo={t("error_calculo_titulo")} mensaje={errorMsg} />
       )}
 
       {/* ── Section divider ─────────────────────────────────────────── */}

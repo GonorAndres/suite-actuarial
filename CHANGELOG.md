@@ -148,6 +148,68 @@ cifras de RM cambian.
   en Salud, el tope de coaseguro del simulador (10% de la suma asegurada) se declara
   en la página como supuesto y se calcula en `Decimal` exacto.
 
+### Corregido — el dashboard enviaba y mostraba unidades equivocadas en reaseguro
+
+- **Cuota parte estaba mal por un factor de 100 en el dashboard.** La API espera
+  `porcentaje_cesion` y `comision_reaseguro` en puntos porcentuales (0–100) y divide
+  entre 100 internamente; `frontend/src/app/reaseguro/page.tsx` volvía a dividir
+  entre 100 antes de enviar. Un usuario que pedía 40% de cesión obtenía la economía
+  de 0.4%: monto cedido $20,000 en lugar de $2,000,000 sobre una prima de $5M. La
+  celda "Ratio de cesión: 40.00%" enmascaraba el error porque el formateador
+  multiplicaba por 100 la respuesta (que ya viene en por ciento). Se elimina la doble
+  división y `ratio_cesion` se formatea como el valor porcentual que ya es.
+- La tasa de prima del contrato XL se etiqueta ahora "(%)" con default 5 (antes un
+  campo sin unidad con default 0.05, que el backend leía como 0.05% y subestimaba
+  la prima de reinstalación por el mismo factor de 100).
+- El dashboard muestra `disclaimer` y `validation_tier` en daños y salud (auto,
+  incendio, RC, GMM, accidentes), como ya hacía vida; la deducibilidad envía
+  `ingresos_totales_anuales` y muestra `tope_global`/`nota_tope_global` (la rama del
+  15% del Art. 151 era inalcanzable desde la UI); las tasas al millar (incendio, RC)
+  se muestran como "0.80 ‰" y no "80.00%"; las claves crudas de la API
+  (`sedan_compacto`, `tope_coaseguro: null`, `danos_materiales`…) pasan por un mapa
+  de etiquetas bilingüe (`frontend/src/lib/field-display.ts`); los errores de la API
+  se muestran como mensaje legible y no como el JSON crudo; y el proveedor de idioma
+  ya no produce un error de hidratación cuando el idioma persistido no es español.
+- `danos/auto.py`: el mensaje de deducible inválido nombra las opciones como
+  porcentajes ("3%, 5%, 10%, 15%, 20%") en lugar de filtrar el `repr` de `Decimal`;
+  el formulario del dashboard ofrece las cinco opciones válidas en un selector.
+- `frontend/src/app/api-docs/page.tsx` se cotejó endpoint por endpoint contra
+  `openapi.json`: se añaden `/pricing/dotal/lab`, `/config/validate` y
+  `/config/fecha/{fecha}`; se retira la afirmación falsa de que auto usa "tablas de
+  referencia AMIS"; la descripción de Ley 97 ya no dice que "recomienda la mejor
+  opción"; y la prosa en español recupera los acentos.
+
+### Cambiado — la prosa en español del dashboard, el README y Streamlit
+
+- Reescritura de la copy en español de todas las superficies que lee un visitante:
+  portada, diccionario i18n, guías de dominio y de workbench, ejemplo guiado,
+  biblioteca, evidencia, metadatos de página, descripciones de `api-docs`, README y
+  `streamlit_app/`. Se retiran los paréntesis con raya (`—`) de la prosa, se unifica
+  el tratamiento en segunda persona (`tú`) que antes convivía con `usted`, y se
+  bajan las afirmaciones de venta: `100% open source ... Auditable, extensible,
+  gratuito` pasa a describir lo que da la licencia MIT. Ningún cambio de cifras.
+- Se corrige una afirmación que contradecía la divulgación del propio módulo:
+  `streamlit_app/Home.py` anunciaba `tarificación AMIS` para auto y
+  `pages/2_Danos.py` titulaba `Seguro de auto (AMIS)`, mientras el caption de esa
+  misma página declara que las tasas *no proceden de la AMIS*. Ahora dicen
+  `tasas ilustrativas`. Es el mismo texto falso que ya se había retirado de
+  `api-docs`.
+
+### Corregido — el conmutador de vista se desplazaba sobre el texto al hacer scroll
+
+- `DomainWorkspace.tsx` aplicaba su transformación de ocultamiento en cuanto se
+  bajaba de 24 px, sin comprobar si la barra había llegado a su desplazamiento
+  sticky. Mientras seguía en el flujo normal, la transformación no la ocultaba: la
+  arrastraba 162 px hacia arriba **encima del párrafo anterior**, tapándolo a media
+  frase, y dejaba un hueco donde estaba la barra. Ahora sólo se oculta cuando está
+  fijada bajo la cabecera, medido con la cadena de `offsetTop` (inmune a la propia
+  transformación del elemento, que contaminaría un `getBoundingClientRect`).
+- La traslación era además 48 px corta: `calc(100% + 1rem)` no contaba el
+  desplazamiento sticky de 64 px, así que al ocultarse quedaba una franja de la
+  barra fija arriba con una línea de texto cortada. Pasa a `calc(100% + 5rem)`.
+- Prueba de regresión en `frontend/tests/public-exposition.spec.ts`, verificada en
+  rojo revirtiendo la corrección antes de darla por buena.
+
 ### Añadido — los ejemplos y los benchmarks publicados entran a la suite
 
 - Los ejemplos autoverificables de `examples/casos/` y `examples/labs/` se ejecutan

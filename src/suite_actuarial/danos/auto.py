@@ -102,8 +102,9 @@ class SeguroAuto:
         if edad_conductor < 18:
             raise ValueError("El conductor debe tener al menos 18 anos.")
         if deducible_pct not in FACTOR_DEDUCIBLE:
+            opciones = ", ".join(f"{float(opcion) * 100:g}%" for opcion in FACTOR_DEDUCIBLE)
             raise ValueError(
-                f"Deducible no valido: {deducible_pct}. Opciones: {list(FACTOR_DEDUCIBLE)}"
+                f"Deducible no valido: {float(deducible_pct) * 100:g}%. Opciones: {opciones}"
             )
 
         self.valor_vehiculo = valor_vehiculo

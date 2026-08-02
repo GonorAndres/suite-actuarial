@@ -20,8 +20,8 @@ export default function LibraryPage() {
     <div className="max-w-6xl mx-auto px-6 py-12">
       <header className="max-w-3xl mb-10">
         <p className="kicker mb-3">{lang === "es" ? "Biblioteca actuarial" : "Actuarial library"}</p>
-        <h1 className="font-heading text-4xl md:text-5xl font-bold text-navy mb-4">{lang === "es" ? "Modelos organizados por la decisión que informan" : "Models organized by the decision they inform"}</h1>
-        <p className="text-lg leading-relaxed text-navy/65">{lang === "es" ? "Cada dominio ofrece dos vistas: un caso explicado —flujos, supuestos, método, resultado y límites— y un Workbench para calcular con parámetros propios." : "Each domain offers two views: an explained case—flows, assumptions, method, result, and limits—and a Workbench for your own parameters."}</p>
+        <h1 className="font-heading text-4xl md:text-5xl font-bold text-navy mb-4">{lang === "es" ? "Modelos organizados por la decisión que ayudan a tomar" : "Models organized by the decision they inform"}</h1>
+        <p className="text-lg leading-relaxed text-navy/65">{lang === "es" ? "Cada dominio tiene dos vistas. El caso explicado recorre los flujos, los supuestos, el método, el resultado y los límites; el Workbench sirve para calcular con tus propios parámetros." : "Each domain has two views. The explained case walks through the flows, assumptions, method, result, and limits; the Workbench is for calculating with your own parameters."}</p>
       </header>
 
       <div className="grid lg:grid-cols-2 gap-5">

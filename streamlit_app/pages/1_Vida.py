@@ -1,5 +1,5 @@
 """
-Demo: Módulo de Vida -- suite_actuarial
+Demo del módulo de Vida de suite_actuarial.
 
 Calculadora interactiva de productos de seguros de vida
 (Temporal, Ordinario, Dotal) con tabla EMSSA-09.
@@ -131,7 +131,7 @@ with tab_lab:
         st.caption(
             "Cada verificación contrasta el motor de valuación contra una ruta de "
             "cálculo independiente: las funciones de conmutación (Dx/Nx/Mx) para la "
-            "descomposición del beneficio, y la recursión de Fackler —retrospectiva— "
+            "descomposición del beneficio, y la recursión de Fackler, que es retrospectiva, "
             "para la trayectoria de la reserva, que se calcula de forma prospectiva."
         )
         st.write(

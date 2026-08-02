@@ -15,12 +15,14 @@ import {
   Table,
   MetricCard,
   ProgressBar,
+  ErrorPanel,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
 import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { reinsuranceApi } from "@/lib/api";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { etiquetaCampo, valorCampo, VALOR_AUSENTE } from "@/lib/field-display";
+import { formatCurrency, formatPercentValue } from "@/lib/utils";
 import type {
   QuotaShareRequest,
   ExcessOfLossRequest,
@@ -110,7 +112,7 @@ const DEFAULT_QS: QuotaShareForm = {
 const DEFAULT_XL: ExcessOfLossForm = {
   retencion: 200000,
   limite: 1_000_000,
-  tasa_prima: 0.05,
+  tasa_prima: 5,
   prima_reaseguro_cobrada: 250000,
   vigencia_inicio: "2024-01-01",
   vigencia_fin: "2024-12-31",
@@ -129,6 +131,14 @@ const DEFAULT_SL: StopLossForm = {
 
 /* ── Result display component ──────────────────────────────────────────── */
 
+/** One row of `detalles.detalle_siniestros`. Fields vary by treaty type: quota
+ *  share reports only the recovery, excess of loss also the gross amount. */
+interface DetalleSiniestro {
+  id?: string;
+  monto?: string | number;
+  recuperacion?: string | number;
+}
+
 function ReinsuranceResultCard({
   result,
   t,
@@ -145,16 +155,49 @@ function ReinsuranceResultCard({
       t("reas_prima_reaseguro_pagada"),
       formatCurrency(result.prima_reaseguro_pagada),
     ],
-    [t("reas_ratio_cesion"), formatPercent(result.ratio_cesion)],
+    // `ratio_cesion` arrives in percent points (40.0 for 40%), so it is
+    // written out as-is. Passing it through the fraction formatter multiplied
+    // it a second time.
+    [t("reas_ratio_cesion"), formatPercentValue(result.ratio_cesion)],
     [t("reas_resultado_neto"), formatCurrency(result.resultado_neto_cedente)],
   ];
 
-  const detailRows = Object.entries(result.detalles).map(([key, val]) => {
-    if (typeof val === "number") {
-      return [key, formatCurrency(val)];
-    }
-    return [key, String(val)];
-  });
+  // `detalles` is an open dictionary whose values cross the wire as strings,
+  // percent-formatted strings, booleans, or a nested claim list. The claim
+  // list gets its own table; everything else goes through the shared field
+  // formatter, which falls back to the raw key when it does not know one.
+  const claimDetails = Array.isArray(result.detalles.detalle_siniestros)
+    ? (result.detalles.detalle_siniestros as DetalleSiniestro[])
+    : [];
+
+  const detailRows = Object.entries(result.detalles)
+    .filter(([, val]) => !Array.isArray(val))
+    .map(([key, val]) => [
+      etiquetaCampo(key, t, "reaseguro"),
+      valorCampo(key, val, t),
+    ]);
+
+  // Quota share reports only the recovery per claim; excess of loss also the
+  // gross amount. The column appears only when the treaty reports it.
+  const showClaimAmount = claimDetails.some((s) => s.monto !== undefined);
+
+  const claimRows = claimDetails.map((s) =>
+    showClaimAmount
+      ? [
+          s.id ?? VALOR_AUSENTE,
+          valorCampo("monto", s.monto, t),
+          valorCampo("recuperacion", s.recuperacion, t),
+        ]
+      : [s.id ?? VALOR_AUSENTE, valorCampo("recuperacion", s.recuperacion, t)],
+  );
+
+  const claimHeaders = showClaimAmount
+    ? [
+        t("reas_id_siniestro"),
+        t("reas_monto_siniestro"),
+        t("reas_recuperacion_siniestro"),
+      ]
+    : [t("reas_id_siniestro"), t("reas_recuperacion_siniestro")];
 
   const csvData = {
     tipo_contrato: result.tipo_contrato,
@@ -225,6 +268,13 @@ function ReinsuranceResultCard({
         </Card>
       )}
 
+      {/* Claim-by-claim recoveries */}
+      {claimRows.length > 0 && (
+        <Card title={t("reas_detalle_siniestros")}>
+          <Table headers={claimHeaders} rows={claimRows} />
+        </Card>
+      )}
+
       <DownloadButton
         data={csvData}
         filename={`reaseguro_${result.tipo_contrato}`}
@@ -277,8 +327,12 @@ export default function ReaseguroPage() {
         case "quotashare": {
           const siniestros = JSON.parse(qsForm.siniestros);
           const req: QuotaShareRequest = {
-            porcentaje_cesion: qsForm.porcentaje_cesion / 100,
-            comision_reaseguro: qsForm.comision_reaseguro / 100,
+            // Percent points, not a fraction: the endpoint validates
+            // `0 < porcentaje_cesion <= 100` and the treaty class divides by
+            // 100 itself. Sending 0.40 for a 40% quota share ceded 0.4% of
+            // the premium and the panel still showed "40.00%".
+            porcentaje_cesion: qsForm.porcentaje_cesion,
+            comision_reaseguro: qsForm.comision_reaseguro,
             prima_bruta: qsForm.prima_bruta,
             vigencia_inicio: qsForm.vigencia_inicio,
             vigencia_fin: qsForm.vigencia_fin,
@@ -349,7 +403,7 @@ export default function ReaseguroPage() {
 
       <section id="workbench" className="scroll-mt-28 pt-3">
         <p className="kicker mb-2">Workbench</p>
-        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Diseñe y compare contratos" : "Design and compare treaties"}</h2>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Diseña y compara contratos" : "Design and compare treaties"}</h2>
       </section>
 
       {/* Tabs */}
@@ -498,12 +552,12 @@ export default function ReaseguroPage() {
                 }
               />
               <Input
-                label={t("reas_tasa_prima")}
+                label={t("reas_tasa_prima") + " (%)"}
                 name="tasa_prima"
                 type="number"
-                step={0.01}
+                step={0.1}
                 min={0}
-                max={1}
+                max={100}
                 value={xlForm.tasa_prima}
                 onChange={(e) =>
                   setXlForm((prev) => ({
@@ -706,11 +760,7 @@ export default function ReaseguroPage() {
 
       {/* Error display */}
       {errorMsg && (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-red-700 font-medium">
-            {t("error")}: {errorMsg}
-          </p>
-        </Card>
+        <ErrorPanel titulo={t("error_calculo_titulo")} mensaje={errorMsg} />
       )}
 
       {/* ── Results ──────────────────────────────────────────────── */}

@@ -26,20 +26,20 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://suite.gonor.me"),
-  title: "suite_actuarial — Laboratorio actuarial abierto",
+  title: "suite_actuarial · Laboratorio actuarial abierto",
   description:
-    "Modelos actuariales explicados, calculadoras reproducibles, fuentes y límites desde el contexto asegurador mexicano.",
+    "Modelos actuariales explicados y calculadoras reproducibles, con sus fuentes y sus límites, desde el mercado asegurador mexicano.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "es_MX",
     alternateLocale: "en_US",
     siteName: "suite_actuarial",
-    title: "suite_actuarial — Laboratorio actuarial abierto",
-    description: "Entienda el modelo, revise sus supuestos y calcule escenarios reproducibles.",
+    title: "suite_actuarial · Laboratorio actuarial abierto",
+    description: "Entiende el modelo, revisa sus supuestos y calcula escenarios reproducibles.",
     url: "/",
   },
-  twitter: { card: "summary", title: "suite_actuarial", description: "Modelos actuariales explicados y reproducibles desde México." },
+  twitter: { card: "summary", title: "suite_actuarial", description: "Modelos actuariales explicados y reproducibles, hechos desde México." },
 };
 
 export default function RootLayout({

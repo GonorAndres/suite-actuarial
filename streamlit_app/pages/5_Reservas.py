@@ -407,7 +407,7 @@ print(comparacion)
 
 # ===== TAB 3: Bootstrap ===================================================
 with tab_bs:
-    st.header("Bootstrap ODP — distribución predictiva de la reserva")
+    st.header("Bootstrap ODP: distribución predictiva de la reserva")
     st.markdown(
         "Bootstrap del modelo Poisson sobredispersado (England y Verrall, 1999). "
         "Remuestrea residuales de Pearson sobre los **incrementales**, contra "

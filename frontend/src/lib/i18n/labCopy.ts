@@ -5,9 +5,9 @@ export const labCopy: Record<Lang, Record<string, string>> = {
     kicker: "Ejemplo guiado · Seguro de vida",
     title: "Seguro dotal educativo 20/10",
     subtitle:
-      "Un caso reproducible para definir el beneficio, declarar los supuestos, calcular la prima neta y revisar la reserva prospectiva de un seguro con 20 años de cobertura y 10 años de primas.",
+      "Un caso reproducible sobre un seguro con 20 años de cobertura y 10 de pago de primas: cómo se define el beneficio, de dónde salen los supuestos, cómo se calcula la prima neta y qué forma toma la reserva prospectiva.",
     scope:
-      "Alcance: ejemplo didáctico con tabla EMSSA-09 incluida y recargos ilustrativos. Requiere una base técnica validada antes de uso profesional.",
+      "Alcance: ejemplo didáctico con la tabla EMSSA-09 incluida y recargos ilustrativos. Para un uso profesional hace falta sustituirlo por una base técnica validada.",
     start: "Comenzar ejemplo",
     previous: "Anterior",
     next: "Siguiente",
@@ -35,13 +35,13 @@ export const labCopy: Record<Lang, Record<string, string>> = {
     pending: "Pendiente",
     codeTitle: "Código reproducible del ejemplo",
     codeText:
-      "Esta capa reproduce el mismo producto en Python y sirve como punto de partida para cambiar la base técnica o construir una extensión.",
+      "Este bloque reproduce el mismo producto en Python y sirve de punto de partida para cambiar la base técnica o construir una extensión.",
     purposeTitle: "Propósito del modelo",
     purposeText:
-      "El ejemplo estudia cómo financiar MXN 1,000,000 para educación dentro de 20 años, conservando el mismo beneficio si el asegurado fallece durante el plazo.",
+      "El ejemplo plantea cómo reunir MXN 1,000,000 para una meta educativa dentro de 20 años, sin perder el beneficio si el asegurado fallece antes de que termine el plazo.",
     purposeQuestion: "Pregunta actuarial",
     purposeQuestionText:
-      "¿Cómo financiamos dos estados mutuamente excluyentes —fallecimiento durante el plazo o supervivencia al vencimiento— pagando primas solamente durante 10 años?",
+      "¿Cómo se financian dos estados que se excluyen entre sí, fallecer dentro del plazo o llegar con vida al vencimiento, pagando primas sólo durante 10 años?",
     benefitsTitle: "Definición de los beneficios",
     death: "Fallecimiento durante el plazo",
     deathText: "Paga la suma asegurada a beneficiarios en el año de fallecimiento.",
@@ -65,10 +65,10 @@ export const labCopy: Record<Lang, Record<string, string>> = {
     annuity: "Factor de anualidad de primas",
     reserveTitle: "Reserva prospectiva durante la vigencia",
     reserveText:
-      "La reserva prospectiva compara beneficios futuros contra primas futuras. Al terminar el periodo de pago ya no existen primas por compensar y la reserva continúa acercándose al beneficio de vencimiento.",
+      "La reserva prospectiva compara los beneficios futuros contra las primas futuras. Cuando termina el periodo de pago ya no quedan primas que descontar, y la reserva sigue acercándose al beneficio de vencimiento.",
     validationTitle: "Comprobaciones del ejemplo",
     validationText:
-      "Cada comprobación contrasta el motor de valuación contra una ruta de cálculo independiente: las funciones de conmutación (Dx/Nx/Mx) para la descomposición del beneficio, y la recursión de Fackler —retrospectiva— para la trayectoria de la reserva, que se calcula de forma prospectiva. Ninguna compara un valor consigo mismo. La validación profesional de datos y parámetros se realiza por separado.",
+      "Cada comprobación contrasta el motor de valuación contra una ruta de cálculo independiente: las funciones de conmutación (Dx/Nx/Mx) para la descomposición del beneficio, y la recursión de Fackler, que es retrospectiva, para la trayectoria de la reserva, que se calcula de forma prospectiva. Ninguna compara un valor consigo mismo. La validación profesional de los datos y los parámetros va aparte.",
     checkDecomp: "Muerte + supervivencia = beneficio total",
     checkEquivalence: "Prima neta × anualidad = VP beneficios",
     checkInitial: "Reserva inicial = 0",
@@ -78,8 +78,8 @@ export const labCopy: Record<Lang, Record<string, string>> = {
     failed: "Revisar",
     evidence: "Base técnica y alcance",
     evidenceText:
-      "Los valores dependen de una tabla de mortalidad simplificada, la tasa técnica elegida y recargos ilustrativos. Sustituye estos supuestos y realiza validación independiente antes de cualquier uso profesional.",
-    showCode: "Ver Python reproducible",
+      "Los valores dependen de una tabla de mortalidad simplificada, de la tasa técnica elegida y de recargos ilustrativos. Antes de cualquier uso profesional hay que sustituir esos supuestos y validarlos por fuera.",
+    showCode: "Ver el código en Python",
     live: "Resultados actualizados con los supuestos seleccionados.",
     loading: "Recalculando modelo",
     error: "No fue posible evaluar esta combinación de supuestos.",
@@ -88,9 +88,9 @@ export const labCopy: Record<Lang, Record<string, string>> = {
     kicker: "Guided example · Life insurance",
     title: "20/10 education endowment",
     subtitle:
-      "A reproducible case for defining the benefit, declaring assumptions, calculating the net premium, and reviewing the prospective reserve for 20 years of coverage and 10 years of premiums.",
+      "A reproducible case on a policy with 20 years of coverage and 10 years of premiums: how the benefit is defined, where the assumptions come from, how the net premium is calculated, and what shape the prospective reserve takes.",
     scope:
-      "Scope: educational example using the bundled EMSSA-09 table and illustrative loadings. A validated technical basis is required before professional use.",
+      "Scope: educational example using the bundled EMSSA-09 table and illustrative loadings. Professional use requires replacing it with a validated technical basis.",
     start: "Start example",
     previous: "Previous",
     next: "Next",
@@ -121,10 +121,10 @@ export const labCopy: Record<Lang, Record<string, string>> = {
       "This layer reproduces the same product in Python and provides a starting point for replacing the technical basis or building an extension.",
     purposeTitle: "Model purpose",
     purposeText:
-      "The example examines how to fund MXN 1,000,000 for education in 20 years while preserving the same benefit if the insured dies during the term.",
+      "The example asks how to raise MXN 1,000,000 for an education goal 20 years out, without losing the benefit if the insured dies before the term ends.",
     purposeQuestion: "Actuarial question",
     purposeQuestionText:
-      "How do we fund two mutually exclusive states—death during the term or survival to maturity—while paying premiums for only 10 years?",
+      "How do you fund two states that exclude each other, death within the term or survival to maturity, while paying premiums for only 10 years?",
     benefitsTitle: "Benefit definition",
     death: "Death during the term",
     deathText: "Pays the sum assured to beneficiaries in the year of death.",
@@ -151,7 +151,7 @@ export const labCopy: Record<Lang, Record<string, string>> = {
       "The prospective reserve compares future benefits with future premiums. Once the payment period ends, no future premiums remain to offset the obligation and the reserve continues toward the maturity benefit.",
     validationTitle: "Example checks",
     validationText:
-      "Each check contrasts the pricing engine against an independent path: commutation columns (Dx/Nx/Mx) for the benefit decomposition, and the retrospective Fackler recursion for the reserve path, which is computed prospectively. None compares a value with itself. Professional validation of data and parameters is performed separately.",
+      "Each check contrasts the pricing engine against an independent path: commutation columns (Dx/Nx/Mx) for the benefit decomposition, and the Fackler recursion, which is retrospective, for the reserve path, which is computed prospectively. None compares a value with itself. Professional validation of data and parameters is a separate job.",
     checkDecomp: "Death + survival = total benefit",
     checkEquivalence: "Net premium × annuity = PV benefits",
     checkInitial: "Initial reserve = 0",
@@ -161,8 +161,8 @@ export const labCopy: Record<Lang, Record<string, string>> = {
     failed: "Review",
     evidence: "Technical basis and scope",
     evidenceText:
-      "Values depend on a simplified mortality table, the selected technical rate, and illustrative loadings. Replace these assumptions and validate independently before professional use.",
-    showCode: "View reproducible Python",
+      "Values depend on a simplified mortality table, on the selected technical rate, and on illustrative loadings. Before any professional use, those assumptions have to be replaced and validated outside this tool.",
+    showCode: "View the Python code",
     live: "Results updated for the selected assumptions.",
     loading: "Recalculating model",
     error: "This combination of assumptions could not be evaluated.",

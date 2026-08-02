@@ -4,22 +4,21 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-B4472D.svg)](LICENSE)
 [![Status: Beta](https://img.shields.io/badge/status-beta-B77A1E.svg)]()
 
-**Construye, prueba y comprende modelos actuariales, en abierto.**  
-*Build, test, and understand actuarial models in the open.*
+**Construye, prueba y entiende modelos actuariales con el código a la vista.**  
+*Build, test, and understand actuarial models with the code in view.*
 
-`suite_actuarial` es una plataforma de código abierto para la modelación actuarial,
-desarrollada desde el contexto asegurador mexicano. Reúne métodos, ejemplos y herramientas
-para transformar una pregunta de producto en beneficios, supuestos, cálculos, resultados y
-pruebas reproducibles.
+`suite_actuarial` es una plataforma de código abierto para modelación actuarial, hecha
+desde el mercado asegurador mexicano. Reúne los métodos y los ejemplos que hacen falta
+para pasar de una pregunta de producto a un modelo que otra persona pueda reproducir.
 
-La aplicación organiza cada modelo con un método común: propósito, beneficios, supuestos,
-método, resultados y validación. El paquete Python permite reproducir, extender e integrar
-los mismos modelos en proyectos universitarios, investigación aplicada e innovación.
+Cada modelo sigue el mismo recorrido: propósito, beneficios, supuestos, método, resultados
+y validación. El paquete de Python sirve para reproducirlos, extenderlos o integrarlos en
+una tesis, un curso o un proyecto de trabajo.
 
 ## Ejemplo guiado: dotal educativo 20/10
 
 El [dotal educativo 20/10](docs/labs/dotal-educativo.md) documenta un seguro con 20 años
-de cobertura y primas durante 10 años. El recorrido incluye:
+de cobertura y 10 de pago de primas. El recorrido incluye:
 
 1. la necesidad y la promesa contractual;
 2. los beneficios por fallecimiento y supervivencia;
@@ -34,24 +33,24 @@ Ejecuta su versión reproducible sin interfaz:
 python examples/labs/lab_01_dotal_educativo.py
 ```
 
-El [guion del video](docs/video/dotal-educativo-script.md) sigue exactamente el mismo
-recorrido para que demostración, documentación y código cuenten una sola historia.
+El [guion del video](docs/video/dotal-educativo-script.md) sigue el mismo recorrido, de
+modo que la demostración, la documentación y el código cuentan lo mismo.
 
 ## Explora por pregunta actuarial
 
 | Pregunta | Dominio | Modelos disponibles |
 |---|---|---|
-| ¿Cómo financiar un beneficio? | Vida | Temporal, ordinario, dotal, reservas matemáticas |
-| ¿Cómo emerge una pérdida agregada? | Daños | Frecuencia-severidad, auto, incendio, RC, credibilidad |
-| ¿Cómo se comparte un gasto médico? | Salud | GMM, deducible, coaseguro, accidentes |
-| ¿Cómo convertir ahorro en ingreso vitalicio? | Pensiones | Ley 73/97, rentas vitalicias, conmutación |
-| ¿Qué costo falta por desarrollarse? | Reservas | Chain Ladder, Bornhuetter-Ferguson, bandas ilustrativas de dispersión |
-| ¿Cómo transferir cola y capital? | Reaseguro | Cuota parte, exceso de pérdida, stop loss |
-| ¿Cómo examinar solvencia y reglas? | Referencia regulatoria | RCS, reservas técnicas, SAT, configuración anual |
+| ¿Cómo se financia un beneficio? | Vida | Temporal, ordinario, dotal, reservas matemáticas |
+| ¿Cómo se forma una pérdida agregada? | Daños | Frecuencia-severidad, auto, incendio, RC, credibilidad |
+| ¿Cómo se reparte un gasto médico? | Salud | GMM, deducible, coaseguro, accidentes |
+| ¿Cómo se convierte el ahorro en ingreso vitalicio? | Pensiones | Ley 73/97, rentas vitalicias, conmutación |
+| ¿Cuánto falta por pagar de los siniestros ya ocurridos? | Reservas | Chain Ladder, Bornhuetter-Ferguson, bandas ilustrativas de dispersión |
+| ¿Cómo se transfiere el riesgo de cola? | Reaseguro | Cuota parte, exceso de pérdida, stop loss |
+| ¿Cómo se examina la solvencia? | Referencia regulatoria | RCS, reservas técnicas, SAT, configuración anual |
 
-Los [casos por dominio](examples/casos/) son scripts autocontenidos con supuestos y
-afirmaciones actuariales. La [visión del proyecto](docs/PROJECT_VISION.md) explica el
-alcance de la plataforma y cómo puede crecer la comunidad alrededor de ella.
+Los [casos por dominio](examples/casos/) son scripts autocontenidos, con sus supuestos y
+sus afirmaciones actuariales dentro. La [visión del proyecto](docs/PROJECT_VISION.md)
+explica hasta dónde llega la plataforma y cómo puede crecer la comunidad alrededor.
 
 ## Usar la plataforma
 
@@ -81,7 +80,7 @@ npm ci
 npm run dev
 ```
 
-La aplicación Streamlit, útil como banco de trabajo directo sobre Python, se inicia con:
+La aplicación de Streamlit, un banco de trabajo directo sobre Python, se inicia así:
 
 ```bash
 pip install -e ".[viz]"
@@ -142,15 +141,15 @@ tests/             comportamiento, contratos e identidades actuariales
 docs/              evidencia, límites, visión y materiales del video
 ```
 
-La lógica actuarial vive en el paquete Python. Las interfaces traducen entradas y
-presentan resultados; no duplican fórmulas. Los importes y tasas usan `Decimal` en los
-límites relevantes, y las pruebas cubren identidades además de resultados puntuales.
+La lógica actuarial vive en el paquete de Python. Las interfaces traducen entradas y
+presentan resultados, sin duplicar fórmulas. Los importes y las tasas usan `Decimal` donde
+importa, y las pruebas cubren identidades, no sólo resultados puntuales.
 
 ## Evidencia y límites
 
-La tabla EMSSA-09 incluida y ciertos parámetros son datos de referencia o ilustrativos.
-Cada uso profesional debe revisar vigencia, unidad, fuente, segmentación, experiencia
-propia, calibración y gobierno del modelo. Consulta:
+La tabla EMSSA-09 incluida y varios parámetros son datos de referencia o ilustrativos.
+Antes de un uso profesional hay que revisar su vigencia, su unidad y su fuente, además de
+la segmentación, la experiencia propia, la calibración y el gobierno del modelo. Consulta:
 
 - [Validación, evidencia y limitaciones](docs/VALIDATION.md)
 - [Referencia regulatoria](docs/REGULATORY.md)
@@ -161,9 +160,9 @@ fiscal, determinaciones del IMSS ni el juicio de un actuario responsable.
 
 ## Contribuir
 
-Una contribución puede ser un producto, una hipótesis, un caso reproducible, una prueba
-de identidad, una mejora de evidencia o una traducción. Consulta
-[CONTRIBUTING.md](CONTRIBUTING.md) para el formato de modelo y las verificaciones.
+Una contribución puede ser un producto nuevo, una hipótesis, un caso reproducible, una
+prueba de identidad, mejor evidencia para un supuesto o una traducción. En
+[CONTRIBUTING.md](CONTRIBUTING.md) están el formato de modelo y las verificaciones.
 
 ```bash
 pytest

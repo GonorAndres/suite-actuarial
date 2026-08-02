@@ -1,8 +1,8 @@
 """
-Demo: Módulo de Daños -- suite_actuarial
+Demo del módulo de Daños de suite_actuarial.
 
-Seguro de auto (AMIS), modelo colectivo frecuencia-severidad,
-y sistema Bonus-Malus.
+Seguro de auto con tasas ilustrativas, modelo colectivo
+frecuencia-severidad y sistema Bonus-Malus.
 """
 
 import sys

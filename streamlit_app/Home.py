@@ -51,11 +51,11 @@ with st.sidebar:
 # Titulo
 # -----------------------------------------------------------------------
 render_workbench_intro(
-    "ANALYST SANDBOX · MÉXICO",
-    "Construye, prueba y comprende modelos actuariales",
-    "Interfaz de exploración libre para modificar supuestos, comparar métodos y "
-    "examinar evidencia. La experiencia guiada principal vive en el laboratorio "
-    "Next.js; este espacio favorece análisis densos y rápidos.",
+    "BANCO DE TRABAJO · MÉXICO",
+    "Construye, prueba y entiende modelos actuariales",
+    "Espacio de exploración libre para mover supuestos, comparar métodos y revisar "
+    "evidencia. El recorrido guiado principal está en la plataforma web; esta "
+    "interfaz está pensada para análisis rápidos y densos.",
 )
 
 st.markdown(
@@ -88,7 +88,7 @@ with col2:
     st.subheader("Daños")
     st.markdown(
         """
-- Seguro de **auto** con tarificación AMIS (grupos, zonas, factores)
+- Seguro de **auto**: estructura tarifaria por grupo, zona y factores (tasas ilustrativas)
 - Modelo colectivo **frecuencia-severidad** (Monte Carlo)
 - Sistema **Bonus-Malus** escala mexicana
 - **Credibilidad** de Bühlmann y Bühlmann-Straub

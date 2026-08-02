@@ -1,5 +1,5 @@
 """
-Demo: Módulo de Salud -- suite_actuarial
+Demo del módulo de Salud de suite_actuarial.
 
 Gastos Médicos Mayores (GMM): calculadora, simulador de gasto
 y curva de prima por edad.

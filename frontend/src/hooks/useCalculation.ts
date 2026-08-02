@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { ApiError } from "@/lib/api";
 
 interface CalculationState<TRes> {
   data: TRes | null;
@@ -33,12 +32,10 @@ export function useCalculation<TReq, TRes>(
         setState({ data: result, loading: false, error: null });
         return result;
       } catch (err) {
-        const message =
-          err instanceof ApiError
-            ? `${err.status}: ${err.message}`
-            : err instanceof Error
-              ? err.message
-              : "Unknown error";
+        // `ApiError.message` is already the API's own explanation, parsed out
+        // of the response envelope. Prefixing it with the status code turned a
+        // readable sentence into "400: {"detail":"..."}".
+        const message = err instanceof Error ? err.message : String(err);
         setState({ data: null, loading: false, error: message });
         return undefined;
       }

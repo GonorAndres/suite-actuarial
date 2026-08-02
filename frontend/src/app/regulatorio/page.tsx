@@ -17,12 +17,14 @@ import {
   Badge,
   MetricCard,
   AvisoLimitacion,
+  ErrorPanel,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
 import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { regulatoryApi } from "@/lib/api";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { etiquetaCampo, VALOR_AUSENTE } from "@/lib/field-display";
+import { formatCurrency, formatPercent, formatPercentValue } from "@/lib/utils";
 import type {
   RCSRequest,
   RCSResponse,
@@ -70,7 +72,10 @@ interface DeducibilidadFormState {
   tipo_seguro: string;
   monto_prima: number;
   es_persona_fisica: boolean;
+  /** Ingresos acumulables: base of the 10% cap of Art. 151, fracc. V. */
   ingreso_anual: number;
+  /** Total income including exempt: base of the 15% leg of the global cap. */
+  ingresos_totales_anuales: number;
   metodo_pago: string;
 }
 
@@ -109,6 +114,7 @@ const DEFAULT_DED: DeducibilidadFormState = {
   monto_prima: 35000,
   es_persona_fisica: true,
   ingreso_anual: 0,
+  ingresos_totales_anuales: 0,
   metodo_pago: "",
 };
 
@@ -228,6 +234,13 @@ function DeductibilityResultCard({
   result: DeductibilityResponse;
   t: (key: TranslationKey) => string;
 }) {
+  const topeGlobalLabel: Record<string, TranslationKey> = {
+    aplicado: "reg_tope_global_aplicado",
+    parcial_sin_ingresos: "reg_tope_global_parcial",
+    no_aplicable: "reg_tope_global_no_aplicable",
+  };
+  const topeGlobalKey = topeGlobalLabel[result.tope_global];
+
   const rows: [string, string][] = [
     [
       t("reg_es_deducible"),
@@ -237,9 +250,15 @@ function DeductibilityResultCard({
     [t("reg_monto_deducible"), formatCurrency(result.monto_deducible)],
     [
       t("reg_porcentaje_deducible"),
-      formatPercent(result.porcentaje_deducible),
+      // Already in percent points (100.0 for the whole premium), so it is
+      // written out as-is rather than multiplied by a hundred again.
+      formatPercentValue(result.porcentaje_deducible),
     ],
-    [t("reg_limite_aplicado"), result.limite_aplicado ?? "-"],
+    [t("reg_limite_aplicado"), result.limite_aplicado ?? VALOR_AUSENTE],
+    [
+      t("reg_tope_global"),
+      topeGlobalKey ? t(topeGlobalKey) : result.tope_global,
+    ],
     [t("reg_fundamento_legal"), result.fundamento_legal],
     [
       t("reg_uma_aplicada"),
@@ -261,6 +280,8 @@ function DeductibilityResultCard({
     monto_deducible: result.monto_deducible,
     porcentaje_deducible: result.porcentaje_deducible,
     limite_aplicado: result.limite_aplicado,
+    tope_global: result.tope_global,
+    nota_tope_global: result.nota_tope_global,
     fundamento_legal: result.fundamento_legal,
     estado: result.estado,
     factores_faltantes: result.factores_faltantes.join("; "),
@@ -290,10 +311,19 @@ function DeductibilityResultCard({
         <Table headers={[t("reg_concepto"), t("reg_valor")]} rows={rows} />
       </Card>
 
+      {result.nota_tope_global && (
+        <AvisoLimitacion titulo={t("reg_nota_tope_global")}>
+          <p>{result.nota_tope_global}</p>
+        </AvisoLimitacion>
+      )}
+
       {result.factores_faltantes.length > 0 && (
         <AvisoLimitacion titulo={t("reg_estado_indeterminate")}>
           <p>
-            {t("reg_factores_faltantes")}: {result.factores_faltantes.join(", ")}
+            {t("reg_factores_faltantes")}:{" "}
+            {result.factores_faltantes
+              .map((f) => etiquetaCampo(f, t, "regulatorio"))
+              .join(", ")}
           </p>
         </AvisoLimitacion>
       )}
@@ -326,7 +356,7 @@ function WithholdingResultCard({
     [t("reg_tasa_retencion"), formatPercent(result.tasa_retencion)],
     [t("reg_monto_retencion"), formatCurrency(result.monto_retencion)],
     [t("reg_monto_neto"), formatCurrency(result.monto_neto_pagar)],
-    [t("reg_regla_aplicada"), result.regla_aplicada ?? "-"],
+    [t("reg_regla_aplicada"), result.regla_aplicada ?? VALOR_AUSENTE],
   ];
 
   const csvData = {
@@ -480,6 +510,13 @@ export default function RegulatorioPage() {
           // Left out on purpose when unset: the API answers "indeterminate"
           // rather than guessing, and the result card says what is missing.
           ingreso_anual: dedForm.ingreso_anual > 0 ? dedForm.ingreso_anual : null,
+          // Without the total income the 15% leg of the global cap of the
+          // article's last paragraph cannot be evaluated at all, and the
+          // response reports the deductible amount as an upper bound.
+          ingresos_totales_anuales:
+            dedForm.ingresos_totales_anuales > 0
+              ? dedForm.ingresos_totales_anuales
+              : null,
           metodo_pago: dedForm.metodo_pago || null,
         };
         await deductibility.calculate(req);
@@ -563,7 +600,7 @@ export default function RegulatorioPage() {
 
       <section id="workbench" className="scroll-mt-28 pt-3">
         <p className="kicker mb-2">Workbench</p>
-        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Examine escenarios de referencia" : "Examine reference scenarios"}</h2>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Revisa los escenarios de referencia" : "Examine reference scenarios"}</h2>
       </section>
 
       {/* Tabs */}
@@ -895,19 +932,42 @@ export default function RegulatorioPage() {
                   </span>
                 </label>
               </div>
-              <Input
-                label={t("reg_ingreso_anual")}
-                name="ingreso_anual"
-                type="number"
-                min={0}
-                value={dedForm.ingreso_anual}
-                onChange={(e) =>
-                  setDedForm((prev) => ({
-                    ...prev,
-                    ingreso_anual: Number(e.target.value),
-                  }))
-                }
-              />
+              <div>
+                <Input
+                  label={t("reg_ingreso_anual")}
+                  name="ingreso_anual"
+                  type="number"
+                  min={0}
+                  value={dedForm.ingreso_anual}
+                  onChange={(e) =>
+                    setDedForm((prev) => ({
+                      ...prev,
+                      ingreso_anual: Number(e.target.value),
+                    }))
+                  }
+                />
+                <p className="text-xs text-navy/50 mt-1.5 leading-relaxed">
+                  {t("reg_ingreso_anual_ayuda")}
+                </p>
+              </div>
+              <div>
+                <Input
+                  label={t("reg_ingresos_totales")}
+                  name="ingresos_totales_anuales"
+                  type="number"
+                  min={0}
+                  value={dedForm.ingresos_totales_anuales}
+                  onChange={(e) =>
+                    setDedForm((prev) => ({
+                      ...prev,
+                      ingresos_totales_anuales: Number(e.target.value),
+                    }))
+                  }
+                />
+                <p className="text-xs text-navy/50 mt-1.5 leading-relaxed">
+                  {t("reg_ingresos_totales_ayuda")}
+                </p>
+              </div>
               <Select
                 label={t("reg_metodo_pago")}
                 name="metodo_pago"
@@ -1039,11 +1099,7 @@ export default function RegulatorioPage() {
 
       {/* Error display */}
       {errorMsg && (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-red-700 font-medium">
-            {t("error")}: {errorMsg}
-          </p>
-        </Card>
+        <ErrorPanel titulo={t("error_calculo_titulo")} mensaje={errorMsg} />
       )}
 
       {/* ── Results ──────────────────────────────────────────────── */}
