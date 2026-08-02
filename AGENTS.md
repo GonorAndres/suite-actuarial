@@ -145,9 +145,15 @@ recorded in [`CHANGELOG.md`](CHANGELOG.md); telemetry setup is in
   `examples/labs/` with their narrative in `docs/labs/`; self-verifying worked cases
   per domain live in `examples/casos/`. Prefer extending these over adding one-off
   scripts, and keep the actuarial logic they exercise in the package, not in the
-  example. Know the limit: no gate executes these scripts today — ruff and mypy read
-  them, but pytest and CI never run their asserts, so a runtime break in a caso
-  ships green. If you touch the package code a caso exercises, run the script.
+  example. `tests/unit/test_examples.py` is the gate: it runs every script through
+  `runpy` under `run_name="__main__"`, so a runtime break in a caso turns the suite
+  red. It also guards the gate itself — discovery has a floor and must hit both
+  directories (an empty parametrization would report green with nothing to run),
+  every script must still contain at least one `assert` (one that lost its checks
+  would pass forever), and each must print something (a body that stopped executing
+  would otherwise look fine). Adding a caso needs no change there; the glob picks it
+  up. If an example fails, the finding is in the example or the model it exercises —
+  do not relax the test to go green.
 
 ## Actuarial guardrails
 
