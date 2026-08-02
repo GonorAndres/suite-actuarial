@@ -23,9 +23,17 @@ export interface CalculationMetadata {
   assumptions_snapshot: Record<string, unknown>;
 }
 
+/** Valores de sexo que viajan por el API: palabras completas, no iniciales.
+ *
+ *  Hasta la unificacion, `/pricing/*` y `/pensiones/*` transmitian "H"/"M"
+ *  (hombre/mujer) y `/salud/*` transmitia "M"/"F" (masculino/femenino): la
+ *  misma "M" significaba hombre en un endpoint y mujer en otro. Con palabras
+ *  completas hay una sola convencion y cualquier inicial recibe un 422. */
+export type Sexo = "masculino" | "femenino";
+
 export interface PricingRequest {
   edad: number;
-  sexo: "H" | "M";
+  sexo: Sexo;
   suma_asegurada: number;
   plazo_years: number;
   tasa_interes?: number;
@@ -106,6 +114,10 @@ export interface AutoResponse {
   subtotal: number;
   bonus_malus: Record<string, unknown>;
   prima_total: number;
+  /** Alcance del modelo; el API lo envía siempre. Muéstralo junto a la cifra. */
+  disclaimer?: string;
+  /** Nivel de respaldo de los datos detrás de la cifra: experimental. */
+  validation_tier?: string;
 }
 
 export interface IncendioRequest {
@@ -124,6 +136,10 @@ export interface IncendioResponse {
   uso: string;
   factor_uso: number;
   prima_anual: number;
+  /** Alcance del modelo; el API lo envía siempre. Muéstralo junto a la cifra. */
+  disclaimer?: string;
+  /** Nivel de respaldo de los datos detrás de la cifra: experimental. */
+  validation_tier?: string;
 }
 
 export interface RCRequest {
@@ -139,6 +155,10 @@ export interface RCResponse {
   tasa_base: number;
   factor_deducible: number;
   prima_anual: number;
+  /** Alcance del modelo; el API lo envía siempre. Muéstralo junto a la cifra. */
+  disclaimer?: string;
+  /** Nivel de respaldo de los datos detrás de la cifra: experimental. */
+  validation_tier?: string;
 }
 
 export interface BonusMalusRequest {
@@ -151,6 +171,8 @@ export interface BonusMalusResponse {
   siniestros: number;
   nivel_nuevo: number;
   factor: number;
+  validation_tier: string;
+  disclaimer: string;
 }
 
 export interface FrecuenciaSeveridadRequest {
@@ -174,13 +196,15 @@ export interface FrecuenciaSeveridadResponse {
   minimo: number;
   maximo: number;
   simulaciones: number;
+  validation_tier: string;
+  disclaimer: string;
 }
 
 // ── Salud (Health) ──────────────────────────────────────────────────────────
 
 export interface GMMRequest {
   edad: number;
-  sexo: "M" | "F";
+  sexo: Sexo;
   suma_asegurada: number;
   deducible: number;
   coaseguro_pct: number;
@@ -194,11 +218,15 @@ export interface GMMResponse {
   producto: Record<string, unknown>;
   tarificacion: Record<string, unknown>;
   siniestralidad_esperada: number;
+  /** Alcance del modelo; el API lo envía siempre. Muéstralo junto a la cifra. */
+  disclaimer?: string;
+  /** Nivel de respaldo de los datos detrás de la cifra: experimental. */
+  validation_tier?: string;
 }
 
 export interface AccidentesRequest {
   edad: number;
-  sexo: "M" | "F";
+  sexo: Sexo;
   suma_asegurada: number;
   ocupacion?: string;
   indemnizacion_diaria?: number | null;
@@ -210,6 +238,10 @@ export interface AccidentesResponse {
   perdidas_organicas: Record<string, unknown>;
   indemnizacion_diaria: Record<string, number>;
   gastos_funerarios: number;
+  /** Alcance del modelo; el API lo envía siempre. Muéstralo junto a la cifra. */
+  disclaimer?: string;
+  /** Nivel de respaldo de los datos detrás de la cifra: experimental. */
+  validation_tier?: string;
 }
 
 // ── Pensiones ───────────────────────────────────────────────────────────────
@@ -235,7 +267,7 @@ export interface Ley73Response {
 export interface Ley97Request {
   saldo_afore: number;
   edad: number;
-  sexo: "H" | "M";
+  sexo: Sexo;
   semanas_cotizadas: number;
   tasa_interes?: number;
 }
@@ -249,7 +281,7 @@ export interface ModalidadDetalle {
 export interface Ley97Response {
   saldo_afore: number;
   edad: number;
-  sexo: string;
+  sexo: Sexo;
   semanas_cotizadas: number;
   renta_vitalicia: ModalidadDetalle;
   retiro_programado: ModalidadDetalle;
@@ -260,7 +292,7 @@ export interface Ley97Response {
 
 export interface RentaVitaliciaRequest {
   edad: number;
-  sexo: "H" | "M";
+  sexo: Sexo;
   monto_mensual: number;
   tasa_interes: number;
   periodo_diferimiento?: number;
@@ -269,7 +301,7 @@ export interface RentaVitaliciaRequest {
 
 export interface RentaVitaliciaResponse {
   edad: number;
-  sexo: string;
+  sexo: Sexo;
   monto_mensual: number;
   tasa_interes: number;
   periodo_diferimiento: number;
@@ -395,6 +427,8 @@ export interface DeductibilityRequest {
   es_persona_fisica?: boolean;
   uma_anual?: number | null;
   ingreso_anual?: number | null;
+  /** Total de ingresos del contribuyente, incluidos exentos. Base del 15% del tope global (LISR Art. 151, ultimo parrafo). */
+  ingresos_totales_anuales?: number | null;
   metodo_pago?: string | null;
   relacion_beneficiario?: string | null;
 }
@@ -410,6 +444,9 @@ export interface DeductibilityResponse {
   factores_faltantes: string[];
   uma_anual_aplicada: number;
   anio_regulatorio: number | null;
+  /** "aplicado" | "parcial_sin_ingresos" | "no_aplicable" */
+  tope_global: string;
+  nota_tope_global: string | null;
 }
 
 export interface WithholdingRequest {

@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { ReservasStory } from "@/components/stories";
+import { DomainGuide } from "@/components/guides/DomainGuide";
+import { DomainWorkspace } from "@/components/guides/DomainWorkspace";
+import { WorkbenchContext } from "@/components/guides/WorkbenchContext";
 import {
   Card,
   Button,
@@ -14,10 +17,13 @@ import {
   Badge,
   MetricCard,
   AvisoIlustrativo,
+  ErrorPanel,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
+import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { reservesApi } from "@/lib/api";
+import { valorCampo } from "@/lib/field-display";
 import { formatNumber } from "@/lib/utils";
 import type {
   ChainLadderRequest,
@@ -194,7 +200,7 @@ function ReserveResultCard({
       <Card>
         <div className="flex items-center gap-3">
           <span className="text-sm text-navy/60">{t("reservas_metodo")}:</span>
-          <Badge variant="info">{result.metodo}</Badge>
+          <Badge variant="info">{valorCampo("metodo", result.metodo, t)}</Badge>
         </div>
       </Card>
 
@@ -302,8 +308,11 @@ function parseOriginYears(text: string): number[] {
 /* ── Page component ────────────────────────────────────────────────────── */
 
 export default function ReservasPage() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<ReserveTab>("chainladder");
+  const { t, lang } = useLanguage();
+  const [activeTab, setActiveTab] = useLinkedWorkbenchTab<ReserveTab>(
+    ["chainladder", "bornhuetter", "bootstrap"],
+    "chainladder",
+  );
   const [clForm, setClForm] = useState<ChainLadderForm>(DEFAULT_CL);
   const [bfForm, setBfForm] = useState<BornhuetterForm>(DEFAULT_BF);
   const [bsForm, setBsForm] = useState<BootstrapForm>(DEFAULT_BS);
@@ -426,7 +435,12 @@ export default function ReservasPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("reservas_contexto")}</p>
       </div>
 
-      <ReservasStory />
+      <DomainWorkspace domain="reservas" caseView={<DomainGuide domain="reservas"><ReservasStory /></DomainGuide>}>
+
+      <section id="workbench" className="scroll-mt-28 pt-3">
+        <p className="kicker mb-2">Workbench</p>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Proyecta el triángulo y mide su incertidumbre" : "Project the triangle and measure its uncertainty"}</h2>
+      </section>
 
       {/* Tabs */}
       <Tabs
@@ -434,6 +448,8 @@ export default function ReservasPage() {
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as ReserveTab)}
       />
+
+      <WorkbenchContext domain="reservas" model={activeTab} />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-navy/15 bg-white/65 px-4 py-3">
         <div>
@@ -719,11 +735,7 @@ export default function ReservasPage() {
 
       {/* Error display */}
       {errorMsg && (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-red-700 font-medium">
-            {t("error")}: {errorMsg}
-          </p>
-        </Card>
+        <ErrorPanel titulo={t("error_calculo_titulo")} mensaje={errorMsg} />
       )}
 
       {/* ── Results ──────────────────────────────────────────────── */}
@@ -742,6 +754,7 @@ export default function ReservasPage() {
         <ReserveResultCard result={bootstrap.data} t={t} />
       )}
 
+      </DomainWorkspace>
     </div>
   );
 }

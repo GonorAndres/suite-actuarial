@@ -40,6 +40,7 @@ import type {
   RentaVitaliciaRequest,
   RentaVitaliciaResponse,
   ReserveResponse,
+  Sexo,
   StopLossRequest,
   UMAResponse,
   WithholdingRequest,
@@ -64,6 +65,67 @@ export class ApiError extends Error {
   }
 }
 
+/** One entry of FastAPI's 422 validation array. */
+interface ValidationIssue {
+  loc?: (string | number)[];
+  msg?: string;
+  type?: string;
+}
+
+function describeIssue(issue: ValidationIssue): string {
+  // `loc` starts with the request part ("body", "query", ...); the reader
+  // cares about the field, not about where FastAPI found it.
+  const path = (issue.loc ?? [])
+    .slice(1)
+    .map((part) => String(part))
+    .join(".");
+  const msg = issue.msg ?? "";
+  if (path && msg) return `${path}: ${msg}`;
+  return path || msg;
+}
+
+/**
+ * Reduce an error response body to a sentence a reader can act on.
+ *
+ * The API answers a rejected input with `{"detail": "..."}` or, for a schema
+ * violation, with `{"detail": [ ...issues ]}`. Neither should reach the screen
+ * as JSON.
+ */
+export function parseErrorBody(
+  body: string,
+  status: number,
+  statusText?: string,
+): string {
+  const trimmed = body.trim();
+  if (trimmed) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      const detail =
+        typeof parsed === "object" && parsed !== null && "detail" in parsed
+          ? (parsed as { detail: unknown }).detail
+          : undefined;
+
+      if (typeof detail === "string" && detail.trim()) return detail.trim();
+
+      if (Array.isArray(detail)) {
+        const described = detail
+          .map((issue) => describeIssue(issue as ValidationIssue))
+          .filter(Boolean);
+        if (described.length > 0) return described.join("; ");
+      }
+
+      if (detail && typeof detail === "object") {
+        const described = describeIssue(detail as ValidationIssue);
+        if (described) return described;
+      }
+    } catch {
+      // Not JSON: the body is already plain text.
+      return trimmed;
+    }
+  }
+  return statusText?.trim() ? statusText.trim() : `HTTP ${status}`;
+}
+
 // ── Generic helpers ─────────────────────────────────────────────────────────
 
 async function apiPost<TReq, TRes>(
@@ -77,8 +139,8 @@ async function apiPost<TReq, TRes>(
   });
 
   if (!res.ok) {
-    const detail = await res.text().catch(() => res.statusText);
-    throw new ApiError(res.status, detail);
+    const body = await res.text().catch(() => "");
+    throw new ApiError(res.status, parseErrorBody(body, res.status, res.statusText));
   }
 
   return res.json() as Promise<TRes>;
@@ -88,7 +150,7 @@ async function apiGet<TRes>(
   path: string,
   params?: Record<string, string>,
 ): Promise<TRes> {
-  const url = new URL(`${API_BASE}${path}`);
+  const url = new URL(`${API_BASE}${path}`, window.location.origin);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, value);
@@ -98,8 +160,8 @@ async function apiGet<TRes>(
   const res = await fetch(url.toString());
 
   if (!res.ok) {
-    const detail = await res.text().catch(() => res.statusText);
-    throw new ApiError(res.status, detail);
+    const body = await res.text().catch(() => "");
+    throw new ApiError(res.status, parseErrorBody(body, res.status, res.statusText));
   }
 
   return res.json() as Promise<TRes>;
@@ -175,7 +237,7 @@ export const pensionesApi = {
     ),
 
   conmutacion: (params: {
-    sexo: string;
+    sexo: Sexo;
     tasa_interes: string;
     edad_min?: string;
     edad_max?: string;

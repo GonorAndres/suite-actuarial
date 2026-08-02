@@ -18,7 +18,7 @@
  *   PROXY_SHARED_SECRET  (same value the Cloud Run service holds)
  */
 
-export default {
+const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
 
@@ -49,3 +49,5 @@ export default {
     );
   },
 };
+
+export default worker;

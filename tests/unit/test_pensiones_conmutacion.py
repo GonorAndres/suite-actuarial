@@ -24,7 +24,7 @@ def tabla_simple():
     datos = pd.DataFrame(
         {
             "edad": list(range(0, 6)) + list(range(0, 6)),
-            "sexo": ["H"] * 6 + ["M"] * 6,
+            "sexo": ["masculino"] * 6 + ["femenino"] * 6,
             "qx": [
                 0.01,
                 0.02,
@@ -47,13 +47,13 @@ def tabla_simple():
 @pytest.fixture
 def tc_simple(tabla_simple):
     """Commutation table from the simple mortality table at 5%."""
-    return TablaConmutacion(tabla_simple, sexo="H", tasa_interes=0.05, raiz=100_000)
+    return TablaConmutacion(tabla_simple, sexo="masculino", tasa_interes=0.05, raiz=100_000)
 
 
 @pytest.fixture
 def tc_simple_mujer(tabla_simple):
     """Commutation table for women."""
-    return TablaConmutacion(tabla_simple, sexo="M", tasa_interes=0.05, raiz=100_000)
+    return TablaConmutacion(tabla_simple, sexo="femenino", tasa_interes=0.05, raiz=100_000)
 
 
 @pytest.fixture
@@ -68,13 +68,13 @@ def tabla_emssa09():
 @pytest.fixture
 def tc_emssa_h(tabla_emssa09):
     """EMSSA-09, male, 5.5% interest."""
-    return TablaConmutacion(tabla_emssa09, sexo="H", tasa_interes=0.055)
+    return TablaConmutacion(tabla_emssa09, sexo="masculino", tasa_interes=0.055)
 
 
 @pytest.fixture
 def tc_emssa_m(tabla_emssa09):
     """EMSSA-09, female, 5.5% interest."""
-    return TablaConmutacion(tabla_emssa09, sexo="M", tasa_interes=0.055)
+    return TablaConmutacion(tabla_emssa09, sexo="femenino", tasa_interes=0.055)
 
 
 # ======================================================================
@@ -328,7 +328,7 @@ class TestCommutationRepr:
         r = repr(tc_simple)
         assert "TablaConmutacion" in r
         assert "Simple" in r
-        assert "H" in r
+        assert "masculino" in r
 
 
 class TestEsperanzaDeVida:
@@ -359,7 +359,7 @@ class TestEsperanzaDeVida:
         un error de indexado o de truncamiento en la suma.
         """
         for x in (30, 50, 65, 80):
-            p_x = 1 - float(tc_emssa_h.tabla_mortalidad.obtener_qx(x, "H"))
+            p_x = 1 - float(tc_emssa_h.tabla_mortalidad.obtener_qx(x, "masculino"))
             esperado = p_x * (1 + float(tc_emssa_h.ex(x + 1)))
             assert float(tc_emssa_h.ex(x)) == pytest.approx(esperado, rel=1e-9)
 
@@ -371,7 +371,7 @@ class TestEsperanzaDeVida:
         dos cantidades sin ambigüedad: coinciden solo cuando el interés se
         anula, y es lo que hace incorrecto usar `ax` como esperanza de vida.
         """
-        sin_interes = TablaConmutacion(tabla_emssa09, sexo="H", tasa_interes=0.0)
+        sin_interes = TablaConmutacion(tabla_emssa09, sexo="masculino", tasa_interes=0.0)
 
         for x in (40, 65, 85):
             assert float(sin_interes.ax(x)) == pytest.approx(1 + float(sin_interes.ex(x)), rel=1e-9)

@@ -13,7 +13,8 @@
         "minima": 18,
         "maxima": 100
       },
-      "sexos": ["H", "M"],
+      "sexos": ["masculino", "femenino"],
+      "nota_columna_sexo": "El CSV conserva las iniciales publicadas H (hombre) y M (mujer); se traducen a masculino/femenino al cargar la tabla.",
       "uso_recomendado": [
         "Seguros de vida individuales",
         "Seguros temporales",

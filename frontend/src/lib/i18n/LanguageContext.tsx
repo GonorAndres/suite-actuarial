@@ -4,7 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
-  useState,
+  useMemo,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { translations, type Lang, type TranslationKey } from "./translations";
@@ -18,29 +19,75 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 const STORAGE_KEY = "suite_actuarial_lang";
 
-function getInitialLang(): Lang {
-  if (typeof window === "undefined") return "es";
+/** Language of the statically exported HTML. The first client render must
+ *  agree with it or React discards the whole tree as a hydration mismatch. */
+const DEFAULT_LANG: Lang = "es";
+
+/* ── The stored preference as an external store ──────────────────────────────
+ *
+ * The chosen language lives in `localStorage`, which is not React state and
+ * is unreadable while the page is being prerendered. Seeding `useState` from
+ * it made the first client render disagree with the exported HTML on every
+ * text node, so React threw the whole tree away and rebuilt it on each load.
+ *
+ * `useSyncExternalStore` is the supported way out: it hands React a server
+ * snapshot to hydrate against and the real one immediately after, which is a
+ * brief flash of Spanish instead of a discarded tree.
+ */
+
+const listeners = new Set<() => void>();
+
+let cachedLang: Lang | null = null;
+
+function readStoredLang(): Lang {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "en" || stored === "es") return stored;
-  } catch { /* SSR or storage unavailable */ }
-  return "es";
+  } catch {
+    // storage unavailable
+  }
+  return DEFAULT_LANG;
+}
+
+function subscribe(onStoreChange: () => void): () => void {
+  listeners.add(onStoreChange);
+  return () => {
+    listeners.delete(onStoreChange);
+  };
+}
+
+/** Cached so React sees a stable value between store changes. */
+function getSnapshot(): Lang {
+  if (cachedLang === null) cachedLang = readStoredLang();
+  return cachedLang;
+}
+
+/** What the prerendered HTML was built with. */
+function getServerSnapshot(): Lang {
+  return DEFAULT_LANG;
+}
+
+function writeLang(next: Lang): void {
+  cachedLang = next;
+  try {
+    localStorage.setItem(STORAGE_KEY, next);
+  } catch {
+    // storage unavailable
+  }
+  for (const listener of listeners) listener();
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(getInitialLang);
+  const lang = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const setLang = useCallback((next: Lang) => {
-    setLangState(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // storage unavailable
-    }
+    writeLang(next);
   }, []);
 
+  const value = useMemo(() => ({ lang, setLang }), [lang, setLang]);
+
   return (
-    <LanguageContext.Provider value={{ lang, setLang }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

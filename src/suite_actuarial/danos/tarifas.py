@@ -5,10 +5,33 @@ Incluye:
 - Credibilidad de Buhlmann y Buhlmann-Straub
 - Sistema de Bonus-Malus para autos
 - Tabla de factores de tarificacion
+
+La escala de Bonus-Malus es ilustrativa. Ver `DISCLAIMER`.
 """
 
+import warnings
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
+
+from suite_actuarial.config.schema import ValidationTier
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+
+DISCLAIMER = (
+    "AVISO: la escala de Bonus-Malus de este modulo es ILUSTRATIVA. Sus nueve "
+    "niveles (-5 a 3), los factores que les corresponden (0.70 a 1.50) y las "
+    "reglas de transicion (sin siniestros baja un nivel; un siniestro sube dos; "
+    "dos o mas suben tres) reproducen la ESTRUCTURA de un sistema de "
+    "tarificacion por experiencia, no los valores de ninguna tarifa registrada "
+    "ni la experiencia de aseguradora alguna. La escala tampoco esta calibrada: "
+    "nada garantiza que descuentos y recargos se compensen sobre una cartera, ni "
+    "que la distancia entre niveles corresponda a una diferencia de riesgo "
+    "medida. Para uso profesional, sustituyala por la escala registrada de su "
+    "institucion."
+)
+
+#: Nivel de respaldo de las cifras de este modulo. La escala es ilustrativa, asi
+#: que ningun factor de Bonus-Malus puede presentarse como respaldado.
+VALIDATION_TIER = ValidationTier.EXPERIMENTAL.value
 
 
 class FactorCredibilidad:
@@ -225,14 +248,19 @@ class FactorCredibilidad:
 
 class CalculadoraBonusMalus:
     """
-    Sistema de Bonus-Malus para seguros de auto en Mexico.
+    Sistema de Bonus-Malus para seguros de auto.
 
-    Escala tipica mexicana:
-    - Sin siniestros: descuento acumulativo (-5% por ano, max -30%)
-    - Con siniestro: recargo (+15% a +50% dependiendo del numero)
+    Escala ILUSTRATIVA, con la forma habitual de estos sistemas:
+    - Sin siniestros: se baja un nivel por periodo, hasta 30% de descuento
+    - Con siniestros: se suben dos o tres niveles, hasta 50% de recargo
+
+    Los valores no proceden de ninguna tarifa registrada. Al construirse emite
+    `ExperimentalModelWarning` con `DISCLAIMER`, que viaja tambien en la
+    respuesta del API: el factor no debe circular sin su limite.
     """
 
-    # Escala estandar mexicana
+    # Escala ilustrativa: la forma es la habitual, los valores no son los de
+    # ninguna tarifa vigente. Ver DISCLAIMER.
     NIVELES: dict[int, Decimal] = {
         -5: Decimal("0.70"),  # Max descuento: 30%
         -4: Decimal("0.75"),
@@ -259,6 +287,10 @@ class CalculadoraBonusMalus:
                 f"recibido: {nivel_actual}"
             )
         self.nivel_actual = nivel_actual
+
+        # Despues de validar: una entrada invalida no produce un factor, asi que
+        # no hay cifra que acompanar con el aviso.
+        warnings.warn(DISCLAIMER, ExperimentalModelWarning, stacklevel=2)
 
     def transicion(self, siniestros_periodo: int) -> int:
         """

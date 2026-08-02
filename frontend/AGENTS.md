@@ -12,10 +12,20 @@ result — with code as a reproducible second layer.
 
 ## Stack caveat
 
-This is **Next.js 16.2.4** with React 19, TypeScript 5, and Tailwind CSS v4. It is
+This is **Next.js 16.2.12** with React 19, TypeScript 5, and Tailwind CSS v4. It is
 newer than the typical Next.js patterns in training data, so APIs and conventions may
 differ. Before writing new Next.js-specific code, check the current app for the
 pattern in use.
+
+Production is a static export: `next.config.ts` sets `output: "export"` with
+`trailingSlash: true` into `frontend/out/`, deployed on Cloudflare Pages. No route
+handlers, middleware, ISR, or image optimization; `sitemap.ts` and `robots.ts` need
+`dynamic = "force-static"`. In dev, `/api/*` is rewritten to `API_PROXY_URL`
+(default `http://127.0.0.1:8000`); in production `NEXT_PUBLIC_API_URL` points at
+`api-suite.gonor.me`, which is now the Worker in `edge/` rather than Cloud Run
+directly — the address is unchanged, so no frontend code changes, but the dashboard's
+calls are counted against the same rate limit as everyone else's. The preview branch
+adds `cloudflare/_worker.js` as a same-origin proxy. See `docs/DEPLOYMENT.md`.
 
 ## Conventions
 
@@ -56,9 +66,11 @@ Run these from `frontend/` before considering a change complete:
 ```bash
 npm run lint
 npm run build
+npm run test:e2e
 ```
 
-The build must pass.
+All three must pass; all three run in CI. `test:e2e` runs the Playwright specs in
+`tests/` against the static export, so it needs the `npm run build` output.
 
 ## Common mistakes to avoid
 

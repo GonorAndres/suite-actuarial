@@ -10,3 +10,5 @@ export { default as MetricCard } from "./MetricCard";
 export { default as ProgressBar } from "./ProgressBar";
 export { default as AvisoIlustrativo } from "./AvisoIlustrativo";
 export { default as AvisoLimitacion } from "./AvisoLimitacion";
+export { default as AvisoModelo } from "./AvisoModelo";
+export { default as ErrorPanel } from "./ErrorPanel";

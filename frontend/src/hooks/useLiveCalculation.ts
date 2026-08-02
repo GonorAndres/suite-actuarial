@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ApiError } from "@/lib/api";
 
 interface LiveState<TRes> {
   key: string | null;
@@ -40,12 +39,9 @@ export function useLiveCalculation<TReq, TRes>(
           setState({ key: reqKey, data: result, error: null });
         }
       } catch (err) {
-        const message =
-          err instanceof ApiError
-            ? `${err.status}: ${err.message}`
-            : err instanceof Error
-              ? err.message
-              : "Unknown error";
+        // `ApiError.message` already carries the API's own explanation,
+        // parsed out of the response envelope by the client.
+        const message = err instanceof Error ? err.message : String(err);
         if (!cancelled) {
           setState((prev) => ({ key: reqKey, data: prev.data, error: message }));
         }

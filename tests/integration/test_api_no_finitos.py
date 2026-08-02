@@ -24,7 +24,7 @@ JSON = {"Content-Type": "application/json"}
 CASOS_NO_FINITOS = [
     pytest.param(
         "/api/v1/salud/gmm/calcular",
-        '{"edad":40,"sexo":"M","suma_asegurada":Infinity,"deducible":20000,"coaseguro_pct":0.1}',
+        '{"edad":40,"sexo":"masculino","suma_asegurada":Infinity,"deducible":20000,"coaseguro_pct":0.1}',
         "suma_asegurada",
         id="gmm-suma-asegurada",
     ),

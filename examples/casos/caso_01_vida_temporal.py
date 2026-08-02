@@ -39,7 +39,7 @@ from suite_actuarial.core.models.common import Sexo
 # 1. Supuestos del caso (cambie estas variables para adaptarlo a su proyecto)
 # ----------------------------------------------------------------------------
 EDAD = 32
-SEXO = Sexo.MUJER
+SEXO = Sexo.FEMENINO
 SUMA_ASEGURADA = Decimal("1500000")  # MXN
 PLAZO = 20  # anios
 TASA_TECNICA = Decimal("0.055")  # 5.5% anual

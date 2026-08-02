@@ -210,7 +210,7 @@ export function VidaStory() {
   const req = useMemo(
     () => ({
       edad,
-      sexo: "M" as const,
+      sexo: "masculino" as const,
       suma_asegurada: sa,
       plazo_years: plazo,
       tasa_interes: 0.055,
@@ -331,7 +331,7 @@ export function SaludStory() {
   const req = useMemo(
     () => ({
       edad,
-      sexo: "F" as const,
+      sexo: "femenino" as const,
       suma_asegurada: 5_000_000,
       deducible: 40_000,
       coaseguro_pct: 0.1,
@@ -392,7 +392,7 @@ export function PensionesStory() {
     () => ({
       saldo_afore: saldo,
       edad: 65,
-      sexo: "M" as const,
+      sexo: "masculino" as const,
       semanas_cotizadas: 1300,
       tasa_interes: 0.035,
     }),

@@ -65,6 +65,9 @@ docs/_build/
 site/
 docs/knowledge/
 
+# Temporary agent/session handoffs (keep permanent project docs under docs/)
+handoff/
+
 # Environment variables
 .env
 .env.local
@@ -110,3 +113,5 @@ to-do.md
 
 # Cloudflare wrangler local state
 .wrangler/
+edge/node_modules/
+edge/.wrangler/

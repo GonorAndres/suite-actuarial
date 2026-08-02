@@ -211,6 +211,127 @@ class TestSATDeductibility:
         assert "metodo_pago" in data["factores_faltantes"]
 
 
+class TestSATTopeGlobalArt151:
+    """El tope del último párrafo del Art. 151 LISR cruza el contrato HTTP.
+
+    Las cifras esperadas se calculan a mano desde el estatuto y la UMA anual
+    que la propia petición envía, no desde la respuesta:
+
+        uma_anual = 42,794.64  ->  5 UMA = 213,973.20
+    """
+
+    def test_gmm_con_ingresos_totales_aplica_el_tope(self, api_client):
+        """15% x 300,000 = 45,000 < 5 UMA: el tope recorta la prima de 50,000."""
+        payload = {
+            "tipo_seguro": "gastos_medicos",
+            "monto_prima": 50_000,
+            "es_persona_fisica": True,
+            "uma_anual": 42_794.64,
+            "ingresos_totales_anuales": 300_000,
+            "metodo_pago": "transferencia",
+        }
+        response = api_client.post("/api/v1/regulatory/sat/deductibility", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["monto_deducible"] == pytest.approx(45_000.0)
+        assert data["tope_global"] == "aplicado"
+        assert data["estado"] == "eligible"
+
+    def test_gmm_sin_ingresos_totales_declara_el_tope_no_determinado(self, api_client):
+        """Sin el ingreso total, la respuesta no finge un 100% deducible.
+
+        Se aplica solo la rama de 5 UMA (213,973.20), por debajo de la prima de
+        400,000, y la respuesta nombra el dato que falta.
+        """
+        payload = {
+            "tipo_seguro": "gastos_medicos",
+            "monto_prima": 400_000,
+            "es_persona_fisica": True,
+            "uma_anual": 42_794.64,
+            "metodo_pago": "transferencia",
+        }
+        response = api_client.post("/api/v1/regulatory/sat/deductibility", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["monto_deducible"] == pytest.approx(213_973.20)
+        assert data["tope_global"] == "parcial_sin_ingresos"
+        assert data["estado"] == "indeterminate"
+        assert "ingresos_totales_anuales" in data["factores_faltantes"]
+        assert "15%" in data["nota_tope_global"]
+
+    def test_pensiones_queda_fuera_del_tope_global(self, api_client):
+        """La fracción V está excluida del tope global por el propio párrafo.
+
+        10% x 1,000,000 = 100,000 < 5 UMA: manda el tope propio de la fracción.
+        """
+        payload = {
+            "tipo_seguro": "pensiones",
+            "monto_prima": 150_000,
+            "es_persona_fisica": True,
+            "uma_anual": 42_794.64,
+            "ingreso_anual": 1_000_000,
+            "metodo_pago": "transferencia",
+        }
+        response = api_client.post("/api/v1/regulatory/sat/deductibility", json=payload)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["monto_deducible"] == pytest.approx(100_000.0)
+        assert data["tope_global"] == "no_aplicable"
+        assert "fracc. VI" not in data["fundamento_legal"]
+
+
+class TestSinPerfilVigente:
+    """Sin perfil vigente para la fecha del servidor, los endpoints se caen bien.
+
+    El agregador de RCS leía los factores CNSF del perfil vigente dentro de
+    `__init__`, y el router solo atrapaba `ValueError` y `TypeError`: al agotarse
+    la cobertura de perfiles el endpoint devolvía 500 con un traceback. Ahora
+    devuelve 503, porque el input del cliente es válido y quien no puede
+    responder es el servidor, y el detalle nombra el rango cubierto.
+    """
+
+    @pytest.fixture
+    def hoy_sin_cobertura(self, monkeypatch):
+        from datetime import date
+
+        from suite_actuarial.config import loader
+
+        monkeypatch.setattr(loader, "_hoy", lambda: date(2030, 6, 15))
+
+    def test_rcs_devuelve_503_con_el_rango(self, api_client, hoy_sin_cobertura):
+        response = api_client.post("/api/v1/regulatory/rcs", json=VALID_RCS_PAYLOAD)
+
+        assert response.status_code == 503
+        detalle = response.json()["detail"]
+        assert "2030-06-15" in detalle
+        assert "2024-02-01 a 2027-01-31" in detalle
+
+    def test_deducibilidad_devuelve_503(self, api_client, hoy_sin_cobertura):
+        payload = {
+            "tipo_seguro": "gastos_medicos",
+            "monto_prima": 50_000,
+            "es_persona_fisica": True,
+        }
+        response = api_client.post("/api/v1/regulatory/sat/deductibility", json=payload)
+
+        assert response.status_code == 503
+        assert "2024-02-01 a 2027-01-31" in response.json()["detail"]
+
+    def test_retenciones_devuelve_503(self, api_client, hoy_sin_cobertura):
+        payload = {
+            "tipo_seguro": "vida",
+            "monto_pago": 100_000,
+            "monto_gravable": 50_000,
+        }
+        response = api_client.post("/api/v1/regulatory/sat/withholding", json=payload)
+
+        assert response.status_code == 503
+        assert "2024-02-01 a 2027-01-31" in response.json()["detail"]
+
+
 class TestSATWithholding:
     def test_success(self, api_client):
         payload = {

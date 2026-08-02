@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from suite_actuarial.api.schemas import SolicitudBase
-from suite_actuarial.config.loader import config_vigente
+from suite_actuarial.config.loader import ConfiguracionNoDisponibleError, config_vigente
 from suite_actuarial.core.models.regulatorio import ResultadoRCS
 from suite_actuarial.regulatorio.agregador_rcs import AgregadorRCS
 from suite_actuarial.regulatorio.rcs_vida import DISCLAIMER as RCS_DISCLAIMER
@@ -132,7 +132,20 @@ class DeductibilityRequest(SolicitudBase):
     ingreso_anual: float | None = Field(
         default=None,
         gt=0,
-        description="Taxpayer's annual income; required to apply income-based caps",
+        description=(
+            "Taxpayer's accumulable annual income (ingresos acumulables). "
+            "Base of the 10% cap of LISR Art. 151, fracc. V."
+        ),
+    )
+    ingresos_totales_anuales: float | None = Field(
+        default=None,
+        gt=0,
+        description=(
+            "Taxpayer's total annual income including exempt income. Base of "
+            "the 15% leg of the global cap in the last paragraph of LISR Art. "
+            "151. Without it the global cap cannot be fully applied and the "
+            "response says so in tope_global."
+        ),
     )
     metodo_pago: str | None = Field(
         default=None,
@@ -168,6 +181,17 @@ class DeductibilityResponse(BaseModel):
     anio_regulatorio: int | None = Field(
         default=None,
         description="Regulatory profile year the UMA came from; null if caller supplied it",
+    )
+    tope_global: str = Field(
+        ...,
+        description=(
+            "How the global cap of LISR Art. 151 last paragraph was applied: "
+            "aplicado | parcial_sin_ingresos | no_aplicable"
+        ),
+    )
+    nota_tope_global: str | None = Field(
+        default=None,
+        description="Plain-language statement of what the global cap did, or why it could not",
     )
 
 
@@ -218,6 +242,23 @@ RETENCIONES_DISCLAIMER = (
     "estan verificadas contra el texto vigente de la LISR. Son ilustrativas. "
     "Ver docs/AUDIT.md."
 )
+
+
+def _sin_perfil_vigente(exc: ConfiguracionNoDisponibleError) -> HTTPException:
+    """Traduce la falta de perfil vigente en un 503 que nombra la cobertura.
+
+    Estos endpoints no reciben la fecha: leen el perfil vigente a la fecha del
+    servidor. Si esa fecha ya no esta cubierta, el fallo es del servidor, no de
+    la peticion, y no hay respuesta defendible que dar: no se reutiliza el
+    ultimo perfil publicado como si siguiera vigente.
+    """
+    return HTTPException(
+        status_code=503,
+        detail=(
+            "No hay perfil regulatorio vigente para la fecha del servidor; "
+            "este endpoint no puede responder sin uno. " + str(exc)
+        ),
+    )
 
 
 def _rcs_resultado_to_response(resultado: ResultadoRCS, agregador: AgregadorRCS) -> RCSResponse:
@@ -313,6 +354,8 @@ def calculate_rcs(req: RCSRequest) -> RCSResponse:
 
         resultado = agregador.calcular_rcs_completo()
         return _rcs_resultado_to_response(resultado, agregador)
+    except ConfiguracionNoDisponibleError as exc:
+        raise _sin_perfil_vigente(exc) from exc
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -324,6 +367,13 @@ def check_deductibility(req: DeductibilityRequest) -> DeductibilityResponse:
     Determines whether an insurance premium is tax-deductible and up to
     what amount, based on the type of insurance and taxpayer category
     (persona fisica or moral).
+
+    For a persona fisica, medical-expenses premiums (LISR Art. 151, fracc. VI)
+    are subject to the global cap of the article's last paragraph: the lesser
+    of five annual UMA and 15% of total income. Supply
+    ``ingresos_totales_anuales`` to evaluate both legs; without it only the UMA
+    leg applies and ``tope_global`` reports ``parcial_sin_ingresos``, meaning
+    the deductible amount is an upper bound.
     """
     try:
         perfil = config_vigente()
@@ -348,6 +398,11 @@ def check_deductibility(req: DeductibilityRequest) -> DeductibilityResponse:
             ),
             metodo_pago=req.metodo_pago,
             relacion_beneficiario=req.relacion_beneficiario,
+            ingresos_totales_anuales=(
+                Decimal(str(req.ingresos_totales_anuales))
+                if req.ingresos_totales_anuales is not None
+                else None
+            ),
         )
         return DeductibilityResponse(
             es_deducible=resultado.es_deducible,
@@ -360,7 +415,11 @@ def check_deductibility(req: DeductibilityRequest) -> DeductibilityResponse:
             factores_faltantes=resultado.factores_faltantes,
             uma_anual_aplicada=float(uma_anual),
             anio_regulatorio=anio_regulatorio,
+            tope_global=str(resultado.tope_global),
+            nota_tope_global=resultado.nota_tope_global,
         )
+    except ConfiguracionNoDisponibleError as exc:
+        raise _sin_perfil_vigente(exc) from exc
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -394,5 +453,7 @@ def calculate_withholding(req: WithholdingRequest) -> WithholdingResponse:
             regla_aplicada=resultado.regla_aplicada,
             disclaimer=RETENCIONES_DISCLAIMER,
         )
+    except ConfiguracionNoDisponibleError as exc:
+        raise _sin_perfil_vigente(exc) from exc
     except (ValueError, TypeError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

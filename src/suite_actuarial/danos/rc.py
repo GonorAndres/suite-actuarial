@@ -5,8 +5,28 @@ Producto para empresas y profesionales que cubre danos a terceros
 causados por la actividad del asegurado.
 """
 
+import warnings
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
+
+from suite_actuarial.config.schema import ValidationTier
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+
+DISCLAIMER = (
+    "AVISO: las tasas por clase de actividad y los factores de deducible de este "
+    "modulo son ILUSTRATIVOS: no proceden de experiencia siniestral ni de una "
+    "tarifa registrada. La prima es un millar del limite de responsabilidad: no "
+    "usa frecuencia ni severidad, no mide la exposicion real (nomina, ventas, "
+    "numero de empleados, metros cuadrados) y no reconoce el desarrollo de cola "
+    "larga tipico de responsabilidad civil. El factor de deducible es escalonado, "
+    "no interpolado: toma el tramo inmediato inferior de la tabla. Para uso "
+    "profesional, sustituya tasas y factores por los de su experiencia. "
+    "Ver docs/AUDIT.md."
+)
+
+#: Nivel de respaldo de las cifras de este modulo. Los datos son ilustrativos,
+#: asi que ninguna cotizacion puede presentarse como respaldada.
+VALIDATION_TIER = ValidationTier.EXPERIMENTAL.value
 
 # Tasas base por millar segun clase de actividad
 TASAS_ACTIVIDAD: dict[str, Decimal] = {
@@ -42,6 +62,9 @@ class SeguroRC:
     - Limite de responsabilidad
     - Deducible
     - Clase de actividad del asegurado
+
+    Al construirse emite `ExperimentalModelWarning` con `DISCLAIMER`, que viaja
+    tambien en la respuesta del API: la prima no debe circular sin su limite.
     """
 
     def __init__(
@@ -74,6 +97,8 @@ class SeguroRC:
 
         # Buscar factor de deducible mas cercano
         self.factor_deducible = self._buscar_factor_deducible(deducible)
+
+        warnings.warn(DISCLAIMER, ExperimentalModelWarning, stacklevel=2)
 
     @staticmethod
     def _buscar_factor_deducible(deducible: Decimal) -> Decimal:

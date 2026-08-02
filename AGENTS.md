@@ -23,6 +23,10 @@ simplification, where it is disclosed, and what replacing it would take. Synthet
 mortality and heuristic RCS factors sit under most life, pension, and capital figures,
 so a verified result is still not a professionally valid one. Keep those disclosures
 attached to the numbers, and extend the inventory when a change adds a new ceiling.
+The last open Class A item (LISR Art. 151 deductibility) closed on 2026-08-02:
+the global cap is applied against the statute's consolidated text, with the source
+and consultation date recorded in `validador_primas.py` and the residual limits
+(single-premium cap, income-absent branch) declared in the inventory.
 
 ## Central idea
 
@@ -74,7 +78,8 @@ The form should match the content: plain, exact, honest. Write and edit to this 
   model does and what it does not do. If something is uncertain or unfinished, say so.
 
 - **Language split.** Domain terms and narrative docs in Spanish; agent guidance (this
-  file, `frontend/AGENTS.md`) in English; UI copy in ES and EN through i18n. Identifiers
+  file, `frontend/AGENTS.md`) in English; dashboard UI copy in ES and EN through i18n
+  (`streamlit_app/` is Spanish-only today and has no i18n layer). Identifiers
   stay ASCII; Spanish prose keeps its accents.
 
 - **Plain structure.** Short sentences. Imperative for guardrails ("Do not alter...",
@@ -87,6 +92,16 @@ Python package, a FastAPI service, a Next.js dashboard, and a secondary Streamli
 app. Treat the actuarial formulas and regulatory parameters as controlled inputs; do
 not tweak them to make a test pass.
 
+Deployment is split (see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)): the dashboard
+static-exports to Cloudflare Pages, and the Docker image is API-only on Cloud Run —
+FastAPI no longer serves the frontend in production. In front of Cloud Run sits a
+Cloudflare Worker (`edge/`, covered by [`edge/AGENTS.md`](edge/AGENTS.md)) that is the
+only address the public reaches: it applies rate limiting, public CORS, caching of the
+annual configuration, and analytics of what the origin cannot see. It holds no
+actuarial logic and must not — every number still comes from the package. Breaking
+numeric changes are recorded in [`CHANGELOG.md`](CHANGELOG.md); telemetry setup is in
+[`docs/ANALYTICS.md`](docs/ANALYTICS.md).
+
 ## Structural conventions
 
 - **Spanish module names, English API router names.** Domain packages live under
@@ -94,7 +109,12 @@ not tweak them to make a test pass.
   `reservas/`, `reaseguro/`, `regulatorio/`, `config/`). The FastAPI routers that
   expose them use English names (`pricing.py`, `danos.py`, `salud.py`, `pensiones.py`,
   `reserves.py`, `reinsurance.py`, `regulatory.py`, `config.py`). Keep this mapping;
-  do not introduce mixed naming in new modules or routers.
+  do not introduce mixed naming in new modules or routers. Three shared packages sit
+  outside the Spanish-name rule: `core/` (Pydantic models, validators, product base),
+  `actuarial/` (English-named: mortality table loader, yield curves, life-pricing
+  formulas under `mortality/`, `interest/`, `pricing/`), and `api/` (the FastAPI
+  service). New shared actuarial machinery belongs in `actuarial/`; new domain
+  products belong in the Spanish packages.
 
 - **Domain logic lives in the package.** Routers validate requests and
   translate them into domain objects. Actuarial calculations, rounding, and
@@ -102,7 +122,15 @@ not tweak them to make a test pass.
 
 - **Shared validation stays in `core/`.** Do not duplicate domain rules in routers,
   frontend code, or Streamlit pages. Reuse `core/validators.py`, `core/models/`, and
-  `core/base_product.py`.
+  `core/base_product.py`. This is the target, not the current state: `danos/` and
+  `salud/` still do not use `core/` for most of their models. One divergence is
+  closed: sex used to be `M`/`F` in `salud/` and `H`/`M` in `core/`, so `"M"` meant
+  male in `/api/v1/salud/*` and female in `/api/v1/pricing/*`. There is now a single
+  `core.models.common.Sexo` with the full words `masculino`/`femenino`, and the three
+  legacy letters are rejected with a 422 everywhere. The EMSSA-09 CSV keeps its
+  published `H`/`M` column; `TablaMortalidad.desde_csv` is the one place that
+  translates it. Do not reintroduce a one-letter code, and do not spread the
+  remaining divergences; new code follows `core/`.
 
 - **Use `Decimal` for money, rates, reserves, and regulatory amounts.** Construct from
   strings (`Decimal("0.055")`). Convert to `float` only at explicit API/UI boundaries
@@ -121,7 +149,15 @@ not tweak them to make a test pass.
   `examples/labs/` with their narrative in `docs/labs/`; self-verifying worked cases
   per domain live in `examples/casos/`. Prefer extending these over adding one-off
   scripts, and keep the actuarial logic they exercise in the package, not in the
-  example.
+  example. `tests/unit/test_examples.py` is the gate: it runs every script through
+  `runpy` under `run_name="__main__"`, so a runtime break in a caso turns the suite
+  red. It also guards the gate itself — discovery has a floor and must hit both
+  directories (an empty parametrization would report green with nothing to run),
+  every script must still contain at least one `assert` (one that lost its checks
+  would pass forever), and each must print something (a body that stopped executing
+  would otherwise look fine). Adding a caso needs no change there; the glob picks it
+  up. If an example fails, the finding is in the example or the model it exercises —
+  do not relax the test to go green.
 
 ## Actuarial guardrails
 
@@ -145,6 +181,16 @@ not tweak them to make a test pass.
 
 - The frontend Next.js dashboard is covered by `frontend/AGENTS.md`. Follow it for UI
   conventions, design tokens, i18n, and the typed API client.
+
+- **Standing to-do: validate every API realm.** Each `/api/v1` realm (pricing, danos,
+  salud, pensiones, reserves, reinsurance, regulatory, config) must reach the same
+  bar before it counts as done: typed response models (no `dict[str, Any]`), values
+  backed by an oracle or identity a test enforces, `disclaimer`/`validation_tier`
+  present wherever an assumption is illustrative, and enumerated inputs rejected at
+  the boundary with a 422 naming the valid set. Realms below the bar today: `danos`
+  and `salud` (untyped responses, no disclosures, free-form enum inputs). When you
+  touch a realm, leave it at the bar or record in the session handoff exactly what
+  still fails it.
 
 ## CLI
 
@@ -177,7 +223,7 @@ real defect there the first time it ran: `streamlit_app/pages/6_Regulatorio.py` 
 
 Use the interpreter explicitly. The optional API extras (`fastapi`, `httpx`) live only
 in the virtualenv; running a bare `pytest` against the system interpreter makes the
-71 integration tests skip silently instead of running. To turn a missing extra into a
+111 integration tests skip silently instead of running. To turn a missing extra into a
 failure rather than a skip, set `SUITE_REQUIRE_API=1`. CI sets it.
 
 Refresh the virtualenv when the extras change; an existing `.venv` does not pick up a
@@ -190,7 +236,7 @@ newly declared dependency on its own:
 `viz` carries streamlit and plotly, without which `streamlit_app/` cannot be checked.
 A stale environment does not announce itself here — it makes a check disappear while
 the run still reports green. Both times this repo lost a check that way, the shape was
-the same: `openpyxl` missing made two Excel tests skip, and missing API extras made 71
+the same: `openpyxl` missing made two Excel tests skip, and missing API extras made the
 integration tests skip. If a gate suddenly has less to check, suspect the environment
 before believing the green.
 
@@ -209,7 +255,22 @@ For frontend work, run from `frontend/`:
 ```bash
 npm run lint
 npm run build
+npm run test:e2e
 ```
+
+All three run in CI. `test:e2e` is the only check on the Playwright specs in
+`frontend/tests/` (bilingual content integrity and public exposition); it serves the
+static export from `frontend/out/`, so it requires a prior `npm run build`.
+
+For the public API edge, run from `edge/`:
+
+```bash
+npm run typecheck
+npm test
+```
+
+Both run in CI. The tests execute inside workerd, the same runtime that serves
+production, so a behavioral difference shows up here rather than after deployment.
 
 ## Working practices
 

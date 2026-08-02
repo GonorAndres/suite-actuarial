@@ -3,6 +3,7 @@
 import math
 import os
 import secrets
+import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
@@ -23,10 +24,11 @@ from suite_actuarial.api.routers import (
     reserves,
     salud,
 )
+from suite_actuarial.api.telemetry import schedule_api_event
 
 app = FastAPI(
     title="suite_actuarial developer interface",
-    version="2.1.0",
+    version="2.2.0",
     description=(
         "Developer interface behind the open actuarial laboratory. "
         "Includes life product pricing (temporal, ordinario, dotal), "
@@ -67,19 +69,59 @@ app.add_middleware(
 
 
 @app.middleware("http")
+async def capture_api_request_metrics(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """Capture aggregate API health metrics when PostHog is configured.
+
+    The event contains only route, method, status, outcome, and duration. No
+    actuarial request data, response values, identity, IP, or query string is
+    sent. The network call is queued after the response path and cannot change
+    the API result.
+    """
+    tracked = request.url.path.startswith("/api/v1/") or request.url.path in {"/api/info"}
+    if not tracked:
+        return await call_next(request)
+    started_at = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        schedule_api_event(
+            route=request.url.path,
+            method=request.method,
+            status_code=500,
+            started_at=started_at,
+        )
+        raise
+    schedule_api_event(
+        route=request.url.path,
+        method=request.method,
+        status_code=response.status_code,
+        started_at=started_at,
+    )
+    return response
+
+
+@app.middleware("http")
 async def require_proxy_secret(
     request: Request,
     call_next: Callable[[Request], Awaitable[Response]],
 ) -> Response:
     """Reject traffic that did not arrive through the Cloudflare proxy.
 
-    Only active when `SUITE_PROXY_SHARED_SECRET` is set, which is how the dev
-    deployment is walled: the dev service is reachable on the open internet by
-    URL, so an unlisted address is not a boundary. The Cloudflare worker adds
-    the header server-side after Access has authenticated the visitor, so a
-    direct request to the Cloud Run URL gets 404 instead of a working API.
+    Only active when `SUITE_PROXY_SHARED_SECRET` is set. Both deployments set
+    it, for the same reason and to different ends.
 
-    Production leaves the variable unset and stays open, as intended.
+    In dev it is the wall: the service is reachable on the open internet by
+    URL, so an unlisted address is not a boundary. The Pages worker adds the
+    header server-side after Access has authenticated the visitor, so a direct
+    request to the Cloud Run URL gets 404 instead of a working API.
+
+    In production the API is public, but only through the edge worker in
+    `edge/`, which is what applies rate limiting. Without the secret the
+    `run.app` URL would be an unmetered way around that limit, so the header is
+    what makes the edge the only door rather than merely the front one.
 
     `/health` stays exempt so the container health check keeps working.
     """
@@ -129,7 +171,7 @@ def api_information() -> dict[str, str | list[str]]:
     """Return machine-readable project and developer-interface metadata."""
     return {
         "name": "suite_actuarial open laboratory",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "modules": [
             "config",
             "danos",

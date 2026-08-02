@@ -26,6 +26,12 @@ El archivo `emssa_09.csv` contiene tres columnas:
 
 Las filas estan ordenadas primero por sexo (H, luego M) y dentro de cada sexo por edad ascendente.
 
+La columna `sexo` conserva las iniciales publicadas porque el archivo es un insumo controlado y no
+se edita. El paquete, en cambio, usa una sola convencion en palabras completas: `masculino` y
+`femenino`. La traduccion `H -> masculino`, `M -> femenino` ocurre una unica vez, al leer el CSV en
+`TablaMortalidad.desde_csv`. Desde ahi en adelante ni la tabla en memoria ni la API aceptan
+iniciales.
+
 El archivo `metadata.json` contiene informacion descriptiva de la tabla: nombre completo, fuente,
 rango de edades, sexos disponibles, uso recomendado y notas sobre precision.
 

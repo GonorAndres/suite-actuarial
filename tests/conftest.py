@@ -26,13 +26,13 @@ def tabla_emssa09():
 @pytest.fixture(scope="session")
 def tabla_conmutacion_hombre(tabla_emssa09):
     """Commutation table for males at i=5.5%."""
-    return TablaConmutacion(tabla_emssa09, "H", Decimal("0.055"))
+    return TablaConmutacion(tabla_emssa09, "masculino", Decimal("0.055"))
 
 
 @pytest.fixture(scope="session")
 def tabla_conmutacion_mujer(tabla_emssa09):
     """Commutation table for females at i=5.5%."""
-    return TablaConmutacion(tabla_emssa09, "M", Decimal("0.055"))
+    return TablaConmutacion(tabla_emssa09, "femenino", Decimal("0.055"))
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def asegurado_35_h():
     """Standard insured: male, age 35, 1M MXN sum assured."""
     return Asegurado(
         edad=35,
-        sexo=Sexo.HOMBRE,
+        sexo=Sexo.MASCULINO,
         suma_asegurada=Decimal("1000000"),
     )
 
@@ -63,7 +63,7 @@ def asegurado_30_m():
     """Standard insured: female, age 30, 500K MXN sum assured."""
     return Asegurado(
         edad=30,
-        sexo=Sexo.MUJER,
+        sexo=Sexo.FEMENINO,
         suma_asegurada=Decimal("500000"),
     )
 

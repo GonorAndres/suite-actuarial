@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { VidaStory } from "@/components/stories";
+import { DomainGuide } from "@/components/guides/DomainGuide";
+import { DomainWorkspace } from "@/components/guides/DomainWorkspace";
+import { WorkbenchContext } from "@/components/guides/WorkbenchContext";
 import {
   Card,
   Button,
@@ -13,12 +16,20 @@ import {
   MetricCard,
   ProgressBar,
   Badge,
+  ErrorPanel,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
+import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { pricingApi } from "@/lib/api";
+import { etiquetaCampo } from "@/lib/field-display";
 import { formatCurrency } from "@/lib/utils";
-import type { PricingRequest, PricingResponse, CompareResponse } from "@/lib/types";
+import type {
+  PricingRequest,
+  PricingResponse,
+  CompareResponse,
+  Sexo,
+} from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n/translations";
 import {
   BarChart,
@@ -38,7 +49,7 @@ type ProductTab = "temporal" | "ordinario" | "dotal" | "comparar";
 
 interface FormState {
   edad: number;
-  sexo: "H" | "M";
+  sexo: Sexo;
   suma_asegurada: number;
   plazo_years: number;
   tasa_interes: number;
@@ -52,7 +63,7 @@ interface FormState {
 
 const DEFAULT_FORM: FormState = {
   edad: 35,
-  sexo: "H",
+  sexo: "masculino",
   suma_asegurada: 1_000_000,
   plazo_years: 20,
   tasa_interes: 0.055,
@@ -91,13 +102,13 @@ function ResultCard({
   const totalRecargos = recargosEntries.reduce((sum, [, val]) => sum + val, 0);
 
   const recargosSegments = recargosEntries.map(([key, val], i) => ({
-    label: key,
+    label: etiquetaCampo(key, t, "vida"),
     value: val,
     color: SERIES_COLORS[i % SERIES_COLORS.length],
   }));
 
   const pieData = recargosEntries.map(([key, val], i) => ({
-    name: key,
+    name: etiquetaCampo(key, t, "vida"),
     value: val,
     color: SERIES_COLORS[i % SERIES_COLORS.length],
   }));
@@ -249,8 +260,11 @@ function ResultCard({
 /* ── Page component ────────────────────────────────────────────────────── */
 
 export default function VidaPage() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<ProductTab>("temporal");
+  const { t, lang } = useLanguage();
+  const [activeTab, setActiveTab] = useLinkedWorkbenchTab<ProductTab>(
+    ["temporal", "ordinario", "dotal", "comparar"],
+    "temporal",
+  );
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [showRecargos, setShowRecargos] = useState(false);
 
@@ -314,7 +328,7 @@ export default function VidaPage() {
       if (tab === "dotal") void dotal.calculate(req);
       if (tab === "comparar") void compare.calculate(req);
     },
-    [buildRequest, temporal, ordinario, dotal, compare],
+    [buildRequest, temporal, ordinario, dotal, compare, setActiveTab],
   );
 
   const handleCalculate = useCallback(async () => {
@@ -351,8 +365,8 @@ export default function VidaPage() {
 
   const sexOptions = useMemo(
     () => [
-      { value: "H", label: t("masculino") },
-      { value: "M", label: t("femenino") },
+      { value: "masculino", label: t("masculino") },
+      { value: "femenino", label: t("femenino") },
     ],
     [t],
   );
@@ -380,7 +394,14 @@ export default function VidaPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("vida_contexto")}</p>
       </div>
 
-      <VidaStory />
+      <DomainWorkspace domain="vida" caseView={<DomainGuide domain="vida"><VidaStory /></DomainGuide>}>
+
+      <section id="workbench" className="scroll-mt-28 pt-3">
+        <p className="kicker mb-2">Workbench</p>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">
+          {lang === "es" ? "Calcula con tus propios supuestos" : "Calculate with your own assumptions"}
+        </h2>
+      </section>
 
       {/* Tabs */}
       <Tabs
@@ -388,6 +409,8 @@ export default function VidaPage() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
       />
+
+      <WorkbenchContext domain="vida" model={activeTab} />
 
       <p className="text-sm text-navy/55 -mt-5" aria-live="polite">
         {activeTab === "comparar"
@@ -415,7 +438,7 @@ export default function VidaPage() {
               options={sexOptions}
               value={form.sexo}
               onChange={(e) =>
-                updateField("sexo", e.target.value as "H" | "M")
+                updateField("sexo", e.target.value as Sexo)
               }
             />
             <Input
@@ -552,11 +575,7 @@ export default function VidaPage() {
 
       {/* Error display */}
       {errorMsg && (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-red-700 font-medium">
-            {t("error")}: {errorMsg}
-          </p>
-        </Card>
+        <ErrorPanel titulo={t("error_calculo_titulo")} mensaje={errorMsg} />
       )}
 
       {/* ── Section divider ─────────────────────────────────────────── */}
@@ -580,6 +599,7 @@ export default function VidaPage() {
         <CompareResults data={compare.data} t={t} />
       )}
 
+      </DomainWorkspace>
     </div>
   );
 }

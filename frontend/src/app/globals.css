@@ -300,10 +300,6 @@ h1, h2, h3, h4 {
 .video-section p, .evidence-section p, .open-section > p:not(.eyebrow) { color: rgba(24,34,45,.68); line-height: 1.65; }
 .video-frame { aspect-ratio: 16/9; border: 1px solid rgba(24,34,45,.2); background: #111923; color: white; }
 .video-frame iframe { width: 100%; height: 100%; border: 0; }
-.video-pending { display: grid; grid-template-columns: auto 1fr; align-content: center; gap: 1rem 1.5rem; height: 100%; padding: clamp(1.5rem, 4vw, 3rem); }
-.video-pending > span { grid-row: span 2; font-family: var(--font-serif); font-size: 3.5rem; color: #72c8cc; }
-.video-pending p { margin-top: .4rem; color: rgba(255,255,255,.6); font-size: .8rem; }
-.video-pending a { color: #72c8cc; font-size: .75rem; font-weight: 700; }
 .model-index { margin-top: 3rem; border-top: 2px solid var(--color-navy); }
 .model-index a { display: grid; grid-template-columns: 48px 1fr auto; gap: 1rem; align-items: start; padding: 1.4rem 0; border-bottom: 1px solid rgba(24,34,45,.16); }
 .model-index a > span { font-family: var(--font-mono); font-size: .7rem; color: var(--color-terracotta); }

@@ -1,5 +1,5 @@
 """
-Demo: Módulo de Vida -- suite_actuarial
+Demo del módulo de Vida de suite_actuarial.
 
 Calculadora interactiva de productos de seguros de vida
 (Temporal, Ordinario, Dotal) con tabla EMSSA-09.
@@ -92,7 +92,7 @@ with tab_lab:
         "supervivencia al vencimiento. Las primas se concentran en un periodo menor."
     )
     plazo_pago = st.slider("Años de pago de prima", 1, plazo, min(10, plazo))
-    sexo_modelo = Sexo.HOMBRE if sexo == "Hombre" else Sexo.MUJER
+    sexo_modelo = Sexo.MASCULINO if sexo == "Hombre" else Sexo.FEMENINO
     try:
         config_lab = ConfiguracionProducto(
             nombre_producto=f"Dotal educativo {plazo}/{plazo_pago}",
@@ -131,7 +131,7 @@ with tab_lab:
         st.caption(
             "Cada verificación contrasta el motor de valuación contra una ruta de "
             "cálculo independiente: las funciones de conmutación (Dx/Nx/Mx) para la "
-            "descomposición del beneficio, y la recursión de Fackler —retrospectiva— "
+            "descomposición del beneficio, y la recursión de Fackler, que es retrospectiva, "
             "para la trayectoria de la reserva, que se calcula de forma prospectiva."
         )
         st.write(
@@ -205,7 +205,7 @@ tabla = TablaMortalidad.cargar_emssa09()
 
 asegurado = Asegurado(
     edad={edad},
-    sexo=Sexo.{"HOMBRE" if sexo == "Hombre" else "MUJER"},
+    sexo=Sexo.{"MASCULINO" if sexo == "Hombre" else "FEMENINO"},
     suma_asegurada=Decimal("{suma_asegurada}"),
 )
 
@@ -291,7 +291,7 @@ tabla = TablaMortalidad.cargar_emssa09()
 
 asegurado = Asegurado(
     edad={edad},
-    sexo=Sexo.{"HOMBRE" if sexo == "Hombre" else "MUJER"},
+    sexo=Sexo.{"MASCULINO" if sexo == "Hombre" else "FEMENINO"},
     suma_asegurada=Decimal("{suma_asegurada}"),
 )
 tasa = Decimal("{tasa_decimal}")
@@ -363,7 +363,7 @@ with tab_reservas:
         )
 
     with st.expander("Ver código Python"):
-        sexo_enum = "HOMBRE" if sexo == "Hombre" else "MUJER"
+        sexo_enum = "MASCULINO" if sexo == "Hombre" else "FEMENINO"
         st.code(
             f'''from decimal import Decimal
 from suite_actuarial import (

@@ -14,6 +14,7 @@ from suite_actuarial.core.models.common import (  # noqa: F401
     Fumador,
     Moneda,
     Sexo,
+    normalizar_sexo,
 )
 from suite_actuarial.core.models.producto import (  # noqa: F401
     ConfiguracionProducto,
@@ -52,6 +53,7 @@ from suite_actuarial.core.models.reservas import (  # noqa: F401
 __all__ = [
     # Common
     "Sexo",
+    "normalizar_sexo",
     "Fumador",
     "Moneda",
     # Asegurado

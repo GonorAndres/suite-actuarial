@@ -13,7 +13,7 @@ from decimal import Decimal
 import numpy as np
 
 from suite_actuarial.actuarial.mortality.tablas import TablaMortalidad
-from suite_actuarial.core.models.common import Sexo
+from suite_actuarial.core.models.common import Sexo, normalizar_sexo
 
 
 class TablaConmutacion:
@@ -51,12 +51,11 @@ class TablaConmutacion:
 
         Args:
             tabla_mortalidad: TablaMortalidad instance
-            sexo: Sexo enum or str ("H"/"M")
+            sexo: Sexo enum or str ("masculino"/"femenino")
             tasa_interes: Decimal or float, e.g. 0.05 for 5%
             raiz: lx starting value (default 100,000)
         """
-        if isinstance(sexo, str):
-            sexo = Sexo(sexo)
+        sexo = normalizar_sexo(sexo)
         self.sexo = sexo
 
         # Mismo rango que `ConfiguracionProducto.tasa_interes_tecnico`, que ya

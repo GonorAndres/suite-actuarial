@@ -1,5 +1,5 @@
 """
-Demo: Módulo de Salud -- suite_actuarial
+Demo del módulo de Salud de suite_actuarial.
 
 Gastos Médicos Mayores (GMM): calculadora, simulador de gasto
 y curva de prima por edad.
@@ -64,8 +64,8 @@ with tab_calc:
         edad = st.slider("Edad del asegurado", 0, 85, 35, key="gmm_edad")
         sexo = st.radio(
             "Sexo",
-            ["M", "F"],
-            format_func=lambda x: "Masculino" if x == "M" else "Femenino",
+            ["masculino", "femenino"],
+            format_func=lambda x: "Masculino" if x == "masculino" else "Femenino",
             horizontal=True,
             key="gmm_sexo",
         )
@@ -167,6 +167,14 @@ with tab_calc:
     fig_factors.update_layout(showlegend=False, yaxis_title="Multiplicador")
     st.plotly_chart(fig_factors, use_container_width=True)
 
+    st.caption(
+        "Prima ilustrativa. Las tasas base por banda de edad no representan datos "
+        "del mercado asegurador mexicano, y la siniestralidad esperada se deriva "
+        "de la propia prima como prima/(1+margen) con margen de 30%: no es una "
+        "estimación independiente ni sale de frecuencia, severidad o tendencia "
+        "médica. El sexo se captura pero no altera la prima. No es una cotización."
+    )
+
     with st.expander("Ver código Python"):
         st.code(
             f'''from decimal import Decimal
@@ -207,6 +215,21 @@ with tab_gasto:
         "deducible, coaseguro del asegurado y pago de la aseguradora."
     )
 
+    # El tope de coaseguro no viene de la calculadora de la pestaña anterior:
+    # esta página lo fija en 10% de la suma asegurada. Es un supuesto de la
+    # demo, no un parámetro del producto ni una cifra normativa, y el reparto
+    # del gasto depende de él, así que se declara donde el usuario lo lee.
+    TOPE_COASEGURO_PCT = Decimal("0.10")
+    tope_coaseguro = (Decimal(str(sa)) * TOPE_COASEGURO_PCT).quantize(Decimal("0.01"))
+    st.info(
+        "**Supuesto de esta página:** tope de coaseguro = 10% de la suma "
+        f"asegurada = ${float(tope_coaseguro):,.2f}. Es un valor elegido para la "
+        "demostración: no es una cifra normativa, ni un valor por omisión del "
+        "producto, ni una referencia de mercado verificada. El modelo admite "
+        "cualquier tope, incluso ninguno, y el tope acota lo que paga el "
+        "asegurado por coaseguro, así que mueve directamente el reparto de abajo."
+    )
+
     monto_reclamacion = st.number_input(
         "Monto de la reclamación médica (MXN)",
         min_value=0,
@@ -224,7 +247,7 @@ with tab_gasto:
         suma_asegurada=Decimal(str(sa)),
         deducible=Decimal(str(deducible)),
         coaseguro_pct=Decimal(str(coaseguro_pct / 100)),
-        tope_coaseguro=Decimal(str(sa * 0.1)),  # Tope común: 10% de SA
+        tope_coaseguro=tope_coaseguro,
         zona=zona,
         nivel=nivel,
     )
@@ -309,6 +332,14 @@ with tab_gasto:
         hide_index=True,
     )
 
+    st.caption(
+        "El reparto aplica deducible, coaseguro y tope tal como los define la "
+        "póliza que configuraste, sobre un monto de reclamación que tú eliges: "
+        "no hay distribución de siniestros detrás, así que esto no dice qué tan "
+        "probable es ese gasto. Tampoco modela red hospitalaria, padecimientos "
+        "preexistentes, periodos de espera ni exclusiones del condicionado."
+    )
+
     with st.expander("Ver código Python"):
         st.code(
             f'''from decimal import Decimal
@@ -320,7 +351,7 @@ gmm = GMM(
     suma_asegurada=Decimal("{sa}"),
     deducible=Decimal("{deducible}"),
     coaseguro_pct=Decimal("{coaseguro_pct / 100}"),
-    tope_coaseguro=Decimal("{int(sa * 0.1)}"),
+    tope_coaseguro=Decimal("{tope_coaseguro}"),  # supuesto: 10% de la suma asegurada
     zona=ZonaGeografica.{zona.name},
     nivel=NivelHospitalario.{nivel.name},
 )
@@ -393,6 +424,13 @@ with tab_edad:
     )
     fig_edad.update_layout(yaxis_title="Prima anual (MXN)", showlegend=False)
     st.plotly_chart(fig_edad, use_container_width=True)
+
+    st.caption(
+        "La curva reproduce las tasas ilustrativas por banda quinquenal del "
+        "módulo: la pendiente muestra la forma que se les dio, no una curva de "
+        "morbilidad observada. Dentro de cada banda la prima es plana, y el "
+        "tramo 65+ agrupa todas las edades superiores en una sola tasa."
+    )
 
     st.dataframe(
         df_edades.style.format(

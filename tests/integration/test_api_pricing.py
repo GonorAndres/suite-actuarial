@@ -2,9 +2,11 @@
 
 import pytest
 
+from tests.integration.sexo_heredado import LETRAS_HEREDADAS, assert_rechaza_sexo_heredado
+
 VALID_PRICING_PAYLOAD = {
     "edad": 35,
-    "sexo": "H",
+    "sexo": "masculino",
     "suma_asegurada": 1_000_000,
     "plazo_years": 20,
     "tasa_interes": 0.055,
@@ -133,3 +135,27 @@ class TestPricingCompare:
         payload = {**VALID_PRICING_PAYLOAD, "sexo": "X"}
         response = api_client.post("/api/v1/pricing/compare", json=payload)
         assert response.status_code == 422
+
+
+class TestSexoHeredado:
+    """Las iniciales de la convencion vieja fallan fuerte en /api/v1/pricing/*.
+
+    Este router hablaba "H"/"M" (hombre/mujer). Ahora "H", "M" y "F" son las
+    tres invalidas: no hay ninguna que se reinterprete en silencio.
+    """
+
+    @pytest.mark.parametrize("letra", LETRAS_HEREDADAS)
+    @pytest.mark.parametrize(
+        "endpoint",
+        ["/api/v1/pricing/temporal", "/api/v1/pricing/ordinario", "/api/v1/pricing/dotal"],
+    )
+    def test_rechaza_letra_heredada(self, api_client, endpoint, letra):
+        payload = {**VALID_PRICING_PAYLOAD, "sexo": letra}
+        assert_rechaza_sexo_heredado(api_client.post(endpoint, json=payload), letra)
+
+    @pytest.mark.parametrize("letra", LETRAS_HEREDADAS)
+    def test_compare_rechaza_letra_heredada(self, api_client, letra):
+        payload = {**VALID_PRICING_PAYLOAD, "sexo": letra}
+        assert_rechaza_sexo_heredado(
+            api_client.post("/api/v1/pricing/compare", json=payload), letra
+        )

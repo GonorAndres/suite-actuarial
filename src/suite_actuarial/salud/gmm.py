@@ -18,16 +18,28 @@ La prima se calcula por bandas de edad quinquenales (0-4, 5-9, ..., 60-64, 65+).
 Referencia: Circular Unica de Seguros y Fianzas (CUSF), CNSF
 """
 
+import warnings
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 from typing import Any
 
+from suite_actuarial.config.schema import ValidationTier
+from suite_actuarial.core.models.common import Sexo, normalizar_sexo
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+
 DISCLAIMER = (
-    "AVISO: Las tasas base por banda de edad en este modulo son ILUSTRATIVAS "
-    "y no representan datos oficiales del mercado asegurador mexicano. "
-    "Para uso en produccion, reemplace con las tasas vigentes de su aseguradora "
-    "o las publicadas por la AMIS/CNSF."
+    "AVISO: las tasas base por banda de edad de este modulo son ILUSTRATIVAS y no "
+    "representan datos oficiales del mercado asegurador mexicano. El modelo tampoco "
+    "usa frecuencia, severidad ni tendencia medica: la siniestralidad esperada se "
+    "deriva de la propia prima como prima/(1+margen), asi que no es una estimacion "
+    "independiente de ella. El sexo se registra pero no altera la prima. Para uso "
+    "profesional, sustituya las tasas por las de su experiencia o por las "
+    "publicadas por AMIS/CNSF. Ver docs/AUDIT.md."
 )
+
+#: Nivel de respaldo de las cifras de este modulo. Los datos son ilustrativos,
+#: asi que ninguna salida puede presentarse como respaldada.
+VALIDATION_TIER = ValidationTier.EXPERIMENTAL.value
 
 
 class NivelHospitalario(StrEnum):
@@ -55,6 +67,11 @@ class GMM:
 
     Tambien simula la distribucion de un gasto medico entre asegurado
     y aseguradora (deducible, coaseguro, tope).
+
+    Al construirse emite `ExperimentalModelWarning` con `DISCLAIMER`: las tasas
+    base son ilustrativas y la siniestralidad esperada se deriva de la prima.
+    El aviso viaja tambien en la respuesta del API para que llegue a quien lee
+    la cifra, no solo a quien lee el codigo.
     """
 
     # Age-band base rates (annual per-mille of sum insured)
@@ -108,7 +125,7 @@ class GMM:
     def __init__(
         self,
         edad: int,
-        sexo: str,
+        sexo: Sexo | str,
         suma_asegurada: Decimal,
         deducible: Decimal,
         coaseguro_pct: Decimal,
@@ -120,7 +137,7 @@ class GMM:
         """
         Args:
             edad: Edad del asegurado (0-110).
-            sexo: 'M' (masculino) o 'F' (femenino).
+            sexo: 'masculino' o 'femenino' (o el miembro de `Sexo`).
             suma_asegurada: Suma asegurada en MXN (>= 1,000,000).
             deducible: Monto del deducible en MXN.
             coaseguro_pct: Porcentaje de coaseguro (ej: 0.10 = 10%).
@@ -130,8 +147,7 @@ class GMM:
         """
         if not (0 <= edad <= 110):
             raise ValueError("La edad debe estar entre 0 y 110 anos.")
-        if sexo not in ("M", "F"):
-            raise ValueError("El sexo debe ser 'M' o 'F'.")
+        sexo = normalizar_sexo(sexo)
         if suma_asegurada < Decimal("1000000"):
             raise ValueError("La suma asegurada minima para GMM es 1,000,000 MXN.")
         if deducible < 0:
@@ -179,6 +195,7 @@ class GMM:
         self.zona = zona
         self.nivel = nivel
         self.margen_operativo = Decimal(str(margen_operativo))
+        warnings.warn(DISCLAIMER, ExperimentalModelWarning, stacklevel=2)
 
     def _obtener_banda_edad(self) -> str:
         """Map age to quinquennial band."""
@@ -318,7 +335,7 @@ class GMM:
         return {
             "asegurado": {
                 "edad": self.edad,
-                "sexo": self.sexo,
+                "sexo": self.sexo.value,
                 "banda_edad": banda,
             },
             "producto": {

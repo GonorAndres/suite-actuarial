@@ -27,12 +27,12 @@ class TestAsegurado:
         """Un asegurado con datos válidos debe crearse sin problemas"""
         asegurado = Asegurado(
             edad=35,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             suma_asegurada=Decimal("1000000"),
         )
 
         assert asegurado.edad == 35
-        assert asegurado.sexo == Sexo.HOMBRE
+        assert asegurado.sexo == Sexo.MASCULINO
         assert asegurado.suma_asegurada == Decimal("1000000")
         assert asegurado.fumador == Fumador.NO_ESPECIFICADO
 
@@ -41,7 +41,7 @@ class TestAsegurado:
         with pytest.raises(ValidationError) as exc_info:
             Asegurado(
                 edad=-5,
-                sexo=Sexo.HOMBRE,
+                sexo=Sexo.MASCULINO,
                 suma_asegurada=Decimal("1000000"),
             )
 
@@ -52,7 +52,7 @@ class TestAsegurado:
         with pytest.raises(ValidationError) as exc_info:
             Asegurado(
                 edad=35,
-                sexo=Sexo.HOMBRE,
+                sexo=Sexo.MASCULINO,
                 suma_asegurada=Decimal("0"),
             )
 
@@ -63,7 +63,7 @@ class TestAsegurado:
         with pytest.raises(ValidationError) as exc_info:
             Asegurado(
                 edad=35,
-                sexo=Sexo.HOMBRE,
+                sexo=Sexo.MASCULINO,
                 suma_asegurada=Decimal("1e13"),  # 10 billones
             )
 
@@ -73,11 +73,11 @@ class TestAsegurado:
         """Debe aceptar sexo como string"""
         asegurado = Asegurado(
             edad=35,
-            sexo="H",
+            sexo="masculino",
             suma_asegurada=Decimal("1000000"),
         )
 
-        assert asegurado.sexo == Sexo.HOMBRE
+        assert asegurado.sexo == Sexo.MASCULINO
 
 
 class TestConfiguracionProducto:
@@ -168,7 +168,7 @@ class TestRegistroMortalidad:
         """Registro válido de mortalidad"""
         registro = RegistroMortalidad(
             edad=35,
-            sexo=Sexo.HOMBRE,
+            sexo=Sexo.MASCULINO,
             qx=Decimal("0.001234"),
             lx=98765,
         )
@@ -181,7 +181,7 @@ class TestRegistroMortalidad:
         with pytest.raises(ValidationError) as exc_info:
             RegistroMortalidad(
                 edad=35,
-                sexo=Sexo.HOMBRE,
+                sexo=Sexo.MASCULINO,
                 qx=Decimal("1.5"),  # Mayor a 1
             )
 
@@ -192,7 +192,7 @@ class TestRegistroMortalidad:
         with pytest.raises(ValidationError) as exc_info:
             RegistroMortalidad(
                 edad=35,
-                sexo=Sexo.HOMBRE,
+                sexo=Sexo.MASCULINO,
                 qx=Decimal("-0.001"),
             )
 

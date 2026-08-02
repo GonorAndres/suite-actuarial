@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "suite-actuarial"
-version = "2.1.0"
+version = "2.2.0"
 description = "Laboratorio actuarial abierto para construir, probar y comprender productos"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -37,6 +37,9 @@ dev = [
     "pytest-cov>=4.1.0",
     "hypothesis>=6.92.0",
     "httpx>=0.25.0",
+    # Starlette 1.x usa httpx2 para TestClient; httpx se conserva para
+    # compatibilidad con las versiones de FastAPI/Starlette aun soportadas.
+    "httpx2>=2.0.0",
     "ruff>=0.1.0",
     "mypy>=1.7.0",
     "pre-commit>=3.5.0",
@@ -97,7 +100,7 @@ where = ["src"]
 # `py.typed` (PEP 561) publica las anotaciones del paquete. Sin el, mypy trata
 # `suite_actuarial` como sin tipos cuando lo importa codigo de fuera del arbol
 # comprobado -- que es lo que pasaba con `examples/` y `streamlit_app/`.
-suite_actuarial = ["py.typed", "data/mortality_tables/*.csv", "data/mortality_tables/*.json"]
+suite_actuarial = ["py.typed", "data/mortality_tables/*.csv", "data/mortality_tables/*.json", "data/mortality_tables/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -102,3 +102,37 @@ jobs:
       run: npm run build
       env:
         NEXT_PUBLIC_API_URL: /api/v1
+
+    - name: Install browser
+      run: npx playwright install --with-deps chromium
+
+    - name: Frontend smoke tests
+      run: npm run test:e2e
+
+  # El borde publico del API. Sus pruebas corren dentro de workerd, el mismo
+  # runtime que sirve produccion, asi que una diferencia de comportamiento
+  # aparece aqui y no despues del despliegue.
+  edge:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: edge
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: edge/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Type check
+      run: npm run typecheck
+
+    - name: Test
+      run: npm test

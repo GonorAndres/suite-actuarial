@@ -10,13 +10,48 @@ from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from suite_actuarial.api.schemas import SolicitudBase
+from suite_actuarial.danos.auto import (
+    DISCLAIMER as AUTO_DISCLAIMER,
+)
+from suite_actuarial.danos.auto import (
+    VALIDATION_TIER as AUTO_VALIDATION_TIER,
+)
 from suite_actuarial.danos.auto import SeguroAuto
-from suite_actuarial.danos.frecuencia_severidad import ModeloColectivo
+from suite_actuarial.danos.frecuencia_severidad import (
+    DISCLAIMER as COLECTIVO_DISCLAIMER,
+)
+from suite_actuarial.danos.frecuencia_severidad import (
+    PARAMS_FRECUENCIA,
+    PARAMS_SEVERIDAD,
+    ModeloColectivo,
+    verificar_parametros,
+)
+from suite_actuarial.danos.frecuencia_severidad import (
+    VALIDATION_TIER as COLECTIVO_VALIDATION_TIER,
+)
+from suite_actuarial.danos.incendio import (
+    DISCLAIMER as INCENDIO_DISCLAIMER,
+)
+from suite_actuarial.danos.incendio import (
+    VALIDATION_TIER as INCENDIO_VALIDATION_TIER,
+)
 from suite_actuarial.danos.incendio import SeguroIncendio
+from suite_actuarial.danos.rc import (
+    DISCLAIMER as RC_DISCLAIMER,
+)
+from suite_actuarial.danos.rc import (
+    VALIDATION_TIER as RC_VALIDATION_TIER,
+)
 from suite_actuarial.danos.rc import SeguroRC
+from suite_actuarial.danos.tarifas import (
+    DISCLAIMER as BONUS_MALUS_DISCLAIMER,
+)
+from suite_actuarial.danos.tarifas import (
+    VALIDATION_TIER as BONUS_MALUS_VALIDATION_TIER,
+)
 from suite_actuarial.danos.tarifas import CalculadoraBonusMalus
 
 router = APIRouter(prefix="/danos", tags=["danos"])
@@ -77,15 +112,25 @@ class AutoResponse(BaseModel):
     subtotal: float
     bonus_malus: dict[str, Any]
     prima_total: float
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 @router.post("/auto/calcular", response_model=AutoResponse)
 def calcular_auto(req: AutoRequest) -> dict[str, Any]:
     """Generate a complete auto insurance quotation.
 
-    Calculates premiums per coverage using AMIS reference tables, zone
-    factors, driver age, deductible, depreciation, and optional Bonus-Malus
-    adjustment.
+    Calculates premiums per coverage from illustrative base rates and the
+    vehicle group, zone, driver age, deductible, depreciation, and optional
+    Bonus-Malus adjustment. The rates and factors reproduce the structure of an
+    auto tariff, not the values of any filed one, and do not come from AMIS or
+    from any insurer's experience; see the `disclaimer` field.
     """
     try:
         seguro = SeguroAuto(
@@ -104,6 +149,10 @@ def calcular_auto(req: AutoRequest) -> dict[str, Any]:
             historial_siniestros=req.historial_siniestros,
         )
         respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        # El aviso viaja con la cifra: quien consume el JSON no ve el
+        # ExperimentalModelWarning que emite el dominio al construirse.
+        respuesta["validation_tier"] = AUTO_VALIDATION_TIER
+        respuesta["disclaimer"] = AUTO_DISCLAIMER
         return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -142,6 +191,14 @@ class IncendioResponse(BaseModel):
     uso: str
     factor_uso: float
     prima_anual: float
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 @router.post("/incendio/calcular", response_model=IncendioResponse)
@@ -160,6 +217,8 @@ def calcular_incendio(req: IncendioRequest) -> dict[str, Any]:
         )
         cotizacion = seguro.generar_cotizacion()
         respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        respuesta["validation_tier"] = INCENDIO_VALIDATION_TIER
+        respuesta["disclaimer"] = INCENDIO_DISCLAIMER
         return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -192,6 +251,14 @@ class RCResponse(BaseModel):
     tasa_base: float
     factor_deducible: float
     prima_anual: float
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 @router.post("/rc/calcular", response_model=RCResponse)
@@ -209,6 +276,8 @@ def calcular_rc(req: RCRequest) -> dict[str, Any]:
         )
         cotizacion = seguro.generar_cotizacion()
         respuesta: dict[str, Any] = _decimal_to_float(cotizacion)
+        respuesta["validation_tier"] = RC_VALIDATION_TIER
+        respuesta["disclaimer"] = RC_DISCLAIMER
         return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -233,25 +302,39 @@ class BonusMalusResponse(BaseModel):
     siniestros: int
     nivel_nuevo: int
     factor: float
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 @router.post("/bonus-malus", response_model=BonusMalusResponse)
 def calcular_bonus_malus(req: BonusMalusRequest) -> BonusMalusResponse:
     """Calculate the Bonus-Malus level transition.
 
-    Applies the standard Mexican BMS scale: no claims = -1 level (discount),
-    1 claim = +2 levels, 2+ claims = +3 levels.
+    Applies an illustrative BMS scale: no claims = -1 level (discount),
+    1 claim = +2 levels, 2+ claims = +3 levels, clamped to the -5..3 range.
+    The levels, their factors, and these transition rules do not come from any
+    filed tariff; see the `disclaimer` field.
     """
     try:
         bms = CalculadoraBonusMalus(nivel_actual=req.nivel_actual)
         nivel_previo = bms.nivel_actual
         nivel_nuevo = bms.transicion(req.numero_siniestros)
         factor = float(bms.factor_actual())
+        # El aviso viaja con la cifra: quien consume el JSON no ve el
+        # ExperimentalModelWarning que emite el dominio al construirse.
         return BonusMalusResponse(
             nivel_previo=nivel_previo,
             siniestros=req.numero_siniestros,
             nivel_nuevo=nivel_nuevo,
             factor=factor,
+            validation_tier=BONUS_MALUS_VALIDATION_TIER,
+            disclaimer=BONUS_MALUS_DISCLAIMER,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -306,6 +389,33 @@ class FrecuenciaSeveridadRequest(SolicitudBase):
                 )
         return v
 
+    @model_validator(mode="after")
+    def _parametros_de_cada_distribucion(self) -> "FrecuenciaSeveridadRequest":
+        """Exige los nombres de parametro que pide cada distribucion elegida.
+
+        Las distribuciones se construyen indexando el diccionario recibido, de
+        modo que `{"lambda": 5.0}` en lugar de `{"lambda_": 5.0}` -- o un
+        `pareto` sin `scale` -- reventaba como `KeyError` dentro del modelo y
+        salia como 500 con traceback. Validarlo aqui lo convierte en un 422 que
+        nombra el juego valido, sin exponer nada interno.
+
+        El nombre de la distribucion se sigue validando en el dominio: si es
+        desconocido, `ModeloColectivo` lo rechaza con su lista de opciones.
+        """
+        verificar_parametros(
+            self.dist_frecuencia,
+            self.params_frecuencia,
+            PARAMS_FRECUENCIA,
+            "params_frecuencia",
+        )
+        verificar_parametros(
+            self.dist_severidad,
+            self.params_severidad,
+            PARAMS_SEVERIDAD,
+            "params_severidad",
+        )
+        return self
+
 
 class FrecuenciaSeveridadResponse(BaseModel):
     """Response for the collective risk model simulation."""
@@ -321,14 +431,24 @@ class FrecuenciaSeveridadResponse(BaseModel):
     minimo: float
     maximo: float
     simulaciones: int
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 @router.post("/frecuencia-severidad", response_model=FrecuenciaSeveridadResponse)
 def calcular_frecuencia_severidad(req: FrecuenciaSeveridadRequest) -> dict[str, Any]:
     """Run a collective risk model simulation (S = X1 + ... + XN).
 
-    Fits frequency and severity distributions, runs Monte Carlo simulation,
-    and returns risk measures including VaR, TVaR, and pure premium.
+    Takes the frequency and severity parameters given in the request -- it does
+    not fit them to any data -- runs a Monte Carlo simulation, and returns risk
+    measures including VaR, TVaR, and the pure premium. See the `disclaimer`
+    field for what the figures do and do not account for.
     """
     try:
         modelo = ModeloColectivo(
@@ -342,6 +462,10 @@ def calcular_frecuencia_severidad(req: FrecuenciaSeveridadRequest) -> dict[str, 
             seed=req.seed,
         )
         respuesta: dict[str, Any] = _decimal_to_float(stats)
+        # El aviso viaja con la cifra: quien consume el JSON no ve el
+        # ExperimentalModelWarning que emite el dominio al construirse.
+        respuesta["validation_tier"] = COLECTIVO_VALIDATION_TIER
+        respuesta["disclaimer"] = COLECTIVO_DISCLAIMER
         return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

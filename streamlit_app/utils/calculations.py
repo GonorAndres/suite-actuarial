@@ -37,7 +37,7 @@ def crear_asegurado(
     Returns:
         Objeto Asegurado validado
     """
-    sexo_enum = Sexo.HOMBRE if sexo == "Hombre" else Sexo.MUJER
+    sexo_enum = Sexo.MASCULINO if sexo == "Hombre" else Sexo.FEMENINO
 
     return Asegurado(
         edad=edad,

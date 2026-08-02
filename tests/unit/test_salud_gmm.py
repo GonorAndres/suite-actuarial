@@ -11,11 +11,19 @@ Tests para Gastos Medicos Mayores (GMM).
 - Relaciones monotónicas (mayor edad = mayor prima, mayor deducible = menor prima)
 """
 
+import warnings
 from decimal import Decimal
 
 import pytest
 
-from suite_actuarial.salud.gmm import GMM, NivelHospitalario, ZonaGeografica
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+from suite_actuarial.salud.gmm import (
+    DISCLAIMER,
+    GMM,
+    VALIDATION_TIER,
+    NivelHospitalario,
+    ZonaGeografica,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -27,7 +35,7 @@ def gmm_base():
     """GMM estandar: 35 anos, CDMX, nivel medio, deducible 50k, coaseguro 10%."""
     return GMM(
         edad=35,
-        sexo="M",
+        sexo="masculino",
         suma_asegurada=Decimal("5000000"),
         deducible=Decimal("50000"),
         coaseguro_pct=Decimal("0.10"),
@@ -42,7 +50,7 @@ def gmm_joven():
     """GMM para bebe: edad 0."""
     return GMM(
         edad=0,
-        sexo="F",
+        sexo="femenino",
         suma_asegurada=Decimal("3000000"),
         deducible=Decimal("25000"),
         coaseguro_pct=Decimal("0.10"),
@@ -56,7 +64,7 @@ def gmm_senior():
     """GMM para adulto mayor: edad 68."""
     return GMM(
         edad=68,
-        sexo="M",
+        sexo="masculino",
         suma_asegurada=Decimal("10000000"),
         deducible=Decimal("100000"),
         coaseguro_pct=Decimal("0.20"),
@@ -73,31 +81,31 @@ def gmm_senior():
 
 class TestBandasEdad:
     def test_banda_edad_0(self):
-        g = GMM(0, "M", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+        g = GMM(0, "masculino", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
         assert g._obtener_banda_edad() == "0-4"
 
     def test_banda_edad_4(self):
-        g = GMM(4, "F", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+        g = GMM(4, "femenino", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
         assert g._obtener_banda_edad() == "0-4"
 
     def test_banda_edad_5(self):
-        g = GMM(5, "M", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+        g = GMM(5, "masculino", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
         assert g._obtener_banda_edad() == "5-9"
 
     def test_banda_edad_25(self):
-        g = GMM(25, "M", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+        g = GMM(25, "masculino", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
         assert g._obtener_banda_edad() == "25-29"
 
     def test_banda_edad_64(self):
-        g = GMM(64, "M", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+        g = GMM(64, "masculino", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
         assert g._obtener_banda_edad() == "60-64"
 
     def test_banda_edad_65(self):
-        g = GMM(65, "M", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+        g = GMM(65, "masculino", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
         assert g._obtener_banda_edad() == "65+"
 
     def test_banda_edad_100(self):
-        g = GMM(100, "F", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+        g = GMM(100, "femenino", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
         assert g._obtener_banda_edad() == "65+"
 
 
@@ -113,7 +121,7 @@ class TestPrimaBase:
 
     def test_prima_base_calculo_manual(self):
         """Edad 35 => banda 35-39, tasa 9.0, SA 5M => (5M/1000)*9 = 45000."""
-        g = GMM(35, "M", Decimal("5000000"), Decimal("50000"), Decimal("0.10"))
+        g = GMM(35, "masculino", Decimal("5000000"), Decimal("50000"), Decimal("0.10"))
         prima = g.calcular_prima_base()
         assert prima == Decimal("45000.00")
 
@@ -137,7 +145,7 @@ class TestFactores:
     def test_factor_zona_metro(self):
         g_metro = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.10"),
@@ -146,7 +154,7 @@ class TestFactores:
         )
         g_urbano = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.10"),
@@ -158,7 +166,7 @@ class TestFactores:
     def test_factor_zona_foraneo_menor(self):
         g_foraneo = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.10"),
@@ -167,7 +175,7 @@ class TestFactores:
         )
         g_urbano = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.10"),
@@ -179,7 +187,7 @@ class TestFactores:
     def test_factor_nivel_alto_mayor(self):
         g_alto = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.10"),
@@ -187,7 +195,7 @@ class TestFactores:
         )
         g_medio = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.10"),
@@ -198,7 +206,7 @@ class TestFactores:
     def test_factor_nivel_estandar_menor(self):
         g_estandar = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.10"),
@@ -206,7 +214,7 @@ class TestFactores:
         )
         g_medio = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.10"),
@@ -217,14 +225,14 @@ class TestFactores:
     def test_deducible_alto_menor_prima(self):
         g_ded_alto = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("500000"),
             Decimal("0.10"),
         )
         g_ded_bajo = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("10000"),
             Decimal("0.10"),
@@ -234,14 +242,14 @@ class TestFactores:
     def test_coaseguro_alto_menor_prima(self):
         g_coa_30 = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.30"),
         )
         g_coa_10 = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("50000"),
             Decimal("0.10"),
@@ -252,7 +260,7 @@ class TestFactores:
         """Deducible no estandar (75000) se interpola linealmente."""
         g = GMM(
             35,
-            "M",
+            "masculino",
             Decimal("5000000"),
             Decimal("75000"),
             Decimal("0.10"),
@@ -274,7 +282,7 @@ class TestEdadMonotona:
         for edad in [20, 35, 50, 65]:
             g = GMM(
                 edad,
-                "M",
+                "masculino",
                 Decimal("5000000"),
                 Decimal("50000"),
                 Decimal("0.10"),
@@ -300,7 +308,7 @@ class TestDesglose:
     def test_desglose_asegurado(self, gmm_base):
         desglose = gmm_base.desglose_prima()
         assert desglose["asegurado"]["edad"] == 35
-        assert desglose["asegurado"]["sexo"] == "M"
+        assert desglose["asegurado"]["sexo"] == "masculino"
         assert desglose["asegurado"]["banda_edad"] == "35-39"
 
     def test_desglose_tarificacion_coherente(self, gmm_base):
@@ -374,19 +382,34 @@ class TestSimulacionGasto:
 class TestValidaciones:
     def test_edad_negativa(self):
         with pytest.raises(ValueError, match="edad"):
-            GMM(-1, "M", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+            GMM(-1, "masculino", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
 
     def test_edad_mayor_110(self):
         with pytest.raises(ValueError, match="edad"):
-            GMM(111, "M", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+            GMM(111, "masculino", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
 
     def test_sexo_invalido(self):
-        with pytest.raises(ValueError, match="sexo"):
+        with pytest.raises(ValueError, match="Sexo no valido"):
             GMM(35, "X", Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+
+    @pytest.mark.parametrize("heredado", ["H", "M", "F"])
+    def test_sexo_heredado_de_una_letra_es_rechazado(self, heredado):
+        """Las tres iniciales de la convencion vieja fallan, y el error las nombra.
+
+        Antes de la unificacion, "M" significaba masculino aqui y mujer en
+        `vida/` y `pensiones/`. Si GMM siguiera aceptando una letra, un cliente
+        viejo del router de salud cambiaria de sexo en silencio al migrar. El
+        rechazo tiene que ser explicito y decir cuales son los valores validos.
+        """
+        with pytest.raises(ValueError) as exc:
+            GMM(35, heredado, Decimal("1000000"), Decimal("50000"), Decimal("0.10"))
+        mensaje = str(exc.value)
+        assert "masculino" in mensaje
+        assert "femenino" in mensaje
 
     def test_suma_asegurada_minima(self):
         with pytest.raises(ValueError, match="minima"):
-            GMM(35, "M", Decimal("500000"), Decimal("50000"), Decimal("0.10"))
+            GMM(35, "masculino", Decimal("500000"), Decimal("50000"), Decimal("0.10"))
 
 
 class TestDeducibleMenorQueSumaAsegurada:
@@ -402,7 +425,7 @@ class TestDeducibleMenorQueSumaAsegurada:
         with pytest.raises(ValueError, match="debe ser menor que la suma"):
             GMM(
                 edad=40,
-                sexo="M",
+                sexo="masculino",
                 suma_asegurada=Decimal("1000000"),
                 deducible=Decimal("2000000"),
                 coaseguro_pct=Decimal("0.10"),
@@ -413,7 +436,7 @@ class TestDeducibleMenorQueSumaAsegurada:
         with pytest.raises(ValueError, match="debe ser menor que la suma"):
             GMM(
                 edad=40,
-                sexo="M",
+                sexo="masculino",
                 suma_asegurada=Decimal("1000000"),
                 deducible=Decimal("1000000"),
                 coaseguro_pct=Decimal("0.10"),
@@ -422,7 +445,7 @@ class TestDeducibleMenorQueSumaAsegurada:
     def test_un_deducible_normal_sigue_construyendo(self):
         gmm = GMM(
             edad=40,
-            sexo="M",
+            sexo="masculino",
             suma_asegurada=Decimal("1000000"),
             deducible=Decimal("20000"),
             coaseguro_pct=Decimal("0.10"),
@@ -445,7 +468,7 @@ class TestFactorCoaseguroInterpola:
     def _gmm(coaseguro: str) -> GMM:
         return GMM(
             edad=40,
-            sexo="M",
+            sexo="masculino",
             suma_asegurada=Decimal("1000000"),
             deducible=Decimal("20000"),
             coaseguro_pct=Decimal(coaseguro),
@@ -475,3 +498,43 @@ class TestFactorCoaseguroInterpola:
         """Antes devolvía en silencio el factor del extremo más cercano."""
         with pytest.raises(ValueError, match="rango que la tabla de factores tarifa"):
             self._gmm(fuera)
+
+
+class TestAvisoDeAlcance:
+    """El producto debe declarar su alcance al construirse, no solo en el docstring.
+
+    `DISCLAIMER` existia como constante desde el inicio y ningun modulo la
+    importaba: un usuario podia construir un GMM, obtener una prima y no
+    enterarse nunca de que la tasa base es ilustrativa.
+    """
+
+    def test_construir_emite_experimental_model_warning(self):
+        with pytest.warns(ExperimentalModelWarning, match="ILUSTRATIVAS"):
+            GMM(
+                edad=35,
+                sexo="masculino",
+                suma_asegurada=Decimal("5000000"),
+                deducible=Decimal("50000"),
+                coaseguro_pct=Decimal("0.10"),
+            )
+
+    def test_el_aviso_nombra_la_circularidad_de_la_siniestralidad(self):
+        """`siniestralidad = prima/(1+margen)` no es una estimacion independiente."""
+        assert "prima/(1+margen)" in DISCLAIMER
+
+    def test_una_entrada_invalida_no_emite_el_aviso(self):
+        """El aviso acompaña a un producto construido, no a un rechazo."""
+        with warnings.catch_warnings(record=True) as capturadas:
+            warnings.simplefilter("always")
+            with pytest.raises(ValueError):
+                GMM(
+                    edad=35,
+                    sexo="masculino",
+                    suma_asegurada=Decimal("5000000"),
+                    deducible=Decimal("5000000"),
+                    coaseguro_pct=Decimal("0.10"),
+                )
+        assert not [c for c in capturadas if issubclass(c.category, ExperimentalModelWarning)]
+
+    def test_el_nivel_de_respaldo_es_experimental(self):
+        assert VALIDATION_TIER == "experimental"

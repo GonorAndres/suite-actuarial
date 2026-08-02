@@ -9,6 +9,51 @@ _CONFIGS: dict[int, ConfigAnual] = {}
 _SUPPORTED_YEARS = (2024, 2025, 2026)
 
 
+class ConfiguracionNoDisponibleError(ModuleNotFoundError):
+    """La fecha o el ano solicitado cae fuera de los perfiles empaquetados.
+
+    El paquete solo contiene perfiles con parametros publicados y con fuente.
+    Cuando la cobertura se agota no se inventan parametros futuros ni se
+    reutiliza en silencio el ultimo perfil: se corta aqui con un error tipado
+    que nombra el rango cubierto, para que quien lo atrape pueda decirlo.
+
+    Hereda de ``ModuleNotFoundError`` a proposito: las rutas que ya atrapaban
+    ese tipo (CLI, router de config, carga de tablas) siguen funcionando sin
+    cambios, y quien necesite distinguir este caso puede atrapar el tipo
+    especifico.
+    """
+
+
+def _hoy() -> date:
+    """Fecha de hoy del servidor.
+
+    Existe como funcion para que las pruebas puedan sustituirla y ejercitar la
+    ruta en la que la fecha por omision cae fuera de la cobertura empaquetada.
+    """
+    return date.today()
+
+
+def rango_cobertura() -> tuple[date, date | None]:
+    """Devuelve el primer y ultimo dia cubiertos por los perfiles empaquetados.
+
+    Returns:
+        Tupla ``(inicio, fin)``. ``fin`` es ``None`` si algun perfil no declara
+        ``effective_to``, es decir, si la cobertura esta abierta por la derecha.
+    """
+    perfiles = _todos_los_perfiles()
+    inicio = min(p.effective_from or date(p.anio, 1, 1) for p in perfiles)
+    fines = [p.effective_to for p in perfiles if p.effective_to is not None]
+    fin = max(fines) if len(fines) == len(perfiles) else None
+    return inicio, fin
+
+
+def _texto_cobertura() -> str:
+    """Describe el rango cubierto para incluirlo en los mensajes de error."""
+    inicio, fin = rango_cobertura()
+    fin_txt = fin.isoformat() if fin is not None else "sin fecha de cierre"
+    return f"{inicio.isoformat()} a {fin_txt}"
+
+
 def _cargar_anio(anio: int) -> ConfigAnual:
     """Carga un modulo anual sin descargar datos de internet."""
     if anio not in _CONFIGS:
@@ -16,7 +61,7 @@ def _cargar_anio(anio: int) -> ConfigAnual:
             module = importlib.import_module(f"suite_actuarial.config.config_{anio}")
         except ModuleNotFoundError as err:
             available = sorted(_CONFIGS.keys()) or list(_SUPPORTED_YEARS)
-            raise ModuleNotFoundError(
+            raise ConfiguracionNoDisponibleError(
                 f"No existe configuracion para el ano {anio}. Disponibles: {available}."
             ) from err
         config = module.CONFIG
@@ -75,11 +120,12 @@ def cargar_config(anio: int | None = None) -> ConfigAnual:
     de modo que ambas rutas publicas respetan la vigencia de febrero de UMA.
     """
     if anio is None:
-        return cargar_config_fecha(date.today())
+        return cargar_config_fecha(_hoy())
     if anio not in _SUPPORTED_YEARS:
-        raise ModuleNotFoundError(
+        raise ConfiguracionNoDisponibleError(
             f"No existe configuracion oficial para el ano {anio}. "
-            f"Disponibles: {list(_SUPPORTED_YEARS)}. "
+            f"Disponibles: {list(_SUPPORTED_YEARS)} "
+            f"(cobertura {_texto_cobertura()}). "
             f"No se crean perfiles futuros antes de su publicacion."
         )
     return _cargar_anio(anio)
@@ -89,8 +135,13 @@ def cargar_config_fecha(fecha: date | datetime | str) -> ConfigAnual:
     """Selecciona el perfil vigente en una fecha, sin llamadas de red.
 
     Enero conserva el perfil de UMA del año anterior; el perfil del nuevo año
-    entra en vigor el 1 de febrero. Las fechas posteriores al ultimo snapshot
-    oficial se rechazan explícitamente.
+    entra en vigor el 1 de febrero. Las fechas fuera del rango cubierto se
+    rechazan con :class:`ConfiguracionNoDisponibleError`, que nombra ese rango.
+
+    Raises:
+        TypeError: Si ``fecha`` no es date, datetime ni ISO-8601.
+        ConfiguracionNoDisponibleError: Si la fecha cae fuera de la cobertura
+            de los perfiles empaquetados.
     """
     if isinstance(fecha, datetime):
         fecha = fecha.date()
@@ -104,22 +155,31 @@ def cargar_config_fecha(fecha: date | datetime | str) -> ConfigAnual:
     # este cargador. Un perfil sin effective_to se considera abierto.
     fines = [perfil.effective_to for perfil in perfiles if perfil.effective_to is not None]
     if len(fines) == len(perfiles) and fecha > max(fines):
-        raise ModuleNotFoundError(
-            f"No existe snapshot oficial para {fecha.isoformat()} "
-            f"(cobertura hasta {max(fines).isoformat()}); use un perfil user_supplied."
+        raise ConfiguracionNoDisponibleError(
+            f"No existe snapshot oficial para {fecha.isoformat()}. "
+            f"Cobertura de perfiles empaquetados: {_texto_cobertura()}. "
+            f"No se extrapolan parametros regulatorios: agregue "
+            f"config/config_<anio>.py cuando se publiquen, o use un perfil "
+            f"user_supplied."
         )
     for perfil in reversed(perfiles):
         inicio = perfil.effective_from or date(perfil.anio, 1, 1)
         fin = perfil.effective_to
         if inicio <= fecha and (fin is None or fecha <= fin):
             return perfil
-    primer_inicio = min(p.effective_from or date(p.anio, 1, 1) for p in perfiles)
-    raise ModuleNotFoundError(
-        f"No existe snapshot oficial para {fecha.isoformat()} "
-        f"(cobertura desde {primer_inicio.isoformat()}); use un perfil user_supplied."
+    raise ConfiguracionNoDisponibleError(
+        f"No existe snapshot oficial para {fecha.isoformat()}. "
+        f"Cobertura de perfiles empaquetados: {_texto_cobertura()}. "
+        f"No se extrapolan parametros regulatorios: use un perfil user_supplied."
     )
 
 
 def config_vigente() -> ConfigAnual:
-    """Carga la configuracion vigente para hoy."""
-    return cargar_config_fecha(date.today())
+    """Carga la configuracion vigente para hoy.
+
+    Raises:
+        ConfiguracionNoDisponibleError: Si la fecha de hoy ya no esta cubierta
+            por ningun perfil empaquetado. El error se propaga a proposito: es
+            preferible a devolver el ultimo perfil como si siguiera vigente.
+    """
+    return cargar_config_fecha(_hoy())

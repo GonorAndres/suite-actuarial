@@ -35,7 +35,7 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.markdown("**Versión:** 2.1.0")
+    st.markdown("**Versión:** 2.2.0")
     st.markdown("**Autor:** Andrés González Ortega")
     st.markdown("**Licencia:** MIT")
 
@@ -51,11 +51,11 @@ with st.sidebar:
 # Titulo
 # -----------------------------------------------------------------------
 render_workbench_intro(
-    "ANALYST SANDBOX · MÉXICO",
-    "Construye, prueba y comprende modelos actuariales",
-    "Interfaz de exploración libre para modificar supuestos, comparar métodos y "
-    "examinar evidencia. La experiencia guiada principal vive en el laboratorio "
-    "Next.js; este espacio favorece análisis densos y rápidos.",
+    "BANCO DE TRABAJO · MÉXICO",
+    "Construye, prueba y entiende modelos actuariales",
+    "Espacio de exploración libre para mover supuestos, comparar métodos y revisar "
+    "evidencia. El recorrido guiado principal está en la plataforma web; esta "
+    "interfaz está pensada para análisis rápidos y densos.",
 )
 
 st.markdown(
@@ -88,7 +88,7 @@ with col2:
     st.subheader("Daños")
     st.markdown(
         """
-- Seguro de **auto** con tarificación AMIS (grupos, zonas, factores)
+- Seguro de **auto**: estructura tarifaria por grupo, zona y factores (tasas ilustrativas)
 - Modelo colectivo **frecuencia-severidad** (Monte Carlo)
 - Sistema **Bonus-Malus** escala mexicana
 - **Credibilidad** de Bühlmann y Bühlmann-Straub
@@ -183,7 +183,7 @@ config = ConfiguracionProducto(
     tasa_interes_tecnico=Decimal("0.05"),
 )
 producto = VidaTemporal(config, tabla)
-asegurado = Asegurado(edad=35, sexo="H", suma_asegurada=Decimal("1000000"))
+asegurado = Asegurado(edad=35, sexo="masculino", suma_asegurada=Decimal("1000000"))
 resultado = producto.calcular_prima(asegurado, frecuencia_pago="mensual")
 print(f"Prima mensual: ${resultado.prima_total:,.2f}")
 
@@ -201,7 +201,7 @@ print(f"Prima total auto: ${cotizacion['prima_total']:,.2f}")
 # --- Salud: prima GMM ---
 from suite_actuarial.salud import GMM, ZonaGeografica, NivelHospitalario
 gmm = GMM(
-    edad=40, sexo="M",
+    edad=40, sexo="masculino",
     suma_asegurada=Decimal("5000000"),
     deducible=Decimal("50000"),
     coaseguro_pct=Decimal("0.10"),
@@ -233,7 +233,7 @@ st.markdown(
     ilustrativos no sustituyen métodos registrados, asesoría fiscal ni determinaciones
     oficiales de CNSF, SAT o IMSS. Valida los resultados con un actuario certificado
     antes de usarlos en producción.</p>
-    <p>suite_actuarial v2.1.0 | MIT License</p>
+    <p>suite_actuarial v2.2.0 | MIT License</p>
 </div>
 """,
     unsafe_allow_html=True,

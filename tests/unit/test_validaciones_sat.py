@@ -13,6 +13,8 @@ from suite_actuarial.config.loader import config_vigente
 from suite_actuarial.config.schema import TasasSAT
 from suite_actuarial.regulatorio.validaciones_sat import (
     CalculadoraRetencionesISR,
+    EstadoFiscal,
+    EstadoTopeGlobal,
     TipoSeguroFiscal,
     ValidadorPrimasDeducibles,
     ValidadorSiniestrosGravables,
@@ -55,8 +57,16 @@ def calculadora_retenciones():
 class TestValidadorPrimasDeducibles:
     """Tests para ValidadorPrimasDeducibles"""
 
-    def test_gastos_medicos_persona_fisica_deducible(self, validador_primas):
-        """GMM debe ser 100% deducible para personas físicas"""
+    def test_gastos_medicos_persona_fisica_es_deducible_pero_topada(self, validador_primas):
+        """GMM es deducible, pero nunca "sin límite".
+
+        Esta prueba fijaba antes el defecto: exigía 100% deducible. El último
+        párrafo del Art. 151 LISR topa el total de deducciones personales, y la
+        prima de GMM (fracc. VI) queda dentro de ese tope. Con la UMA de la
+        fixture (37,500) el tope de 5 UMA es 187,500, muy por encima de una
+        prima de 50,000, así que el monto no se recorta; lo que sí cambia es
+        que el resultado ya declara qué pasó con el tope.
+        """
         resultado = validador_primas.validar_deducibilidad(
             tipo_seguro=TipoSeguroFiscal.GASTOS_MEDICOS,
             monto_prima=Decimal("50000"),
@@ -67,6 +77,10 @@ class TestValidadorPrimasDeducibles:
         assert resultado.monto_deducible == Decimal("50000")
         assert resultado.porcentaje_deducible == Decimal("100")
         assert "151" in resultado.fundamento_legal
+        # La fracción es la VI (primas de GMM), no la I (honorarios médicos).
+        assert "fracc. VI" in resultado.fundamento_legal
+        # Sin el ingreso total, la rama del 15% no pudo evaluarse y se dice.
+        assert resultado.tope_global == EstadoTopeGlobal.PARCIAL_SIN_INGRESOS
 
     def test_vida_persona_fisica_no_deducible(self, validador_primas):
         """Seguros de vida NO deducibles para personas físicas"""
@@ -95,7 +109,7 @@ class TestValidadorPrimasDeducibles:
         assert resultado.es_deducible is True
         assert resultado.monto_deducible == limite_esperado
         assert resultado.monto_deducible < prima_alta
-        assert "5 UMAs" in resultado.limite_aplicado
+        assert "5 UMA anuales" in resultado.limite_aplicado
 
     def test_pensiones_persona_fisica_bajo_limite(self, validador_primas):
         """Pensiones bajo el límite deben ser 100% deducibles"""
@@ -168,6 +182,251 @@ class TestValidadorPrimasDeducibles:
 
         assert resultado.es_deducible is True
         assert resultado.monto_deducible == Decimal("50000")
+
+
+class TestTopeGlobalArt151:
+    """Tope global de deducciones personales, último párrafo del Art. 151 LISR.
+
+    Texto aplicado (Ley del ISR, texto vigente consolidado por la Cámara de
+    Diputados, última reforma DOF 01-04-2024, consultado el 2026-08-02 en
+    https://www.diputados.gob.mx/LeyesBiblio/pdf/LISR.pdf):
+
+        "El monto total de las deducciones que podrán efectuar los
+        contribuyentes en los términos de este artículo, no podrá exceder de la
+        cantidad que resulte menor entre cinco veces el valor anual de la
+        Unidad de Medida y Actualización, o del 15% del total de los ingresos
+        del contribuyente, incluyendo aquéllos por los que no se pague el
+        impuesto. Lo dispuesto en este párrafo no será aplicable tratándose de
+        la fracción V de este artículo."
+
+    Las cifras esperadas de cada caso se calculan a mano a partir de ese texto
+    y de la UMA anual del perfil 2026 (42,794.64 MXN, INEGI, vigente del
+    2026-02-01 al 2027-01-31), no ejecutando la fórmula bajo prueba.
+
+        5 UMA anuales = 5 x 42,794.64 = 213,973.20 MXN
+    """
+
+    UMA_ANUAL_2026 = Decimal("42794.64")
+    CINCO_UMA = Decimal("213973.20")
+
+    @pytest.fixture
+    def validador(self):
+        return ValidadorPrimasDeducibles(
+            uma_anual=self.UMA_ANUAL_2026,
+            limite_deducciones_umas=5,
+        )
+
+    def test_manda_la_rama_del_15_por_ciento(self, validador):
+        """Ingreso bajo: el 15% topa por debajo de las 5 UMA.
+
+        Aritmética a mano:
+            15% x 300,000 = 45,000
+            5 UMA         = 213,973.20
+            tope = min(45,000 ; 213,973.20) = 45,000
+            deducible = min(prima 50,000 ; 45,000) = 45,000
+            porcentaje = 45,000 / 50,000 = 90.00%
+        """
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.GASTOS_MEDICOS,
+            monto_prima=Decimal("50000"),
+            es_persona_fisica=True,
+            ingresos_totales_anuales=Decimal("300000"),
+            metodo_pago="transferencia",
+        )
+
+        assert r.monto_deducible == Decimal("45000")
+        assert r.porcentaje_deducible == Decimal("90.00")
+        assert r.tope_global == EstadoTopeGlobal.APLICADO
+        assert r.estado == EstadoFiscal.ELIGIBLE
+        # El defecto cerrado: antes esto devolvia 50,000 al 100%.
+        assert r.monto_deducible < r.monto_prima
+
+    def test_manda_la_rama_de_las_cinco_umas(self, validador):
+        """Ingreso alto: las 5 UMA topan por debajo del 15%.
+
+        Aritmética a mano:
+            15% x 3,000,000 = 450,000
+            5 UMA           = 213,973.20
+            tope = min(450,000 ; 213,973.20) = 213,973.20
+            deducible = min(prima 400,000 ; 213,973.20) = 213,973.20
+            porcentaje = 213,973.20 / 400,000 = 0.5349330 -> 53.49%
+        """
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.GASTOS_MEDICOS,
+            monto_prima=Decimal("400000"),
+            es_persona_fisica=True,
+            ingresos_totales_anuales=Decimal("3000000"),
+            metodo_pago="transferencia",
+        )
+
+        assert r.monto_deducible == self.CINCO_UMA
+        assert r.porcentaje_deducible == Decimal("53.49")
+        assert r.tope_global == EstadoTopeGlobal.APLICADO
+
+    def test_tope_no_restrictivo_deja_la_prima_completa(self, validador):
+        """Prima por debajo de ambas ramas: se deduce completa.
+
+        Aritmética a mano:
+            15% x 300,000 = 45,000
+            5 UMA         = 213,973.20
+            tope = 45,000; deducible = min(prima 20,000 ; 45,000) = 20,000
+        """
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.GASTOS_MEDICOS,
+            monto_prima=Decimal("20000"),
+            es_persona_fisica=True,
+            ingresos_totales_anuales=Decimal("300000"),
+            metodo_pago="transferencia",
+        )
+
+        assert r.monto_deducible == Decimal("20000")
+        assert r.porcentaje_deducible == Decimal("100.00")
+        assert r.tope_global == EstadoTopeGlobal.APLICADO
+
+    def test_sin_ingresos_el_tope_queda_declarado_como_no_determinado(self, validador):
+        """Sin el ingreso total, la rama del 15% no puede evaluarse.
+
+        No se devuelve 100% en silencio: se aplica la única rama conocida
+        (5 UMA = 213,973.20), el resultado se marca indeterminado y nombra el
+        dato que falta. Aritmética a mano:
+            deducible = min(prima 400,000 ; 213,973.20) = 213,973.20 (cota superior)
+        """
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.GASTOS_MEDICOS,
+            monto_prima=Decimal("400000"),
+            es_persona_fisica=True,
+            metodo_pago="transferencia",
+        )
+
+        assert r.monto_deducible == self.CINCO_UMA
+        assert r.tope_global == EstadoTopeGlobal.PARCIAL_SIN_INGRESOS
+        assert r.estado == EstadoFiscal.INDETERMINATE
+        assert "ingresos_totales_anuales" in r.factores_faltantes
+        assert "15%" in r.nota_tope_global
+
+    def test_sin_ingresos_una_prima_pequena_no_se_declara_cierta(self, validador):
+        """Aunque el monto no se recorte, el estado no finge certeza.
+
+        prima 50,000 < 5 UMA (213,973.20), así que la rama conocida no muerde;
+        pero la rama del 15% podría hacerlo (bastan ingresos por debajo de
+        333,333.33) y no se evaluó. El monto es el mismo que el defecto viejo
+        producía; lo que no es igual es que ahora se declara indeterminado.
+        """
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.GASTOS_MEDICOS,
+            monto_prima=Decimal("50000"),
+            es_persona_fisica=True,
+            metodo_pago="transferencia",
+        )
+
+        assert r.monto_deducible == Decimal("50000")
+        assert r.tope_global == EstadoTopeGlobal.PARCIAL_SIN_INGRESOS
+        assert r.estado == EstadoFiscal.INDETERMINATE
+
+    def test_la_nota_dice_que_el_tope_es_global(self, validador):
+        """El tope aplica al total de deducciones personales, no a una prima."""
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.GASTOS_MEDICOS,
+            monto_prima=Decimal("50000"),
+            es_persona_fisica=True,
+            ingresos_totales_anuales=Decimal("300000"),
+            metodo_pago="transferencia",
+        )
+
+        assert "total de las" in r.nota_tope_global
+        assert "única deducción personal" in r.nota_tope_global
+
+    def test_la_fraccion_de_gmm_es_la_vi(self, validador):
+        """Las primas de GMM son la fracc. VI; la I son honorarios médicos."""
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.GASTOS_MEDICOS,
+            monto_prima=Decimal("50000"),
+            es_persona_fisica=True,
+            metodo_pago="transferencia",
+        )
+
+        assert "fracc. VI" in r.fundamento_legal
+        assert "fracc. I -" not in r.fundamento_legal
+
+
+class TestFraccionVPlanesDeRetiro:
+    """Fracción V: tope propio del 10%, y exclusión del tope global.
+
+    Texto aplicado (misma fuente y fecha de consulta que `TestTopeGlobalArt151`):
+
+        "El monto de la deducción a que se refiere esta fracción será de hasta
+        el 10% de los ingresos acumulables del contribuyente en el ejercicio,
+        sin que dichas aportaciones excedan del equivalente a cinco salarios
+        mínimos generales del área geográfica del contribuyente elevados al
+        año."
+
+    Los cinco salarios mínimos se leen como cinco UMA anuales por el Art.
+    Tercero transitorio del decreto de desindexación (DOF 27-01-2016), que es
+    lo que el perfil anual versiona como `limite_deducciones_pf_umas`.
+    """
+
+    UMA_ANUAL_2026 = Decimal("42794.64")
+
+    @pytest.fixture
+    def validador(self):
+        return ValidadorPrimasDeducibles(
+            uma_anual=self.UMA_ANUAL_2026,
+            limite_deducciones_umas=5,
+        )
+
+    def test_el_porcentaje_de_la_fraccion_v_es_diez_no_quince(self, validador):
+        """El código calculaba 15%; el estatuto dice 10%.
+
+        Aritmética a mano:
+            10% x 1,000,000 = 100,000
+            5 UMA           = 213,973.20
+            tope = min(100,000 ; 213,973.20) = 100,000
+            deducible = min(prima 150,000 ; 100,000) = 100,000
+
+        Con el 15% anterior el tope habría sido 150,000 y la prima entera
+        habría resultado deducible: el caso discrimina las dos versiones.
+        """
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.PENSIONES,
+            monto_prima=Decimal("150000"),
+            es_persona_fisica=True,
+            ingreso_anual=Decimal("1000000"),
+            metodo_pago="transferencia",
+        )
+
+        assert r.monto_deducible == Decimal("100000")
+        assert "10%" in r.limite_aplicado
+
+    def test_la_fraccion_v_queda_fuera_del_tope_global(self, validador):
+        """El último párrafo excluye expresamente a la fracción V."""
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.PENSIONES,
+            monto_prima=Decimal("150000"),
+            es_persona_fisica=True,
+            ingreso_anual=Decimal("1000000"),
+            metodo_pago="transferencia",
+        )
+
+        assert r.tope_global == EstadoTopeGlobal.NO_APLICABLE
+        assert "fracción V" in r.nota_tope_global
+
+    def test_manda_el_tope_de_cinco_umas_con_ingreso_alto(self, validador):
+        """Ingreso alto: el 10% supera las 5 UMA y manda el tope en UMA.
+
+        Aritmética a mano:
+            10% x 5,000,000 = 500,000
+            5 UMA           = 213,973.20
+            tope = 213,973.20; deducible = min(prima 300,000 ; 213,973.20)
+        """
+        r = validador.validar_deducibilidad(
+            tipo_seguro=TipoSeguroFiscal.PENSIONES,
+            monto_prima=Decimal("300000"),
+            es_persona_fisica=True,
+            ingreso_anual=Decimal("5000000"),
+            metodo_pago="transferencia",
+        )
+
+        assert r.monto_deducible == Decimal("213973.20")
 
 
 # ======================================
@@ -627,7 +886,7 @@ class TestTasasVienenDelPerfilAnual:
         )
         # 7 UMAs x 40,000 = 280,000 (con el 5 literal habrian sido 200,000).
         assert r.monto_deducible == Decimal("280000")
-        assert "7 UMAs" in r.limite_aplicado
+        assert "7 UMA anuales" in r.limite_aplicado
 
     def test_por_omision_toma_el_perfil_vigente(self):
         """Sin argumento debe leer la configuración, no una constante."""

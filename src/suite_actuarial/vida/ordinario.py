@@ -64,7 +64,7 @@ class VidaOrdinario(ProductoSeguro):
         >>> # Asegurado
         >>> asegurado = Asegurado(
         ...     edad=35,
-        ...     sexo=Sexo.HOMBRE,
+        ...     sexo=Sexo.MASCULINO,
         ...     suma_asegurada=Decimal("1000000")
         ... )
         >>>

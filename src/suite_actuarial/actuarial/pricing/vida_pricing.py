@@ -81,7 +81,7 @@ def calcular_seguro_vida(
         >>> from decimal import Decimal
         >>> tabla = TablaMortalidad.cargar_emssa09()
         >>> axn = calcular_seguro_vida(
-        ...     tabla, edad=35, sexo=Sexo.HOMBRE, plazo=20,
+        ...     tabla, edad=35, sexo=Sexo.MASCULINO, plazo=20,
         ...     tasa_interes=Decimal("0.055"), suma_asegurada=Decimal("1000000")
         ... )
         >>> print(f"Valor presente: ${axn:,.2f}")
@@ -148,7 +148,7 @@ def calcular_anualidad(
 
     Examples:
         >>> anualidad = calcular_anualidad(
-        ...     tabla, edad=35, sexo=Sexo.HOMBRE,
+        ...     tabla, edad=35, sexo=Sexo.MASCULINO,
         ...     plazo=20, tasa_interes=Decimal("0.055")
         ... )
     """
@@ -219,7 +219,7 @@ def calcular_prima_neta_temporal(
         >>> prima = calcular_prima_neta_temporal(
         ...     tabla=tabla_emssa,
         ...     edad=35,
-        ...     sexo=Sexo.HOMBRE,
+        ...     sexo=Sexo.MASCULINO,
         ...     plazo_seguro=20,
         ...     plazo_pago=20,
         ...     tasa_interes=Decimal("0.055"),

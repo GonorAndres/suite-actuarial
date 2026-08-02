@@ -1,5 +1,5 @@
 """
-Demo: Módulo de Pensiones -- suite_actuarial
+Demo del módulo de Pensiones de suite_actuarial.
 
 Calculadoras IMSS (Ley 73 / Ley 97), rentas vitalicias
 y funciones de conmutación.
@@ -199,7 +199,7 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
         pension97 = PensionLey97(
             saldo_afore=Decimal(str(saldo_afore)),
             edad=edad_retiro_97,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=semanas_97,
             tabla_mortalidad=tabla_mortalidad,
         )
@@ -218,7 +218,7 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
             p = PensionLey97(
                 saldo_afore=Decimal(str(saldo)),
                 edad=_ed - anos,
-                sexo="H",
+                sexo="masculino",
                 semanas_cotizadas=_sem,
                 tabla_mortalidad=tabla_mortalidad,
             )
@@ -247,7 +247,7 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
         pension97_final = PensionLey97(
             saldo_afore=Decimal(str(saldo_final)),
             edad=edad_retiro_97,
-            sexo="H",
+            sexo="masculino",
             semanas_cotizadas=semanas_97,
             tabla_mortalidad=tabla_mortalidad,
         )
@@ -266,7 +266,15 @@ print(f"Factor edad:        {{float(resumen['factor_edad'])*100:.0f}}%")
             f"${float(comparacion['retiro_programado']['pension_mensual']):,.2f}",
             help="Se recalcula anualmente, puede agotarse",
         )
-        st.info(f"Recomendación: **{comparacion['recomendacion']}**")
+        st.info(f"Modalidad con mayor pensión mensual inicial: **{comparacion['recomendacion']}**")
+        st.caption(
+            "Es una comparación ilustrativa, no una recomendación: sólo contrasta "
+            "la pensión del primer mes bajo mortalidad ilustrativa. No pondera el "
+            "riesgo de longevidad ni el de agotamiento del saldo, no valora la "
+            "herencia del remanente ni la garantía vitalicia, y no evalúa "
+            "necesidades, liquidez ni idoneidad de la persona. El modelo no "
+            "recomienda una modalidad."
+        )
 
         # Projection chart
         fig_proy = go.Figure()
@@ -328,7 +336,7 @@ tabla = TablaMortalidad.cargar_emssa09()
 pension = PensionLey97(
     saldo_afore=Decimal("{saldo_afore}"),
     edad={edad_retiro_97},
-    sexo="H",
+    sexo="masculino",
     semanas_cotizadas={semanas_97},
     tabla_mortalidad=tabla,
 )
@@ -369,7 +377,7 @@ with tab_rv:
             horizontal=True,
             key="rv_sexo",
         )
-        sexo_rv_code = "H" if sexo_rv == "Hombre" else "M"
+        sexo_rv_code = "masculino" if sexo_rv == "Hombre" else "femenino"
     with rv2:
         monto_mensual_rv = st.number_input(
             "Monto mensual deseado (MXN)",
@@ -529,7 +537,7 @@ with tab_conm:
             horizontal=True,
             key="tc_sexo",
         )
-        sexo_tc_code = "H" if sexo_tc == "Hombre" else "M"
+        sexo_tc_code = "masculino" if sexo_tc == "Hombre" else "femenino"
     with tc2:
         tasa_tc = st.slider(
             "Tasa de interés (%)",

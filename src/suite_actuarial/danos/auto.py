@@ -5,10 +5,16 @@ Integra las tablas de referencia AMIS, el sistema Bonus-Malus
 y el motor de factores para generar cotizaciones completas.
 """
 
+import warnings
 from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 from typing import Any
 
+from suite_actuarial.config.schema import ValidationTier
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+from suite_actuarial.danos.tablas_amis import (
+    DISCLAIMER as DISCLAIMER_TABLAS,
+)
 from suite_actuarial.danos.tablas_amis import (
     FACTOR_DEDUCIBLE,
     FACTOR_EDAD_CONDUCTOR,
@@ -19,6 +25,18 @@ from suite_actuarial.danos.tablas_amis import (
     rango_edad_conductor,
 )
 from suite_actuarial.danos.tarifas import CalculadoraBonusMalus
+
+DISCLAIMER = (
+    DISCLAIMER_TABLAS + " Ademas, este producto tarifa la responsabilidad civil a "
+    "terceros sobre el valor del propio vehiculo, no sobre el limite de "
+    "responsabilidad contratado, y redondea en pasos intermedios (valor "
+    "asegurado al asegurar, prima de cada cobertura, total tras bonus-malus) en "
+    "lugar de una sola vez al final. Ver docs/AUDIT.md."
+)
+
+#: Nivel de respaldo de las cifras de este modulo. Las tablas son
+#: representativas, asi que ninguna cotizacion puede presentarse como respaldada.
+VALIDATION_TIER = ValidationTier.EXPERIMENTAL.value
 
 
 class Cobertura(StrEnum):
@@ -51,6 +69,10 @@ class SeguroAuto:
     - Factores de zona, edad, deducible
     - Depreciacion por antiguedad
     - Ajuste Bonus-Malus
+
+    Al construirse emite `ExperimentalModelWarning` con `DISCLAIMER`: las tablas
+    son representativas, no la tarifa vigente de la AMIS. El aviso viaja tambien
+    en la respuesta del API para que llegue a quien lee la cotizacion.
     """
 
     def __init__(
@@ -80,8 +102,9 @@ class SeguroAuto:
         if edad_conductor < 18:
             raise ValueError("El conductor debe tener al menos 18 anos.")
         if deducible_pct not in FACTOR_DEDUCIBLE:
+            opciones = ", ".join(f"{float(opcion) * 100:g}%" for opcion in FACTOR_DEDUCIBLE)
             raise ValueError(
-                f"Deducible no valido: {deducible_pct}. Opciones: {list(FACTOR_DEDUCIBLE)}"
+                f"Deducible no valido: {float(deducible_pct) * 100:g}%. Opciones: {opciones}"
             )
 
         self.valor_vehiculo = valor_vehiculo
@@ -104,6 +127,8 @@ class SeguroAuto:
         self.valor_asegurado = (valor_vehiculo * self.factor_depreciacion).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
+
+        warnings.warn(DISCLAIMER, ExperimentalModelWarning, stacklevel=2)
 
     def _prima_cobertura(self, cobertura: Cobertura) -> Decimal:
         """Calcula la prima para una cobertura individual."""

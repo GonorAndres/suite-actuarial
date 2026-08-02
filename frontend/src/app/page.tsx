@@ -8,78 +8,74 @@ const GITHUB_URL = "https://github.com/GonorAndres/suite-actuarial";
 const COPY = {
   es: {
     kicker: "Modelación actuarial en código abierto · México",
-    title: "Construye, prueba y comprende modelos actuariales, en abierto.",
+    title: "Construye, prueba y entiende modelos actuariales con el código a la vista.",
     intro:
-      "suite_actuarial reúne métodos, ejemplos y herramientas para pasar de una pregunta de producto a un modelo reproducible. Cada análisis conecta beneficios, supuestos, cálculo, resultados y pruebas para que otros actuarios puedan revisarlo y extenderlo.",
-    primary: "Revisar el ejemplo guiado",
+      "suite_actuarial reúne los métodos y los ejemplos que hacen falta para pasar de una pregunta de producto a un modelo que otra persona pueda reproducir. Cada caso deja a la vista el beneficio, los supuestos, el cálculo y las pruebas que lo sostienen.",
+    primary: "Ver el ejemplo guiado",
     secondary: "Explorar la biblioteca",
-    note: "Desarrollado desde el contexto asegurador mexicano, con métodos clásicos, fuentes visibles y código abierto.",
-    processKicker: "Método común",
-    processTitle: "Seis etapas para documentar y revisar cada modelo",
+    note: "Hecho desde el mercado asegurador mexicano, con métodos clásicos y fuentes citadas.",
+    processKicker: "Método de trabajo",
+    processTitle: "Cada modelo pasa por las mismas seis etapas",
     videoKicker: "Demostración",
     videoTitle: "Dotal educativo 20/10, paso a paso",
     videoText:
-      "El recorrido documenta la promesa contractual, la base de mortalidad, el descuento, la prima, la reserva, la sensibilidad y las verificaciones del mismo ejemplo disponible en código.",
-    videoPending: "Grabación pendiente",
-    videoFallback: "El ejemplo escrito e interactivo ya está disponible.",
+      "El recorrido sigue el mismo ejemplo que está en el código: la promesa contractual, la base de mortalidad, la tasa, la prima, la reserva año por año y las comprobaciones finales.",
     featuredKicker: "Ejemplo guiado · Vida",
     featuredTitle: "Seguro dotal a 20 años con primas durante 10",
     featuredText:
-      "Este caso parte de una necesidad educativa y define un beneficio por fallecimiento o supervivencia. Permite modificar los supuestos, calcular la prima neta, seguir la reserva prospectiva y comprobar las identidades utilizadas.",
-    featuredCta: "Revisar el ejemplo",
+      "El caso parte de una meta de ahorro educativo y define un beneficio que se paga por fallecimiento o por supervivencia. Puedes cambiar los supuestos, calcular la prima neta, seguir la reserva año por año y comprobar las identidades que la sostienen.",
+    featuredCta: "Abrir el ejemplo",
     coverageLabel: "Cobertura: 20 años",
     premiumLabel: "Pago de primas: 10 años",
     modelsKicker: "Biblioteca actuarial",
-    modelsTitle: "Modelos organizados por la pregunta que ayudan a estudiar",
+    modelsTitle: "Modelos ordenados por la pregunta que ayudan a responder",
     evidenceKicker: "Trazabilidad",
     evidenceTitle: "Supuestos, fuentes, pruebas y límites junto al resultado",
     evidenceText:
-      "Cada ejemplo identifica su base técnica, fecha o contexto de referencia, nivel de validación, comprobaciones y alcance. Así se puede distinguir entre una implementación reproducible y un modelo listo para uso profesional.",
+      "Cada ejemplo declara de dónde salen sus datos, hasta dónde se validó y qué queda fuera. Con eso se distingue una implementación reproducible de un modelo listo para uso profesional.",
     validation: "Pruebas e identidades",
     provenance: "Fuentes y contexto",
     limitations: "Alcance declarado",
     openKicker: "Trabajo abierto",
-    openTitle: "Una base compartida para aprender, investigar y desarrollar",
+    openTitle: "Una base común sobre la que construir",
     openText:
-      "El repositorio permite estudiar modelos existentes, comparar resultados, proponer nuevas bases técnicas y construir ejemplos para proyectos universitarios, investigación aplicada e innovación actuarial.",
-    github: "Consultar el repositorio",
+      "El repositorio está abierto para estudiar los modelos que ya existen, cambiarles la base técnica y construir ejemplos nuevos, sea para una tesis, un curso o un proyecto de trabajo.",
+    github: "Ver el repositorio",
   },
   en: {
     kicker: "Open actuarial platform · Mexico",
-    title: "Build, test, and understand actuarial models in the open.",
+    title: "Build, test, and understand actuarial models with the code in view.",
     intro:
-      "suite_actuarial brings together methods, examples, and tools for moving from a product question to a reproducible model. Each analysis connects benefits, assumptions, calculations, results, and tests so other actuaries can review and extend it.",
-    primary: "Review the guided example",
+      "suite_actuarial brings together the methods and examples needed to move from a product question to a model someone else can reproduce. Each case keeps the benefit, the assumptions, the calculation, and the tests behind it in view.",
+    primary: "See the guided example",
     secondary: "Explore the library",
-    note: "Built from the Mexican insurance context, with classical methods, visible sources, and open code.",
-    processKicker: "Shared method",
-    processTitle: "Six stages for documenting and reviewing each model",
+    note: "Built from the Mexican insurance market, with classical methods and cited sources.",
+    processKicker: "How the work is done",
+    processTitle: "Every model goes through the same six stages",
     videoKicker: "Demonstration",
     videoTitle: "20/10 education endowment, step by step",
     videoText:
-      "The walkthrough documents the contractual promise, mortality basis, discounting, premium, reserve, sensitivity, and checks for the same example available in code.",
-    videoPending: "Recording pending",
-    videoFallback: "The written and interactive example is already available.",
+      "The walkthrough follows the same example that lives in the code: the contractual promise, the mortality basis, the rate, the premium, the year-by-year reserve, and the closing checks.",
     featuredKicker: "Guided example · Life",
     featuredTitle: "20-year endowment with premiums paid for 10 years",
     featuredText:
-      "This case starts with an education need and defines a benefit on death or survival. It lets users change assumptions, calculate the net premium, follow the prospective reserve, and check the identities used.",
-    featuredCta: "Review the example",
+      "The case starts from an education savings goal and defines a benefit paid on death or on survival. You can change the assumptions, calculate the net premium, follow the reserve year by year, and check the identities behind it.",
+    featuredCta: "Open the example",
     coverageLabel: "Coverage: 20 years",
     premiumLabel: "Premium payments: 10 years",
     modelsKicker: "Actuarial library",
-    modelsTitle: "Models organized by the question they help examine",
+    modelsTitle: "Models organized by the question they help answer",
     evidenceKicker: "Traceability",
     evidenceTitle: "Assumptions, sources, tests, and limits beside the result",
     evidenceText:
-      "Each example identifies its technical basis, reference date or context, validation level, checks, and scope. This distinguishes a reproducible implementation from a model ready for professional use.",
+      "Each example states where its data comes from, how far it was validated, and what is left out. That is what distinguishes a reproducible implementation from a model ready for professional use.",
     validation: "Tests and identities",
     provenance: "Sources and context",
     limitations: "Declared scope",
     openKicker: "Open work",
-    openTitle: "A shared foundation for learning, research, and development",
+    openTitle: "A common base to build on",
     openText:
-      "The repository supports studying existing models, comparing results, proposing technical bases, and building examples for university projects, applied research, and actuarial innovation.",
+      "The repository is open for studying the models already here, replacing their technical basis, and building new examples, whether for a thesis, a course, or work.",
     github: "View the repository",
   },
 } as const;
@@ -91,45 +87,36 @@ const PROCESS = {
 
 const MODELS = {
   es: [
-    ["¿Cómo financiar un beneficio?", "Vida", "Temporal, ordinario, dotal y reservas matemáticas", "/vida"],
-    ["¿Cómo emerge una pérdida agregada?", "Daños", "Tarificación, frecuencia-severidad, credibilidad y bonus-malus", "/danos"],
-    ["¿Cómo se comparte un gasto médico?", "Salud", "GMM, deducible, coaseguro y accidentes", "/salud"],
-    ["¿Cómo convertir ahorro en ingreso vitalicio?", "Pensiones", "Ley 73/97, rentas vitalicias y conmutación", "/pensiones"],
-    ["¿Qué costo falta por desarrollarse?", "Reservas", "Chain Ladder, Bornhuetter-Ferguson y bandas ilustrativas de dispersión", "/reservas"],
-    ["¿Cómo transferir cola y capital?", "Reaseguro", "Cuota parte, exceso de pérdida y stop loss", "/reaseguro"],
-    ["¿Cómo examinar solvencia y reglas?", "Referencia regulatoria", "RCS, reservas técnicas, SAT y configuración efectiva", "/regulatorio"],
+    ["¿Cómo se financia un beneficio?", "Vida", "Temporal, ordinario, dotal y reservas matemáticas", "/vida"],
+    ["¿Cómo se forma una pérdida agregada?", "Daños", "Tarificación, frecuencia-severidad, credibilidad y bonus-malus", "/danos"],
+    ["¿Cómo se reparte un gasto médico?", "Salud", "GMM, deducible, coaseguro y accidentes", "/salud"],
+    ["¿Cómo se convierte el ahorro en ingreso vitalicio?", "Pensiones", "Ley 73/97, rentas vitalicias y conmutación", "/pensiones"],
+    ["¿Cuánto falta por pagar de los siniestros ya ocurridos?", "Reservas", "Chain Ladder, Bornhuetter-Ferguson y bandas ilustrativas de dispersión", "/reservas"],
+    ["¿Cómo se transfiere el riesgo de cola?", "Reaseguro", "Cuota parte, exceso de pérdida y stop loss", "/reaseguro"],
+    ["¿Cómo se examina la solvencia?", "Referencia regulatoria", "RCS, reservas técnicas, SAT y configuración anual vigente", "/regulatorio"],
   ],
   en: [
-    ["How should a benefit be funded?", "Life", "Term, whole life, endowment, and mathematical reserves", "/vida"],
-    ["How does aggregate loss emerge?", "P&C", "Rating, frequency-severity, credibility, and bonus-malus", "/danos"],
+    ["How is a benefit funded?", "Life", "Term, whole life, endowment, and mathematical reserves", "/vida"],
+    ["How does an aggregate loss build up?", "P&C", "Rating, frequency-severity, credibility, and bonus-malus", "/danos"],
     ["How is a medical bill shared?", "Health", "Major medical, deductibles, coinsurance, and accidents", "/salud"],
-    ["How does savings become lifetime income?", "Pensions", "Ley 73/97, life annuities, and commutation", "/pensiones"],
-    ["Which cost remains undeveloped?", "Reserves", "Chain Ladder, Bornhuetter-Ferguson, and illustrative dispersion bands", "/reservas"],
-    ["How can tail risk and capital be transferred?", "Reinsurance", "Quota share, excess of loss, and stop loss", "/reaseguro"],
-    ["How can solvency and rules be examined?", "Regulatory reference", "RCS, technical reserves, SAT, and effective configuration", "/regulatorio"],
+    ["How do savings become lifetime income?", "Pensions", "Ley 73/97, life annuities, and commutation", "/pensiones"],
+    ["How much is still to be paid on claims already incurred?", "Reserves", "Chain Ladder, Bornhuetter-Ferguson, and illustrative dispersion bands", "/reservas"],
+    ["How is tail risk transferred?", "Reinsurance", "Quota share, excess of loss, and stop loss", "/reaseguro"],
+    ["How is solvency examined?", "Regulatory reference", "RCS, technical reserves, SAT, and the year's configuration", "/regulatorio"],
   ],
 } as const;
 
-function DemoVideo({ lang }: { lang: "es" | "en" }) {
+function DemoVideo({ lang, videoId }: { lang: "es" | "en"; videoId: string }) {
   const copy = COPY[lang];
-  const videoId = process.env.NEXT_PUBLIC_DEMO_VIDEO_ID;
 
   return (
     <div className="video-frame">
-      {videoId ? (
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-          title={copy.videoTitle}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      ) : (
-        <div className="video-pending">
-          <span>20/10</span>
-          <div><strong>{copy.videoPending}</strong><p>{copy.videoFallback}</p></div>
-          <Link href="/lab">{copy.featuredCta} →</Link>
-        </div>
-      )}
+      <iframe
+        src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+        title={copy.videoTitle}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
     </div>
   );
 }
@@ -137,6 +124,7 @@ function DemoVideo({ lang }: { lang: "es" | "en" }) {
 export default function Home() {
   const { lang } = useLanguage();
   const copy = COPY[lang];
+  const videoId = process.env.NEXT_PUBLIC_DEMO_VIDEO_ID;
 
   return (
     <div className="studio-home">
@@ -146,8 +134,8 @@ export default function Home() {
           <h1>{copy.title}</h1>
           <p className="hero-intro">{copy.intro}</p>
           <div className="hero-actions">
-            <Link href="/lab" className="primary-action">{copy.primary}</Link>
-            <a href="#models" className="secondary-action">{copy.secondary}</a>
+            <Link href="/biblioteca" className="primary-action">{copy.secondary}</Link>
+            <Link href="/lab" className="secondary-action">{copy.primary}</Link>
           </div>
           <p className="hero-note">{copy.note}</p>
         </div>
@@ -170,18 +158,20 @@ export default function Home() {
         <div className="contract-diagram"><span>{copy.coverageLabel}</span><div className="timeline"><i /><i /></div><span>{copy.premiumLabel}</span></div>
       </section>
 
-      <section className="video-section">
-        <div><p className="eyebrow">{copy.videoKicker}</p><h2>{copy.videoTitle}</h2><p>{copy.videoText}</p></div>
-        <DemoVideo lang={lang} />
-      </section>
+      {videoId && (
+        <section className="video-section">
+          <div><p className="eyebrow">{copy.videoKicker}</p><h2>{copy.videoTitle}</h2><p>{copy.videoText}</p></div>
+          <DemoVideo lang={lang} videoId={videoId} />
+        </section>
+      )}
 
       <section id="models" className="models-section">
-        <p className="eyebrow">{copy.modelsKicker}</p><h2>{copy.modelsTitle}</h2>
+        <p className="eyebrow">{copy.modelsKicker}</p><h2>{copy.modelsTitle}</h2><Link href="/biblioteca" className="inline-block mt-3 text-terracotta font-semibold">{lang === "es" ? "Ver biblioteca completa" : "View complete library"} →</Link>
         <div className="model-index">{MODELS[lang].map(([question, domain, detail, href], index) => <Link href={href} key={href}><span>{String(index + 1).padStart(2, "0")}</span><div><p>{domain}</p><h3>{question}</h3><small>{detail}</small></div><b>↗</b></Link>)}</div>
       </section>
 
       <section id="evidence" className="evidence-section">
-        <div><p className="eyebrow">{copy.evidenceKicker}</p><h2>{copy.evidenceTitle}</h2><p>{copy.evidenceText}</p></div>
+        <div><p className="eyebrow">{copy.evidenceKicker}</p><h2>{copy.evidenceTitle}</h2><p>{copy.evidenceText}</p><Link href="/evidencia" className="inline-block mt-4 text-terracotta font-semibold">{lang === "es" ? "Examinar evidencia y límites" : "Examine evidence and limits"} →</Link></div>
         <ol><li><span>01</span>{copy.validation}</li><li><span>02</span>{copy.provenance}</li><li><span>03</span>{copy.limitations}</li></ol>
       </section>
 

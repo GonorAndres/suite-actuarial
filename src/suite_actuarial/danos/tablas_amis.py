@@ -6,15 +6,18 @@ Instituciones de Seguros). Los valores son representativos, no datos
 confidenciales de ninguna aseguradora.
 
 Las tasas base estan expresadas por millar (por cada 1,000 pesos de
-valor asegurado) y corresponden a la tarifa de referencia de mercado.
+valor asegurado). Su nivel es ilustrativo: no reproduce ninguna tarifa
+observada en el mercado. Ver `DISCLAIMER`.
 """
 
 from decimal import Decimal
 
 DISCLAIMER = (
-    "AVISO: Las tasas y tablas en este modulo son REPRESENTATIVAS y no constituyen "
-    "las tablas oficiales vigentes de la AMIS. Para uso en produccion, consulte "
-    "las tablas de tarificacion vigentes publicadas por la AMIS."
+    "AVISO: las tasas, zonas y factores de este modulo son ILUSTRATIVOS. "
+    "Reproducen la ESTRUCTURA de una tarifa de auto (grupo de vehiculo, zona, "
+    "edad del conductor, deducible, antiguedad), no los valores de ninguna tarifa "
+    "vigente: no proceden de la AMIS ni de la experiencia de aseguradora alguna. "
+    "Para uso profesional, sustituyalos por la tarifa registrada de su institucion."
 )
 
 # ---------------------------------------------------------------------------

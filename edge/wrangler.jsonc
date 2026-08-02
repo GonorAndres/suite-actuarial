@@ -1,0 +1,90 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "suite-actuarial-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+
+  // The public address is `api-suite.gonor.me`, configured below as a route.
+  // The `workers.dev` subdomain of this account is `andtega349`, which is not a
+  // name to put in front of a public API, and a second live address would only
+  // be a way to bypass the route's protections.
+  "workers_dev": false,
+
+  // A route rather than a Custom Domain. `api-suite.gonor.me` already exists as
+  // a proxied CNAME to Cloud Run's domain mapping, and a Custom Domain cannot
+  // be attached to a hostname that already has a CNAME -- taking it over would
+  // mean deleting the record and dropping the API while DNS settles. A route
+  // overlays the existing record instead: the cutover is instant, and removing
+  // the route restores the previous path just as fast.
+  "routes": [{ "pattern": "api-suite.gonor.me/*", "zone_name": "gonor.me" }],
+
+  "vars": {
+    // The Cloud Run service that performs every calculation. Reachable at this
+    // address only while the service's default URL is enabled; see
+    // `docs/DEPLOYMENT.md`.
+    "ORIGIN_URL": "https://suite-actuarial-d3qj5vwxtq-uc.a.run.app",
+    "POSTHOG_HOST": "https://us.i.posthog.com",
+    "CACHE_TTL_SECONDS": "300",
+
+    // These two mirror the `ratelimits` blocks below so the numbers can be
+    // stated in the 429 body: the binding does not expose its own limit. They
+    // are the one pair of values that has to be edited in two places.
+    "ANON_RATE_LIMIT": "120",
+    "KEYED_RATE_LIMIT": "1200"
+  },
+
+  // Per-minute request ceilings, counted per Cloudflare location. The period
+  // may only be 10 or 60 seconds.
+  //
+  // 120 rather than 60 for anonymous callers because the dashboard is one of
+  // them: `useLiveCalculation` debounces at 350 ms, so someone adjusting a
+  // slider legitimately bursts well above one request per second. A limit that
+  // makes the product's own UI return 429 is not protection, it is a bug. The
+  // ceiling still turns an unbounded scrape into a bounded one.
+  "ratelimits": [
+    {
+      "name": "RL_ANON",
+      "namespace_id": "1001",
+      "simple": { "limit": 120, "period": 60 }
+    },
+    {
+      "name": "RL_KEYED",
+      "namespace_id": "1002",
+      "simple": { "limit": 1200, "period": 60 }
+    }
+  ],
+
+  // SHA-256 hex of an issued key -> `{"label": "..."}`. Storing the digest
+  // rather than the key means a read of this namespace yields nothing usable.
+  "kv_namespaces": [{ "binding": "API_KEYS", "id": "3710717eae0e4a69b51e7926eba499d4" }],
+
+  "observability": { "enabled": true },
+
+  // Staging. Same code, same origin, reachable on `workers.dev` and attached to
+  // no route, so it can be exercised end to end without `api-suite.gonor.me`
+  // changing behaviour for anyone.
+  //
+  // This is how the edge gets verified before a cutover and after any later
+  // change: `wrangler deploy --env verify`, check it, then deploy production.
+  // It needs its own KV namespace so a test key can never authenticate against
+  // production.
+  "env": {
+    "verify": {
+      "workers_dev": true,
+      "routes": [],
+      "vars": {
+        "ORIGIN_URL": "https://suite-actuarial-d3qj5vwxtq-uc.a.run.app",
+        "POSTHOG_HOST": "https://us.i.posthog.com",
+        "CACHE_TTL_SECONDS": "300",
+        "ANON_RATE_LIMIT": "120",
+        "KEYED_RATE_LIMIT": "1200"
+      },
+      "ratelimits": [
+        { "name": "RL_ANON", "namespace_id": "2001", "simple": { "limit": 120, "period": 60 } },
+        { "name": "RL_KEYED", "namespace_id": "2002", "simple": { "limit": 1200, "period": 60 } }
+      ],
+      "kv_namespaces": [{ "binding": "API_KEYS", "id": "79b95c1615c949c1803af797a6cbad68" }],
+      "observability": { "enabled": true }
+    }
+  }
+}

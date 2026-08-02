@@ -10,13 +10,17 @@ Tests para el producto de seguro de incendio y danos a propiedad.
 - Valores limite (muy pequenos y muy grandes)
 """
 
+import warnings
 from decimal import ROUND_HALF_UP, Decimal
 
 import pytest
 
+from suite_actuarial.core.warnings import ExperimentalModelWarning
 from suite_actuarial.danos.incendio import (
+    DISCLAIMER,
     FACTOR_USO,
     TASAS_CONSTRUCCION,
+    VALIDATION_TIER,
     ZONAS_INCENDIO,
     SeguroIncendio,
 )
@@ -306,3 +310,40 @@ class TestValoresLimite:
             (Decimal("1") / Decimal("1000")) * Decimal("0.90") * Decimal("1.60") * Decimal("1.45")
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         assert prima == expected
+
+
+class TestAvisoDeAlcance:
+    """Incendio no tenia aviso alguno: ni constante, ni warning, ni campo HTTP.
+
+    La prima es un producto de factores sobre el valor declarado; el aviso
+    nombra lo que ese producto NO hace (deducible, regla proporcional,
+    proteccion contra incendio, riesgo catastrofico).
+    """
+
+    def test_construir_emite_experimental_model_warning(self):
+        with pytest.warns(ExperimentalModelWarning, match="ILUSTRATIVOS"):
+            SeguroIncendio(
+                valor_inmueble=Decimal("5000000"),
+                tipo_construccion="concreto",
+                zona="urbana_media",
+                uso="habitacional",
+            )
+
+    def test_el_aviso_nombra_los_riesgos_catastroficos_no_cubiertos(self):
+        assert "sismo" in DISCLAIMER
+        assert "deducible" in DISCLAIMER
+
+    def test_una_entrada_invalida_no_emite_el_aviso(self):
+        with warnings.catch_warnings(record=True) as capturadas:
+            warnings.simplefilter("always")
+            with pytest.raises(ValueError):
+                SeguroIncendio(
+                    valor_inmueble=Decimal("0"),
+                    tipo_construccion="concreto",
+                    zona="urbana_media",
+                    uso="habitacional",
+                )
+        assert not [c for c in capturadas if issubclass(c.category, ExperimentalModelWarning)]
+
+    def test_el_nivel_de_respaldo_es_experimental(self):
+        assert VALIDATION_TIER == "experimental"

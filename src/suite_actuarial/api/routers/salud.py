@@ -12,8 +12,21 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, model_validator
 
 from suite_actuarial.api.schemas import SolicitudBase
+from suite_actuarial.core.models.common import Sexo
+from suite_actuarial.salud.accidentes import (
+    DISCLAIMER as ACCIDENTES_DISCLAIMER,
+)
+from suite_actuarial.salud.accidentes import (
+    VALIDATION_TIER as ACCIDENTES_VALIDATION_TIER,
+)
 from suite_actuarial.salud.accidentes import AccidentesEnfermedades
+from suite_actuarial.salud.gmm import (
+    DISCLAIMER as GMM_DISCLAIMER,
+)
 from suite_actuarial.salud.gmm import GMM, NivelHospitalario, ZonaGeografica
+from suite_actuarial.salud.gmm import (
+    VALIDATION_TIER as GMM_VALIDATION_TIER,
+)
 
 router = APIRouter(prefix="/salud", tags=["salud"])
 
@@ -43,7 +56,7 @@ class GMMRequest(SolicitudBase):
     """Request body for GMM premium calculation."""
 
     edad: int = Field(..., ge=0, le=110, description="Edad del asegurado (0-110)")
-    sexo: str = Field(..., pattern="^[MF]$", description="Sexo: M (masculino) o F (femenino)")
+    sexo: Sexo = Field(..., description="Sexo del asegurado: masculino o femenino")
     suma_asegurada: float = Field(
         ..., ge=1_000_000, description="Suma asegurada en MXN (minimo 1,000,000)"
     )
@@ -87,6 +100,14 @@ class GMMResponse(BaseModel):
     producto: dict[str, Any]
     tarificacion: dict[str, Any]
     siniestralidad_esperada: float
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 # ── Accidentes Request / Response models ───────────────────────────────────
@@ -96,7 +117,7 @@ class AccidentesRequest(SolicitudBase):
     """Request body for Accidentes y Enfermedades premium calculation."""
 
     edad: int = Field(..., ge=18, le=70, description="Edad del asegurado (18-70)")
-    sexo: str = Field(..., pattern="^[MF]$", description="Sexo: M (masculino) o F (femenino)")
+    sexo: Sexo = Field(..., description="Sexo del asegurado: masculino o femenino")
     suma_asegurada: float = Field(..., gt=0, description="Suma asegurada en MXN")
     ocupacion: str = Field(
         default="oficina",
@@ -117,6 +138,14 @@ class AccidentesResponse(BaseModel):
     perdidas_organicas: dict[str, Any]
     indemnizacion_diaria: dict[str, float]
     gastos_funerarios: float
+    validation_tier: str = Field(
+        ...,
+        description="Validation level of the data behind these figures",
+    )
+    disclaimer: str = Field(
+        ...,
+        description="Scope limit of this model; must be shown wherever the figures are",
+    )
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────
@@ -145,6 +174,10 @@ def calcular_gmm(req: GMMRequest) -> dict[str, Any]:
         )
         desglose = producto.desglose_prima()
         respuesta: dict[str, Any] = _decimal_to_float(desglose)
+        # El aviso viaja con la cifra: quien consume el JSON no ve el
+        # ExperimentalModelWarning que emite el dominio al construirse.
+        respuesta["validation_tier"] = GMM_VALIDATION_TIER
+        respuesta["disclaimer"] = GMM_DISCLAIMER
         return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -171,6 +204,8 @@ def calcular_accidentes(req: AccidentesRequest) -> dict[str, Any]:
         )
         tabla = producto.tabla_indemnizaciones()
         respuesta: dict[str, Any] = _decimal_to_float(tabla)
+        respuesta["validation_tier"] = ACCIDENTES_VALIDATION_TIER
+        respuesta["disclaimer"] = ACCIDENTES_DISCLAIMER
         return respuesta
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

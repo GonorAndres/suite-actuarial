@@ -17,7 +17,7 @@ def tabla_ejemplo():
     datos = pd.DataFrame(
         {
             "edad": [30, 31, 32, 30, 31, 32],
-            "sexo": ["H", "H", "H", "M", "M", "M"],
+            "sexo": ["masculino"] * 3 + ["femenino"] * 3,
             "qx": [0.001, 0.0012, 0.0014, 0.0005, 0.0006, 0.0007],
         }
     )
@@ -48,28 +48,28 @@ class TestTablaMortalidad:
 
     def test_obtener_qx_exacto(self, tabla_ejemplo):
         """Debe obtener qx cuando existe el valor exacto"""
-        qx = tabla_ejemplo.obtener_qx(edad=30, sexo=Sexo.HOMBRE)
+        qx = tabla_ejemplo.obtener_qx(edad=30, sexo=Sexo.MASCULINO)
         assert qx == Decimal("0.001")
 
-        qx_mujer = tabla_ejemplo.obtener_qx(edad=30, sexo=Sexo.MUJER)
+        qx_mujer = tabla_ejemplo.obtener_qx(edad=30, sexo=Sexo.FEMENINO)
         assert qx_mujer == Decimal("0.0005")
 
     def test_obtener_qx_inexistente_sin_interpolar_falla(self, tabla_ejemplo):
         """Debe fallar si no existe el valor y no se pide interpolación"""
         with pytest.raises(ValueError) as exc_info:
-            tabla_ejemplo.obtener_qx(edad=50, sexo=Sexo.HOMBRE, interpolar=False)
+            tabla_ejemplo.obtener_qx(edad=50, sexo=Sexo.MASCULINO, interpolar=False)
 
         assert "no existe" in str(exc_info.value).lower()
 
     def test_obtener_tabla_completa_hombres(self, tabla_ejemplo):
         """Debe filtrar correctamente por sexo"""
-        df_hombres = tabla_ejemplo.obtener_tabla_completa(Sexo.HOMBRE)
+        df_hombres = tabla_ejemplo.obtener_tabla_completa(Sexo.MASCULINO)
         assert len(df_hombres) == 3
-        assert all(df_hombres["sexo"] == "H")
+        assert all(df_hombres["sexo"] == "masculino")
 
     def test_calcular_lx(self, tabla_ejemplo):
         """Debe calcular lx correctamente"""
-        tabla_vida = tabla_ejemplo.calcular_lx(Sexo.HOMBRE, raiz=100000)
+        tabla_vida = tabla_ejemplo.calcular_lx(Sexo.MASCULINO, raiz=100000)
 
         # Verificar que lx disminuye
         assert tabla_vida.iloc[0]["lx"] == 100000
@@ -82,7 +82,7 @@ class TestTablaMortalidad:
     def test_calcular_lx_force_zero_convention(self, tabla_ejemplo):
         """Under force_zero, last dx equals last lx (all die at omega)"""
         tabla_vida = tabla_ejemplo.calcular_lx(
-            Sexo.HOMBRE, raiz=100000, omega_convention="force_zero"
+            Sexo.MASCULINO, raiz=100000, omega_convention="force_zero"
         )
         last = tabla_vida.iloc[-1]
         assert last["dx"] == pytest.approx(last["lx"])
@@ -90,16 +90,16 @@ class TestTablaMortalidad:
     def test_calcular_lx_table_as_is_convention(self, tabla_ejemplo):
         """Under table_as_is, last dx < last lx (some survive past omega)"""
         tabla_vida = tabla_ejemplo.calcular_lx(
-            Sexo.HOMBRE, raiz=100000, omega_convention="table_as_is"
+            Sexo.MASCULINO, raiz=100000, omega_convention="table_as_is"
         )
         last = tabla_vida.iloc[-1]
         assert last["dx"] < last["lx"]
 
     def test_omega_convention_default_backward_compatible(self, tabla_ejemplo):
         """Default behavior matches explicit force_zero exactly"""
-        default = tabla_ejemplo.calcular_lx(Sexo.HOMBRE, raiz=100000)
+        default = tabla_ejemplo.calcular_lx(Sexo.MASCULINO, raiz=100000)
         explicit = tabla_ejemplo.calcular_lx(
-            Sexo.HOMBRE, raiz=100000, omega_convention="force_zero"
+            Sexo.MASCULINO, raiz=100000, omega_convention="force_zero"
         )
         pd.testing.assert_frame_equal(default, explicit)
 
@@ -118,8 +118,8 @@ class TestCargaEMSSA09:
             assert len(tabla.datos) > 0
 
             # Verificar que tiene datos para hombres y mujeres
-            assert "H" in tabla.datos["sexo"].values
-            assert "M" in tabla.datos["sexo"].values
+            assert "masculino" in tabla.datos["sexo"].values
+            assert "femenino" in tabla.datos["sexo"].values
 
             # Verificar rangos de edad razonables
             assert tabla.datos["edad"].min() >= 18
@@ -149,3 +149,66 @@ class TestCargaEMSSA09:
 
         assert tabla.nombre == "test_tabla"
         assert len(tabla.datos) == 4
+
+
+class TestFronteraSexoCSV:
+    """El CSV conserva "H"/"M"; la traduccion ocurre una sola vez, al leerlo.
+
+    EMSSA-09 se distribuye con la columna `sexo` en iniciales publicadas
+    (H = hombre, M = mujer) y es un insumo controlado que no se edita. El
+    paquete, en cambio, solo habla "masculino"/"femenino". El punto de contacto
+    entre ambas convenciones es `desde_csv`, y estas pruebas lo fijan ahi: si
+    alguien moviera la traduccion a `obtener_qx` o la duplicara, la tabla en
+    memoria volveria a aceptar letras y el error dejaria de saltar.
+    """
+
+    def test_csv_heredado_se_traduce_al_cargar(self, tmp_path):
+        """Un CSV con H/M queda en memoria como masculino/femenino."""
+        csv_path = tmp_path / "heredado.csv"
+        csv_path.write_text("edad,sexo,qx\n30,H,0.001\n30,M,0.0005\n")
+
+        tabla = TablaMortalidad.desde_csv(csv_path)
+
+        assert set(tabla.datos["sexo"]) == {"masculino", "femenino"}
+        # H era hombre: su qx debe seguir siendo el de la fila H.
+        assert tabla.obtener_qx(30, Sexo.MASCULINO) == Decimal("0.001")
+        assert tabla.obtener_qx(30, Sexo.FEMENINO) == Decimal("0.0005")
+
+    def test_emssa09_publica_los_valores_actuales(self):
+        """La tabla instalada no expone ninguna inicial hacia afuera."""
+        tabla = TablaMortalidad.cargar_emssa09()
+
+        assert set(tabla.datos["sexo"]) == {"masculino", "femenino"}
+        assert not tabla.obtener_tabla_completa(Sexo.MASCULINO).empty
+        assert not tabla.obtener_tabla_completa(Sexo.FEMENINO).empty
+
+    def test_csv_con_convencion_mf_es_rechazado(self, tmp_path):
+        """Una "F" delata la convencion opuesta, donde "M" significa hombre.
+
+        Traducirla seria adivinar: bajo M/F la misma "M" es masculino, bajo H/M
+        es mujer. El cargador se niega en vez de elegir.
+        """
+        csv_path = tmp_path / "convencion_mf.csv"
+        csv_path.write_text("edad,sexo,qx\n30,M,0.001\n30,F,0.0005\n")
+
+        with pytest.raises(ValueError) as exc_info:
+            TablaMortalidad.desde_csv(csv_path)
+
+        assert "no reconocidos" in str(exc_info.value)
+
+    def test_dataframe_en_memoria_con_iniciales_es_rechazado(self):
+        """Construir la tabla directamente con letras falla; no se traduce."""
+        datos = pd.DataFrame(
+            {
+                "edad": [30, 30],
+                "sexo": ["H", "M"],
+                "qx": [0.001, 0.0005],
+            }
+        )
+
+        with pytest.raises(ValueError) as exc_info:
+            TablaMortalidad(nombre="Invalida", datos=datos)
+
+        mensaje = str(exc_info.value)
+        assert "masculino" in mensaje
+        assert "femenino" in mensaje

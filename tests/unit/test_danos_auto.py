@@ -9,11 +9,22 @@ Tests para el producto de seguro de auto con tarificacion AMIS.
 - Seleccion de coberturas
 """
 
+import warnings
 from decimal import Decimal
 
 import pytest
 
-from suite_actuarial.danos.auto import COBERTURAS_BASICAS, Cobertura, SeguroAuto
+from suite_actuarial.core.warnings import ExperimentalModelWarning
+from suite_actuarial.danos.auto import (
+    COBERTURAS_BASICAS,
+    DISCLAIMER,
+    VALIDATION_TIER,
+    Cobertura,
+    SeguroAuto,
+)
+from suite_actuarial.danos.tablas_amis import (
+    DISCLAIMER as DISCLAIMER_TABLAS,
+)
 from suite_actuarial.danos.tablas_amis import (
     obtener_depreciacion,
     obtener_grupo,
@@ -341,3 +352,61 @@ class TestTablasAMIS:
         assert rango_edad_conductor(45) == "36-50"
         assert rango_edad_conductor(60) == "51-65"
         assert rango_edad_conductor(70) == "66+"
+
+
+class TestAvisoDeAlcance:
+    """La cotizacion debe declarar su alcance al construirse.
+
+    `tablas_amis.DISCLAIMER` existia y no lo importaba nadie. El aviso del
+    producto lo extiende con dos limites propios de `SeguroAuto`, ambos
+    registrados en docs/AUDIT.md: la RC de terceros se tarifica sobre el valor
+    del propio vehiculo y el redondeo ocurre tras cada factor.
+    """
+
+    def test_construir_emite_experimental_model_warning(self):
+        with pytest.warns(ExperimentalModelWarning, match="ILUSTRATIVOS"):
+            SeguroAuto(
+                valor_vehiculo=Decimal("350000"),
+                tipo_vehiculo="sedan_compacto",
+                antiguedad_anos=0,
+                zona="monterrey",
+                edad_conductor=35,
+            )
+
+    def test_el_aviso_incluye_el_de_las_tablas_y_los_limites_del_producto(self):
+        assert DISCLAIMER.startswith(DISCLAIMER_TABLAS)
+        assert "responsabilidad civil" in DISCLAIMER
+        assert "redondea" in DISCLAIMER
+
+    def test_la_rc_se_tarifica_sobre_el_valor_del_vehiculo(self):
+        """El limite que el aviso declara es real: la prima de RC a terceros
+        sale del valor asegurado del propio vehiculo. El producto ni siquiera
+        recibe un limite de responsabilidad, que es la exposicion real."""
+        seguro = SeguroAuto(
+            valor_vehiculo=Decimal("350000"),
+            tipo_vehiculo="sedan_compacto",
+            antiguedad_anos=0,
+            zona="monterrey",
+            edad_conductor=35,
+        )
+        tarifas = seguro.calcular_tarifa()
+        # A mano: (350,000 / 1000) x 4.50 (rc_bienes, grupo 1)
+        # x 1.15 (monterrey) x 1.00 (conductor 26-35) = 1,811.25
+        esperado = Decimal("1811.25")
+        assert tarifas[Cobertura.RC_BIENES] == esperado
+
+    def test_una_entrada_invalida_no_emite_el_aviso(self):
+        with warnings.catch_warnings(record=True) as capturadas:
+            warnings.simplefilter("always")
+            with pytest.raises(ValueError):
+                SeguroAuto(
+                    valor_vehiculo=Decimal("-1"),
+                    tipo_vehiculo="sedan_compacto",
+                    antiguedad_anos=0,
+                    zona="monterrey",
+                    edad_conductor=35,
+                )
+        assert not [c for c in capturadas if issubclass(c.category, ExperimentalModelWarning)]
+
+    def test_el_nivel_de_respaldo_es_experimental(self):
+        assert VALIDATION_TIER == "experimental"

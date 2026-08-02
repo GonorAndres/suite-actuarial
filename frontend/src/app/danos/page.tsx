@@ -3,6 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { DanosStory } from "@/components/stories";
+import { DomainGuide } from "@/components/guides/DomainGuide";
+import { DomainWorkspace } from "@/components/guides/DomainWorkspace";
+import { WorkbenchContext } from "@/components/guides/WorkbenchContext";
 import {
   Card,
   Button,
@@ -11,11 +14,15 @@ import {
   Tabs,
   LoadingSpinner,
   MetricCard,
+  AvisoModelo,
+  ErrorPanel,
 } from "@/components/ui";
 import DownloadButton from "@/components/download/DownloadButton";
 import { useCalculation } from "@/hooks/useCalculation";
+import { useLinkedWorkbenchTab } from "@/hooks/useLinkedWorkbenchTab";
 import { danosApi } from "@/lib/api";
-import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
+import { etiquetaCampo, valorCampo } from "@/lib/field-display";
+import { formatCurrency, formatNumber, formatPerMille } from "@/lib/utils";
 import type {
   AutoRequest,
   AutoResponse,
@@ -136,8 +143,11 @@ const DEFAULT_FS: FreqSevFormState = {
 /* ── Page component ────────────────────────────────────────────────────── */
 
 export default function DanosPage() {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<DanosTab>("auto");
+  const { t, lang } = useLanguage();
+  const [activeTab, setActiveTab] = useLinkedWorkbenchTab<DanosTab>(
+    ["auto", "incendio", "rc", "bonus_malus", "freq_sev"],
+    "auto",
+  );
 
   /* ── Form state ──────────────────────────────────────────────────────── */
 
@@ -227,6 +237,12 @@ export default function DanosPage() {
       { value: "forestal", label: t("zona_incendio_forestal") },
     ],
     [t],
+  );
+
+  // Valid deductible tiers mirror FACTOR_DEDUCIBLE in the package; any other value is a 422.
+  const deduciblePctOptions = useMemo(
+    () => ["3", "5", "10", "15", "20"].map((value) => ({ value, label: `${value}%` })),
+    [],
   );
 
   const tipoConstruccionOptions = useMemo(
@@ -421,7 +437,12 @@ export default function DanosPage() {
         <p className="text-navy/50 text-lg leading-relaxed mt-3">{t("danos_contexto")}</p>
       </div>
 
-      <DanosStory />
+      <DomainWorkspace domain="danos" caseView={<DomainGuide domain="danos"><DanosStory /></DomainGuide>}>
+
+      <section id="workbench" className="scroll-mt-28 pt-3">
+        <p className="kicker mb-2">Workbench</p>
+        <h2 className="font-heading text-2xl md:text-3xl font-bold text-navy">{lang === "es" ? "Explora tarifas y modelos de pérdidas" : "Explore rating and loss models"}</h2>
+      </section>
 
       {/* Tabs */}
       <Tabs
@@ -429,6 +450,8 @@ export default function DanosPage() {
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as DanosTab)}
       />
+
+      <WorkbenchContext domain="danos" model={activeTab} />
 
       {/* Calculator form */}
       <Card className="form-depth">
@@ -476,14 +499,11 @@ export default function DanosPage() {
                 value={autoForm.edad_conductor}
                 onChange={(e) => updateAuto("edad_conductor", Number(e.target.value))}
               />
-              <Input
+              <Select
                 label={t("danos_deducible_pct")}
                 name="deducible_pct"
-                type="number"
-                step={1}
-                min={0}
-                max={100}
-                value={autoForm.deducible_pct}
+                options={deduciblePctOptions}
+                value={String(autoForm.deducible_pct)}
                 onChange={(e) => updateAuto("deducible_pct", Number(e.target.value))}
               />
             </div>
@@ -656,11 +676,7 @@ export default function DanosPage() {
 
       {/* Error display */}
       {errorMsg && (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-red-700 font-medium">
-            {t("error")}: {errorMsg}
-          </p>
-        </Card>
+        <ErrorPanel titulo={t("error_calculo_titulo")} mensaje={errorMsg} />
       )}
 
       {/* ── Section divider ─────────────────────────────────────────── */}
@@ -693,6 +709,7 @@ export default function DanosPage() {
         <FreqSevResults result={freqSev.data} t={t} />
       )}
 
+      </DomainWorkspace>
     </div>
   );
 }
@@ -709,7 +726,7 @@ function AutoResults({
   const coverageEntries = Object.entries(result.coberturas);
 
   const chartData = coverageEntries.map(([key, val]) => ({
-    name: key,
+    name: etiquetaCampo(key, t, "danos"),
     value: val,
   }));
 
@@ -739,6 +756,13 @@ function AutoResults({
           variant="accent"
         />
       </div>
+
+      <AvisoModelo
+        tier={result.validation_tier}
+        disclaimer={result.disclaimer}
+        titulo={t("reg_aviso_alcance")}
+        etiquetaNivel={t("nivel_validacion")}
+      />
 
       {/* Coverage breakdown -- horizontal bar chart */}
       {coverageEntries.length > 0 && (
@@ -794,9 +818,11 @@ function AutoResults({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
             {vehicleEntries.map(([key, val]) => (
               <div key={key} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-navy/5 last:border-0">
-                <span className="text-sm text-navy/50 shrink-0">{key}</span>
+                <span className="text-sm text-navy/50 shrink-0">
+                  {etiquetaCampo(key, t, "danos")}
+                </span>
                 <span className="text-sm font-medium text-navy tabular-nums text-right">
-                  {String(val)}
+                  {valorCampo(key, val, t)}
                 </span>
               </div>
             ))}
@@ -818,11 +844,14 @@ function IncendioResults({
 }) {
   const csvData = { ...result } as unknown as Record<string, unknown>;
 
-  // Factor pipeline data
+  // Factor pipeline data. `tasa_base` is quoted per thousand of the declared
+  // value -- 0.8 means 0.80 per mille, and 2,000,000 x 0.8/1000 = 1,600 is the
+  // premium the API returns. Reading it as a percentage overstated it by
+  // a factor of a thousand.
   const pipelineSteps = [
-    { label: t("danos_tasa_base"), value: formatPercent(result.tasa_base), sublabel: result.tipo_construccion },
-    { label: t("danos_factor_zona"), value: formatNumber(result.factor_zona, 4), sublabel: result.zona },
-    { label: t("danos_factor_uso"), value: formatNumber(result.factor_uso, 4), sublabel: result.uso },
+    { label: t("danos_tasa_base"), value: formatPerMille(result.tasa_base), sublabel: valorCampo("tipo_construccion", result.tipo_construccion, t) },
+    { label: t("danos_factor_zona"), value: formatNumber(result.factor_zona, 4), sublabel: valorCampo("zona", result.zona, t) },
+    { label: t("danos_factor_uso"), value: formatNumber(result.factor_uso, 4), sublabel: valorCampo("uso", result.uso, t) },
   ];
 
   return (
@@ -833,6 +862,13 @@ function IncendioResults({
         value={formatCurrency(result.prima_anual)}
         variant="accent"
         sublabel={`${t("valor_inmueble")}: ${formatCurrency(result.valor_inmueble)}`}
+      />
+
+      <AvisoModelo
+        tier={result.validation_tier}
+        disclaimer={result.disclaimer}
+        titulo={t("reg_aviso_alcance")}
+        etiquetaNivel={t("nivel_validacion")}
       />
 
       {/* Factor pipeline */}
@@ -883,8 +919,10 @@ function RCResults({
 }) {
   const csvData = { ...result } as unknown as Record<string, unknown>;
 
+  // Same unit as fire: the base rate is a millar of the liability limit.
+  // 5,000,000 x 1.2/1000 x 0.9 = 5,400, the premium the API returns.
   const pipelineSteps = [
-    { label: t("danos_tasa_base"), value: formatPercent(result.tasa_base), sublabel: result.clase_actividad },
+    { label: t("danos_tasa_base"), value: formatPerMille(result.tasa_base), sublabel: valorCampo("clase_actividad", result.clase_actividad, t) },
     { label: t("danos_factor_deducible"), value: formatNumber(result.factor_deducible, 4), sublabel: formatCurrency(result.deducible) },
   ];
 
@@ -896,6 +934,13 @@ function RCResults({
         value={formatCurrency(result.prima_anual)}
         variant="accent"
         sublabel={`${t("limite_responsabilidad")}: ${formatCurrency(result.limite_responsabilidad)}`}
+      />
+
+      <AvisoModelo
+        tier={result.validation_tier}
+        disclaimer={result.disclaimer}
+        titulo={t("reg_aviso_alcance")}
+        etiquetaNivel={t("nivel_validacion")}
       />
 
       {/* Factor pipeline */}
@@ -991,6 +1036,13 @@ function BonusMalusResults({
         </div>
       </Card>
 
+      <AvisoModelo
+        tier={result.validation_tier}
+        disclaimer={result.disclaimer}
+        titulo={t("reg_aviso_alcance")}
+        etiquetaNivel={t("nivel_validacion")}
+      />
+
       <DownloadButton data={csvData} filename="danos_bonus_malus" label={t("descargar_csv")} />
     </div>
   );
@@ -1071,6 +1123,13 @@ function FreqSevResults({
           </div>
         </div>
       </Card>
+
+      <AvisoModelo
+        tier={result.validation_tier}
+        disclaimer={result.disclaimer}
+        titulo={t("reg_aviso_alcance")}
+        etiquetaNivel={t("nivel_validacion")}
+      />
 
       <DownloadButton data={csvData} filename="danos_frecuencia_severidad" label={t("descargar_csv")} />
     </div>

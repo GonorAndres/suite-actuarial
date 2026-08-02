@@ -14,11 +14,32 @@ export function formatCurrency(value: number, decimals = 2): string {
 }
 
 /**
- * Format a number as a percentage: "12.34%"
+ * Format a fraction as a percentage: 0.1234 -> "12.34%".
+ *
+ * Use only when the API sends a fraction of one. When the API already sends
+ * the value in percent points (40.0 for 40%), use `formatPercentValue`:
+ * multiplying twice is the classic 100x display error.
  */
 export function formatPercent(value: number, decimals = 2): string {
   const pct = value * 100;
   return `${pct.toFixed(decimals)}%`;
+}
+
+/**
+ * Format a value already expressed in percent points: 40.0 -> "40.00%".
+ */
+export function formatPercentValue(value: number, decimals = 2): string {
+  return `${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Format a rate quoted per mille (por millar): 0.8 -> "0.80 ‰".
+ *
+ * Property, liability, and health base rates in this package are quoted per
+ * thousand of the insured value, not per hundred.
+ */
+export function formatPerMille(value: number, decimals = 2): string {
+  return `${value.toFixed(decimals)} ‰`;
 }
 
 /**

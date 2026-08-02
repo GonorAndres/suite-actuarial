@@ -26,8 +26,8 @@ def tabla_simple():
     for edad in edades:
         qx_h = 0.001 + (edad - 18) * 0.0002
         qx_m = 0.0005 + (edad - 18) * 0.0001
-        datos.append({"edad": edad, "sexo": "H", "qx": min(qx_h, 0.99)})
-        datos.append({"edad": edad, "sexo": "M", "qx": min(qx_m, 0.99)})
+        datos.append({"edad": edad, "sexo": "masculino", "qx": min(qx_h, 0.99)})
+        datos.append({"edad": edad, "sexo": "femenino", "qx": min(qx_m, 0.99)})
 
     df = pd.DataFrame(datos)
     return TablaMortalidad(nombre="Simple", datos=df)
@@ -51,7 +51,7 @@ def asegurado_basico():
     """Asegurado con datos básicos"""
     return Asegurado(
         edad=35,
-        sexo=Sexo.HOMBRE,
+        sexo=Sexo.MASCULINO,
         suma_asegurada=Decimal("1000000"),
     )
 
@@ -217,7 +217,7 @@ class TestVidaOrdinario:
         """No debe aceptar asegurados mayores de 70 años (base class limit)"""
         producto = VidaOrdinario(config_pago_limitado, tabla_simple)
 
-        asegurado_mayor = Asegurado(edad=76, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado_mayor = Asegurado(edad=76, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000"))
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado_mayor)
 
@@ -229,7 +229,9 @@ class TestVidaOrdinario:
         producto = VidaOrdinario(config_pago_limitado, tabla_simple, edad_omega=100)
 
         # Edad 96 > 70 so base class rejects first
-        asegurado_cercano = Asegurado(edad=96, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado_cercano = Asegurado(
+            edad=96, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000")
+        )
 
         es_asegurable, razon = producto.validar_asegurabilidad(asegurado_cercano)
 
@@ -240,7 +242,9 @@ class TestVidaOrdinario:
         """Debe fallar si edad >= omega (base class rejects >70 first)"""
         producto = VidaOrdinario(config_pago_limitado, tabla_simple, edad_omega=100)
 
-        asegurado_omega = Asegurado(edad=100, sexo=Sexo.HOMBRE, suma_asegurada=Decimal("1000000"))
+        asegurado_omega = Asegurado(
+            edad=100, sexo=Sexo.MASCULINO, suma_asegurada=Decimal("1000000")
+        )
 
         with pytest.raises(ValueError) as exc_info:
             producto.calcular_prima(asegurado_omega)
