@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function Footer() {
-  const { lang } = useLanguage();
+  const { lang, href } = useLanguage();
   return (
     <footer className="bg-navy text-offwhite/80 mt-16">
       {/* Thin gold rule */}
@@ -24,10 +24,10 @@ export function Footer() {
 
           {/* Center: links */}
           <div className="flex items-center gap-8 text-xs font-semibold uppercase tracking-wider">
-            <Link href="/biblioteca" className="text-offwhite/60 hover:text-offwhite transition-colors">
+            <Link href={href("/biblioteca")} className="text-offwhite/60 hover:text-offwhite transition-colors">
               {lang === "es" ? "Biblioteca" : "Library"}
             </Link>
-            <Link href="/evidencia" className="text-offwhite/60 hover:text-offwhite transition-colors">
+            <Link href={href("/evidencia")} className="text-offwhite/60 hover:text-offwhite transition-colors">
               {lang === "es" ? "Evidencia" : "Evidence"}
             </Link>
             <a
@@ -39,7 +39,7 @@ export function Footer() {
               GitHub
             </a>
             <Link
-              href="/api-docs"
+              href={href("/api-docs")}
               className="text-offwhite/60 hover:text-offwhite transition-colors"
             >
               {lang === "es" ? "Referencia técnica" : "Developer reference"}

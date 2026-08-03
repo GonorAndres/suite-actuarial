@@ -93,10 +93,21 @@ adds `cloudflare/_worker.js` as a same-origin proxy. See `docs/DEPLOYMENT.md`.
   would depend on Cloudflare Pages guessing a Content-Type. The repository `.gitignore`
   ignores `*.png`, with an explicit exception for this file.
 
-- **`<html lang>` is set twice on purpose.** The exported HTML is Spanish; an inline
-  snippet (`src/lib/i18n/langBootstrap.ts`) applies the stored preference before
-  hydration, and `DocumentLanguage` keeps it in sync afterwards. A crawler that runs
-  no JavaScript still sees `lang="es"` everywhere — only locale routes fix that.
+- **The language is the route, not a stored preference.** Two root layouts:
+  `app/(es)/` exports the Spanish documents at the original URLs and `app/(en)/en/`
+  exports the English ones under `/en/`, each with its real `<html lang>`. The root
+  layout passes the language into `LanguageProvider`; `useLanguage()` returns
+  `{ lang, t, href }`, where `href()` keeps internal links inside the current tree.
+  There is no localStorage, no bootstrap snippet, and no client-side `lang`
+  correction. A new route must be added in **both** trees: the Spanish
+  `layout.tsx` + `page.tsx` under `(es)/`, and under `(en)/en/` a layout with the
+  English `name`/`description` (passing `lang: "en"` to `routeMetadata` and the
+  graph builder) plus a `page.tsx` that re-exports the Spanish page component.
+  Both variants emit reciprocal hreflang (`es-MX`, `en-US`, `x-default` → Spanish)
+  via `routeMetadata`; `tests/seo-metadata.spec.ts` gates the pairing and
+  `sitemap.ts` lists both trees. The language switcher in the Header is a real
+  link to the twin document that carries path, query and hash across the full
+  document load — crossing root layouts is never a client transition.
 
 ## Design system guardrails
 

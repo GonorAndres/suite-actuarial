@@ -112,6 +112,8 @@ outputs/
 subagents_outputs/
 temp/
 to-do.md
+# Planes de sesion: notas locales de trabajo, no documentacion del proyecto.
+plan-*.md
 
 # Cloudflare wrangler local state
 .wrangler/

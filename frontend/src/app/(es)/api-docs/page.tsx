@@ -1272,7 +1272,7 @@ function MethodBadge({ method }: { method: "POST" | "GET" }) {
 /* ── Single endpoint card ──────────────────────────────────────────────── */
 
 function EndpointCard({ endpoint, lang }: { endpoint: Endpoint; lang: "es" | "en" }) {
-  const { t } = useLanguage();
+  const { t, href } = useLanguage();
   const desc = lang === "es" ? endpoint.desc_es : endpoint.desc_en;
   const params = endpoint.params;
   const isGet = endpoint.method === "GET";
@@ -1337,7 +1337,7 @@ function EndpointCard({ endpoint, lang }: { endpoint: Endpoint; lang: "es" | "en
       {/* Try it link */}
       <div className="mt-4 pt-3 border-t border-navy/5">
         <Link
-          href={endpoint.try_link}
+          href={href(endpoint.try_link)}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-terracotta hover:text-terracotta/80 transition-colors"
         >
           {t("api_docs_try_it")}
