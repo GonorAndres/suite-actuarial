@@ -28,6 +28,7 @@
 
 import type { JsonLdNode } from "@/components/StructuredData";
 import { DOMAIN_GUIDES, type DomainId } from "@/lib/domain-guides";
+import { SCOPE_TEXT } from "@/lib/evidence-content";
 import { labCopy } from "@/lib/i18n/labCopy";
 import { translations, type Lang } from "@/lib/i18n/translations";
 import { SITE_NAME, SITE_URL, twinPaths } from "@/lib/site-metadata";
@@ -53,17 +54,13 @@ const SITE_DESCRIPTION: Record<Lang, string> = {
   en: "Actuarial models explained and reproducible calculators, with their sources and their limits, from the Mexican insurance market.",
 };
 
-/**
- * Verbatim from the third support level on /evidencia/ (`evidencia/page.tsx`,
- * the `esText`/`enText` of level "03"). Quoted rather than imported because that
- * page is a client component holding the levels inline; if the wording there
- * changes, change it here too. An earlier version of this constant prepended a
- * sentence that appeared nowhere on the site while claiming to be verbatim.
+/*
+ * The scope disclosure (`SCOPE_TEXT`, imported above) is the body of the third
+ * support level on /evidencia/. It used to be quoted here by hand — with a
+ * comment begging both copies to move together — because the page held its
+ * levels inline; the content now lives in `lib/evidence-content.ts`, so the
+ * verbatim rule holds by construction.
  */
-const SCOPE_TEXT: Record<Lang, string> = {
-  es: "Para una decisión real todavía hacen falta datos aprobados, gobierno corporativo, un método institucional y juicio actuarial. Este repositorio no afirma tenerlos.",
-  en: "A real decision still needs approved data, corporate governance, an institutional method, and actuarial judgment. This repository does not claim to have them.",
-};
 
 /** Route name of /evidencia/, per language tree (see its layout metadata). */
 const SCOPE_NAME: Record<Lang, string> = {
