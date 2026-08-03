@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { DOMAIN_GUIDES } from "../src/lib/domain-guides";
 import { WORKBENCH_GUIDES } from "../src/lib/workbench-guides";
+import { translations } from "../src/lib/i18n/translations";
+
+test("the translation dictionaries hold exact key parity", () => {
+  // `t()` falls back to the raw key, so a missing English key would render
+  // `hero_titulo` as indexable text on /en/. TypeScript already rejects a key
+  // that exists in one dictionary and not the other; this keeps the guarantee
+  // visible and gated even if the typing changes shape.
+  expect(Object.keys(translations.en).sort()).toEqual(Object.keys(translations.es).sort());
+});
 
 test("every domain guide is bilingual and decision-complete", () => {
   const guides = Object.values(DOMAIN_GUIDES);

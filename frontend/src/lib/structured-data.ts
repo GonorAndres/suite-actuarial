@@ -14,56 +14,94 @@
  * `usageInfo` pointing at the disclosure node, so the declared scope travels with
  * the markup instead of living only in the prose.
  *
- * Language: the exported HTML is Spanish (English is a client-side preference with
- * no URL of its own), so every node declares `inLanguage: "es-MX"` and no
- * alternate-language node is emitted. That changes when locale routes exist.
+ * Language: every route exists as a Spanish document at its original URL and an
+ * English one under `/en/`. Each graph function takes the document's language,
+ * localizes page-level ids and text to it, and keeps the site-level ids
+ * (`#website`, `#person`, `#software`) shared across both trees so crawlers see
+ * one entity. The disclosure node is per-language — each document's creative
+ * works point at the disclosure a reader of that document can actually read.
  *
  * Values come from real page content: `DOMAIN_GUIDES` for the domain questions,
- * `labCopy` for the guided case, `translations` for domain labels, and the route's
- * own `Metadata` description for the page description.
+ * `labCopy` for the guided case, `translations` for domain labels, the verbatim
+ * scope text from /evidencia/, and the route's own `Metadata` description.
  */
 
 import type { JsonLdNode } from "@/components/StructuredData";
 import { DOMAIN_GUIDES, type DomainId } from "@/lib/domain-guides";
 import { labCopy } from "@/lib/i18n/labCopy";
-import { translations } from "@/lib/i18n/translations";
-import { SITE_NAME, SITE_URL } from "@/lib/site-metadata";
+import { translations, type Lang } from "@/lib/i18n/translations";
+import { SITE_NAME, SITE_URL, twinPaths } from "@/lib/site-metadata";
 import pkg from "../../package.json";
 
 const REPO_URL = "https://github.com/GonorAndres/suite-actuarial";
 const MIT_LICENSE = "https://opensource.org/licenses/MIT";
-const LANGUAGE = "es-MX";
+
+const LANGUAGE_TAG: Record<Lang, string> = { es: "es-MX", en: "en-US" };
 
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const PERSON_ID = `${SITE_URL}/#person`;
 const SOFTWARE_ID = `${SITE_URL}/#software`;
-const SCOPE_ID = `${SITE_URL}/evidencia/#alcance`;
 
 /** Trailing slash to match `trailingSlash: true` and the canonical tags. */
 const url = (path: string) => `${SITE_URL}${path}`;
 
-const SITE_DESCRIPTION =
-  "Modelos actuariales explicados y calculadoras reproducibles, con sus fuentes y sus límites, desde el mercado asegurador mexicano.";
+/** Absolute URL of a route in the given language tree. */
+const localizedUrl = (lang: Lang, path: string) => url(twinPaths(path)[lang]);
+
+const SITE_DESCRIPTION: Record<Lang, string> = {
+  es: "Modelos actuariales explicados y calculadoras reproducibles, con sus fuentes y sus límites, desde el mercado asegurador mexicano.",
+  en: "Actuarial models explained and reproducible calculators, with their sources and their limits, from the Mexican insurance market.",
+};
 
 /**
  * Verbatim from the third support level on /evidencia/ (`evidencia/page.tsx`,
- * the `esText` of level "03"). Quoted rather than imported because that page is
- * a client component holding the levels inline; if the wording there changes,
- * change it here too. An earlier version of this constant prepended a sentence
- * that appeared nowhere on the site while claiming to be verbatim.
+ * the `esText`/`enText` of level "03"). Quoted rather than imported because that
+ * page is a client component holding the levels inline; if the wording there
+ * changes, change it here too. An earlier version of this constant prepended a
+ * sentence that appeared nowhere on the site while claiming to be verbatim.
  */
-const SCOPE_TEXT =
-  "Para una decisión real todavía hacen falta datos aprobados, gobierno corporativo, un método institucional y juicio actuarial. Este repositorio no afirma tenerlos.";
-
-const DOMAIN_LABELS: Record<DomainId, string> = {
-  vida: translations.es.nav_vida,
-  danos: translations.es.nav_danos,
-  salud: translations.es.nav_salud,
-  pensiones: translations.es.nav_pensiones,
-  reservas: translations.es.nav_reservas,
-  reaseguro: translations.es.nav_reaseguro,
-  regulatorio: translations.es.nav_regulatorio,
+const SCOPE_TEXT: Record<Lang, string> = {
+  es: "Para una decisión real todavía hacen falta datos aprobados, gobierno corporativo, un método institucional y juicio actuarial. Este repositorio no afirma tenerlos.",
+  en: "A real decision still needs approved data, corporate governance, an institutional method, and actuarial judgment. This repository does not claim to have them.",
 };
+
+/** Route name of /evidencia/, per language tree (see its layout metadata). */
+const SCOPE_NAME: Record<Lang, string> = {
+  es: "Evidencia, validación y límites",
+  en: "Evidence, validation, and limits",
+};
+
+const BROWSER_REQUIREMENTS: Record<Lang, string> = {
+  es: "Requiere JavaScript; el cálculo consulta api-suite.gonor.me.",
+  en: "Requires JavaScript; calculations query api-suite.gonor.me.",
+};
+
+/**
+ * The six section headings rendered by components/guides/DomainGuide.tsx
+ * (its `LABELS` constant). Quoted per language for the same verbatim reason
+ * as `SCOPE_TEXT`.
+ */
+const ARTICLE_SECTIONS: Record<Lang, string[]> = {
+  es: [
+    "Propósito",
+    "Beneficios y flujos",
+    "Supuestos",
+    "Método",
+    "Resultados e interpretación",
+    "Validación y límites",
+  ],
+  en: [
+    "Purpose",
+    "Benefits and cash flows",
+    "Assumptions",
+    "Method",
+    "Results and interpretation",
+    "Validation and limits",
+  ],
+};
+
+const domainLabel = (lang: Lang, domain: DomainId): string =>
+  translations[lang][`nav_${domain}`];
 
 /** Same order the library page lists them in. */
 export const DOMAIN_ORDER: DomainId[] = [
@@ -76,67 +114,78 @@ export const DOMAIN_ORDER: DomainId[] = [
   "regulatorio",
 ];
 
-const scopeRef = { "@id": SCOPE_ID };
+/** The disclosure node of the tree this document belongs to. */
+const scopeId = (lang: Lang) => `${localizedUrl(lang, "/evidencia/")}#alcance`;
+
+const scopeRef = (lang: Lang) => ({ "@id": scopeId(lang) });
 const personRef = { "@id": PERSON_ID };
 
 /**
- * Declared once in the root layout, which wraps every route, so route-level
- * nodes can reference these ids inside the same document.
+ * Declared once in each tree's root layout, which wraps every route, so
+ * route-level nodes can reference these ids inside the same document. The
+ * site-level ids are shared across both trees; only the text and the
+ * disclosure node are per-language.
  */
-export const siteGraph: JsonLdNode[] = [
-  {
-    "@type": "Person",
-    "@id": PERSON_ID,
-    // The only named party on the site, from the footer credit line.
-    name: "Andrés González Ortega",
-    url: url("/"),
-    sameAs: ["https://github.com/GonorAndres"],
-  },
-  {
-    "@type": "WebSite",
-    "@id": WEBSITE_ID,
-    name: SITE_NAME,
-    url: url("/"),
-    description: SITE_DESCRIPTION,
-    inLanguage: LANGUAGE,
-    author: personRef,
-    publisher: personRef,
-    license: MIT_LICENSE,
-    creativeWorkStatus: "Experimental",
-    usageInfo: scopeRef,
-    // No `potentialAction: SearchAction`: the site has no search.
-  },
-  {
-    "@type": "SoftwareSourceCode",
-    "@id": SOFTWARE_ID,
-    name: SITE_NAME,
-    description:
-      "Paquete de Python, servicio FastAPI y tablero para construir, probar y explicar modelos actuariales.",
-    codeRepository: REPO_URL,
-    programmingLanguage: ["Python", "TypeScript"],
-    runtimePlatform: "Python 3.11+",
-    license: MIT_LICENSE,
-    version: pkg.version,
-    author: personRef,
-    isAccessibleForFree: true,
-    inLanguage: LANGUAGE,
-    creativeWorkStatus: "Experimental",
-    usageInfo: scopeRef,
-    // No `downloadUrl` / `installUrl`: the package is not published to an index.
-  },
-  {
-    "@type": "CreativeWork",
-    "@id": SCOPE_ID,
-    url: url("/evidencia/"),
-    name: "Evidencia, validación y límites",
-    description: SCOPE_TEXT,
-    inLanguage: LANGUAGE,
-    author: personRef,
-  },
-];
+export function siteGraph(lang: Lang): JsonLdNode[] {
+  return [
+    {
+      "@type": "Person",
+      "@id": PERSON_ID,
+      // The only named party on the site, from the footer credit line.
+      name: "Andrés González Ortega",
+      url: url("/"),
+      sameAs: ["https://github.com/GonorAndres"],
+    },
+    {
+      "@type": "WebSite",
+      "@id": WEBSITE_ID,
+      name: SITE_NAME,
+      url: url("/"),
+      description: SITE_DESCRIPTION[lang],
+      // The site ships both language trees; the WebSite entity is bilingual.
+      inLanguage: [LANGUAGE_TAG.es, LANGUAGE_TAG.en],
+      author: personRef,
+      publisher: personRef,
+      license: MIT_LICENSE,
+      creativeWorkStatus: "Experimental",
+      usageInfo: scopeRef(lang),
+      // No `potentialAction: SearchAction`: the site has no search.
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": SOFTWARE_ID,
+      name: SITE_NAME,
+      description:
+        lang === "es"
+          ? "Paquete de Python, servicio FastAPI y tablero para construir, probar y explicar modelos actuariales."
+          : "Python package, FastAPI service, and dashboard to build, test, and explain actuarial models.",
+      codeRepository: REPO_URL,
+      programmingLanguage: ["Python", "TypeScript"],
+      runtimePlatform: "Python 3.11+",
+      license: MIT_LICENSE,
+      version: pkg.version,
+      author: personRef,
+      isAccessibleForFree: true,
+      inLanguage: [LANGUAGE_TAG.es, LANGUAGE_TAG.en],
+      creativeWorkStatus: "Experimental",
+      usageInfo: scopeRef(lang),
+      // No `downloadUrl` / `installUrl`: the package is not published to an index.
+    },
+    {
+      "@type": "CreativeWork",
+      "@id": scopeId(lang),
+      url: localizedUrl(lang, "/evidencia/"),
+      name: SCOPE_NAME[lang],
+      description: SCOPE_TEXT[lang],
+      inLanguage: LANGUAGE_TAG[lang],
+      author: personRef,
+    },
+  ];
+}
 
 interface PageOptions {
-  /** Path with a leading and trailing slash, e.g. "/vida/". */
+  lang: Lang;
+  /** Path in the Spanish tree, with a leading and trailing slash, e.g. "/vida/". */
   path: string;
   name: string;
   description: string;
@@ -145,18 +194,19 @@ interface PageOptions {
   mainEntityId?: string;
 }
 
-function webPage({ path, name, description, type = "WebPage", mainEntityId }: PageOptions): JsonLdNode {
+function webPage({ lang, path, name, description, type = "WebPage", mainEntityId }: PageOptions): JsonLdNode {
+  const pageUrl = localizedUrl(lang, path);
   return {
     "@type": type,
-    "@id": `${url(path)}#webpage`,
-    url: url(path),
+    "@id": `${pageUrl}#webpage`,
+    url: pageUrl,
     name,
     description,
     isPartOf: { "@id": WEBSITE_ID },
-    inLanguage: LANGUAGE,
+    inLanguage: LANGUAGE_TAG[lang],
     author: personRef,
     creativeWorkStatus: "Experimental",
-    usageInfo: scopeRef,
+    usageInfo: scopeRef(lang),
     ...(mainEntityId ? { mainEntity: { "@id": mainEntityId } } : {}),
   };
 }
@@ -166,130 +216,132 @@ function webPage({ path, name, description, type = "WebPage", mainEntityId }: Pa
  * appears after hydration, so the node describes the tool and never presents its
  * output as page content.
  */
-function workbench(domain: DomainId): JsonLdNode {
+function workbench(lang: Lang, domain: DomainId): JsonLdNode {
+  const pageUrl = localizedUrl(lang, `/${domain}/`);
   return {
     "@type": "WebApplication",
-    "@id": `${url(`/${domain}/`)}#workbench`,
-    name: `Workbench · ${DOMAIN_LABELS[domain]}`,
-    url: `${url(`/${domain}/`)}?view=workbench#workbench`,
+    "@id": `${pageUrl}#workbench`,
+    name: `Workbench · ${domainLabel(lang, domain)}`,
+    url: `${pageUrl}?view=workbench#workbench`,
     // Not FinanceApplication: that categorises the tool as finance software.
     applicationCategory: "EducationalApplication",
     operatingSystem: "Any",
-    browserRequirements: "Requiere JavaScript; el cálculo consulta api-suite.gonor.me.",
+    browserRequirements: BROWSER_REQUIREMENTS[lang],
     isAccessibleForFree: true,
-    inLanguage: LANGUAGE,
+    inLanguage: LANGUAGE_TAG[lang],
     author: personRef,
     creativeWorkStatus: "Experimental",
-    usageInfo: scopeRef,
+    usageInfo: scopeRef(lang),
   };
 }
 
-export function homeGraph(name: string, description: string): JsonLdNode[] {
-  return [webPage({ path: "/", name, description, mainEntityId: SOFTWARE_ID })];
+export function homeGraph(name: string, description: string, lang: Lang = "es"): JsonLdNode[] {
+  return [webPage({ lang, path: "/", name, description, mainEntityId: SOFTWARE_ID })];
 }
 
-export function libraryGraph(name: string, description: string): JsonLdNode[] {
-  const listId = `${url("/biblioteca/")}#modelos`;
+export function libraryGraph(name: string, description: string, lang: Lang = "es"): JsonLdNode[] {
+  const listId = `${localizedUrl(lang, "/biblioteca/")}#modelos`;
   return [
-    webPage({ path: "/biblioteca/", name, description, type: "CollectionPage", mainEntityId: listId }),
+    webPage({ lang, path: "/biblioteca/", name, description, type: "CollectionPage", mainEntityId: listId }),
     {
       "@type": "ItemList",
       "@id": listId,
-      name: "Dominios actuariales explicados",
+      name: lang === "es" ? "Dominios actuariales explicados" : "Actuarial domains explained",
       numberOfItems: DOMAIN_ORDER.length,
       itemListOrder: "https://schema.org/ItemListOrderAscending",
       itemListElement: DOMAIN_ORDER.map((domain, index) => ({
         "@type": "ListItem",
         position: index + 1,
-        name: DOMAIN_LABELS[domain],
-        url: url(`/${domain}/`),
+        name: domainLabel(lang, domain),
+        url: localizedUrl(lang, `/${domain}/`),
       })),
     },
   ];
 }
 
-export function domainGraph(domain: DomainId, name: string, description: string): JsonLdNode[] {
+export function domainGraph(
+  domain: DomainId,
+  name: string,
+  description: string,
+  lang: Lang = "es",
+): JsonLdNode[] {
   const guide = DOMAIN_GUIDES[domain];
   const path = `/${domain}/`;
-  const articleId = `${url(path)}#caso`;
+  const pageUrl = localizedUrl(lang, path);
+  const articleId = `${pageUrl}#caso`;
 
   return [
-    webPage({ path, name, description, mainEntityId: articleId }),
+    webPage({ lang, path, name, description, mainEntityId: articleId }),
     {
       "@type": "TechArticle",
       "@id": articleId,
-      headline: guide.question.es,
-      description: guide.decision.es,
-      about: { "@type": "Thing", name: DOMAIN_LABELS[domain] },
+      headline: guide.question[lang],
+      description: guide.decision[lang],
+      about: { "@type": "Thing", name: domainLabel(lang, domain) },
       // The six section headings rendered by components/guides/DomainGuide.tsx.
-      articleSection: [
-        "Propósito",
-        "Beneficios y flujos",
-        "Supuestos",
-        "Método",
-        "Resultados e interpretación",
-        "Validación y límites",
-      ],
-      mainEntityOfPage: { "@id": `${url(path)}#webpage` },
-      hasPart: { "@id": `${url(path)}#workbench` },
+      articleSection: ARTICLE_SECTIONS[lang],
+      mainEntityOfPage: { "@id": `${pageUrl}#webpage` },
+      hasPart: { "@id": `${pageUrl}#workbench` },
       isAccessibleForFree: true,
-      inLanguage: LANGUAGE,
+      inLanguage: LANGUAGE_TAG[lang],
       author: personRef,
       creativeWorkStatus: "Experimental",
-      usageInfo: scopeRef,
+      usageInfo: scopeRef(lang),
     },
-    workbench(domain),
+    workbench(lang, domain),
   ];
 }
 
-export function labGraph(name: string, description: string): JsonLdNode[] {
+export function labGraph(name: string, description: string, lang: Lang = "es"): JsonLdNode[] {
   const path = "/lab/";
-  const articleId = `${url(path)}#caso`;
-  const appId = `${url(path)}#calculadora`;
+  const pageUrl = localizedUrl(lang, path);
+  const articleId = `${pageUrl}#caso`;
+  const appId = `${pageUrl}#calculadora`;
 
   return [
-    webPage({ path, name, description, mainEntityId: articleId }),
+    webPage({ lang, path, name, description, mainEntityId: articleId }),
     {
       "@type": "TechArticle",
       // Not HowTo: the six stages are views over one continuous model, not steps
       // the reader performs.
       "@id": articleId,
       additionalType: "https://schema.org/LearningResource",
-      learningResourceType: "Ejemplo guiado",
-      headline: labCopy.es.title,
-      description: labCopy.es.subtitle,
-      about: { "@type": "Thing", name: DOMAIN_LABELS.vida },
-      mainEntityOfPage: { "@id": `${url(path)}#webpage` },
+      learningResourceType: lang === "es" ? "Ejemplo guiado" : "Guided example",
+      headline: labCopy[lang].title,
+      description: labCopy[lang].subtitle,
+      about: { "@type": "Thing", name: domainLabel(lang, "vida") },
+      mainEntityOfPage: { "@id": `${pageUrl}#webpage` },
       hasPart: { "@id": appId },
       isAccessibleForFree: true,
-      inLanguage: LANGUAGE,
+      inLanguage: LANGUAGE_TAG[lang],
       author: personRef,
       creativeWorkStatus: "Experimental",
-      usageInfo: scopeRef,
+      usageInfo: scopeRef(lang),
     },
     {
       "@type": "WebApplication",
       "@id": appId,
-      name: labCopy.es.title,
-      url: url(path),
+      name: labCopy[lang].title,
+      url: pageUrl,
       applicationCategory: "EducationalApplication",
       operatingSystem: "Any",
-      browserRequirements: "Requiere JavaScript; el cálculo consulta api-suite.gonor.me.",
+      browserRequirements: BROWSER_REQUIREMENTS[lang],
       isAccessibleForFree: true,
-      inLanguage: LANGUAGE,
+      inLanguage: LANGUAGE_TAG[lang],
       author: personRef,
       creativeWorkStatus: "Experimental",
-      usageInfo: scopeRef,
+      usageInfo: scopeRef(lang),
     },
   ];
 }
 
-export function evidenceGraph(name: string, description: string): JsonLdNode[] {
+export function evidenceGraph(name: string, description: string, lang: Lang = "es"): JsonLdNode[] {
   const path = "/evidencia/";
-  const articleId = `${url(path)}#articulo`;
+  const pageUrl = localizedUrl(lang, path);
+  const articleId = `${pageUrl}#articulo`;
 
   return [
-    webPage({ path, name, description, mainEntityId: articleId }),
+    webPage({ lang, path, name, description, mainEntityId: articleId }),
     {
       "@type": "TechArticle",
       "@id": articleId,
@@ -298,23 +350,27 @@ export function evidenceGraph(name: string, description: string): JsonLdNode[] {
       // thing this file's own rule forbids.
       headline: name,
       description,
-      about: { "@type": "Thing", name: "Validación y límites de los modelos" },
-      mainEntityOfPage: { "@id": `${url(path)}#webpage` },
+      about: {
+        "@type": "Thing",
+        name: lang === "es" ? "Validación y límites de los modelos" : "Validation and limits of the models",
+      },
+      mainEntityOfPage: { "@id": `${pageUrl}#webpage` },
       isAccessibleForFree: true,
-      inLanguage: LANGUAGE,
+      inLanguage: LANGUAGE_TAG[lang],
       author: personRef,
       creativeWorkStatus: "Experimental",
-      usageInfo: scopeRef,
+      usageInfo: scopeRef(lang),
     },
   ];
 }
 
-export function apiDocsGraph(name: string, description: string): JsonLdNode[] {
+export function apiDocsGraph(name: string, description: string, lang: Lang = "es"): JsonLdNode[] {
   const path = "/api-docs/";
-  const articleId = `${url(path)}#referencia`;
+  const pageUrl = localizedUrl(lang, path);
+  const articleId = `${pageUrl}#referencia`;
 
   return [
-    webPage({ path, name, description, mainEntityId: articleId }),
+    webPage({ lang, path, name, description, mainEntityId: articleId }),
     {
       "@type": "APIReference",
       "@id": articleId,
@@ -322,13 +378,16 @@ export function apiDocsGraph(name: string, description: string): JsonLdNode[] {
       description,
       targetPlatform: "REST/HTTP JSON",
       assemblyVersion: pkg.version,
-      about: { "@type": "Thing", name: "API REST de suite_actuarial" },
-      mainEntityOfPage: { "@id": `${url(path)}#webpage` },
+      about: {
+        "@type": "Thing",
+        name: lang === "es" ? "API REST de suite_actuarial" : "suite_actuarial REST API",
+      },
+      mainEntityOfPage: { "@id": `${pageUrl}#webpage` },
       isAccessibleForFree: true,
-      inLanguage: LANGUAGE,
+      inLanguage: LANGUAGE_TAG[lang],
       author: personRef,
       creativeWorkStatus: "Experimental",
-      usageInfo: scopeRef,
+      usageInfo: scopeRef(lang),
     },
   ];
 }

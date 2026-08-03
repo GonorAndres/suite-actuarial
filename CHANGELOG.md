@@ -1,5 +1,29 @@
 # Changelog
 
+## Sin publicar — rutas por idioma en el tablero
+
+El inglés deja de ser invisible para los buscadores. Antes había 568 claves
+traducidas en paridad exacta y cero URLs indexables: los doce documentos exportados
+eran español con `lang="es"`, y el idioma era estado de cliente en `localStorage`.
+Ahora cada ruta existe dos veces: el documento español en su URL original (ninguna
+cambia) y el inglés bajo `/en/`, con la misma prioridad en el sitemap.
+
+- Dos root layouts por grupos de ruta (`app/(es)/`, `app/(en)/en/`); el HTML
+  exportado declara `lang` real y el contenido inglés se prerrenderiza — un
+  rastreador sin JavaScript ve inglés en `/en/`, cosa que una prueba fija.
+- hreflang recíproco (`es-MX`, `en-US`, `x-default` → español) en las 24 páginas y
+  en el sitemap; canónico y `og:locale` por variante.
+- JSON-LD localizado: los nodos de sitio (`#website`, `#person`, `#software`)
+  comparten `@id` entre árboles; los nodos de página y la divulgación de alcance
+  son por idioma, con textos citados literalmente del contenido real.
+- El idioma viene de la ruta: `LanguageProvider` recibe `lang` del layout;
+  desaparecen `localStorage`, el snippet previo a hidratación y `DocumentLanguage`
+  (~45 líneas menos). El conmutador es un enlace real al documento gemelo y
+  conserva ruta, query y hash (el estado del workbench sobrevive el cambio).
+- Compuertas nuevas en Playwright: 33 pruebas (antes 18) — paridad de claves,
+  hreflang recíproco, estado activo del Header bajo `/en/`, navegación contenida
+  en cada árbol, y el conmutador con query y hash.
+
 ## Sin publicar — borde público del API
 
 El API deja de estar expuesto directamente. `api-suite.gonor.me` pasa a servirse por

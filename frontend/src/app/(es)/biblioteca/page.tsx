@@ -15,7 +15,7 @@ const DOMAINS: { id: DomainId; name: { es: string; en: string }; models: { es: s
 ];
 
 export default function LibraryPage() {
-  const { lang } = useLanguage();
+  const { lang, href } = useLanguage();
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
       <header className="max-w-3xl mb-10">
@@ -33,8 +33,8 @@ export default function LibraryPage() {
               <p className="text-lg font-heading font-semibold text-navy/90 mb-3">{guide.question[lang]}</p>
               <p className="text-sm leading-relaxed text-navy/60 mb-6">{domain.models[lang]}</p>
               <div className="mt-auto flex flex-wrap gap-3">
-                <Link href={`/${domain.id}/`} className="bg-navy text-offwhite px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-terracotta">{lang === "es" ? "Entender el caso" : "Understand the case"}</Link>
-                <a href={`/${domain.id}/?model=${guide.workbenchModel}&view=workbench#workbench`} className="border border-navy/25 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-navy hover:border-terracotta hover:text-terracotta">{lang === "es" ? "Abrir Workbench" : "Open Workbench"}</a>
+                <Link href={href(`/${domain.id}/`)} className="bg-navy text-offwhite px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-terracotta">{lang === "es" ? "Entender el caso" : "Understand the case"}</Link>
+                <a href={`${href(`/${domain.id}/`)}?model=${guide.workbenchModel}&view=workbench#workbench`} className="border border-navy/25 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-navy hover:border-terracotta hover:text-terracotta">{lang === "es" ? "Abrir Workbench" : "Open Workbench"}</a>
               </div>
             </article>
           );

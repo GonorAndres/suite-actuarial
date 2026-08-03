@@ -12,10 +12,24 @@ const NAV_ITEMS = [
 ];
 
 export function Header() {
-  const { lang, setLang } = useLanguage();
+  const { lang, href } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
   const pathname = usePathname();
+
+  /** The route without the `/en` prefix, so the active state and the language
+   *  switcher work identically in both trees. */
+  const localPath = pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+  const esHref = localPath;
+  const enHref = localPath === "/" ? "/en/" : `/en${localPath}`;
+
+  /** Switching language crosses root layouts, which is a full document load.
+   *  The href alone would drop the query and the hash — and with them the
+   *  workbench state (`?model=...#workbench`) — so they are carried explicitly. */
+  const switchTo = (target: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    window.location.assign(`${target}${window.location.search}${window.location.hash}`);
+  };
 
   useEffect(() => {
     let previousY = window.scrollY;
@@ -54,7 +68,7 @@ export function Header() {
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-16">
           {/* Wordmark */}
           <Link
-            href="/"
+            href={href("/")}
             className="font-heading font-bold text-2xl text-navy shrink-0"
           >
             Suite Actuarial
@@ -65,12 +79,12 @@ export function Header() {
             {NAV_ITEMS.map((item) => {
               const isActive =
                 item.href === "/"
-                    ? pathname === "/"
-                  : pathname.startsWith(item.href);
+                    ? localPath === "/"
+                  : localPath.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={href(item.href)}
                   className={[
                     "relative px-2.5 py-2 text-xs font-semibold uppercase tracking-wider transition-colors",
                     isActive
@@ -93,10 +107,11 @@ export function Header() {
 
           {/* Right side: language toggle + mobile hamburger */}
           <div className="flex items-center gap-3">
-            {/* Language toggle */}
+            {/* Language toggle: real links to the twin document, one per tree */}
             <div className="flex items-center border border-navy/25 rounded-sm overflow-hidden">
-              <button
-                onClick={() => setLang("es")}
+              <a
+                href={esHref}
+                onClick={switchTo(esHref)}
                 className={[
                   "px-2.5 py-1 text-xs font-bold transition-colors duration-150",
                   lang === "es"
@@ -104,11 +119,13 @@ export function Header() {
                     : "text-navy/60 hover:text-navy",
                 ].join(" ")}
                 aria-label="Espanol"
+                aria-current={lang === "es" ? "true" : undefined}
               >
                 ES
-              </button>
-              <button
-                onClick={() => setLang("en")}
+              </a>
+              <a
+                href={enHref}
+                onClick={switchTo(enHref)}
                 className={[
                   "px-2.5 py-1 text-xs font-bold transition-colors duration-150",
                   lang === "en"
@@ -116,9 +133,10 @@ export function Header() {
                     : "text-navy/60 hover:text-navy",
                 ].join(" ")}
                 aria-label="English"
+                aria-current={lang === "en" ? "true" : undefined}
               >
                 EN
-              </button>
+              </a>
             </div>
             <a
               href="https://github.com/GonorAndres/suite-actuarial"
@@ -211,12 +229,12 @@ export function Header() {
           {NAV_ITEMS.map((item) => {
             const isActive =
               item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+                ? localPath === "/"
+                : localPath.startsWith(item.href);
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href(item.href)}
                 onClick={() => setMobileOpen(false)}
                 className={[
                   "px-3 py-3 text-sm font-semibold uppercase tracking-wider border-b border-navy/10 transition-colors duration-150",

@@ -100,10 +100,56 @@ test("evidence distinguishes implementation from professional validity", async (
   await expect(page.locator("tbody tr")).toHaveCount(7);
 });
 
-test("language switch changes public library copy", async ({ page }) => {
+test("language switch navigates to the English document", async ({ page }) => {
   await page.goto("/biblioteca/");
-  await page.getByRole("button", { name: "English" }).click();
+  await page.getByRole("link", { name: "English" }).click();
+  await expect(page).toHaveURL("/en/biblioteca/");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Models organized");
+
+  await page.getByRole("link", { name: "Espanol" }).click();
+  await expect(page).toHaveURL("/biblioteca/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Modelos organizados");
+});
+
+test("language switch carries the path, query and hash across trees", async ({ page }) => {
+  // Crossing root layouts is a full document load; without carrying the query
+  // and hash the workbench state would silently reset to the case tab.
+  await page.goto("/reaseguro/?model=xl&view=workbench#workbench");
+  await page.getByRole("link", { name: "English" }).click();
+  await expect(page).toHaveURL("/en/reaseguro/?model=xl&view=workbench#workbench");
+  await expect(page.getByRole("tab", { name: "Workbench" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "Excess of Loss" })).toHaveAttribute("aria-selected", "true");
+});
+
+test("the header marks the active section under /en/", async ({ page }) => {
+  // `pathname.startsWith(item.href)` was false for every item under the /en
+  // prefix, which failed silently: the nav rendered with no active state.
+  await page.goto("/en/lab/");
+  const active = page.locator("header nav").first().getByRole("link", { name: "Guided example" });
+  await expect(active).toHaveClass(/text-terracotta/);
+  await expect(
+    page.locator("header nav").first().getByRole("link", { name: "Library" }),
+  ).not.toHaveClass(/text-terracotta/);
+});
+
+test("English navigation stays inside the English tree", async ({ page }) => {
+  await page.goto("/en/");
+  await expect(page.getByRole("link", { name: "Library" }).first()).toHaveAttribute("href", "/en/biblioteca/");
+  await expect(page.getByRole("link", { name: "Evidence" }).first()).toHaveAttribute("href", "/en/evidencia/");
+  await page.goto("/en/biblioteca/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Models organized");
+  await expect(page.locator("main article")).toHaveCount(7);
+  await expect(page.getByRole("link", { name: "Open Workbench" })).toHaveCount(7);
+});
+
+test("an English domain page serves its case in English", async ({ page }) => {
+  await page.goto("/en/vida/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Life Insurance");
+  await expect(page.getByRole("tab", { name: "Explained case" })).toHaveAttribute("aria-selected", "true");
+  const guide = page.locator("main article").first();
+  await expect(guide.getByRole("heading", { name: "Purpose" })).toBeVisible();
+  await expect(guide.getByRole("heading", { name: "Validation and limits" })).toBeVisible();
 });
 
 test("mobile navigation reaches the new destinations", async ({ page }) => {

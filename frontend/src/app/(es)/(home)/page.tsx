@@ -122,7 +122,7 @@ function DemoVideo({ lang, videoId }: { lang: "es" | "en"; videoId: string }) {
 }
 
 export default function Home() {
-  const { lang } = useLanguage();
+  const { lang, href: localHref } = useLanguage();
   const copy = COPY[lang];
   const videoId = process.env.NEXT_PUBLIC_DEMO_VIDEO_ID;
 
@@ -134,8 +134,8 @@ export default function Home() {
           <h1>{copy.title}</h1>
           <p className="hero-intro">{copy.intro}</p>
           <div className="hero-actions">
-            <Link href="/biblioteca" className="primary-action">{copy.secondary}</Link>
-            <Link href="/lab" className="secondary-action">{copy.primary}</Link>
+            <Link href={localHref("/biblioteca")} className="primary-action">{copy.secondary}</Link>
+            <Link href={localHref("/lab")} className="secondary-action">{copy.primary}</Link>
           </div>
           <p className="hero-note">{copy.note}</p>
         </div>
@@ -154,7 +154,7 @@ export default function Home() {
       </section>
 
       <section className="featured-lab">
-        <div><p className="eyebrow">{copy.featuredKicker}</p><h2>{copy.featuredTitle}</h2><p>{copy.featuredText}</p><Link href="/lab">{copy.featuredCta} →</Link></div>
+        <div><p className="eyebrow">{copy.featuredKicker}</p><h2>{copy.featuredTitle}</h2><p>{copy.featuredText}</p><Link href={localHref("/lab")}>{copy.featuredCta} →</Link></div>
         <div className="contract-diagram"><span>{copy.coverageLabel}</span><div className="timeline"><i /><i /></div><span>{copy.premiumLabel}</span></div>
       </section>
 
@@ -166,12 +166,12 @@ export default function Home() {
       )}
 
       <section id="models" className="models-section">
-        <p className="eyebrow">{copy.modelsKicker}</p><h2>{copy.modelsTitle}</h2><Link href="/biblioteca" className="inline-block mt-3 text-terracotta font-semibold">{lang === "es" ? "Ver biblioteca completa" : "View complete library"} →</Link>
-        <div className="model-index">{MODELS[lang].map(([question, domain, detail, href], index) => <Link href={href} key={href}><span>{String(index + 1).padStart(2, "0")}</span><div><p>{domain}</p><h3>{question}</h3><small>{detail}</small></div><b>↗</b></Link>)}</div>
+        <p className="eyebrow">{copy.modelsKicker}</p><h2>{copy.modelsTitle}</h2><Link href={localHref("/biblioteca")} className="inline-block mt-3 text-terracotta font-semibold">{lang === "es" ? "Ver biblioteca completa" : "View complete library"} →</Link>
+        <div className="model-index">{MODELS[lang].map(([question, domain, detail, href], index) => <Link href={localHref(href)} key={href}><span>{String(index + 1).padStart(2, "0")}</span><div><p>{domain}</p><h3>{question}</h3><small>{detail}</small></div><b>↗</b></Link>)}</div>
       </section>
 
       <section id="evidence" className="evidence-section">
-        <div><p className="eyebrow">{copy.evidenceKicker}</p><h2>{copy.evidenceTitle}</h2><p>{copy.evidenceText}</p><Link href="/evidencia" className="inline-block mt-4 text-terracotta font-semibold">{lang === "es" ? "Examinar evidencia y límites" : "Examine evidence and limits"} →</Link></div>
+        <div><p className="eyebrow">{copy.evidenceKicker}</p><h2>{copy.evidenceTitle}</h2><p>{copy.evidenceText}</p><Link href={localHref("/evidencia")} className="inline-block mt-4 text-terracotta font-semibold">{lang === "es" ? "Examinar evidencia y límites" : "Examine evidence and limits"} →</Link></div>
         <ol><li><span>01</span>{copy.validation}</li><li><span>02</span>{copy.provenance}</li><li><span>03</span>{copy.limitations}</li></ol>
       </section>
 
