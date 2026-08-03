@@ -87,6 +87,36 @@ echo "Entregar esta clave una sola vez: $CLAVE"
 
 La etiqueta es lo que aparece en PostHog. No pongas datos personales en ella.
 
+### Operar las claves
+
+El mecanismo funciona desde 2026-08-02; el namespace de producción arrancó con cero
+claves. El proceso operativo es este:
+
+- **Solicitud.** Quien quiera una clave abre un issue en el repositorio o escribe a
+  `gonorandres@ciencias.unam.mx` diciendo qué va a construir y con qué volumen
+  aproximado. No hay formulario ni autoservicio: el volumen actual no lo justifica.
+- **Emisión.** La emite el dueño del proyecto con el comando de arriba, con una
+  etiqueta que identifique al consumidor sin datos personales. La clave se entrega
+  una sola vez, por el mismo canal de la solicitud; no queda copia recuperable.
+- **Revocación.** Borrar el digest basta; el efecto es inmediato en la siguiente
+  petición:
+
+  ```bash
+  npx wrangler kv key delete --binding=API_KEYS --remote "<digest>"
+  ```
+
+- **Auditoría.** Listar el namespace muestra digests y nada más; las etiquetas se
+  leen consultando cada digest:
+
+  ```bash
+  npx wrangler kv key list --binding=API_KEYS --remote
+  npx wrangler kv key get  --binding=API_KEYS --remote "<digest>"
+  ```
+
+No hay rotación programada: con este volumen, una clave comprometida se revoca y se
+emite otra. Si el número de consumidores crece, lo primero que hay que revisar es
+esta sección.
+
 ## Caché
 
 Sólo se cachean `GET /api/info` y `GET /api/v1/config/*`: son idénticos para
